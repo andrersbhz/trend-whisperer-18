@@ -14,7 +14,197 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      articles: {
+        Row: {
+          category: string
+          content: string | null
+          created_at: string
+          excerpt: string | null
+          facebook_post_id: string | null
+          featured_image_url: string | null
+          id: string
+          instagram_post_id: string | null
+          meta_description: string | null
+          published_at: string | null
+          scheduled_at: string | null
+          seo_keyword: string | null
+          seo_title: string | null
+          status: string
+          title: string
+          trending_topic: string | null
+          updated_at: string
+          user_id: string
+          wordpress_post_id: string | null
+        }
+        Insert: {
+          category: string
+          content?: string | null
+          created_at?: string
+          excerpt?: string | null
+          facebook_post_id?: string | null
+          featured_image_url?: string | null
+          id?: string
+          instagram_post_id?: string | null
+          meta_description?: string | null
+          published_at?: string | null
+          scheduled_at?: string | null
+          seo_keyword?: string | null
+          seo_title?: string | null
+          status?: string
+          title: string
+          trending_topic?: string | null
+          updated_at?: string
+          user_id: string
+          wordpress_post_id?: string | null
+        }
+        Update: {
+          category?: string
+          content?: string | null
+          created_at?: string
+          excerpt?: string | null
+          facebook_post_id?: string | null
+          featured_image_url?: string | null
+          id?: string
+          instagram_post_id?: string | null
+          meta_description?: string | null
+          published_at?: string | null
+          scheduled_at?: string | null
+          seo_keyword?: string | null
+          seo_title?: string | null
+          status?: string
+          title?: string
+          trending_topic?: string | null
+          updated_at?: string
+          user_id?: string
+          wordpress_post_id?: string | null
+        }
+        Relationships: []
+      }
+      publish_log: {
+        Row: {
+          article_id: string
+          created_at: string
+          error_message: string | null
+          id: string
+          platform: string
+          published_url: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          article_id: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          platform: string
+          published_url?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          article_id?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          platform?: string
+          published_url?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "publish_log_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trending_topics: {
+        Row: {
+          category: string
+          created_at: string
+          fetched_at: string
+          id: string
+          related_queries: string[] | null
+          search_volume: string | null
+          topic: string
+          used: boolean | null
+          user_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          fetched_at?: string
+          id?: string
+          related_queries?: string[] | null
+          search_volume?: string | null
+          topic: string
+          used?: boolean | null
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          fetched_at?: string
+          id?: string
+          related_queries?: string[] | null
+          search_volume?: string | null
+          topic?: string
+          used?: boolean | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_settings: {
+        Row: {
+          articles_per_day: number | null
+          auto_publish: boolean | null
+          categories: string[] | null
+          created_at: string
+          facebook_access_token: string | null
+          facebook_page_id: string | null
+          id: string
+          instagram_account_id: string | null
+          updated_at: string
+          user_id: string
+          wordpress_app_password: string | null
+          wordpress_url: string | null
+          wordpress_username: string | null
+        }
+        Insert: {
+          articles_per_day?: number | null
+          auto_publish?: boolean | null
+          categories?: string[] | null
+          created_at?: string
+          facebook_access_token?: string | null
+          facebook_page_id?: string | null
+          id?: string
+          instagram_account_id?: string | null
+          updated_at?: string
+          user_id: string
+          wordpress_app_password?: string | null
+          wordpress_url?: string | null
+          wordpress_username?: string | null
+        }
+        Update: {
+          articles_per_day?: number | null
+          auto_publish?: boolean | null
+          categories?: string[] | null
+          created_at?: string
+          facebook_access_token?: string | null
+          facebook_page_id?: string | null
+          id?: string
+          instagram_account_id?: string | null
+          updated_at?: string
+          user_id?: string
+          wordpress_app_password?: string | null
+          wordpress_url?: string | null
+          wordpress_username?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
