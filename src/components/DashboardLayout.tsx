@@ -21,6 +21,7 @@ const navItems = [
   { icon: FileText, label: 'Artigos', path: '/articles' },
   { icon: TrendingUp, label: 'Tendências', path: '/trends' },
   { icon: Clock, label: 'Agendamentos', path: '/schedule' },
+  { icon: BarChart3, label: 'Analytics', path: '/analytics' },
   { icon: Settings, label: 'Configurações', path: '/settings' },
 ];
 
