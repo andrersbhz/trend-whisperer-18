@@ -74,6 +74,7 @@ const Dashboard = () => {
     policia: '🚔 Polícia',
     saude: '💚 Saúde',
     celebridades: '⭐ Celebridades',
+    financas: '💰 Finanças',
   };
 
   const statCards = [
