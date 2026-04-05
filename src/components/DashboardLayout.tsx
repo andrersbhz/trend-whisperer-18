@@ -11,6 +11,7 @@ import {
   Newspaper,
   Menu,
   X,
+  BarChart3,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -20,6 +21,7 @@ const navItems = [
   { icon: FileText, label: 'Artigos', path: '/articles' },
   { icon: TrendingUp, label: 'Tendências', path: '/trends' },
   { icon: Clock, label: 'Agendamentos', path: '/schedule' },
+  { icon: BarChart3, label: 'Analytics', path: '/analytics' },
   { icon: Settings, label: 'Configurações', path: '/settings' },
 ];
 

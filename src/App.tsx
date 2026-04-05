@@ -11,6 +11,7 @@ import ArticlesPage from "@/pages/ArticlesPage";
 import TrendsPage from "@/pages/TrendsPage";
 import SchedulePage from "@/pages/SchedulePage";
 import SettingsPage from "@/pages/SettingsPage";
+import AnalyticsPage from "@/pages/AnalyticsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,6 +43,7 @@ const App = () => (
             <Route path="/articles" element={<ProtectedRoute><ArticlesPage /></ProtectedRoute>} />
             <Route path="/trends" element={<ProtectedRoute><TrendsPage /></ProtectedRoute>} />
             <Route path="/schedule" element={<ProtectedRoute><SchedulePage /></ProtectedRoute>} />
+            <Route path="/analytics" element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>

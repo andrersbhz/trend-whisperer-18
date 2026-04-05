@@ -165,6 +165,7 @@ export type Database = {
           created_at: string
           facebook_access_token: string | null
           facebook_page_id: string | null
+          google_analytics_property_id: string | null
           id: string
           instagram_account_id: string | null
           updated_at: string
@@ -180,6 +181,7 @@ export type Database = {
           created_at?: string
           facebook_access_token?: string | null
           facebook_page_id?: string | null
+          google_analytics_property_id?: string | null
           id?: string
           instagram_account_id?: string | null
           updated_at?: string
@@ -195,6 +197,7 @@ export type Database = {
           created_at?: string
           facebook_access_token?: string | null
           facebook_page_id?: string | null
+          google_analytics_property_id?: string | null
           id?: string
           instagram_account_id?: string | null
           updated_at?: string
