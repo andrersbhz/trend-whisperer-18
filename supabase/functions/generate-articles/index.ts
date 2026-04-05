@@ -24,7 +24,7 @@ serve(async (req) => {
       .eq("user_id", userId)
       .single();
 
-    const categories = settings?.categories || ["esportes", "politica", "policia", "saude", "celebridades"];
+    const categories = settings?.categories || ["esportes", "politica", "policia", "saude", "celebridades", "financas"];
 
     // Fetch trending topics that haven't been used
     const { data: topics } = await supabase
@@ -208,6 +208,7 @@ function getDefaultTopic(category: string): string {
     policia: "Segurança pública no Brasil",
     saude: "Dicas de saúde e bem-estar",
     celebridades: "Novidades do mundo das celebridades brasileiras",
+    financas: "Economia e mercado financeiro no Brasil",
   };
   return defaults[category] || "Notícias do Brasil";
 }

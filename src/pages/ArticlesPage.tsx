@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Send, Eye, Trash2, Loader2, FileText } from 'lucide-react';
+import { Send, Eye, Trash2, Loader2, FileText, RotateCcw } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -19,6 +19,7 @@ const ArticlesPage = () => {
   const [articles, setArticles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [publishing, setPublishing] = useState<string | null>(null);
+  const [retrying, setRetrying] = useState<string | null>(null);
   const [preview, setPreview] = useState<any | null>(null);
 
   const fetchArticles = async () => {
@@ -49,6 +50,24 @@ const ArticlesPage = () => {
       toast({ title: 'Erro', description: e.message, variant: 'destructive' });
     } finally {
       setPublishing(null);
+    }
+  };
+
+  const handleRetry = async (articleId: string) => {
+    setRetrying(articleId);
+    try {
+      // Reset status to ready then publish
+      await supabase.from('articles').update({ status: 'ready' }).eq('id', articleId);
+      const { data, error } = await supabase.functions.invoke('publish-article', {
+        body: { articleId, userId: user?.id },
+      });
+      if (error) throw error;
+      toast({ title: 'Tentativa enviada!', description: data?.message || 'Artigo republicado.' });
+      fetchArticles();
+    } catch (e: any) {
+      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+    } finally {
+      setRetrying(null);
     }
   };
 
@@ -130,6 +149,22 @@ const ArticlesPage = () => {
                     <Button size="sm" variant="ghost" onClick={() => setPreview(article)}>
                       <Eye className="h-4 w-4" />
                     </Button>
+                    {article.status === 'failed' && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-warning"
+                        onClick={() => handleRetry(article.id)}
+                        disabled={retrying === article.id}
+                        title="Tentar novamente"
+                      >
+                        {retrying === article.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <RotateCcw className="h-4 w-4" />
+                        )}
+                      </Button>
+                    )}
                     {(article.status === 'ready' || article.status === 'draft') && (
                       <Button
                         size="sm"

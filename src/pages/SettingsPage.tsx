@@ -36,7 +36,7 @@ const defaultSettings: UserSettings = {
   facebook_access_token: '',
   instagram_account_id: '',
   google_analytics_property_id: '',
-  categories: ['esportes', 'politica', 'policia', 'saude', 'celebridades'],
+  categories: ['esportes', 'politica', 'policia', 'saude', 'celebridades', 'financas'],
   articles_per_day: 10,
   auto_publish: false,
 };

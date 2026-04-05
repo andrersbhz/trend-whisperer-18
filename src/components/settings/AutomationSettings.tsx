@@ -12,6 +12,7 @@ const allCategories = [
   { id: 'policia', label: '🚔 Polícia' },
   { id: 'saude', label: '💚 Saúde e Bem-Estar' },
   { id: 'celebridades', label: '⭐ Celebridades' },
+  { id: 'financas', label: '💰 Finanças' },
 ];
 
 interface Props {

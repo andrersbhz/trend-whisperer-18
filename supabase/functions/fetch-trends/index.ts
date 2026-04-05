@@ -27,7 +27,7 @@ serve(async (req) => {
       .eq("user_id", userId)
       .single();
 
-    const categories = settings?.categories || ["esportes", "politica", "policia", "saude", "celebridades"];
+    const categories = settings?.categories || ["esportes", "politica", "policia", "saude", "celebridades", "financas"];
 
     const categoryKeywords: Record<string, string[]> = {
       esportes: ["futebol brasileiro", "campeonato brasileiro", "seleção brasileira", "NBA Brasil", "UFC"],
@@ -35,6 +35,7 @@ serve(async (req) => {
       policia: ["segurança pública Brasil", "operação policial", "criminalidade Brasil"],
       saude: ["saúde Brasil", "SUS", "bem-estar", "saúde mental", "fitness"],
       celebridades: ["celebridades brasileiras", "famosos Brasil", "novelas", "BBB"],
+      financas: ["economia Brasil", "bolsa de valores", "dólar", "investimentos", "Selic", "inflação"],
     };
 
     // Use AI to identify trending topics for each category
