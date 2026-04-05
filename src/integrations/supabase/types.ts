@@ -80,6 +80,39 @@ export type Database = {
         }
         Relationships: []
       }
+      facebook_accounts: {
+        Row: {
+          access_token: string
+          created_at: string
+          id: string
+          instagram_account_id: string | null
+          is_active: boolean
+          page_id: string
+          page_name: string | null
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          created_at?: string
+          id?: string
+          instagram_account_id?: string | null
+          is_active?: boolean
+          page_id: string
+          page_name?: string | null
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          id?: string
+          instagram_account_id?: string | null
+          is_active?: boolean
+          page_id?: string
+          page_name?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       publish_log: {
         Row: {
           article_id: string
