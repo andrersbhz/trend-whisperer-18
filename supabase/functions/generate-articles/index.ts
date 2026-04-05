@@ -208,6 +208,7 @@ function getDefaultTopic(category: string): string {
     policia: "Segurança pública no Brasil",
     saude: "Dicas de saúde e bem-estar",
     celebridades: "Novidades do mundo das celebridades brasileiras",
+    financas: "Economia e mercado financeiro no Brasil",
   };
   return defaults[category] || "Notícias do Brasil";
 }
