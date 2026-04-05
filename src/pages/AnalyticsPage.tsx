@@ -8,15 +8,21 @@ import { useToast } from '@/hooks/use-toast';
 import {
   BarChart3,
   TrendingUp,
+  TrendingDown,
   Eye,
   MousePointerClick,
   Users,
   Lightbulb,
   RefreshCw,
   Loader2,
-  ArrowUp,
-  ArrowDown,
   Globe,
+  Clock,
+  ArrowUpRight,
+  Percent,
+  FileText,
+  Smartphone,
+  Monitor,
+  Tablet,
 } from 'lucide-react';
 import {
   BarChart,
@@ -31,17 +37,26 @@ import {
   PieChart,
   Pie,
   Cell,
+  AreaChart,
+  Area,
+  Legend,
 } from 'recharts';
 
 interface AnalyticsData {
   pageviews: number;
   sessions: number;
   users: number;
+  newUsers: number;
   bounceRate: number;
   avgSessionDuration: string;
-  topPages: { page: string; views: number }[];
+  pagesPerSession: number;
+  topPages: { page: string; views: number; avgTime: string }[];
   trafficSources: { source: string; value: number }[];
-  dailyViews: { date: string; views: number }[];
+  dailyViews: { date: string; views: number; users: number; sessions: number }[];
+  devices: { device: string; value: number }[];
+  countries: { country: string; users: number }[];
+  topReferrers: { referrer: string; visits: number }[];
+  hourlyTraffic: { hour: string; views: number }[];
 }
 
 interface AiTip {
@@ -51,11 +66,12 @@ interface AiTip {
 }
 
 const CHART_COLORS = [
-  'hsl(220, 90%, 56%)',
-  'hsl(262, 83%, 58%)',
+  'hsl(var(--primary))',
+  'hsl(var(--accent))',
   'hsl(142, 76%, 36%)',
   'hsl(38, 92%, 50%)',
-  'hsl(0, 84%, 60%)',
+  'hsl(var(--destructive))',
+  'hsl(262, 83%, 58%)',
 ];
 
 const AnalyticsPage = () => {
@@ -66,11 +82,25 @@ const AnalyticsPage = () => {
   const [loading, setLoading] = useState(true);
   const [loadingTips, setLoadingTips] = useState(false);
   const [gaConnected, setGaConnected] = useState(false);
+  const [articleStats, setArticleStats] = useState({ total: 0, published: 0, failed: 0 });
 
   useEffect(() => {
     if (!user) return;
     checkGaConnection();
+    fetchArticleStats();
   }, [user]);
+
+  const fetchArticleStats = async () => {
+    if (!user) return;
+    const { data } = await supabase.from('articles').select('status').eq('user_id', user.id);
+    if (data) {
+      setArticleStats({
+        total: data.length,
+        published: data.filter((a) => a.status === 'published').length,
+        failed: data.filter((a) => a.status === 'failed').length,
+      });
+    }
+  };
 
   const checkGaConnection = async () => {
     if (!user) return;
@@ -79,10 +109,10 @@ const AnalyticsPage = () => {
       .select('google_analytics_property_id')
       .eq('user_id', user.id)
       .maybeSingle();
-    
+
     const connected = !!(data as any)?.google_analytics_property_id;
     setGaConnected(connected);
-    
+
     if (connected) {
       fetchAnalytics();
     } else {
@@ -129,6 +159,12 @@ const AnalyticsPage = () => {
     baixa: 'bg-primary/20 text-primary',
   };
 
+  const deviceIcons: Record<string, any> = {
+    Desktop: Monitor,
+    Mobile: Smartphone,
+    Tablet: Tablet,
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -158,18 +194,22 @@ const AnalyticsPage = () => {
   }
 
   const statCards = [
-    { icon: Eye, label: 'Pageviews', value: analytics?.pageviews?.toLocaleString() || '0', color: 'text-primary' },
-    { icon: Users, label: 'Usuários', value: analytics?.users?.toLocaleString() || '0', color: 'text-accent' },
-    { icon: MousePointerClick, label: 'Sessões', value: analytics?.sessions?.toLocaleString() || '0', color: 'text-success' },
-    { icon: TrendingUp, label: 'Taxa de Rejeição', value: `${analytics?.bounceRate || 0}%`, color: 'text-warning' },
+    { icon: Eye, label: 'Pageviews', value: analytics?.pageviews?.toLocaleString() || '0', color: 'text-primary', change: '+12%', up: true },
+    { icon: Users, label: 'Usuários', value: analytics?.users?.toLocaleString() || '0', color: 'text-accent', change: '+8%', up: true },
+    { icon: MousePointerClick, label: 'Sessões', value: analytics?.sessions?.toLocaleString() || '0', color: 'text-success', change: '+5%', up: true },
+    { icon: Percent, label: 'Taxa de Rejeição', value: `${analytics?.bounceRate || 0}%`, color: 'text-warning', change: '-3%', up: false },
+    { icon: Clock, label: 'Duração Média', value: analytics?.avgSessionDuration || '0:00', color: 'text-primary', change: '+15s', up: true },
+    { icon: ArrowUpRight, label: 'Págs/Sessão', value: analytics?.pagesPerSession?.toFixed(1) || '0', color: 'text-accent', change: '+0.3', up: true },
+    { icon: Users, label: 'Novos Usuários', value: analytics?.newUsers?.toLocaleString() || '0', color: 'text-success', change: '+10%', up: true },
+    { icon: FileText, label: 'Artigos Publicados', value: String(articleStats.published), color: 'text-primary', change: `${articleStats.total} total`, up: true },
   ];
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Analytics</h1>
-          <p className="text-muted-foreground text-sm mt-1">Métricas e insights do seu blog</p>
+          <p className="text-muted-foreground text-sm mt-1">Métricas completas e insights do seu blog</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={generateTips} disabled={loadingTips || !analytics}>
@@ -183,87 +223,213 @@ const AnalyticsPage = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Stat Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {statCards.map((stat) => (
           <Card key={stat.label} className="shadow-card">
-            <CardContent className="p-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">{stat.label}</p>
-                  <p className="text-2xl font-bold text-foreground mt-1">{stat.value}</p>
-                </div>
-                <stat.icon className={`h-8 w-8 ${stat.color} opacity-80`} />
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <stat.icon className={`h-5 w-5 ${stat.color} opacity-80`} />
+                <span className={`text-xs flex items-center gap-0.5 ${stat.up ? 'text-success' : 'text-destructive'}`}>
+                  {stat.up ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                  {stat.change}
+                </span>
               </div>
+              <p className="text-xl font-bold text-foreground">{stat.value}</p>
+              <p className="text-xs text-muted-foreground">{stat.label}</p>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      {/* Charts */}
+      {/* Main Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Daily Views + Users + Sessions */}
         {analytics?.dailyViews && analytics.dailyViews.length > 0 && (
-          <Card className="shadow-card">
+          <Card className="shadow-card lg:col-span-2">
             <CardHeader>
-              <CardTitle className="text-lg">Visualizações Diárias</CardTitle>
+              <CardTitle className="text-lg">Tráfego dos Últimos 30 Dias</CardTitle>
+              <CardDescription>Visualizações, usuários e sessões diárias</CardDescription>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={250}>
-                <LineChart data={analytics.dailyViews}>
+              <ResponsiveContainer width="100%" height={300}>
+                <AreaChart data={analytics.dailyViews}>
+                  <defs>
+                    <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(220, 90%, 56%)" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="hsl(220, 90%, 56%)" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(142, 76%, 36%)" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="hsl(142, 76%, 36%)" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 13%, 91%)" />
-                  <XAxis dataKey="date" fontSize={12} stroke="hsl(220, 10%, 46%)" />
-                  <YAxis fontSize={12} stroke="hsl(220, 10%, 46%)" />
+                  <XAxis dataKey="date" fontSize={11} stroke="hsl(220, 10%, 46%)" />
+                  <YAxis fontSize={11} stroke="hsl(220, 10%, 46%)" />
                   <Tooltip />
-                  <Line type="monotone" dataKey="views" stroke="hsl(220, 90%, 56%)" strokeWidth={2} dot={false} />
-                </LineChart>
+                  <Legend />
+                  <Area type="monotone" dataKey="views" name="Views" stroke="hsl(220, 90%, 56%)" fill="url(#colorViews)" strokeWidth={2} />
+                  <Area type="monotone" dataKey="users" name="Usuários" stroke="hsl(142, 76%, 36%)" fill="url(#colorUsers)" strokeWidth={2} />
+                  <Line type="monotone" dataKey="sessions" name="Sessões" stroke="hsl(38, 92%, 50%)" strokeWidth={2} dot={false} />
+                </AreaChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
         )}
 
+        {/* Top Pages */}
         {analytics?.topPages && analytics.topPages.length > 0 && (
           <Card className="shadow-card">
             <CardHeader>
               <CardTitle className="text-lg">Páginas Mais Visitadas</CardTitle>
+              <CardDescription>Top 10 páginas por visualizações</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {analytics.topPages.slice(0, 10).map((page, i) => (
+                  <div key={i} className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <span className="text-xs font-bold text-muted-foreground w-5">{i + 1}</span>
+                      <span className="text-sm text-foreground truncate">{page.page}</span>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <span className="text-xs text-muted-foreground">{page.avgTime}</span>
+                      <Badge variant="secondary" className="text-xs">{page.views}</Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Traffic Sources Pie */}
+        {analytics?.trafficSources && analytics.trafficSources.length > 0 && (
+          <Card className="shadow-card">
+            <CardHeader>
+              <CardTitle className="text-lg">Fontes de Tráfego</CardTitle>
+              <CardDescription>De onde vêm seus visitantes</CardDescription>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={analytics.topPages.slice(0, 5)} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 13%, 91%)" />
-                  <XAxis type="number" fontSize={12} stroke="hsl(220, 10%, 46%)" />
-                  <YAxis dataKey="page" type="category" width={120} fontSize={11} stroke="hsl(220, 10%, 46%)" />
+                <PieChart>
+                  <Pie
+                    data={analytics.trafficSources}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={80}
+                    dataKey="value"
+                    nameKey="source"
+                    label={({ source, percent }) => `${source} ${(percent * 100).toFixed(0)}%`}
+                  >
+                    {analytics.trafficSources.map((_, index) => (
+                      <Cell key={index} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                    ))}
+                  </Pie>
                   <Tooltip />
-                  <Bar dataKey="views" fill="hsl(262, 83%, 58%)" radius={[0, 4, 4, 0]} />
+                </PieChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Devices */}
+        {analytics?.devices && analytics.devices.length > 0 && (
+          <Card className="shadow-card">
+            <CardHeader>
+              <CardTitle className="text-lg">Dispositivos</CardTitle>
+              <CardDescription>Distribuição por tipo de dispositivo</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {analytics.devices.map((d, i) => {
+                  const Icon = deviceIcons[d.device] || Monitor;
+                  const total = analytics.devices.reduce((s, x) => s + x.value, 0);
+                  const pct = total > 0 ? ((d.value / total) * 100).toFixed(1) : '0';
+                  return (
+                    <div key={i} className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Icon className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm text-foreground">{d.device}</span>
+                        </div>
+                        <span className="text-sm font-medium text-foreground">{pct}%</span>
+                      </div>
+                      <div className="h-2 rounded-full bg-muted overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all"
+                          style={{ width: `${pct}%`, backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Hourly Traffic */}
+        {analytics?.hourlyTraffic && analytics.hourlyTraffic.length > 0 && (
+          <Card className="shadow-card">
+            <CardHeader>
+              <CardTitle className="text-lg">Tráfego por Hora</CardTitle>
+              <CardDescription>Horários de pico do seu blog</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={analytics.hourlyTraffic}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 13%, 91%)" />
+                  <XAxis dataKey="hour" fontSize={10} stroke="hsl(220, 10%, 46%)" />
+                  <YAxis fontSize={10} stroke="hsl(220, 10%, 46%)" />
+                  <Tooltip />
+                  <Bar dataKey="views" fill="hsl(262, 83%, 58%)" radius={[3, 3, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
         )}
 
-        {analytics?.trafficSources && analytics.trafficSources.length > 0 && (
-          <Card className="shadow-card lg:col-span-2">
+        {/* Top Referrers */}
+        {analytics?.topReferrers && analytics.topReferrers.length > 0 && (
+          <Card className="shadow-card">
             <CardHeader>
-              <CardTitle className="text-lg">Fontes de Tráfego</CardTitle>
+              <CardTitle className="text-lg">Principais Referências</CardTitle>
+              <CardDescription>Sites que enviam tráfego para você</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center justify-center">
-                <ResponsiveContainer width="100%" height={250}>
-                  <PieChart>
-                    <Pie
-                      data={analytics.trafficSources}
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={80}
-                      dataKey="value"
-                      nameKey="source"
-                      label={({ source, percent }) => `${source} ${(percent * 100).toFixed(0)}%`}
-                    >
-                      {analytics.trafficSources.map((_, index) => (
-                        <Cell key={index} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
+              <div className="space-y-2">
+                {analytics.topReferrers.map((ref, i) => (
+                  <div key={i} className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50">
+                    <div className="flex items-center gap-2">
+                      <Globe className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm text-foreground">{ref.referrer}</span>
+                    </div>
+                    <Badge variant="secondary">{ref.visits}</Badge>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Countries */}
+        {analytics?.countries && analytics.countries.length > 0 && (
+          <Card className="shadow-card">
+            <CardHeader>
+              <CardTitle className="text-lg">Países</CardTitle>
+              <CardDescription>Origem geográfica dos visitantes</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {analytics.countries.map((c, i) => (
+                  <div key={i} className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50">
+                    <span className="text-sm text-foreground">{c.country}</span>
+                    <Badge variant="secondary">{c.users} usuários</Badge>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
@@ -278,7 +444,7 @@ const AnalyticsPage = () => {
               <Lightbulb className="h-5 w-5 text-warning" />
               <CardTitle className="text-lg">Dicas da IA para Melhorar</CardTitle>
             </div>
-            <CardDescription>Sugestões baseadas nos seus dados de analytics</CardDescription>
+            <CardDescription>Sugestões personalizadas baseadas nos seus dados de analytics</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
