@@ -32,26 +32,24 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <div className="min-h-screen flex bg-background">
-      {/* Mobile overlay */}
       {sidebarOpen && (
-        <div className="fixed inset-0 bg-foreground/20 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
+        <div className="fixed inset-0 bg-background/60 backdrop-blur-sm z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
-      {/* Sidebar */}
       <aside
         className={cn(
-          'fixed lg:static inset-y-0 left-0 z-50 w-64 bg-sidebar border-r border-sidebar-border flex flex-col transition-transform duration-200',
+          'fixed lg:static inset-y-0 left-0 z-50 w-64 glass flex flex-col transition-transform duration-200',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         )}
       >
         <div className="p-5 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="gradient-primary p-2 rounded-lg">
+            <div className="gradient-primary p-2 rounded-lg shadow-neon-green">
               <Newspaper className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="font-bold text-lg text-sidebar-accent-foreground">AutoBlog AI</span>
+            <span className="font-bold text-lg neon-text-green">AutoBlog AI</span>
           </div>
-          <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-sidebar-foreground">
+          <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-muted-foreground hover:text-foreground">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -65,10 +63,10 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                 to={item.path}
                 onClick={() => setSidebarOpen(false)}
                 className={cn(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                  'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200',
                   active
-                    ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                    : 'text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground'
+                    ? 'bg-primary/10 text-primary neon-border-green'
+                    : 'text-muted-foreground hover:bg-secondary/50 hover:text-foreground'
                 )}
               >
                 <item.icon className="h-4.5 w-4.5" />
@@ -78,10 +76,10 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           })}
         </nav>
 
-        <div className="p-3 border-t border-sidebar-border">
+        <div className="p-3 border-t border-border">
           <Button
             variant="ghost"
-            className="w-full justify-start text-sidebar-foreground hover:text-destructive hover:bg-sidebar-accent/50"
+            className="w-full justify-start text-muted-foreground hover:text-destructive hover:bg-destructive/10"
             onClick={signOut}
           >
             <LogOut className="h-4 w-4 mr-3" />
@@ -90,9 +88,8 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
         </div>
       </aside>
 
-      {/* Main */}
       <main className="flex-1 min-w-0">
-        <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-sm border-b border-border px-4 lg:px-6 h-14 flex items-center">
+        <header className="sticky top-0 z-30 glass border-b border-border px-4 lg:px-6 h-14 flex items-center">
           <button onClick={() => setSidebarOpen(true)} className="lg:hidden mr-3">
             <Menu className="h-5 w-5 text-foreground" />
           </button>

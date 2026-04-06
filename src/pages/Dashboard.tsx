@@ -4,30 +4,40 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FileText, TrendingUp, CheckCircle, Clock, Sparkles, RefreshCw } from 'lucide-react';
+import { FileText, TrendingUp, CheckCircle, Clock, Sparkles, RefreshCw, Facebook, Instagram } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const Dashboard = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [stats, setStats] = useState({ total: 0, published: 0, pending: 0, trending: 0 });
+  const [stats, setStats] = useState({ total: 0, published: 0, pending: 0, trending: 0, failed: 0 });
   const [recentArticles, setRecentArticles] = useState<any[]>([]);
+  const [socialStats, setSocialStats] = useState({ fbPosts: 0, igPosts: 0, fbAccounts: 0 });
   const [generating, setGenerating] = useState(false);
 
   const fetchStats = async () => {
     if (!user) return;
 
-    const [articlesRes, trendingRes] = await Promise.all([
+    const [articlesRes, trendingRes, fbAccountsRes, publishLogRes] = await Promise.all([
       supabase.from('articles').select('id, status').eq('user_id', user.id),
       supabase.from('trending_topics').select('id').eq('user_id', user.id).eq('used', false),
+      supabase.from('facebook_accounts').select('id').eq('user_id', user.id).eq('is_active', true),
+      supabase.from('publish_log').select('platform, status').eq('user_id', user.id).eq('status', 'success'),
     ]);
 
     const articles = articlesRes.data || [];
+    const logs = publishLogRes.data || [];
     setStats({
       total: articles.length,
       published: articles.filter((a) => a.status === 'published').length,
       pending: articles.filter((a) => a.status === 'ready' || a.status === 'draft').length,
       trending: trendingRes.data?.length || 0,
+      failed: articles.filter((a) => a.status === 'failed').length,
+    });
+    setSocialStats({
+      fbPosts: logs.filter((l) => l.platform === 'facebook').length,
+      igPosts: logs.filter((l) => l.platform === 'instagram').length,
+      fbAccounts: fbAccountsRes.data?.length || 0,
     });
 
     const { data: recent } = await supabase
@@ -78,28 +88,30 @@ const Dashboard = () => {
   };
 
   const statCards = [
-    { icon: FileText, label: 'Total Artigos', value: stats.total, color: 'text-primary' },
-    { icon: CheckCircle, label: 'Publicados', value: stats.published, color: 'text-success' },
-    { icon: Clock, label: 'Pendentes', value: stats.pending, color: 'text-warning' },
-    { icon: TrendingUp, label: 'Tendências', value: stats.trending, color: 'text-accent' },
+    { icon: FileText, label: 'Total Artigos', value: stats.total, color: 'text-primary', glow: 'neon-border-green' },
+    { icon: CheckCircle, label: 'Publicados', value: stats.published, color: 'text-primary', glow: 'neon-border-green' },
+    { icon: Clock, label: 'Pendentes', value: stats.pending, color: 'text-warning', glow: '' },
+    { icon: TrendingUp, label: 'Tendências', value: stats.trending, color: 'text-accent', glow: 'neon-border-pink' },
+    { icon: Facebook, label: 'Posts Facebook', value: socialStats.fbPosts, color: 'text-accent', glow: 'neon-border-pink' },
+    { icon: Instagram, label: 'Posts Instagram', value: socialStats.igPosts, color: 'text-accent', glow: 'neon-border-pink' },
   ];
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Painel</h1>
+          <h1 className="text-2xl font-bold neon-text-green">Painel</h1>
           <p className="text-muted-foreground text-sm mt-1">Gerencie sua automação de blog</p>
         </div>
-        <Button onClick={handleGenerateArticles} disabled={generating} className="gradient-primary">
+        <Button onClick={handleGenerateArticles} disabled={generating} className="gradient-primary text-primary-foreground shadow-neon-green hover:shadow-neon-green">
           {generating ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
           Gerar Artigos
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {statCards.map((stat) => (
-          <Card key={stat.label} className="shadow-card">
+          <Card key={stat.label} className={`glass-card ${stat.glow}`}>
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
@@ -113,9 +125,18 @@ const Dashboard = () => {
         ))}
       </div>
 
-      <Card className="shadow-card">
+      {stats.failed > 0 && (
+        <Card className="glass-card border-destructive/30">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="h-3 w-3 rounded-full bg-destructive animate-pulse-dot" />
+            <p className="text-sm text-destructive">{stats.failed} artigo(s) falharam na publicação. Vá em Artigos para tentar novamente.</p>
+          </CardContent>
+        </Card>
+      )}
+
+      <Card className="glass-card">
         <CardHeader>
-          <CardTitle className="text-lg">Artigos Recentes</CardTitle>
+          <CardTitle className="text-lg text-foreground">Artigos Recentes</CardTitle>
         </CardHeader>
         <CardContent>
           {recentArticles.length === 0 ? (
@@ -125,7 +146,7 @@ const Dashboard = () => {
           ) : (
             <div className="space-y-3">
               {recentArticles.map((article) => (
-                <div key={article.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                <div key={article.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors">
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-foreground truncate">{article.title}</p>
                     <div className="flex items-center gap-2 mt-1">
