@@ -18,28 +18,29 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Fetch article
-    const { data: article } = await supabase
+    const { data: article, error: articleError } = await supabase
       .from("articles")
       .select("*")
       .eq("id", articleId)
       .eq("user_id", userId)
       .single();
 
-    if (!article) throw new Error("Article not found");
+    if (articleError || !article) throw new Error("Article not found: " + (articleError?.message || ""));
 
     // Fetch settings
-    const { data: settings } = await supabase
+    const { data: settings, error: settingsError } = await supabase
       .from("user_settings")
       .select("*")
       .eq("user_id", userId)
       .single();
 
-    if (!settings) throw new Error("Settings not configured. Go to Settings page.");
+    if (settingsError || !settings) throw new Error("Settings not configured. Go to Settings page.");
 
     // Update status
     await supabase.from("articles").update({ status: "publishing" }).eq("id", articleId);
 
     const results: { wordpress?: boolean; facebook?: boolean; instagram?: boolean } = {};
+    const errors: string[] = [];
 
     // 1. Publish to WordPress
     if (settings.wordpress_url && settings.wordpress_username && settings.wordpress_app_password) {
@@ -47,48 +48,88 @@ serve(async (req) => {
         const wpUrl = settings.wordpress_url.replace(/\/$/, "");
         const auth = btoa(`${settings.wordpress_username}:${settings.wordpress_app_password}`);
 
-        // Upload featured image first if available
+        // Prepare post body - standard WP REST API fields
+        const wpBody: Record<string, unknown> = {
+          title: article.title,
+          content: article.content || "",
+          status: "publish",
+          excerpt: article.excerpt || article.meta_description || "",
+        };
+
+        // Upload featured image if it's a URL (not base64)
         let featuredMediaId = null;
-        if (article.featured_image_url && article.featured_image_url.startsWith("data:image")) {
+        if (article.featured_image_url) {
           try {
-            const base64Data = article.featured_image_url.split(",")[1];
-            const binaryData = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0));
+            if (article.featured_image_url.startsWith("data:image")) {
+              // Base64 image upload
+              const base64Data = article.featured_image_url.split(",")[1];
+              const binaryData = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0));
+              const slug = (article.seo_keyword || article.title || "image").replace(/[^a-zA-Z0-9]/g, "-").substring(0, 50);
 
-            const mediaResponse = await fetch(`${wpUrl}/wp-json/wp/v2/media`, {
-              method: "POST",
-              headers: {
-                Authorization: `Basic ${auth}`,
-                "Content-Type": "image/png",
-                "Content-Disposition": `attachment; filename="${article.seo_keyword?.replace(/\s/g, "-") || "image"}.png"`,
-              },
-              body: binaryData,
-            });
+              const mediaResponse = await fetch(`${wpUrl}/wp-json/wp/v2/media`, {
+                method: "POST",
+                headers: {
+                  Authorization: `Basic ${auth}`,
+                  "Content-Type": "image/png",
+                  "Content-Disposition": `attachment; filename="${slug}.png"`,
+                },
+                body: binaryData,
+              });
 
-            if (mediaResponse.ok) {
-              const mediaData = await mediaResponse.json();
-              featuredMediaId = mediaData.id;
+              if (mediaResponse.ok) {
+                const mediaData = await mediaResponse.json();
+                featuredMediaId = mediaData.id;
+              } else {
+                console.error("WP image upload status:", mediaResponse.status);
+              }
+            } else if (article.featured_image_url.startsWith("http")) {
+              // External URL - download then upload
+              try {
+                const imgResp = await fetch(article.featured_image_url);
+                if (imgResp.ok) {
+                  const imgData = new Uint8Array(await imgResp.arrayBuffer());
+                  const contentType = imgResp.headers.get("content-type") || "image/jpeg";
+                  const ext = contentType.includes("png") ? "png" : "jpg";
+                  const slug = (article.seo_keyword || "image").replace(/[^a-zA-Z0-9]/g, "-").substring(0, 50);
+
+                  const mediaResponse = await fetch(`${wpUrl}/wp-json/wp/v2/media`, {
+                    method: "POST",
+                    headers: {
+                      Authorization: `Basic ${auth}`,
+                      "Content-Type": contentType,
+                      "Content-Disposition": `attachment; filename="${slug}.${ext}"`,
+                    },
+                    body: imgData,
+                  });
+
+                  if (mediaResponse.ok) {
+                    const mediaData = await mediaResponse.json();
+                    featuredMediaId = mediaData.id;
+                  }
+                }
+              } catch (dlErr) {
+                console.error("Image download failed:", dlErr);
+              }
             }
           } catch (imgErr) {
             console.error("WP image upload failed:", imgErr);
           }
         }
 
-        const wpBody: any = {
-          title: article.title,
-          content: article.content,
-          status: "publish",
-          excerpt: article.excerpt || "",
-          meta: {
-            _yoast_wpseo_title: article.seo_title || article.title,
-            _yoast_wpseo_metadesc: article.meta_description || "",
-            _yoast_wpseo_focuskw: article.seo_keyword || "",
-          },
-        };
-
         if (featuredMediaId) {
           wpBody.featured_media = featuredMediaId;
         }
 
+        // Try to set Yoast SEO meta via meta field (works if Yoast REST is enabled)
+        if (article.seo_title || article.meta_description || article.seo_keyword) {
+          wpBody.meta = {
+            _yoast_wpseo_title: article.seo_title || article.title,
+            _yoast_wpseo_metadesc: article.meta_description || "",
+            _yoast_wpseo_focuskw: article.seo_keyword || "",
+          };
+        }
+
+        // Create the post
         const wpResponse = await fetch(`${wpUrl}/wp-json/wp/v2/posts`, {
           method: "POST",
           headers: {
@@ -111,7 +152,9 @@ serve(async (req) => {
           results.wordpress = true;
         } else {
           const errText = await wpResponse.text();
-          throw new Error(`WordPress error: ${wpResponse.status} - ${errText}`);
+          const msg = `WordPress ${wpResponse.status}: ${errText.substring(0, 200)}`;
+          errors.push(msg);
+          throw new Error(msg);
         }
       } catch (wpErr: any) {
         console.error("WordPress publish failed:", wpErr);
@@ -120,28 +163,42 @@ serve(async (req) => {
           article_id: articleId,
           platform: "wordpress",
           status: "failed",
-          error_message: wpErr.message,
+          error_message: wpErr.message?.substring(0, 500),
         });
       }
     }
 
-    // 2. Post to Facebook
-    if (settings.facebook_page_id && settings.facebook_access_token) {
+    // 2. Post to Facebook (support multiple accounts)
+    const { data: fbAccounts } = await supabase
+      .from("facebook_accounts")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("is_active", true);
+
+    // Also check legacy settings
+    const legacyFb = settings.facebook_page_id && settings.facebook_access_token;
+    const allFbAccounts = [
+      ...(fbAccounts || []),
+      ...(legacyFb ? [{ page_id: settings.facebook_page_id, access_token: settings.facebook_access_token, instagram_account_id: settings.instagram_account_id }] : []),
+    ];
+
+    for (const fbAccount of allFbAccounts) {
       try {
         const wpPostUrl = results.wordpress
           ? (await supabase.from("publish_log").select("published_url").eq("article_id", articleId).eq("platform", "wordpress").single()).data?.published_url
           : null;
 
-        const message = `📰 ${article.title}\n\n${article.excerpt || article.meta_description || ""}\n\n${wpPostUrl ? `Leia mais: ${wpPostUrl}` : ""}`;
+        const message = `📰 ${article.title}\n\n${article.excerpt || article.meta_description || ""}\n\n${wpPostUrl ? `Leia mais: ${wpPostUrl}` : ""}`.trim();
 
         const fbResponse = await fetch(
-          `https://graph.facebook.com/v18.0/${settings.facebook_page_id}/feed`,
+          `https://graph.facebook.com/v18.0/${fbAccount.page_id}/feed`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               message,
-              access_token: settings.facebook_access_token,
+              link: wpPostUrl || undefined,
+              access_token: fbAccount.access_token,
             }),
           }
         );
@@ -158,53 +215,51 @@ serve(async (req) => {
           results.facebook = true;
         } else {
           const errText = await fbResponse.text();
-          throw new Error(`Facebook error: ${fbResponse.status} - ${errText}`);
+          throw new Error(`Facebook ${fbResponse.status}: ${errText.substring(0, 200)}`);
         }
       } catch (fbErr: any) {
         console.error("Facebook post failed:", fbErr);
+        errors.push(fbErr.message);
         await supabase.from("publish_log").insert({
           user_id: userId,
           article_id: articleId,
           platform: "facebook",
           status: "failed",
-          error_message: fbErr.message,
+          error_message: fbErr.message?.substring(0, 500),
         });
       }
-    }
 
-    // 3. Post to Instagram
-    if (settings.instagram_account_id && settings.facebook_access_token && article.featured_image_url) {
-      try {
-        // Instagram requires a public image URL. Skip if base64.
-        if (!article.featured_image_url.startsWith("data:")) {
-          const caption = `📰 ${article.title}\n\n${article.excerpt || ""}\n\n#noticias #brasil #${article.category}`;
+      // 3. Instagram via same account
+      if (fbAccount.instagram_account_id && article.featured_image_url && !article.featured_image_url.startsWith("data:")) {
+        try {
+          const caption = `📰 ${article.title}\n\n${article.excerpt || ""}\n\n#noticias #brasil #${(article.category || "").replace(/\s/g, "")}`;
 
-          // Create media container
           const containerResponse = await fetch(
-            `https://graph.facebook.com/v18.0/${settings.instagram_account_id}/media`,
+            `https://graph.facebook.com/v18.0/${fbAccount.instagram_account_id}/media`,
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 image_url: article.featured_image_url,
                 caption,
-                access_token: settings.facebook_access_token,
+                access_token: fbAccount.access_token,
               }),
             }
           );
 
           if (containerResponse.ok) {
             const containerData = await containerResponse.json();
+            // Wait a bit for processing
+            await new Promise(r => setTimeout(r, 3000));
 
-            // Publish
             const publishResponse = await fetch(
-              `https://graph.facebook.com/v18.0/${settings.instagram_account_id}/media_publish`,
+              `https://graph.facebook.com/v18.0/${fbAccount.instagram_account_id}/media_publish`,
               {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                   creation_id: containerData.id,
-                  access_token: settings.facebook_access_token,
+                  access_token: fbAccount.access_token,
                 }),
               }
             );
@@ -219,33 +274,47 @@ serve(async (req) => {
                 status: "success",
               });
               results.instagram = true;
+            } else {
+              const errText = await publishResponse.text();
+              throw new Error(`IG publish ${publishResponse.status}: ${errText.substring(0, 200)}`);
             }
+          } else {
+            const errText = await containerResponse.text();
+            throw new Error(`IG container ${containerResponse.status}: ${errText.substring(0, 200)}`);
           }
+        } catch (igErr: any) {
+          console.error("Instagram post failed:", igErr);
+          errors.push(igErr.message);
+          await supabase.from("publish_log").insert({
+            user_id: userId,
+            article_id: articleId,
+            platform: "instagram",
+            status: "failed",
+            error_message: igErr.message?.substring(0, 500),
+          });
         }
-      } catch (igErr: any) {
-        console.error("Instagram post failed:", igErr);
-        await supabase.from("publish_log").insert({
-          user_id: userId,
-          article_id: articleId,
-          platform: "instagram",
-          status: "failed",
-          error_message: igErr.message,
-        });
       }
     }
 
     // Update final status
-    const finalStatus = results.wordpress || results.facebook || results.instagram ? "published" : "failed";
+    const anySuccess = results.wordpress || results.facebook || results.instagram;
+    const finalStatus = anySuccess ? "published" : "failed";
     await supabase
       .from("articles")
-      .update({ status: finalStatus, published_at: finalStatus === "published" ? new Date().toISOString() : null })
+      .update({
+        status: finalStatus,
+        published_at: finalStatus === "published" ? new Date().toISOString() : null,
+      })
       .eq("id", articleId);
+
+    const summary = `WP: ${results.wordpress ? "✅" : "❌"} | FB: ${results.facebook ? "✅" : "❌"} | IG: ${results.instagram ? "✅" : "❌"}`;
 
     return new Response(
       JSON.stringify({
-        success: true,
-        message: `Artigo publicado! WP: ${results.wordpress ? "✅" : "❌"} | FB: ${results.facebook ? "✅" : "❌"} | IG: ${results.instagram ? "✅" : "❌"}`,
+        success: anySuccess,
+        message: anySuccess ? `Artigo publicado! ${summary}` : `Falha na publicação. ${summary}. Erros: ${errors.join("; ").substring(0, 300)}`,
         results,
+        errors: errors.length > 0 ? errors : undefined,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
