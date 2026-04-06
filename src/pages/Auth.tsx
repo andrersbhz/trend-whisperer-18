@@ -43,16 +43,11 @@ const Auth = () => {
       const result = await lovable.auth.signInWithOAuth('google', {
         redirect_uri: window.location.origin,
       });
-
       if (result.error) {
         toast({ title: 'Erro', description: (result.error as Error).message, variant: 'destructive' });
         return;
       }
-
-      if (result.redirected) {
-        return;
-      }
-
+      if (result.redirected) return;
       navigate('/');
     } catch (error: any) {
       toast({ title: 'Erro', description: error.message, variant: 'destructive' });
@@ -62,28 +57,31 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md animate-fade-in">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4 relative overflow-hidden">
+      {/* Background glow effects */}
+      <div className="absolute top-1/4 -left-32 w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
+      <div className="absolute bottom-1/4 -right-32 w-64 h-64 bg-accent/10 rounded-full blur-3xl" />
+
+      <div className="w-full max-w-md animate-fade-in relative z-10">
         <div className="flex items-center justify-center gap-2 mb-8">
-          <div className="gradient-primary p-2.5 rounded-xl">
+          <div className="gradient-primary p-2.5 rounded-xl shadow-neon-green animate-glow">
             <Newspaper className="h-6 w-6 text-primary-foreground" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground">AutoBlog AI</h1>
+          <h1 className="text-2xl font-bold neon-text-green">AutoBlog AI</h1>
         </div>
 
-        <Card className="shadow-elevated">
+        <Card className="glass-card shadow-elevated">
           <CardHeader className="text-center">
-            <CardTitle className="text-xl">{isLogin ? 'Entrar' : 'Criar conta'}</CardTitle>
+            <CardTitle className="text-xl text-foreground">{isLogin ? 'Entrar' : 'Criar conta'}</CardTitle>
             <CardDescription>
               {isLogin ? 'Acesse seu painel de automação' : 'Comece a automatizar seu blog'}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Google Login */}
             <Button
               type="button"
               variant="outline"
-              className="w-full"
+              className="w-full border-border hover:bg-secondary/50"
               onClick={handleGoogleSignIn}
               disabled={googleLoading}
             >
@@ -109,7 +107,6 @@ const Auth = () => {
               </div>
             </div>
 
-            {/* Email/Password */}
             <form onSubmit={handleSubmit} className="space-y-4">
               <Input
                 type="email"
@@ -117,6 +114,7 @@ const Auth = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                className="bg-secondary/30 border-border focus:border-primary"
               />
               <Input
                 type="password"
@@ -125,8 +123,9 @@ const Auth = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={6}
+                className="bg-secondary/30 border-border focus:border-primary"
               />
-              <Button type="submit" className="w-full gradient-primary" disabled={loading}>
+              <Button type="submit" className="w-full gradient-primary text-primary-foreground shadow-neon-green" disabled={loading}>
                 <Sparkles className="h-4 w-4 mr-2" />
                 {loading ? 'Aguarde...' : isLogin ? 'Entrar' : 'Criar conta'}
               </Button>
@@ -134,7 +133,7 @@ const Auth = () => {
             <div className="mt-4 text-center">
               <button
                 onClick={() => setIsLogin(!isLogin)}
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                className="text-sm text-muted-foreground hover:text-primary transition-colors"
               >
                 {isLogin ? 'Não tem conta? Criar agora' : 'Já tem conta? Entrar'}
               </button>
