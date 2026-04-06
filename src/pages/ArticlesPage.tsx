@@ -44,7 +44,7 @@ const ArticlesPage = () => {
         body: { articleId, userId: user?.id },
       });
       if (error) throw error;
-      toast({ title: 'Publicado!', description: data?.message || 'Artigo publicado com sucesso.' });
+      toast({ title: data?.success ? 'Publicado!' : 'Atenção', description: data?.message || 'Verifique o status.', variant: data?.success ? 'default' : 'destructive' });
       fetchArticles();
     } catch (e: any) {
       toast({ title: 'Erro', description: e.message, variant: 'destructive' });
@@ -56,13 +56,12 @@ const ArticlesPage = () => {
   const handleRetry = async (articleId: string) => {
     setRetrying(articleId);
     try {
-      // Reset status to ready then publish
       await supabase.from('articles').update({ status: 'ready' }).eq('id', articleId);
       const { data, error } = await supabase.functions.invoke('publish-article', {
         body: { articleId, userId: user?.id },
       });
       if (error) throw error;
-      toast({ title: 'Tentativa enviada!', description: data?.message || 'Artigo republicado.' });
+      toast({ title: data?.success ? 'Publicado!' : 'Atenção', description: data?.message || 'Verifique o status.', variant: data?.success ? 'default' : 'destructive' });
       fetchArticles();
     } catch (e: any) {
       toast({ title: 'Erro', description: e.message, variant: 'destructive' });
@@ -86,7 +85,7 @@ const ArticlesPage = () => {
     generating: 'bg-warning/20 text-warning',
     ready: 'bg-primary/20 text-primary',
     publishing: 'bg-accent/20 text-accent',
-    published: 'bg-success/20 text-success',
+    published: 'bg-primary/20 text-primary',
     failed: 'bg-destructive/20 text-destructive',
   };
 
@@ -110,12 +109,12 @@ const ArticlesPage = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Artigos</h1>
+        <h1 className="text-2xl font-bold neon-text-green">Artigos</h1>
         <p className="text-muted-foreground text-sm mt-1">{articles.length} artigos gerados</p>
       </div>
 
       {articles.length === 0 ? (
-        <Card className="shadow-card">
+        <Card className="glass-card">
           <CardContent className="py-16 text-center">
             <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <p className="text-muted-foreground">Nenhum artigo encontrado.</p>
@@ -125,7 +124,7 @@ const ArticlesPage = () => {
       ) : (
         <div className="grid gap-4">
           {articles.map((article) => (
-            <Card key={article.id} className="shadow-card">
+            <Card key={article.id} className={`glass-card ${article.status === 'failed' ? 'border-destructive/30' : ''}`}>
               <CardContent className="p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0 flex-1">
@@ -146,14 +145,14 @@ const ArticlesPage = () => {
                     )}
                   </div>
                   <div className="flex gap-1 shrink-0">
-                    <Button size="sm" variant="ghost" onClick={() => setPreview(article)}>
+                    <Button size="sm" variant="ghost" onClick={() => setPreview(article)} className="text-muted-foreground hover:text-foreground">
                       <Eye className="h-4 w-4" />
                     </Button>
                     {article.status === 'failed' && (
                       <Button
                         size="sm"
                         variant="ghost"
-                        className="text-warning"
+                        className="text-warning hover:text-warning hover:bg-warning/10"
                         onClick={() => handleRetry(article.id)}
                         disabled={retrying === article.id}
                         title="Tentar novamente"
@@ -169,7 +168,7 @@ const ArticlesPage = () => {
                       <Button
                         size="sm"
                         variant="ghost"
-                        className="text-primary"
+                        className="text-primary hover:text-primary hover:bg-primary/10"
                         onClick={() => handlePublish(article.id)}
                         disabled={publishing === article.id}
                       >
@@ -180,7 +179,7 @@ const ArticlesPage = () => {
                         )}
                       </Button>
                     )}
-                    <Button size="sm" variant="ghost" className="text-destructive" onClick={() => handleDelete(article.id)}>
+                    <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => handleDelete(article.id)}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -192,26 +191,26 @@ const ArticlesPage = () => {
       )}
 
       <Dialog open={!!preview} onOpenChange={() => setPreview(null)}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto glass-card border-border">
           <DialogHeader>
-            <DialogTitle>{preview?.title}</DialogTitle>
+            <DialogTitle className="text-foreground">{preview?.title}</DialogTitle>
           </DialogHeader>
           {preview?.featured_image_url && (
             <img src={preview.featured_image_url} alt={preview.title} className="w-full rounded-lg" />
           )}
           <div className="space-y-3 text-sm">
             <div className="flex gap-2 flex-wrap">
-              <Badge variant="secondary">{preview?.category}</Badge>
-              {preview?.seo_keyword && <Badge variant="outline">🔑 {preview.seo_keyword}</Badge>}
+              <Badge variant="secondary" className="bg-primary/10 text-primary">{preview?.category}</Badge>
+              {preview?.seo_keyword && <Badge variant="outline" className="border-accent/30 text-accent">🔑 {preview.seo_keyword}</Badge>}
             </div>
             {preview?.meta_description && (
-              <div className="p-3 rounded-lg bg-muted">
+              <div className="p-3 rounded-lg bg-secondary/30">
                 <p className="text-xs font-medium text-muted-foreground mb-1">Meta Description</p>
                 <p className="text-sm text-foreground">{preview?.meta_description}</p>
               </div>
             )}
             <div
-              className="prose prose-sm max-w-none text-foreground"
+              className="prose prose-sm prose-invert max-w-none text-foreground"
               dangerouslySetInnerHTML={{ __html: preview?.content || '' }}
             />
           </div>
