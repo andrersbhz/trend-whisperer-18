@@ -57,7 +57,7 @@ serve(async (req) => {
       const scheduledAt = new Date(now.getTime() + i * intervalHours * 60 * 60 * 1000);
 
       try {
-        // Generate article content
+        // Usar tool calling para output estruturado — mais confiável que pedir JSON na mensagem
         const articleResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",
           headers: {
@@ -65,59 +65,124 @@ serve(async (req) => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            model: "google/gemini-2.5-flash",
+            model: "openai/gpt-5-mini",
             messages: [
               {
                 role: "system",
-                content: `Você é um jornalista brasileiro especializado. Escreva artigos completos em português do Brasil, formato HTML para WordPress.
-                
-Regras:
-- Título atrativo com menos de 60 caracteres
-- Mínimo 800 palavras
-- Use subtítulos H2 e H3
-- Parágrafos curtos e escaneáveis
-- SEO otimizado
-- Linguagem jornalística profissional
-- Tom informativo e engajante
+                content: `Você é um jornalista digital brasileiro sênior, especialista em SEO e redação para WordPress.
 
-Responda APENAS em JSON válido com este formato:
-{
-  "title": "título do artigo",
-  "content": "<h2>...</h2><p>...</p>...",
-  "excerpt": "resumo de 2 frases",
-  "seo_keyword": "palavra-chave principal",
-  "seo_title": "título SEO até 60 caracteres",
-  "meta_description": "meta descrição até 155 caracteres"
-}`,
+REGRAS OBRIGATÓRIAS PARA CADA ARTIGO:
+1. TÍTULO: máximo 60 caracteres, contendo a palavra-chave principal, atrativo e clicável
+2. CONTEÚDO EM HTML (para WordPress):
+   - Máximo 2400 caracteres no total do HTML
+   - Use tags <h2> e <h3> para subtítulos (nunca <h1>)
+   - Parágrafos curtos (máx. 3 linhas) com tags <p>
+   - Pelo menos 2 subtítulos H2 e 1 H3
+   - Primeira frase deve ser um gancho forte (lead jornalístico)
+   - Use <strong> para destacar termos importantes
+   - Use <ul>/<li> quando fizer sentido para escaneabilidade
+3. ESTILO JORNALÍSTICO:
+   - Mescle notícia trending com valor evergreen (informação que permanece útil)
+   - Tom informativo, autoritativo mas acessível
+   - Inclua dados ou contexto que agreguem valor ao leitor
+   - Evite linguagem de IA ou frases genéricas
+4. SEO:
+   - seo_keyword: palavra-chave principal de cauda longa (3-5 palavras)
+   - seo_title: até 60 caracteres, com a keyword no início
+   - meta_description: até 155 caracteres, com a keyword e call-to-action sutil
+   - excerpt: resumo em 2 frases curtas para redes sociais`,
               },
               {
                 role: "user",
-                content: `Escreva um artigo completo sobre: "${topic.topic}" na categoria ${topic.category}. O artigo deve ser atual, relevante e bem pesquisado.`,
+                content: `Escreva um artigo jornalístico completo sobre: "${topic.topic}" (categoria: ${topic.category}).
+
+Data de hoje: ${new Date().toLocaleDateString("pt-BR")}.
+
+O artigo deve misturar a notícia atual com contexto relevante e informação evergreen. Foque em engajar o leitor brasileiro.`,
               },
             ],
+            tools: [
+              {
+                type: "function",
+                function: {
+                  name: "create_article",
+                  description: "Cria um artigo completo para publicação no WordPress com todos os campos SEO preenchidos.",
+                  parameters: {
+                    type: "object",
+                    properties: {
+                      title: {
+                        type: "string",
+                        description: "Título do artigo, máximo 60 caracteres, contendo a keyword"
+                      },
+                      content: {
+                        type: "string",
+                        description: "Conteúdo completo do artigo em HTML (h2, h3, p, strong, ul/li). Máximo 2400 caracteres."
+                      },
+                      excerpt: {
+                        type: "string",
+                        description: "Resumo em 2 frases curtas para redes sociais"
+                      },
+                      seo_keyword: {
+                        type: "string",
+                        description: "Palavra-chave principal de cauda longa (3-5 palavras)"
+                      },
+                      seo_title: {
+                        type: "string",
+                        description: "Título SEO até 60 caracteres, com keyword no início"
+                      },
+                      meta_description: {
+                        type: "string",
+                        description: "Meta descrição até 155 caracteres com keyword e CTA sutil"
+                      }
+                    },
+                    required: ["title", "content", "excerpt", "seo_keyword", "seo_title", "meta_description"],
+                    additionalProperties: false
+                  }
+                }
+              }
+            ],
+            tool_choice: { type: "function", function: { name: "create_article" } },
           }),
         });
 
         if (!articleResponse.ok) {
-          console.error(`AI error for topic ${topic.topic}: ${articleResponse.status}`);
+          const errText = await articleResponse.text();
+          console.error(`AI error for topic ${topic.topic}: ${articleResponse.status} - ${errText}`);
+
+          // Handle rate limits
+          if (articleResponse.status === 429) {
+            console.log("Rate limited, waiting 10 seconds...");
+            await new Promise((r) => setTimeout(r, 10000));
+          }
           continue;
         }
 
         const aiData = await articleResponse.json();
-        let articleContent = aiData.choices?.[0]?.message?.content || "";
 
-        // Clean JSON from markdown code blocks
-        articleContent = articleContent.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-
+        // Extrair dados do tool call
         let parsed;
         try {
-          parsed = JSON.parse(articleContent);
+          const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+          if (toolCall?.function?.arguments) {
+            parsed = JSON.parse(toolCall.function.arguments);
+          } else {
+            // Fallback: tentar parse do content direto
+            let content = aiData.choices?.[0]?.message?.content || "";
+            content = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+            parsed = JSON.parse(content);
+          }
         } catch {
           console.error("Failed to parse AI response for topic:", topic.topic);
           continue;
         }
 
-        // Generate featured image
+        // Validar campos obrigatórios
+        if (!parsed.title || !parsed.content) {
+          console.error("Missing required fields for topic:", topic.topic);
+          continue;
+        }
+
+        // Gerar imagem destacada
         let featuredImageUrl = null;
         try {
           const imageResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -131,7 +196,7 @@ Responda APENAS em JSON válido com este formato:
               messages: [
                 {
                   role: "user",
-                  content: `Create a professional news article featured image for the topic: "${parsed.title}". The image should be photorealistic, editorial style, suitable for a news website. No text in the image. High quality, 16:9 aspect ratio.`,
+                  content: `Create a professional news article featured image for: "${parsed.title}". Photorealistic, editorial style, suitable for a news website. No text overlay. High quality, 16:9 aspect ratio, vibrant colors.`,
                 },
               ],
               modalities: ["image", "text"],
@@ -141,24 +206,22 @@ Responda APENAS em JSON válido com este formato:
           if (imageResponse.ok) {
             const imageData = await imageResponse.json();
             const imageUrl = imageData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-            if (imageUrl) {
-              featuredImageUrl = imageUrl;
-            }
+            if (imageUrl) featuredImageUrl = imageUrl;
           }
         } catch (imgErr) {
           console.error("Image generation failed:", imgErr);
         }
 
-        // Save to database
+        // Salvar no banco de dados
         const { data: article, error: insertError } = await supabase.from("articles").insert({
           user_id: userId,
           title: parsed.title,
           content: parsed.content,
-          excerpt: parsed.excerpt,
+          excerpt: parsed.excerpt || "",
           category: topic.category,
-          seo_keyword: parsed.seo_keyword,
-          seo_title: parsed.seo_title,
-          meta_description: parsed.meta_description,
+          seo_keyword: parsed.seo_keyword || "",
+          seo_title: parsed.seo_title || parsed.title,
+          meta_description: parsed.meta_description || "",
           featured_image_url: featuredImageUrl,
           status: settings?.auto_publish ? "ready" : "draft",
           scheduled_at: scheduledAt.toISOString(),
@@ -170,15 +233,15 @@ Responda APENAS em JSON válido com este formato:
           continue;
         }
 
-        // Mark topic as used
+        // Marcar tópico como usado
         if (topic.id) {
           await supabase.from("trending_topics").update({ used: true }).eq("id", topic.id);
         }
 
         generatedArticles.push(article);
 
-        // Rate limiting - wait between requests
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+        // Rate limiting — aguardar entre requisições
+        await new Promise((resolve) => setTimeout(resolve, 3000));
       } catch (err) {
         console.error(`Error generating article for ${topic.topic}:`, err);
       }
