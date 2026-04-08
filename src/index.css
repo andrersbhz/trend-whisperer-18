@@ -142,8 +142,8 @@
 }
 
 @keyframes glow-pulse {
-  0%, 100% { box-shadow: 0 0 5px hsla(145, 80%, 45%, 0.2); }
-  50% { box-shadow: 0 0 20px hsla(145, 80%, 45%, 0.4); }
+  0%, 100% { box-shadow: 0 0 5px hsla(270, 60%, 50%, 0.2); }
+  50% { box-shadow: 0 0 20px hsla(270, 60%, 50%, 0.4); }
 }
 
 .animate-fade-in {
