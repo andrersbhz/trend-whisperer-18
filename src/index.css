@@ -121,9 +121,9 @@
     border: 1px solid hsla(320, 80%, 55%, 0.3);
     box-shadow: 0 0 10px hsla(320, 80%, 55%, 0.1), inset 0 0 10px hsla(320, 80%, 55%, 0.03);
   }
-  .neon-text-green {
-    color: hsl(145, 80%, 45%);
-    text-shadow: 0 0 10px hsla(145, 80%, 45%, 0.5);
+  .neon-text-lilac {
+    color: hsl(270, 60%, 55%);
+    text-shadow: 0 0 10px hsla(270, 60%, 50%, 0.5);
   }
   .neon-text-pink {
     color: hsl(320, 80%, 55%);
