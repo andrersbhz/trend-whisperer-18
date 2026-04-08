@@ -113,9 +113,9 @@
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid hsla(260, 20%, 22%, 0.5);
   }
-  .neon-border-green {
-    border: 1px solid hsla(145, 80%, 45%, 0.3);
-    box-shadow: 0 0 10px hsla(145, 80%, 45%, 0.1), inset 0 0 10px hsla(145, 80%, 45%, 0.03);
+  .neon-border-lilac {
+    border: 1px solid hsla(270, 60%, 50%, 0.3);
+    box-shadow: 0 0 10px hsla(270, 60%, 50%, 0.1), inset 0 0 10px hsla(270, 60%, 50%, 0.03);
   }
   .neon-border-pink {
     border: 1px solid hsla(320, 80%, 55%, 0.3);
