@@ -35,7 +35,7 @@ Responda APENAS com um JSON array, sem markdown, sem explicação. Cada item dev
 
 Exemplo: [{"category":"SEO","tip":"Otimize os meta descriptions...","priority":"alta"}]`;
 
-    const response = await fetch("https://api.lovable.dev/v1/chat/completions", {
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${LOVABLE_API_KEY}`,
