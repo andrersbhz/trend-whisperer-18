@@ -109,7 +109,7 @@ const ArticlesPage = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold neon-text-green">Artigos</h1>
+        <h1 className="text-2xl font-bold neon-text-lilac">Artigos</h1>
         <p className="text-muted-foreground text-sm mt-1">{articles.length} artigos gerados</p>
       </div>
 

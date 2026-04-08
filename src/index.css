@@ -15,8 +15,8 @@
     --popover: 260 15% 10%;
     --popover-foreground: 0 0% 95%;
 
-    --primary: 145 80% 45%;
-    --primary-foreground: 260 15% 6%;
+    --primary: 270 60% 50%;
+    --primary-foreground: 0 0% 100%;
 
     --secondary: 260 20% 16%;
     --secondary-foreground: 0 0% 90%;
@@ -30,7 +30,7 @@
     --destructive: 0 75% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 145 80% 45%;
+    --success: 145 70% 42%;
     --success-foreground: 260 15% 6%;
 
     --warning: 38 92% 50%;
@@ -38,30 +38,29 @@
 
     --border: 260 20% 18%;
     --input: 260 20% 18%;
-    --ring: 145 80% 45%;
-
+    --ring: 270 60% 50%;
     --radius: 0.75rem;
 
     --sidebar-background: 260 20% 8%;
     --sidebar-foreground: 260 10% 60%;
-    --sidebar-primary: 145 80% 45%;
-    --sidebar-primary-foreground: 260 15% 6%;
+    --sidebar-primary: 270 60% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 260 20% 14%;
     --sidebar-accent-foreground: 0 0% 95%;
     --sidebar-border: 260 20% 14%;
-    --sidebar-ring: 145 80% 45%;
+    --sidebar-ring: 270 60% 50%;
 
-    --neon-green: 145 80% 45%;
+    --neon-lilac: 270 60% 50%;
     --neon-pink: 320 80% 55%;
     --neon-purple: 275 70% 35%;
 
-    --gradient-primary: linear-gradient(135deg, hsl(145 80% 45%), hsl(320 80% 55%));
-    --gradient-neon: linear-gradient(135deg, hsl(145 80% 45%), hsl(275 70% 50%));
+    --gradient-primary: linear-gradient(135deg, hsl(270 60% 50%), hsl(320 80% 55%));
+    --gradient-neon: linear-gradient(135deg, hsl(270 60% 50%), hsl(275 70% 50%));
     --gradient-pink-purple: linear-gradient(135deg, hsl(320 80% 55%), hsl(275 70% 35%));
-    --gradient-success: linear-gradient(135deg, hsl(145 80% 45%), hsl(160 84% 39%));
-    --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 0 15px -3px rgba(0, 255, 128, 0.05);
-    --shadow-elevated: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 30px -10px rgba(0, 255, 128, 0.1);
-    --shadow-neon-green: 0 0 20px rgba(0, 255, 128, 0.15);
+    --gradient-success: linear-gradient(135deg, hsl(270 60% 50%), hsl(290 50% 45%));
+    --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 0 15px -3px rgba(140, 80, 220, 0.08);
+    --shadow-elevated: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 30px -10px rgba(140, 80, 220, 0.15);
+    --shadow-neon-lilac: 0 0 20px rgba(140, 80, 220, 0.2);
     --shadow-neon-pink: 0 0 20px rgba(255, 50, 150, 0.15);
   }
 }
@@ -96,8 +95,8 @@
   .shadow-elevated {
     box-shadow: var(--shadow-elevated);
   }
-  .shadow-neon-green {
-    box-shadow: var(--shadow-neon-green);
+  .shadow-neon-lilac {
+    box-shadow: var(--shadow-neon-lilac);
   }
   .shadow-neon-pink {
     box-shadow: var(--shadow-neon-pink);
@@ -114,17 +113,17 @@
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid hsla(260, 20%, 22%, 0.5);
   }
-  .neon-border-green {
-    border: 1px solid hsla(145, 80%, 45%, 0.3);
-    box-shadow: 0 0 10px hsla(145, 80%, 45%, 0.1), inset 0 0 10px hsla(145, 80%, 45%, 0.03);
+  .neon-border-lilac {
+    border: 1px solid hsla(270, 60%, 50%, 0.3);
+    box-shadow: 0 0 10px hsla(270, 60%, 50%, 0.1), inset 0 0 10px hsla(270, 60%, 50%, 0.03);
   }
   .neon-border-pink {
     border: 1px solid hsla(320, 80%, 55%, 0.3);
     box-shadow: 0 0 10px hsla(320, 80%, 55%, 0.1), inset 0 0 10px hsla(320, 80%, 55%, 0.03);
   }
-  .neon-text-green {
-    color: hsl(145, 80%, 45%);
-    text-shadow: 0 0 10px hsla(145, 80%, 45%, 0.5);
+  .neon-text-lilac {
+    color: hsl(270, 60%, 55%);
+    text-shadow: 0 0 10px hsla(270, 60%, 50%, 0.5);
   }
   .neon-text-pink {
     color: hsl(320, 80%, 55%);
@@ -143,8 +142,8 @@
 }
 
 @keyframes glow-pulse {
-  0%, 100% { box-shadow: 0 0 5px hsla(145, 80%, 45%, 0.2); }
-  50% { box-shadow: 0 0 20px hsla(145, 80%, 45%, 0.4); }
+  0%, 100% { box-shadow: 0 0 5px hsla(270, 60%, 50%, 0.2); }
+  50% { box-shadow: 0 0 20px hsla(270, 60%, 50%, 0.4); }
 }
 
 .animate-fade-in {
