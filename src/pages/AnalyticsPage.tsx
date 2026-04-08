@@ -212,7 +212,7 @@ const AnalyticsPage = () => {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold neon-text-green">Analytics</h1>
+          <h1 className="text-2xl font-bold neon-text-lilac">Analytics</h1>
           <p className="text-muted-foreground text-sm mt-1">Métricas e insights do seu blog</p>
         </div>
         {socialSection}
@@ -244,7 +244,7 @@ const AnalyticsPage = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold neon-text-green">Analytics</h1>
+          <h1 className="text-2xl font-bold neon-text-lilac">Analytics</h1>
           <p className="text-muted-foreground text-sm mt-1">Métricas completas e insights do seu blog</p>
         </div>
         <div className="flex gap-2">
@@ -252,7 +252,7 @@ const AnalyticsPage = () => {
             {loadingTips ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Lightbulb className="h-4 w-4 mr-2" />}
             Dicas IA
           </Button>
-          <Button onClick={fetchAnalytics} className="gradient-primary text-primary-foreground shadow-neon-green">
+          <Button onClick={fetchAnalytics} className="gradient-primary text-primary-foreground shadow-neon-lilac">
             <RefreshCw className="h-4 w-4 mr-2" />
             Atualizar
           </Button>
@@ -464,7 +464,7 @@ const AnalyticsPage = () => {
 
       {/* AI Tips */}
       {tips.length > 0 && (
-        <Card className="glass-card neon-border-green">
+        <Card className="glass-card neon-border-lilac">
           <CardHeader>
             <div className="flex items-center gap-2">
               <Lightbulb className="h-5 w-5 text-warning" />

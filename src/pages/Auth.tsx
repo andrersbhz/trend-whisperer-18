@@ -64,10 +64,10 @@ const Auth = () => {
 
       <div className="w-full max-w-md animate-fade-in relative z-10">
         <div className="flex items-center justify-center gap-2 mb-8">
-          <div className="gradient-primary p-2.5 rounded-xl shadow-neon-green animate-glow">
+          <div className="gradient-primary p-2.5 rounded-xl shadow-neon-lilac animate-glow">
             <Newspaper className="h-6 w-6 text-primary-foreground" />
           </div>
-          <h1 className="text-2xl font-bold neon-text-green">AutoBlog AI</h1>
+          <h1 className="text-2xl font-bold neon-text-lilac">AutoBlog AI</h1>
         </div>
 
         <Card className="glass-card shadow-elevated">
@@ -125,7 +125,7 @@ const Auth = () => {
                 minLength={6}
                 className="bg-secondary/30 border-border focus:border-primary"
               />
-              <Button type="submit" className="w-full gradient-primary text-primary-foreground shadow-neon-green" disabled={loading}>
+              <Button type="submit" className="w-full gradient-primary text-primary-foreground shadow-neon-lilac" disabled={loading}>
                 <Sparkles className="h-4 w-4 mr-2" />
                 {loading ? 'Aguarde...' : isLogin ? 'Entrar' : 'Criar conta'}
               </Button>

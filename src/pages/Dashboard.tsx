@@ -88,8 +88,8 @@ const Dashboard = () => {
   };
 
   const statCards = [
-    { icon: FileText, label: 'Total Artigos', value: stats.total, color: 'text-primary', glow: 'neon-border-green' },
-    { icon: CheckCircle, label: 'Publicados', value: stats.published, color: 'text-primary', glow: 'neon-border-green' },
+    { icon: FileText, label: 'Total Artigos', value: stats.total, color: 'text-primary', glow: 'neon-border-lilac' },
+    { icon: CheckCircle, label: 'Publicados', value: stats.published, color: 'text-primary', glow: 'neon-border-lilac' },
     { icon: Clock, label: 'Pendentes', value: stats.pending, color: 'text-warning', glow: '' },
     { icon: TrendingUp, label: 'Tendências', value: stats.trending, color: 'text-accent', glow: 'neon-border-pink' },
     { icon: Facebook, label: 'Posts Facebook', value: socialStats.fbPosts, color: 'text-accent', glow: 'neon-border-pink' },
@@ -100,10 +100,10 @@ const Dashboard = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold neon-text-green">Painel</h1>
+          <h1 className="text-2xl font-bold neon-text-lilac">Painel</h1>
           <p className="text-muted-foreground text-sm mt-1">Gerencie sua automação de blog</p>
         </div>
-        <Button onClick={handleGenerateArticles} disabled={generating} className="gradient-primary text-primary-foreground shadow-neon-green hover:shadow-neon-green">
+        <Button onClick={handleGenerateArticles} disabled={generating} className="gradient-primary text-primary-foreground shadow-neon-lilac hover:shadow-neon-lilac">
           {generating ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
           Gerar Artigos
         </Button>

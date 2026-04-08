@@ -44,10 +44,10 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
       >
         <div className="p-5 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="gradient-primary p-2 rounded-lg shadow-neon-green">
+            <div className="gradient-primary p-2 rounded-lg shadow-neon-lilac">
               <Newspaper className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="font-bold text-lg neon-text-green">AutoBlog AI</span>
+            <span className="font-bold text-lg neon-text-lilac">AutoBlog AI</span>
           </div>
           <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-muted-foreground hover:text-foreground">
             <X className="h-5 w-5" />
@@ -65,7 +65,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                 className={cn(
                   'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200',
                   active
-                    ? 'bg-primary/10 text-primary neon-border-green'
+                    ? 'bg-primary/10 text-primary neon-border-lilac'
                     : 'text-muted-foreground hover:bg-secondary/50 hover:text-foreground'
                 )}
               >
