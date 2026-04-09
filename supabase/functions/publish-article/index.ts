@@ -42,19 +42,49 @@ serve(async (req) => {
     const results: { wordpress?: boolean; facebook?: boolean; instagram?: boolean } = {};
     const errors: string[] = [];
 
-    // 1. Publish to WordPress
-    if (settings.wordpress_url && settings.wordpress_username && settings.wordpress_app_password) {
+    // 1. Publish to WordPress (suporta plugin AutoBlog AI Connector ou REST API padrão)
+    if (settings.wordpress_url && settings.wordpress_app_password) {
       try {
         const wpUrl = settings.wordpress_url.replace(/\/$/, "");
-        const auth = btoa(`${settings.wordpress_username}:${settings.wordpress_app_password}`);
+        const hasPlugin = !settings.wordpress_username || settings.wordpress_username.toLowerCase() === 'autoblog-ai';
 
-        // Prepare post body - standard WP REST API fields
-        const wpBody: Record<string, unknown> = {
-          title: article.title,
-          content: article.content || "",
-          status: "publish",
-          excerpt: article.excerpt || article.meta_description || "",
+        // Headers conforme o método de autenticação
+        const wpHeaders: Record<string, string> = {
+          "Content-Type": "application/json",
         };
+
+        let publishEndpoint: string;
+
+        if (hasPlugin) {
+          // Modo Plugin AutoBlog AI Connector — usa chave API no header
+          wpHeaders["X-AutoBlog-Key"] = settings.wordpress_app_password;
+          publishEndpoint = `${wpUrl}/wp-json/autoblog-ai/v1/publish`;
+        } else {
+          // Modo padrão WP REST API — usa Application Password
+          const auth = btoa(`${settings.wordpress_username}:${settings.wordpress_app_password}`);
+          wpHeaders["Authorization"] = `Basic ${auth}`;
+          publishEndpoint = `${wpUrl}/wp-json/wp/v2/posts`;
+        }
+
+        // Prepare post body
+        const wpBody: Record<string, unknown> = hasPlugin
+          ? {
+              title: article.title,
+              content: article.content || "",
+              excerpt: article.excerpt || article.meta_description || "",
+              status: "publish",
+              seo_title: article.seo_title || article.title,
+              meta_description: article.meta_description || "",
+              seo_keyword: article.seo_keyword || "",
+              featured_image_url: article.featured_image_url || "",
+              categories: [article.category],
+            }
+          : {
+              title: article.title,
+              content: article.content || "",
+              status: "publish",
+              excerpt: article.excerpt || article.meta_description || "",
+            };
 
         // Upload featured image if it's a URL (not base64)
         let featuredMediaId = null;
