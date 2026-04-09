@@ -86,12 +86,13 @@ serve(async (req) => {
               excerpt: article.excerpt || article.meta_description || "",
             };
 
-        // Upload featured image if it's a URL (not base64)
-        let featuredMediaId = null;
-        if (article.featured_image_url) {
+        // No modo plugin, a imagem é enviada junto no body (URL ou base64)
+        // No modo padrão, precisa fazer upload separado
+        if (!hasPlugin && article.featured_image_url) {
           try {
+            let featuredMediaId = null;
+
             if (article.featured_image_url.startsWith("data:image")) {
-              // Base64 image upload
               const base64Data = article.featured_image_url.split(",")[1];
               const binaryData = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0));
               const slug = (article.seo_keyword || article.title || "image").replace(/[^a-zA-Z0-9]/g, "-").substring(0, 50);
@@ -99,7 +100,7 @@ serve(async (req) => {
               const mediaResponse = await fetch(`${wpUrl}/wp-json/wp/v2/media`, {
                 method: "POST",
                 headers: {
-                  Authorization: `Basic ${auth}`,
+                  ...wpHeaders,
                   "Content-Type": "image/png",
                   "Content-Disposition": `attachment; filename="${slug}.png"`,
                 },
@@ -109,11 +110,8 @@ serve(async (req) => {
               if (mediaResponse.ok) {
                 const mediaData = await mediaResponse.json();
                 featuredMediaId = mediaData.id;
-              } else {
-                console.error("WP image upload status:", mediaResponse.status);
               }
             } else if (article.featured_image_url.startsWith("http")) {
-              // External URL - download then upload
               try {
                 const imgResp = await fetch(article.featured_image_url);
                 if (imgResp.ok) {
@@ -125,7 +123,7 @@ serve(async (req) => {
                   const mediaResponse = await fetch(`${wpUrl}/wp-json/wp/v2/media`, {
                     method: "POST",
                     headers: {
-                      Authorization: `Basic ${auth}`,
+                      ...wpHeaders,
                       "Content-Type": contentType,
                       "Content-Disposition": `attachment; filename="${slug}.${ext}"`,
                     },
@@ -141,31 +139,28 @@ serve(async (req) => {
                 console.error("Image download failed:", dlErr);
               }
             }
+
+            if (featuredMediaId) {
+              wpBody.featured_media = featuredMediaId;
+            }
           } catch (imgErr) {
             console.error("WP image upload failed:", imgErr);
           }
+
+          // Yoast SEO meta no modo padrão
+          if (article.seo_title || article.meta_description || article.seo_keyword) {
+            wpBody.meta = {
+              _yoast_wpseo_title: article.seo_title || article.title,
+              _yoast_wpseo_metadesc: article.meta_description || "",
+              _yoast_wpseo_focuskw: article.seo_keyword || "",
+            };
+          }
         }
 
-        if (featuredMediaId) {
-          wpBody.featured_media = featuredMediaId;
-        }
-
-        // Try to set Yoast SEO meta via meta field (works if Yoast REST is enabled)
-        if (article.seo_title || article.meta_description || article.seo_keyword) {
-          wpBody.meta = {
-            _yoast_wpseo_title: article.seo_title || article.title,
-            _yoast_wpseo_metadesc: article.meta_description || "",
-            _yoast_wpseo_focuskw: article.seo_keyword || "",
-          };
-        }
-
-        // Create the post
-        const wpResponse = await fetch(`${wpUrl}/wp-json/wp/v2/posts`, {
+        // Enviar o post
+        const wpResponse = await fetch(publishEndpoint, {
           method: "POST",
-          headers: {
-            Authorization: `Basic ${auth}`,
-            "Content-Type": "application/json",
-          },
+          headers: wpHeaders,
           body: JSON.stringify(wpBody),
         });
 
