@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -135,7 +136,7 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">Access Token *</Label>
-                  <Input type="password" placeholder="EAAxxxxxxx..." value={newAccount.access_token} onChange={(e) => setNewAccount((p) => ({ ...p, access_token: e.target.value }))} className="h-9 text-sm" />
+                  <PasswordInput placeholder="EAAxxxxxxx..." value={newAccount.access_token} onChange={(e) => setNewAccount((p) => ({ ...p, access_token: e.target.value }))} className="h-9 text-sm" />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">Instagram Business Account ID</Label>
