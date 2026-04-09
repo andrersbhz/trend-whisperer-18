@@ -43,8 +43,7 @@ const WordPressSettings = ({ settings, onChange }: Props) => {
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs">Senha de Aplicativo</Label>
-          <Input
-            type="password"
+          <PasswordInput
             placeholder="xxxx xxxx xxxx xxxx"
             value={settings.wordpress_app_password}
             onChange={(e) => onChange({ wordpress_app_password: e.target.value })}

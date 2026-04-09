@@ -116,8 +116,7 @@ const Auth = () => {
                 required
                 className="bg-secondary/30 border-border focus:border-primary"
               />
-              <Input
-                type="password"
+              <PasswordInput
                 placeholder="Senha"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
