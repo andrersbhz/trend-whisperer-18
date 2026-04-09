@@ -136,7 +136,7 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">Access Token *</Label>
-                  <Input type="password" placeholder="EAAxxxxxxx..." value={newAccount.access_token} onChange={(e) => setNewAccount((p) => ({ ...p, access_token: e.target.value }))} className="h-9 text-sm" />
+                  <PasswordInput placeholder="EAAxxxxxxx..." value={newAccount.access_token} onChange={(e) => setNewAccount((p) => ({ ...p, access_token: e.target.value }))} className="h-9 text-sm" />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">Instagram Business Account ID</Label>
