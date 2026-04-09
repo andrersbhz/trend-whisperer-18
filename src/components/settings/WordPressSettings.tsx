@@ -1,4 +1,5 @@
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
 import { Globe } from 'lucide-react';
 import ConnectionCard from '@/components/ConnectionCard';
