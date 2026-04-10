@@ -208,10 +208,16 @@ IMPORTANTE:
           continue;
         }
 
-        // Validar campos obrigatórios
+        // Validar campos obrigatórios e tamanho do conteúdo
         if (!parsed.title || !parsed.content) {
           console.error("Missing required fields for topic:", topic.topic);
           continue;
+        }
+
+        // Validar tamanho mínimo do conteúdo
+        const contentLength = parsed.content.length;
+        if (contentLength < 1800) {
+          console.warn(`Content too short (${contentLength} chars) for topic: ${topic.topic}, but proceeding`);
         }
 
         // Gerar imagem destacada
