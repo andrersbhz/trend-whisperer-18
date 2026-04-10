@@ -32,40 +32,50 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await anonClient.auth.getUser(authHeader.replace("Bearer ", ""));
     if (authError || !user) throw new Error("Invalid token");
 
+    // Try to read body params (live form values)
+    let bodyParams: any = {};
+    try {
+      bodyParams = await req.json();
+    } catch {}
+
     const { data: settings } = await supabase
       .from("user_settings")
       .select("wordpress_url, wordpress_username, wordpress_app_password")
       .eq("user_id", user.id)
       .single();
 
-    if (!settings?.wordpress_url || !settings?.wordpress_app_password) {
+    // Merge: body params override DB values
+    const wpUrl = (bodyParams.wordpress_url || settings?.wordpress_url || "").replace(/\/$/, "");
+    const wpUsername = bodyParams.wordpress_username ?? settings?.wordpress_username ?? "";
+    const rawBodyPwd = bodyParams.wordpress_app_password;
+    
+    if (!wpUrl) {
       return new Response(
-        JSON.stringify({ success: false, error: "WordPress URL e senha não configurados" }),
+        JSON.stringify({ success: false, error: "WordPress URL não configurada" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Decrypt password server-side
-    const rawPwd = settings.wordpress_app_password;
-    const isEncrypted = rawPwd.startsWith("ENCRYPTED:");
-    console.log(`Password encrypted: ${isEncrypted}, encKey available: ${!!encKey && encKey.length > 0}`);
-    
-    const wpPassword = await decryptField(supabase, rawPwd, encKey);
+    // Determine password: use body password if provided, otherwise decrypt from DB
+    let wpPassword: string | null = null;
+    if (rawBodyPwd) {
+      wpPassword = rawBodyPwd;
+    } else if (settings?.wordpress_app_password) {
+      wpPassword = await decryptField(supabase, settings.wordpress_app_password, encKey);
+    }
+
     if (!wpPassword) {
       return new Response(
-        JSON.stringify({ success: false, error: "Falha ao descriptografar a senha. Tente salvar novamente nas Configurações." }),
+        JSON.stringify({ success: false, error: "Senha/Chave API não configurada. Preencha o campo e salve ou digite a senha para testar." }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-    
-    // Log password info for debugging (length only, not the actual value)
-    console.log(`Decrypted password length: ${wpPassword.length}, still encrypted: ${wpPassword.startsWith("ENCRYPTED:")}`);
 
-    let wpUrl = settings.wordpress_url.replace(/\/$/, "");
-    if (!/^https?:\/\//i.test(wpUrl)) wpUrl = `https://${wpUrl}`;
-    const isPlugin = !settings.wordpress_username || settings.wordpress_username.toLowerCase() === "autoblog-ai";
+    let finalUrl = wpUrl;
+    if (!/^https?:\/\//i.test(finalUrl)) finalUrl = `https://${finalUrl}`;
+    const isPlugin = !wpUsername || wpUsername.toLowerCase() === "autoblog-ai";
 
-    console.log(`Testing WP: ${wpUrl}, user: ${settings.wordpress_username || '(plugin)'}, mode: ${isPlugin ? 'plugin' : 'standard'}`);
+    console.log(`Testing WP: ${finalUrl}, user: ${wpUsername || '(plugin)'}, mode: ${isPlugin ? 'plugin' : 'standard'}`);
 
     let res: Response;
     let testEndpoint: string;
