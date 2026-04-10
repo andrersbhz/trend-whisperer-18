@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FileText, TrendingUp, CheckCircle, Clock, Sparkles, RefreshCw, Facebook, Instagram } from 'lucide-react';
+import { FileText, TrendingUp, CheckCircle, Clock, Sparkles, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const Dashboard = () => {
@@ -12,21 +12,17 @@ const Dashboard = () => {
   const { toast } = useToast();
   const [stats, setStats] = useState({ total: 0, published: 0, pending: 0, trending: 0, failed: 0 });
   const [recentArticles, setRecentArticles] = useState<any[]>([]);
-  const [socialStats, setSocialStats] = useState({ fbPosts: 0, igPosts: 0, fbAccounts: 0 });
   const [generating, setGenerating] = useState(false);
 
   const fetchStats = async () => {
     if (!user) return;
 
-    const [articlesRes, trendingRes, fbAccountsRes, publishLogRes] = await Promise.all([
+    const [articlesRes, trendingRes] = await Promise.all([
       supabase.from('articles').select('id, status').eq('user_id', user.id),
       supabase.from('trending_topics').select('id').eq('user_id', user.id).eq('used', false),
-      supabase.from('facebook_accounts').select('id').eq('user_id', user.id).eq('is_active', true),
-      supabase.from('publish_log').select('platform, status').eq('user_id', user.id).eq('status', 'success'),
     ]);
 
     const articles = articlesRes.data || [];
-    const logs = publishLogRes.data || [];
     setStats({
       total: articles.length,
       published: articles.filter((a) => a.status === 'published').length,
@@ -34,15 +30,10 @@ const Dashboard = () => {
       trending: trendingRes.data?.length || 0,
       failed: articles.filter((a) => a.status === 'failed').length,
     });
-    setSocialStats({
-      fbPosts: logs.filter((l) => l.platform === 'facebook').length,
-      igPosts: logs.filter((l) => l.platform === 'instagram').length,
-      fbAccounts: fbAccountsRes.data?.length || 0,
-    });
 
     const { data: recent } = await supabase
       .from('articles')
-      .select('*')
+      .select('id, title, category, seo_keyword, status')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(5);
@@ -92,8 +83,6 @@ const Dashboard = () => {
     { icon: CheckCircle, label: 'Publicados', value: stats.published, color: 'text-primary', glow: 'neon-border-lilac' },
     { icon: Clock, label: 'Pendentes', value: stats.pending, color: 'text-warning', glow: '' },
     { icon: TrendingUp, label: 'Tendências', value: stats.trending, color: 'text-accent', glow: 'neon-border-pink' },
-    { icon: Facebook, label: 'Posts Facebook', value: socialStats.fbPosts, color: 'text-accent', glow: 'neon-border-pink' },
-    { icon: Instagram, label: 'Posts Instagram', value: socialStats.igPosts, color: 'text-accent', glow: 'neon-border-pink' },
   ];
 
   return (

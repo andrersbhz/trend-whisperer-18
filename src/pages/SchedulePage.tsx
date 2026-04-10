@@ -14,16 +14,23 @@ const SchedulePage = () => {
 
   useEffect(() => {
     if (!user) return;
+
     const fetch = async () => {
-      const { data } = await supabase
-        .from('articles')
-        .select('*')
-        .eq('user_id', user.id)
-        .not('scheduled_at', 'is', null)
-        .order('scheduled_at', { ascending: true });
-      setArticles(data || []);
-      setLoading(false);
+      try {
+        const { data, error } = await supabase
+          .from('articles')
+          .select('id, title, category, scheduled_at, status')
+          .eq('user_id', user.id)
+          .not('scheduled_at', 'is', null)
+          .order('scheduled_at', { ascending: true });
+
+        if (error) throw error;
+        setArticles(data || []);
+      } finally {
+        setLoading(false);
+      }
     };
+
     fetch();
   }, [user]);
 
