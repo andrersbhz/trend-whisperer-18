@@ -71,7 +71,7 @@ serve(async (req) => {
           publishEndpoint = `${wpUrl}/wp-json/autoblog-ai/v1/publish`;
         } else {
           // Modo padrão WP REST API — usa Application Password
-          const auth = btoa(`${settings.wordpress_username}:${settings.wordpress_app_password}`);
+          const auth = btoa(`${settings.wordpress_username}:${wpPassword}`);
           wpHeaders["Authorization"] = `Basic ${auth}`;
           publishEndpoint = `${wpUrl}/wp-json/wp/v2/posts`;
         }
