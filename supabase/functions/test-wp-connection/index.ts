@@ -122,7 +122,7 @@ serve(async (req) => {
       try {
         const errJson = JSON.parse(responseText);
         if (errJson.code === "invalid_username") {
-          errorDetail = `Usuário "${settings.wordpress_username}" não encontrado no WordPress.`;
+          errorDetail = `Usuário "${wpUsername}" não encontrado no WordPress.`;
         } else if (errJson.code === "incorrect_password") {
           errorDetail = "Senha de aplicativo incorreta. Gere uma nova em WordPress → Usuários → Perfil → Senhas de Aplicativo.";
         } else if (errJson.code === "rest_not_logged_in") {
