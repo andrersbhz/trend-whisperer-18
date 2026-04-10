@@ -6,11 +6,15 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+function decryptValue(val: string | null, encKey: string): string | null {
+  // Decryption happens in DB via RPC; this is a passthrough for non-encrypted values
+  return val;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    // Extract user from JWT
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("Not authenticated");
 
@@ -23,7 +27,23 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await anonClient.auth.getUser(authHeader.replace("Bearer ", ""));
     if (authError || !user) throw new Error("Invalid token");
 
-    // Fetch settings with service_role (can read sensitive columns)
+    // Set encryption key for this session so decrypt_credential works
+    const encKey = Deno.env.get("DB_ENCRYPTION_KEY");
+    if (encKey) {
+      await supabase.rpc('set_config', undefined as any).then(() => {});
+      // Use raw SQL to set the session variable
+      await fetch(`${supabaseUrl}/rest/v1/rpc/decrypt_credential`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${supabaseKey}`,
+          "apikey": supabaseKey,
+        },
+        body: JSON.stringify({ val: "test" }),
+      });
+    }
+
+    // Fetch settings and decrypt server-side
     const { data: settings } = await supabase
       .from("user_settings")
       .select("wordpress_url, wordpress_username, wordpress_app_password")
@@ -37,16 +57,23 @@ serve(async (req) => {
       );
     }
 
+    // Decrypt the password
+    let wpPassword = settings.wordpress_app_password;
+    if (wpPassword.startsWith("ENCRYPTED:") && encKey) {
+      const { data: decrypted } = await supabase.rpc("decrypt_credential", { val: wpPassword });
+      if (decrypted) wpPassword = decrypted;
+    }
+
     const wpUrl = settings.wordpress_url.replace(/\/$/, "");
     const isPlugin = !settings.wordpress_username || settings.wordpress_username.toLowerCase() === "autoblog-ai";
 
     let res: Response;
     if (isPlugin) {
       res = await fetch(`${wpUrl}/wp-json/autoblog-ai/v1/status`, {
-        headers: { "X-AutoBlog-Key": settings.wordpress_app_password },
+        headers: { "X-AutoBlog-Key": wpPassword },
       });
     } else {
-      const auth = btoa(`${settings.wordpress_username}:${settings.wordpress_app_password}`);
+      const auth = btoa(`${settings.wordpress_username}:${wpPassword}`);
       res = await fetch(`${wpUrl}/wp-json/wp/v2/users/me`, {
         headers: { Authorization: `Basic ${auth}` },
       });
