@@ -53,125 +53,106 @@ serve(async (req) => {
     let wpUrl = settings.wordpress_url.replace(/\/$/, "");
     if (!/^https?:\/\//i.test(wpUrl)) wpUrl = `https://${wpUrl}`;
     const hasPlugin = !settings.wordpress_username || settings.wordpress_username.toLowerCase() === 'autoblog-ai';
-
-    // Decrypt password server-side
     const wpPassword = await decryptField(supabase, settings.wordpress_app_password, encKey) || settings.wordpress_app_password;
 
-    console.log(`Publishing to WordPress: ${wpUrl}, mode: ${hasPlugin ? 'plugin' : 'standard'}, user: ${settings.wordpress_username || '(plugin)'}`);
+    // --- Helper: publish via standard REST API ---
+    async function publishStandard(authHeader: string) {
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        "Authorization": authHeader,
+      };
+      const body: Record<string, unknown> = {
+        title: article.title,
+        content: article.content || "",
+        status: "publish",
+        excerpt: article.excerpt || article.meta_description || "",
+      };
 
-    // Headers
-    const wpHeaders: Record<string, string> = {
-      "Content-Type": "application/json",
-    };
-
-    let publishEndpoint: string;
-
-    if (hasPlugin) {
-      wpHeaders["X-AutoBlog-Key"] = wpPassword;
-      publishEndpoint = `${wpUrl}/wp-json/autoblog-ai/v1/publish`;
-    } else {
-      const auth = btoa(`${settings.wordpress_username}:${wpPassword}`);
-      wpHeaders["Authorization"] = `Basic ${auth}`;
-      publishEndpoint = `${wpUrl}/wp-json/wp/v2/posts`;
-    }
-
-    // Prepare post body
-    const wpBody: Record<string, unknown> = hasPlugin
-      ? {
-          title: article.title,
-          content: article.content || "",
-          excerpt: article.excerpt || article.meta_description || "",
-          status: "publish",
-          seo_title: article.seo_title || article.title,
-          meta_description: article.meta_description || "",
-          seo_keyword: article.seo_keyword || "",
-          featured_image_url: article.featured_image_url || "",
-          categories: [article.category],
-        }
-      : {
-          title: article.title,
-          content: article.content || "",
-          status: "publish",
-          excerpt: article.excerpt || article.meta_description || "",
-        };
-
-    // Standard mode: handle featured image upload
-    if (!hasPlugin && article.featured_image_url) {
-      try {
-        let featuredMediaId = null;
-
-        if (article.featured_image_url.startsWith("data:image")) {
-          const base64Data = article.featured_image_url.split(",")[1];
-          const binaryData = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0));
-          const slug = (article.seo_keyword || article.title || "image").replace(/[^a-zA-Z0-9]/g, "-").substring(0, 50);
-
-          const mediaResponse = await fetch(`${wpUrl}/wp-json/wp/v2/media`, {
-            method: "POST",
-            headers: {
-              ...wpHeaders,
-              "Content-Type": "image/png",
-              "Content-Disposition": `attachment; filename="${slug}.png"`,
-            },
-            body: binaryData,
-          });
-
-          if (mediaResponse.ok) {
-            const mediaData = await mediaResponse.json();
-            featuredMediaId = mediaData.id;
-          }
-        } else if (article.featured_image_url.startsWith("http")) {
-          try {
+      // Featured image upload
+      if (article.featured_image_url) {
+        try {
+          let featuredMediaId = null;
+          if (article.featured_image_url.startsWith("data:image")) {
+            const base64Data = article.featured_image_url.split(",")[1];
+            const binaryData = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0));
+            const slug = (article.seo_keyword || article.title || "image").replace(/[^a-zA-Z0-9]/g, "-").substring(0, 50);
+            const mediaResponse = await fetch(`${wpUrl}/wp-json/wp/v2/media`, {
+              method: "POST",
+              headers: { ...headers, "Content-Type": "image/png", "Content-Disposition": `attachment; filename="${slug}.png"` },
+              body: binaryData,
+            });
+            if (mediaResponse.ok) { featuredMediaId = (await mediaResponse.json()).id; }
+          } else if (article.featured_image_url.startsWith("http")) {
             const imgResp = await fetch(article.featured_image_url);
             if (imgResp.ok) {
               const imgData = new Uint8Array(await imgResp.arrayBuffer());
               const contentType = imgResp.headers.get("content-type") || "image/jpeg";
               const ext = contentType.includes("png") ? "png" : "jpg";
               const slug = (article.seo_keyword || "image").replace(/[^a-zA-Z0-9]/g, "-").substring(0, 50);
-
               const mediaResponse = await fetch(`${wpUrl}/wp-json/wp/v2/media`, {
                 method: "POST",
-                headers: {
-                  ...wpHeaders,
-                  "Content-Type": contentType,
-                  "Content-Disposition": `attachment; filename="${slug}.${ext}"`,
-                },
+                headers: { ...headers, "Content-Type": contentType, "Content-Disposition": `attachment; filename="${slug}.${ext}"` },
                 body: imgData,
               });
-
-              if (mediaResponse.ok) {
-                const mediaData = await mediaResponse.json();
-                featuredMediaId = mediaData.id;
-              }
+              if (mediaResponse.ok) { featuredMediaId = (await mediaResponse.json()).id; }
             }
-          } catch (dlErr) {
-            console.error("Image download failed:", dlErr);
           }
-        }
-
-        if (featuredMediaId) {
-          wpBody.featured_media = featuredMediaId;
-        }
-      } catch (imgErr) {
-        console.error("WP image upload failed:", imgErr);
+          if (featuredMediaId) body.featured_media = featuredMediaId;
+        } catch (imgErr) { console.error("WP image upload failed:", imgErr); }
       }
 
-      // Yoast SEO meta
+      // Yoast SEO
       if (article.seo_title || article.meta_description || article.seo_keyword) {
-        wpBody.meta = {
+        body.meta = {
           _yoast_wpseo_title: article.seo_title || article.title,
           _yoast_wpseo_metadesc: article.meta_description || "",
           _yoast_wpseo_focuskw: article.seo_keyword || "",
         };
       }
+
+      const endpoint = `${wpUrl}/wp-json/wp/v2/posts`;
+      console.log(`POST (standard) ${endpoint}`);
+      return fetch(endpoint, { method: "POST", headers, body: JSON.stringify(body) });
     }
 
-    // Send the post
-    console.log(`POST ${publishEndpoint}`);
-    const wpResponse = await fetch(publishEndpoint, {
-      method: "POST",
-      headers: wpHeaders,
-      body: JSON.stringify(wpBody),
-    });
+    // --- Determine auth and attempt publish ---
+    let wpResponse: Response;
+    let usePlugin = hasPlugin;
+
+    if (hasPlugin) {
+      // Try plugin first
+      const pluginEndpoint = `${wpUrl}/wp-json/autoblog-ai/v1/publish`;
+      const pluginBody = {
+        title: article.title,
+        content: article.content || "",
+        excerpt: article.excerpt || article.meta_description || "",
+        status: "publish",
+        seo_title: article.seo_title || article.title,
+        meta_description: article.meta_description || "",
+        seo_keyword: article.seo_keyword || "",
+        featured_image_url: article.featured_image_url || "",
+        categories: [article.category],
+      };
+      console.log(`POST (plugin) ${pluginEndpoint}`);
+      wpResponse = await fetch(pluginEndpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-AutoBlog-Key": wpPassword },
+        body: JSON.stringify(pluginBody),
+      });
+
+      // Fallback: if plugin endpoint not found (404), try standard REST API with password as Application Password
+      if (wpResponse.status === 404) {
+        console.log("Plugin endpoint not found (404), falling back to standard WP REST API...");
+        // Use "admin" as default username for Application Password auth
+        const fallbackUser = settings.wordpress_username || "admin";
+        const auth = btoa(`${fallbackUser}:${wpPassword}`);
+        wpResponse = await publishStandard(`Basic ${auth}`);
+        usePlugin = false;
+      }
+    } else {
+      const auth = btoa(`${settings.wordpress_username}:${wpPassword}`);
+      wpResponse = await publishStandard(`Basic ${auth}`);
+    }
 
     const responseText = await wpResponse.text();
     console.log(`WordPress response ${wpResponse.status}: ${responseText.substring(0, 300)}`);
