@@ -8,7 +8,11 @@ const corsHeaders = {
 
 async function decryptField(supabase: any, val: string | null, encKey: string): Promise<string | null> {
   if (!val || !val.startsWith("ENCRYPTED:")) return val;
-  const { data } = await supabase.rpc("decrypt_credential", { val, enc_key: encKey });
+  const { data, error } = await supabase.rpc("decrypt_credential", { val, enc_key: encKey });
+  if (error) {
+    console.error("Decrypt error:", error);
+    return null;
+  }
   return data || val;
 }
 
@@ -42,37 +46,89 @@ serve(async (req) => {
     }
 
     // Decrypt password server-side
-    const wpPassword = await decryptField(supabase, settings.wordpress_app_password, encKey) || settings.wordpress_app_password;
+    const rawPwd = settings.wordpress_app_password;
+    const isEncrypted = rawPwd.startsWith("ENCRYPTED:");
+    console.log(`Password encrypted: ${isEncrypted}, encKey available: ${!!encKey && encKey.length > 0}`);
+    
+    const wpPassword = await decryptField(supabase, rawPwd, encKey);
+    if (!wpPassword) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Falha ao descriptografar a senha. Tente salvar novamente nas Configurações." }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    // Log password info for debugging (length only, not the actual value)
+    console.log(`Decrypted password length: ${wpPassword.length}, still encrypted: ${wpPassword.startsWith("ENCRYPTED:")}`);
 
     let wpUrl = settings.wordpress_url.replace(/\/$/, "");
     if (!/^https?:\/\//i.test(wpUrl)) wpUrl = `https://${wpUrl}`;
     const isPlugin = !settings.wordpress_username || settings.wordpress_username.toLowerCase() === "autoblog-ai";
 
+    console.log(`Testing WP: ${wpUrl}, user: ${settings.wordpress_username || '(plugin)'}, mode: ${isPlugin ? 'plugin' : 'standard'}`);
+
     let res: Response;
+    let testEndpoint: string;
+    
     if (isPlugin) {
-      res = await fetch(`${wpUrl}/wp-json/autoblog-ai/v1/status`, {
+      testEndpoint = `${wpUrl}/wp-json/autoblog-ai/v1/status`;
+      res = await fetch(testEndpoint, {
         headers: { "X-AutoBlog-Key": wpPassword },
       });
     } else {
+      testEndpoint = `${wpUrl}/wp-json/wp/v2/users/me`;
       const auth = btoa(`${settings.wordpress_username}:${wpPassword}`);
-      res = await fetch(`${wpUrl}/wp-json/wp/v2/users/me`, {
+      console.log(`Auth header (base64 length): ${auth.length}`);
+      res = await fetch(testEndpoint, {
         headers: { Authorization: `Basic ${auth}` },
       });
     }
 
+    const responseText = await res.text();
+    console.log(`WP response ${res.status}: ${responseText.substring(0, 500)}`);
+
     if (res.ok) {
-      const data = await res.json();
-      return new Response(
-        JSON.stringify({ success: true, message: "Conexão OK!", data: { name: data.name || data.site_name || "WordPress" } }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      try {
+        const data = JSON.parse(responseText);
+        const info: Record<string, string> = {};
+        if (data.name) info.name = data.name;
+        if (data.roles) info.roles = data.roles.join(", ");
+        if (data.capabilities) {
+          info.can_publish = data.capabilities.publish_posts ? "sim" : "não";
+          info.can_edit = data.capabilities.edit_posts ? "sim" : "não";
+        }
+        return new Response(
+          JSON.stringify({ success: true, message: "Conexão OK!", data: info }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      } catch {
+        return new Response(
+          JSON.stringify({ success: true, message: "Conexão OK!" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     } else {
+      let errorDetail = `WordPress retornou ${res.status}`;
+      try {
+        const errJson = JSON.parse(responseText);
+        if (errJson.code === "invalid_username") {
+          errorDetail = `Usuário "${settings.wordpress_username}" não encontrado no WordPress.`;
+        } else if (errJson.code === "incorrect_password") {
+          errorDetail = "Senha de aplicativo incorreta. Gere uma nova em WordPress → Usuários → Perfil → Senhas de Aplicativo.";
+        } else if (errJson.code === "rest_not_logged_in") {
+          errorDetail = "Autenticação falhou. Verifique se a Senha de Aplicativo está correta (não é a senha de login).";
+        } else if (errJson.message) {
+          errorDetail = `WordPress: ${errJson.message}`;
+        }
+      } catch {}
+      
       return new Response(
-        JSON.stringify({ success: false, error: `WordPress retornou ${res.status}` }),
+        JSON.stringify({ success: false, error: errorDetail }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
   } catch (error) {
+    console.error("test-wp-connection error:", error);
     return new Response(
       JSON.stringify({ success: false, error: error instanceof Error ? error.message : "Erro desconhecido" }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
