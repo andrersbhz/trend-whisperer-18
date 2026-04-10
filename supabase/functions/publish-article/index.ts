@@ -55,6 +55,9 @@ serve(async (req) => {
         const wpUrl = settings.wordpress_url.replace(/\/$/, "");
         const hasPlugin = !settings.wordpress_username || settings.wordpress_username.toLowerCase() === 'autoblog-ai';
 
+        // Decrypt password server-side
+        const wpPassword = await decryptField(supabase, settings.wordpress_app_password, encKey) || settings.wordpress_app_password;
+
         // Headers conforme o método de autenticação
         const wpHeaders: Record<string, string> = {
           "Content-Type": "application/json",
@@ -64,7 +67,7 @@ serve(async (req) => {
 
         if (hasPlugin) {
           // Modo Plugin AutoBlog AI Connector — usa chave API no header
-          wpHeaders["X-AutoBlog-Key"] = settings.wordpress_app_password;
+          wpHeaders["X-AutoBlog-Key"] = wpPassword;
           publishEndpoint = `${wpUrl}/wp-json/autoblog-ai/v1/publish`;
         } else {
           // Modo padrão WP REST API — usa Application Password
