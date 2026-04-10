@@ -246,7 +246,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      decrypt_credential: { Args: { val: string }; Returns: string }
+      decrypt_credential: {
+        Args: { enc_key: string; val: string }
+        Returns: string
+      }
       encrypt_credential: { Args: { val: string }; Returns: string }
       get_credentials_status: { Args: never; Returns: Json }
     }
