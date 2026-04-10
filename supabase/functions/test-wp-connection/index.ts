@@ -6,9 +6,10 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-function decryptValue(val: string | null, encKey: string): string | null {
-  // Decryption happens in DB via RPC; this is a passthrough for non-encrypted values
-  return val;
+async function decryptField(supabase: any, val: string | null, encKey: string): Promise<string | null> {
+  if (!val || !val.startsWith("ENCRYPTED:")) return val;
+  const { data } = await supabase.rpc("decrypt_credential", { val, enc_key: encKey });
+  return data || val;
 }
 
 serve(async (req) => {
@@ -20,30 +21,13 @@ serve(async (req) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const encKey = Deno.env.get("DB_ENCRYPTION_KEY") || "";
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Verify JWT and get user
     const anonClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!);
     const { data: { user }, error: authError } = await anonClient.auth.getUser(authHeader.replace("Bearer ", ""));
     if (authError || !user) throw new Error("Invalid token");
 
-    // Set encryption key for this session so decrypt_credential works
-    const encKey = Deno.env.get("DB_ENCRYPTION_KEY");
-    if (encKey) {
-      await supabase.rpc('set_config', undefined as any).then(() => {});
-      // Use raw SQL to set the session variable
-      await fetch(`${supabaseUrl}/rest/v1/rpc/decrypt_credential`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${supabaseKey}`,
-          "apikey": supabaseKey,
-        },
-        body: JSON.stringify({ val: "test" }),
-      });
-    }
-
-    // Fetch settings and decrypt server-side
     const { data: settings } = await supabase
       .from("user_settings")
       .select("wordpress_url, wordpress_username, wordpress_app_password")
@@ -57,12 +41,8 @@ serve(async (req) => {
       );
     }
 
-    // Decrypt the password
-    let wpPassword = settings.wordpress_app_password;
-    if (wpPassword.startsWith("ENCRYPTED:") && encKey) {
-      const { data: decrypted } = await supabase.rpc("decrypt_credential", { val: wpPassword });
-      if (decrypted) wpPassword = decrypted;
-    }
+    // Decrypt password server-side
+    const wpPassword = await decryptField(supabase, settings.wordpress_app_password, encKey) || settings.wordpress_app_password;
 
     const wpUrl = settings.wordpress_url.replace(/\/$/, "");
     const isPlugin = !settings.wordpress_username || settings.wordpress_username.toLowerCase() === "autoblog-ai";
