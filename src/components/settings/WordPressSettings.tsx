@@ -3,7 +3,7 @@ import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
 import { Globe, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useState } from 'react';
+import { forwardRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import ConnectionCard from '@/components/ConnectionCard';
@@ -15,7 +15,7 @@ interface Props {
   hasWpPassword?: boolean;
 }
 
-const WordPressSettings = ({ settings, onChange, hasWpPassword }: Props) => {
+const WordPressSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChange, hasWpPassword }, ref) => {
   const connected = !!(settings.wordpress_url && (settings.wordpress_app_password || hasWpPassword));
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<'success' | 'error' | null>(null);
@@ -55,6 +55,7 @@ const WordPressSettings = ({ settings, onChange, hasWpPassword }: Props) => {
 
   return (
     <ConnectionCard
+      ref={ref}
       icon={<Globe className="h-5 w-5 text-primary" />}
       title="WordPress"
       description="Publicação automática via Plugin AutoBlog AI ou REST API"
@@ -116,6 +117,8 @@ const WordPressSettings = ({ settings, onChange, hasWpPassword }: Props) => {
       </div>
     </ConnectionCard>
   );
-};
+});
+
+WordPressSettings.displayName = 'WordPressSettings';
 
 export default WordPressSettings;

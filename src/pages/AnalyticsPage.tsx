@@ -14,6 +14,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   LineChart, Line, PieChart, Pie, Cell, AreaChart, Area, Legend,
 } from 'recharts';
+import { getErrorMessage, runBackendQuery } from '@/lib/backend';
 
 interface AnalyticsData {
   pageviews: number;
@@ -72,68 +73,96 @@ const AnalyticsPage = () => {
 
   const fetchArticleStats = async () => {
     if (!user) return;
-    const { data } = await supabase.from('articles').select('status').eq('user_id', user.id);
-    if (data) {
+
+    try {
+      const data = await runBackendQuery(() => supabase.from('articles').select('status').eq('user_id', user.id));
+
       setArticleStats({
-        total: data.length,
-        published: data.filter((a) => a.status === 'published').length,
-        failed: data.filter((a) => a.status === 'failed').length,
+        total: data?.length || 0,
+        published: (data || []).filter((a) => a.status === 'published').length,
+        failed: (data || []).filter((a) => a.status === 'failed').length,
       });
+    } catch {
+      setArticleStats({ total: 0, published: 0, failed: 0 });
     }
   };
 
   const fetchSocialMetrics = async () => {
     if (!user) return;
-    const { data: logs } = await supabase
-      .from('publish_log')
-      .select('platform, status')
-      .eq('user_id', user.id);
 
-    const fbSuccess = (logs || []).filter(l => l.platform === 'facebook' && l.status === 'success').length;
-    const igSuccess = (logs || []).filter(l => l.platform === 'instagram' && l.status === 'success').length;
+    try {
+      const logs = await runBackendQuery(() =>
+        supabase
+          .from('publish_log')
+          .select('platform, status')
+          .eq('user_id', user.id),
+      );
 
-    setSocialMetrics({
-      facebook: {
-        posts: fbSuccess,
-        reach: fbSuccess * 850,
-        engagement: fbSuccess * 120,
-        likes: fbSuccess * 45,
-        shares: fbSuccess * 12,
-      },
-      instagram: {
-        posts: igSuccess,
-        reach: igSuccess * 1200,
-        engagement: igSuccess * 180,
-        likes: igSuccess * 95,
-        comments: igSuccess * 15,
-      },
-    });
+      const fbSuccess = (logs || []).filter(l => l.platform === 'facebook' && l.status === 'success').length;
+      const igSuccess = (logs || []).filter(l => l.platform === 'instagram' && l.status === 'success').length;
+
+      setSocialMetrics({
+        facebook: {
+          posts: fbSuccess,
+          reach: fbSuccess * 850,
+          engagement: fbSuccess * 120,
+          likes: fbSuccess * 45,
+          shares: fbSuccess * 12,
+        },
+        instagram: {
+          posts: igSuccess,
+          reach: igSuccess * 1200,
+          engagement: igSuccess * 180,
+          likes: igSuccess * 95,
+          comments: igSuccess * 15,
+        },
+      });
+    } catch {
+      setSocialMetrics({
+        facebook: { posts: 0, reach: 0, engagement: 0, likes: 0, shares: 0 },
+        instagram: { posts: 0, reach: 0, engagement: 0, likes: 0, comments: 0 },
+      });
+    }
   };
 
   const checkGaConnection = async () => {
     if (!user) return;
-    const { data } = await supabase
-      .from('user_settings')
-      .select('google_analytics_property_id')
-      .eq('user_id', user.id)
-      .maybeSingle();
 
-    const connected = !!(data as any)?.google_analytics_property_id;
-    setGaConnected(connected);
-    if (connected) fetchAnalytics();
-    else setLoading(false);
+    try {
+      const data = await runBackendQuery(() =>
+        supabase
+          .from('user_settings')
+          .select('google_analytics_property_id')
+          .eq('user_id', user.id)
+          .maybeSingle(),
+      );
+
+      const connected = !!(data as any)?.google_analytics_property_id;
+      setGaConnected(connected);
+
+      if (connected) {
+        fetchAnalytics();
+      } else {
+        setLoading(false);
+      }
+    } catch {
+      setGaConnected(false);
+      setLoading(false);
+    }
   };
 
   const fetchAnalytics = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('fetch-analytics', {
-        body: { userId: user?.id },
-      });
-      if (error) throw error;
+      const data = await runBackendQuery(() =>
+        supabase.functions.invoke('fetch-analytics', {
+          body: { userId: user?.id },
+        }),
+      );
+
       if (data?.analytics) setAnalytics(data.analytics);
-    } catch (e: any) {
-      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+    } catch (error) {
+      toast({ title: 'Erro', description: getErrorMessage(error), variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -143,13 +172,15 @@ const AnalyticsPage = () => {
     if (!analytics) return;
     setLoadingTips(true);
     try {
-      const { data, error } = await supabase.functions.invoke('generate-analytics-tips', {
-        body: { userId: user?.id, analytics, socialMetrics },
-      });
-      if (error) throw error;
+      const data = await runBackendQuery(() =>
+        supabase.functions.invoke('generate-analytics-tips', {
+          body: { userId: user?.id, analytics, socialMetrics },
+        }),
+      );
+
       setTips(data?.tips || []);
-    } catch (e: any) {
-      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+    } catch (error) {
+      toast({ title: 'Erro', description: getErrorMessage(error), variant: 'destructive' });
     } finally {
       setLoadingTips(false);
     }

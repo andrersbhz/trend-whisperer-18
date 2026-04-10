@@ -5,6 +5,7 @@ import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Settings } from 'lucide-react';
 import type { UserSettings } from '@/pages/SettingsPage';
+import { forwardRef } from 'react';
 
 const allCategories = [
   { id: 'esportes', label: '⚽ Esportes' },
@@ -20,7 +21,7 @@ interface Props {
   onChange: (partial: Partial<UserSettings>) => void;
 }
 
-const AutomationSettings = ({ settings, onChange }: Props) => {
+const AutomationSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChange }, ref) => {
   const toggleCategory = (cat: string) => {
     const newCategories = settings.categories.includes(cat)
       ? settings.categories.filter((c) => c !== cat)
@@ -29,7 +30,7 @@ const AutomationSettings = ({ settings, onChange }: Props) => {
   };
 
   return (
-    <Card className="shadow-card">
+    <Card ref={ref} className="shadow-card">
       <CardHeader>
         <div className="flex items-center gap-2">
           <Settings className="h-5 w-5 text-primary" />
@@ -77,6 +78,8 @@ const AutomationSettings = ({ settings, onChange }: Props) => {
       </CardContent>
     </Card>
   );
-};
+});
+
+AutomationSettings.displayName = 'AutomationSettings';
 
 export default AutomationSettings;

@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Unplug, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { forwardRef } from 'react';
 
 interface ConnectionCardProps {
   icon: React.ReactNode;
@@ -17,7 +18,7 @@ interface ConnectionCardProps {
   connectedInfo?: string;
 }
 
-const ConnectionCard = ({
+const ConnectionCard = forwardRef<HTMLDivElement, ConnectionCardProps>(({ 
   icon,
   title,
   description,
@@ -28,9 +29,9 @@ const ConnectionCard = ({
   onConnect,
   children,
   connectedInfo,
-}: ConnectionCardProps) => {
+}, ref) => {
   return (
-    <Card className="shadow-card overflow-hidden">
+    <Card ref={ref} className="shadow-card overflow-hidden">
       <div className={cn(
         'h-1',
         connected ? 'bg-success' : 'bg-destructive'
@@ -88,6 +89,8 @@ const ConnectionCard = ({
       </CardContent>
     </Card>
   );
-};
+});
+
+ConnectionCard.displayName = 'ConnectionCard';
 
 export default ConnectionCard;

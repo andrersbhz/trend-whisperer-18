@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { FileText, TrendingUp, CheckCircle, Clock, Sparkles, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { getErrorMessage, runBackendQuery } from '@/lib/backend';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -17,28 +18,33 @@ const Dashboard = () => {
   const fetchStats = async () => {
     if (!user) return;
 
-    const [articlesRes, trendingRes] = await Promise.all([
-      supabase.from('articles').select('id, status').eq('user_id', user.id),
-      supabase.from('trending_topics').select('id').eq('user_id', user.id).eq('used', false),
-    ]);
+    try {
+      const [articles, trendingTopics, recent] = await Promise.all([
+        runBackendQuery(() => supabase.from('articles').select('id, status').eq('user_id', user.id)),
+        runBackendQuery(() => supabase.from('trending_topics').select('id').eq('user_id', user.id).eq('used', false)),
+        runBackendQuery(() =>
+          supabase
+            .from('articles')
+            .select('id, title, category, seo_keyword, status')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(5),
+        ),
+      ]);
 
-    const articles = articlesRes.data || [];
-    setStats({
-      total: articles.length,
-      published: articles.filter((a) => a.status === 'published').length,
-      pending: articles.filter((a) => a.status === 'ready' || a.status === 'draft').length,
-      trending: trendingRes.data?.length || 0,
-      failed: articles.filter((a) => a.status === 'failed').length,
-    });
-
-    const { data: recent } = await supabase
-      .from('articles')
-      .select('id, title, category, seo_keyword, status')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(5);
-
-    setRecentArticles(recent || []);
+      setStats({
+        total: articles?.length || 0,
+        published: (articles || []).filter((a) => a.status === 'published').length,
+        pending: (articles || []).filter((a) => a.status === 'ready' || a.status === 'draft').length,
+        trending: trendingTopics?.length || 0,
+        failed: (articles || []).filter((a) => a.status === 'failed').length,
+      });
+      setRecentArticles(recent || []);
+    } catch (error) {
+      setStats({ total: 0, published: 0, pending: 0, trending: 0, failed: 0 });
+      setRecentArticles([]);
+      toast({ title: 'Erro ao carregar painel', description: getErrorMessage(error), variant: 'destructive' });
+    }
   };
 
   useEffect(() => {
@@ -48,14 +54,15 @@ const Dashboard = () => {
   const handleGenerateArticles = async () => {
     setGenerating(true);
     try {
-      const { data, error } = await supabase.functions.invoke('generate-articles', {
-        body: { userId: user?.id },
-      });
-      if (error) throw error;
+      const data = await runBackendQuery(() =>
+        supabase.functions.invoke('generate-articles', {
+          body: { userId: user?.id },
+        }),
+      );
       toast({ title: 'Geração iniciada!', description: data?.message || 'Artigos sendo gerados...' });
       setTimeout(fetchStats, 5000);
-    } catch (e: any) {
-      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+    } catch (error) {
+      toast({ title: 'Erro', description: getErrorMessage(error), variant: 'destructive' });
     } finally {
       setGenerating(false);
     }

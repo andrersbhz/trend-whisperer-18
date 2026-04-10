@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Send, Eye, Trash2, Loader2, FileText, RotateCcw } from 'lucide-react';
+import { getErrorMessage, runBackendMutation, runBackendQuery } from '@/lib/backend';
 import {
   Dialog,
   DialogContent,
@@ -28,17 +29,18 @@ const ArticlesPage = () => {
     if (!user) return;
 
     try {
-      const { data, error } = await supabase
-        .from('articles')
-        .select('id, title, status, category, seo_keyword, meta_description')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+      const data = await runBackendQuery(() =>
+        supabase
+          .from('articles')
+          .select('id, title, status, category, seo_keyword, meta_description')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false }),
+      );
 
-      if (error) throw error;
       setArticles(data || []);
-    } catch (e: any) {
+    } catch (error) {
       setArticles([]);
-      toast({ title: 'Erro ao carregar artigos', description: e.message, variant: 'destructive' });
+      toast({ title: 'Erro ao carregar artigos', description: getErrorMessage(error), variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -51,14 +53,16 @@ const ArticlesPage = () => {
   const handlePublish = async (articleId: string) => {
     setPublishing(articleId);
     try {
-      const { data, error } = await supabase.functions.invoke('publish-article', {
-        body: { articleId, userId: user?.id },
-      });
-      if (error) throw error;
+      const data = await runBackendQuery(() =>
+        supabase.functions.invoke('publish-article', {
+          body: { articleId, userId: user?.id },
+        }),
+      );
+
       toast({ title: data?.success ? 'Publicado!' : 'Atenção', description: data?.message || 'Verifique o status.', variant: data?.success ? 'default' : 'destructive' });
       fetchArticles();
-    } catch (e: any) {
-      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+    } catch (error) {
+      toast({ title: 'Erro', description: getErrorMessage(error), variant: 'destructive' });
     } finally {
       setPublishing(null);
     }
@@ -67,15 +71,18 @@ const ArticlesPage = () => {
   const handleRetry = async (articleId: string) => {
     setRetrying(articleId);
     try {
-      await supabase.from('articles').update({ status: 'ready' }).eq('id', articleId);
-      const { data, error } = await supabase.functions.invoke('publish-article', {
-        body: { articleId, userId: user?.id },
-      });
-      if (error) throw error;
+      await runBackendMutation(() => supabase.from('articles').update({ status: 'ready' }).eq('id', articleId));
+
+      const data = await runBackendQuery(() =>
+        supabase.functions.invoke('publish-article', {
+          body: { articleId, userId: user?.id },
+        }),
+      );
+
       toast({ title: data?.success ? 'Publicado!' : 'Atenção', description: data?.message || 'Verifique o status.', variant: data?.success ? 'default' : 'destructive' });
       fetchArticles();
-    } catch (e: any) {
-      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+    } catch (error) {
+      toast({ title: 'Erro', description: getErrorMessage(error), variant: 'destructive' });
     } finally {
       setRetrying(null);
     }
@@ -83,12 +90,11 @@ const ArticlesPage = () => {
 
   const handleDelete = async (articleId: string) => {
     try {
-      const { error } = await supabase.from('articles').delete().eq('id', articleId);
-      if (error) throw error;
+      await runBackendMutation(() => supabase.from('articles').delete().eq('id', articleId));
       toast({ title: 'Excluído', description: 'Artigo removido.' });
       fetchArticles();
-    } catch (e: any) {
-      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+    } catch (error) {
+      toast({ title: 'Erro', description: getErrorMessage(error), variant: 'destructive' });
     }
   };
 
@@ -97,17 +103,18 @@ const ArticlesPage = () => {
     setPreviewLoading(true);
 
     try {
-      const { data, error } = await supabase
-        .from('articles')
-        .select('id, title, category, seo_keyword, meta_description, content, featured_image_url')
-        .eq('id', articleId)
-        .maybeSingle();
+      const data = await runBackendQuery(() =>
+        supabase
+          .from('articles')
+          .select('id, title, category, seo_keyword, meta_description, content, featured_image_url')
+          .eq('id', articleId)
+          .maybeSingle(),
+      );
 
-      if (error) throw error;
       setPreview(data);
-    } catch (e: any) {
+    } catch (error) {
       setPreviewOpen(false);
-      toast({ title: 'Erro ao carregar prévia', description: e.message, variant: 'destructive' });
+      toast({ title: 'Erro ao carregar prévia', description: getErrorMessage(error), variant: 'destructive' });
     } finally {
       setPreviewLoading(false);
     }
