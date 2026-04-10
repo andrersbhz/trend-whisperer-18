@@ -34,8 +34,13 @@ const WordPressSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChang
     setTesting(true);
     setTestResult(null);
     try {
-      // Use edge function to test — credentials are read server-side
-      const { data, error } = await supabase.functions.invoke('test-wp-connection');
+      const { data, error } = await supabase.functions.invoke('test-wp-connection', {
+        body: {
+          wordpress_url: settings.wordpress_url,
+          wordpress_username: settings.wordpress_username,
+          wordpress_app_password: settings.wordpress_app_password || undefined,
+        },
+      });
       if (error) throw error;
 
       if (data?.success) {
