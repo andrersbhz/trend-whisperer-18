@@ -52,7 +52,8 @@ serve(async (req) => {
     // 1. Publish to WordPress (suporta plugin AutoBlog AI Connector ou REST API padrão)
     if (settings.wordpress_url && settings.wordpress_app_password) {
       try {
-        const wpUrl = settings.wordpress_url.replace(/\/$/, "");
+        let wpUrl = settings.wordpress_url.replace(/\/$/, "");
+        if (!/^https?:\/\//i.test(wpUrl)) wpUrl = `https://${wpUrl}`;
         const hasPlugin = !settings.wordpress_username || settings.wordpress_username.toLowerCase() === 'autoblog-ai';
 
         // Decrypt password server-side
