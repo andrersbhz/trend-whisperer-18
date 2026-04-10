@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Save, Loader2 } from 'lucide-react';
 import WordPressSettings from '@/components/settings/WordPressSettings';
-import FacebookSettings from '@/components/settings/FacebookSettings';
 import GoogleAnalyticsSettings from '@/components/settings/GoogleAnalyticsSettings';
 import AutomationSettings from '@/components/settings/AutomationSettings';
 
@@ -150,7 +149,6 @@ const SettingsPage = () => {
       </div>
 
       <WordPressSettings settings={settings} onChange={updateSettings} hasWpPassword={credStatus.has_wp_password} />
-      <FacebookSettings settings={settings} onChange={updateSettings} />
       <GoogleAnalyticsSettings settings={settings} onChange={updateSettings} />
       <AutomationSettings settings={settings} onChange={updateSettings} />
 

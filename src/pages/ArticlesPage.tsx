@@ -21,16 +21,27 @@ const ArticlesPage = () => {
   const [publishing, setPublishing] = useState<string | null>(null);
   const [retrying, setRetrying] = useState<string | null>(null);
   const [preview, setPreview] = useState<any | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(false);
 
   const fetchArticles = async () => {
     if (!user) return;
-    const { data } = await supabase
-      .from('articles')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
-    setArticles(data || []);
-    setLoading(false);
+
+    try {
+      const { data, error } = await supabase
+        .from('articles')
+        .select('id, title, status, category, seo_keyword, meta_description')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setArticles(data || []);
+    } catch (e: any) {
+      setArticles([]);
+      toast({ title: 'Erro ao carregar artigos', description: e.message, variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -72,11 +83,33 @@ const ArticlesPage = () => {
 
   const handleDelete = async (articleId: string) => {
     try {
-      await supabase.from('articles').delete().eq('id', articleId);
+      const { error } = await supabase.from('articles').delete().eq('id', articleId);
+      if (error) throw error;
       toast({ title: 'Excluído', description: 'Artigo removido.' });
       fetchArticles();
     } catch (e: any) {
       toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+    }
+  };
+
+  const handlePreview = async (articleId: string) => {
+    setPreviewOpen(true);
+    setPreviewLoading(true);
+
+    try {
+      const { data, error } = await supabase
+        .from('articles')
+        .select('id, title, category, seo_keyword, meta_description, content, featured_image_url')
+        .eq('id', articleId)
+        .maybeSingle();
+
+      if (error) throw error;
+      setPreview(data);
+    } catch (e: any) {
+      setPreviewOpen(false);
+      toast({ title: 'Erro ao carregar prévia', description: e.message, variant: 'destructive' });
+    } finally {
+      setPreviewLoading(false);
     }
   };
 
@@ -145,7 +178,7 @@ const ArticlesPage = () => {
                     )}
                   </div>
                   <div className="flex gap-1 shrink-0">
-                    <Button size="sm" variant="ghost" onClick={() => setPreview(article)} className="text-muted-foreground hover:text-foreground">
+                    <Button size="sm" variant="ghost" onClick={() => handlePreview(article.id)} className="text-muted-foreground hover:text-foreground">
                       <Eye className="h-4 w-4" />
                     </Button>
                     {article.status === 'failed' && (
@@ -190,30 +223,42 @@ const ArticlesPage = () => {
         </div>
       )}
 
-      <Dialog open={!!preview} onOpenChange={() => setPreview(null)}>
+      <Dialog
+        open={previewOpen}
+        onOpenChange={(open) => {
+          setPreviewOpen(open);
+          if (!open) setPreview(null);
+        }}
+      >
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto glass-card border-border">
           <DialogHeader>
-            <DialogTitle className="text-foreground">{preview?.title}</DialogTitle>
+            <DialogTitle className="text-foreground">{previewLoading ? 'Carregando prévia...' : preview?.title}</DialogTitle>
           </DialogHeader>
-          {preview?.featured_image_url && (
-            <img src={preview.featured_image_url} alt={preview.title} className="w-full rounded-lg" />
-          )}
-          <div className="space-y-3 text-sm">
-            <div className="flex gap-2 flex-wrap">
-              <Badge variant="secondary" className="bg-primary/10 text-primary">{preview?.category}</Badge>
-              {preview?.seo_keyword && <Badge variant="outline" className="border-accent/30 text-accent">🔑 {preview.seo_keyword}</Badge>}
+          {previewLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
-            {preview?.meta_description && (
-              <div className="p-3 rounded-lg bg-secondary/30">
-                <p className="text-xs font-medium text-muted-foreground mb-1">Meta Description</p>
-                <p className="text-sm text-foreground">{preview?.meta_description}</p>
+          ) : (
+            <div className="space-y-3 text-sm">
+              {preview?.featured_image_url && (
+                <img src={preview.featured_image_url} alt={preview.title} className="w-full rounded-lg" />
+              )}
+              <div className="flex gap-2 flex-wrap">
+                <Badge variant="secondary" className="bg-primary/10 text-primary">{preview?.category}</Badge>
+                {preview?.seo_keyword && <Badge variant="outline" className="border-accent/30 text-accent">🔑 {preview.seo_keyword}</Badge>}
               </div>
-            )}
-            <div
-              className="prose prose-sm prose-invert max-w-none text-foreground"
-              dangerouslySetInnerHTML={{ __html: preview?.content || '' }}
-            />
-          </div>
+              {preview?.meta_description && (
+                <div className="p-3 rounded-lg bg-secondary/30">
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Meta Description</p>
+                  <p className="text-sm text-foreground">{preview?.meta_description}</p>
+                </div>
+              )}
+              <div
+                className="prose prose-sm prose-invert max-w-none text-foreground"
+                dangerouslySetInnerHTML={{ __html: preview?.content || '' }}
+              />
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
