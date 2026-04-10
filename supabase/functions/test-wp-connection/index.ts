@@ -44,7 +44,8 @@ serve(async (req) => {
     // Decrypt password server-side
     const wpPassword = await decryptField(supabase, settings.wordpress_app_password, encKey) || settings.wordpress_app_password;
 
-    const wpUrl = settings.wordpress_url.replace(/\/$/, "");
+    let wpUrl = settings.wordpress_url.replace(/\/$/, "");
+    if (!/^https?:\/\//i.test(wpUrl)) wpUrl = `https://${wpUrl}`;
     const isPlugin = !settings.wordpress_username || settings.wordpress_username.toLowerCase() === "autoblog-ai";
 
     let res: Response;
