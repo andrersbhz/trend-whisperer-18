@@ -81,13 +81,13 @@ serve(async (req) => {
     let testEndpoint: string;
     
     if (isPlugin) {
-      testEndpoint = `${wpUrl}/wp-json/autoblog-ai/v1/status`;
+      testEndpoint = `${finalUrl}/wp-json/autoblog-ai/v1/status`;
       res = await fetch(testEndpoint, {
         headers: { "X-AutoBlog-Key": wpPassword },
       });
     } else {
-      testEndpoint = `${wpUrl}/wp-json/wp/v2/users/me`;
-      const auth = btoa(`${settings.wordpress_username}:${wpPassword}`);
+      testEndpoint = `${finalUrl}/wp-json/wp/v2/users/me`;
+      const auth = btoa(`${wpUsername}:${wpPassword}`);
       console.log(`Auth header (base64 length): ${auth.length}`);
       res = await fetch(testEndpoint, {
         headers: { Authorization: `Basic ${auth}` },
