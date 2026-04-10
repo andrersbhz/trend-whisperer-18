@@ -234,7 +234,14 @@ IMPORTANTE:
               messages: [
                 {
                   role: "user",
-                  content: `Create a professional news article featured image for: "${parsed.title}". Photorealistic, editorial style, suitable for a news website. No text overlay. High quality, 16:9 aspect ratio, vibrant colors.`,
+                  content: `Create a professional, photorealistic news article featured image for: "${parsed.title}". 
+Requirements:
+- Editorial/journalistic style, suitable for a professional news website
+- NO text overlay, NO watermarks, NO logos
+- High quality, 16:9 aspect ratio (1200x675px)
+- Vibrant, eye-catching colors
+- The image should visually represent the topic and evoke the emotion of the article
+- Professional lighting and composition`,
                 },
               ],
               modalities: ["image", "text"],
