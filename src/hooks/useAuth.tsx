@@ -19,19 +19,49 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+
+    const finishAuthLoading = (nextSession: Session | null) => {
+      if (!isMounted) return;
+      setSession(nextSession);
+      setUser(nextSession?.user ?? null);
+      setLoading(false);
+    };
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
+      finishAuthLoading(session);
     });
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    const timeoutId = window.setTimeout(() => {
+      finishAuthLoading(null);
+    }, 5000);
 
-    return () => subscription.unsubscribe();
+    const initializeAuth = async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+
+        if (error) {
+          await supabase.auth.signOut({ scope: 'local' });
+          finishAuthLoading(null);
+          return;
+        }
+
+        finishAuthLoading(data.session);
+      } catch {
+        await supabase.auth.signOut({ scope: 'local' });
+        finishAuthLoading(null);
+      } finally {
+        window.clearTimeout(timeoutId);
+      }
+    };
+
+    initializeAuth();
+
+    return () => {
+      isMounted = false;
+      window.clearTimeout(timeoutId);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
