@@ -3,6 +3,9 @@ type ResultWithError<T> = {
   error: unknown | null;
 };
 
+type ResultLike<T> = PromiseLike<ResultWithError<T>>;
+type MutationLike = PromiseLike<{ error: unknown | null }>;
+
 const RETRYABLE_MESSAGES = [
   /schema cache/i,
   /failed to fetch/i,
@@ -65,7 +68,7 @@ export const withBackendRetry = async <T>(
 };
 
 export const runBackendQuery = async <T>(
-  operation: () => Promise<ResultWithError<T>>,
+  operation: () => ResultLike<T>,
   options?: { retries?: number; delayMs?: number },
 ) => {
   return withBackendRetry(async () => {
@@ -80,7 +83,7 @@ export const runBackendQuery = async <T>(
 };
 
 export const runBackendMutation = async (
-  operation: () => Promise<{ error: unknown | null }>,
+  operation: () => MutationLike,
   options?: { retries?: number; delayMs?: number },
 ) => {
   await withBackendRetry(async () => {

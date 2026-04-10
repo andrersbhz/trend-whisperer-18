@@ -108,9 +108,9 @@ const WordPressSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChang
           {testing ? (
             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
           ) : testResult === 'success' ? (
-            <CheckCircle2 className="h-4 w-4 mr-2 text-green-400" />
+            <CheckCircle2 className="h-4 w-4 mr-2 text-success" />
           ) : testResult === 'error' ? (
-            <XCircle className="h-4 w-4 mr-2 text-red-400" />
+            <XCircle className="h-4 w-4 mr-2 text-destructive" />
           ) : null}
           {testing ? 'Testando...' : 'Testar Conexão'}
         </Button>
