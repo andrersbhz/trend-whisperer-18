@@ -45,6 +45,7 @@ const SettingsPage = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [hasExistingSettings, setHasExistingSettings] = useState(false);
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
   const [credStatus, setCredStatus] = useState<CredentialsStatus>({ has_wp_password: false, has_fb_token: false });
 
@@ -57,6 +58,8 @@ const SettingsPage = () => {
         .select('wordpress_url, wordpress_username, google_analytics_property_id, facebook_page_id, instagram_account_id, categories, articles_per_day, auto_publish')
         .eq('user_id', user.id)
         .maybeSingle();
+
+      setHasExistingSettings(!!data);
 
       if (data) {
         setSettings({
@@ -88,9 +91,7 @@ const SettingsPage = () => {
     if (!user) return;
     setSaving(true);
     try {
-      // Build upsert payload, only include password fields if user entered new values
       const payload: Record<string, unknown> = {
-        user_id: user.id,
         wordpress_url: settings.wordpress_url,
         wordpress_username: settings.wordpress_username,
         facebook_page_id: settings.facebook_page_id,
@@ -101,7 +102,6 @@ const SettingsPage = () => {
         auto_publish: settings.auto_publish,
       };
 
-      // Only update sensitive fields if user typed new values
       if (settings.wordpress_app_password) {
         payload.wordpress_app_password = settings.wordpress_app_password;
       }
@@ -109,15 +109,19 @@ const SettingsPage = () => {
         payload.facebook_access_token = settings.facebook_access_token;
       }
 
-      const { error } = await supabase.from('user_settings').upsert(payload as any, { onConflict: 'user_id' });
+      const query = hasExistingSettings
+        ? supabase.from('user_settings').update(payload as any).eq('user_id', user.id)
+        : supabase.from('user_settings').insert({ user_id: user.id, ...payload } as any);
+
+      const { error } = await query;
       if (error) throw error;
+
+      setHasExistingSettings(true);
       toast({ title: 'Salvo!', description: 'Configurações atualizadas com sucesso.' });
 
-      // Refresh credentials status
       const { data: status } = await supabase.rpc('get_credentials_status');
       if (status) setCredStatus(status as unknown as CredentialsStatus);
 
-      // Clear password fields after save
       setSettings(prev => ({ ...prev, wordpress_app_password: '', facebook_access_token: '' }));
     } catch (e: any) {
       toast({ title: 'Erro', description: e.message, variant: 'destructive' });
