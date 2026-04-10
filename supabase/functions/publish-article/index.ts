@@ -210,11 +210,19 @@ serve(async (req) => {
       .eq("user_id", userId)
       .eq("is_active", true);
 
+    // Decrypt facebook account tokens
+    const decryptedFbAccounts = [];
+    for (const acc of (fbAccounts || [])) {
+      const token = await decryptField(supabase, acc.access_token, encKey) || acc.access_token;
+      decryptedFbAccounts.push({ ...acc, access_token: token });
+    }
+
     // Also check legacy settings
-    const legacyFb = settings.facebook_page_id && settings.facebook_access_token;
+    const legacyFbToken = await decryptField(supabase, settings.facebook_access_token, encKey);
+    const legacyFb = settings.facebook_page_id && legacyFbToken;
     const allFbAccounts = [
-      ...(fbAccounts || []),
-      ...(legacyFb ? [{ page_id: settings.facebook_page_id, access_token: settings.facebook_access_token, instagram_account_id: settings.instagram_account_id }] : []),
+      ...decryptedFbAccounts,
+      ...(legacyFb ? [{ page_id: settings.facebook_page_id, access_token: legacyFbToken, instagram_account_id: settings.instagram_account_id }] : []),
     ];
 
     for (const fbAccount of allFbAccounts) {
