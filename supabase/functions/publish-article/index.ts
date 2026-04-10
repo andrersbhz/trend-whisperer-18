@@ -68,47 +68,80 @@ serve(async (req) => {
         excerpt: article.excerpt || article.meta_description || "",
       };
 
-      // Featured image upload
+      // Set slug if available
+      if (article.seo_keyword) {
+        body.slug = article.seo_keyword
+          .toLowerCase()
+          .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-|-$/g, "")
+          .substring(0, 80);
+      }
+
+      // Featured image upload with alt text
       if (article.featured_image_url) {
         try {
           let featuredMediaId = null;
+          const imgSlug = (article.seo_keyword || article.title || "image").replace(/[^a-zA-Z0-9]/g, "-").substring(0, 50);
+          
+          let uploadedMediaId = null;
           if (article.featured_image_url.startsWith("data:image")) {
             const base64Data = article.featured_image_url.split(",")[1];
             const binaryData = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0));
-            const slug = (article.seo_keyword || article.title || "image").replace(/[^a-zA-Z0-9]/g, "-").substring(0, 50);
             const mediaResponse = await fetch(`${wpUrl}/wp-json/wp/v2/media`, {
               method: "POST",
-              headers: { ...headers, "Content-Type": "image/png", "Content-Disposition": `attachment; filename="${slug}.png"` },
+              headers: { ...headers, "Content-Type": "image/png", "Content-Disposition": `attachment; filename="${imgSlug}.png"` },
               body: binaryData,
             });
-            if (mediaResponse.ok) { featuredMediaId = (await mediaResponse.json()).id; }
+            if (mediaResponse.ok) { uploadedMediaId = (await mediaResponse.json()).id; }
           } else if (article.featured_image_url.startsWith("http")) {
             const imgResp = await fetch(article.featured_image_url);
             if (imgResp.ok) {
               const imgData = new Uint8Array(await imgResp.arrayBuffer());
               const contentType = imgResp.headers.get("content-type") || "image/jpeg";
               const ext = contentType.includes("png") ? "png" : "jpg";
-              const slug = (article.seo_keyword || "image").replace(/[^a-zA-Z0-9]/g, "-").substring(0, 50);
               const mediaResponse = await fetch(`${wpUrl}/wp-json/wp/v2/media`, {
                 method: "POST",
-                headers: { ...headers, "Content-Type": contentType, "Content-Disposition": `attachment; filename="${slug}.${ext}"` },
+                headers: { ...headers, "Content-Type": contentType, "Content-Disposition": `attachment; filename="${imgSlug}.${ext}"` },
                 body: imgData,
               });
-              if (mediaResponse.ok) { featuredMediaId = (await mediaResponse.json()).id; }
+              if (mediaResponse.ok) { uploadedMediaId = (await mediaResponse.json()).id; }
             }
           }
-          if (featuredMediaId) body.featured_media = featuredMediaId;
+          
+          if (uploadedMediaId) {
+            featuredMediaId = uploadedMediaId;
+            body.featured_media = featuredMediaId;
+            
+            // Update media with alt text and caption for SEO
+            const altText = article.seo_keyword ? `${article.seo_keyword} - ${article.title}` : article.title;
+            try {
+              await fetch(`${wpUrl}/wp-json/wp/v2/media/${featuredMediaId}`, {
+                method: "POST",
+                headers,
+                body: JSON.stringify({
+                  alt_text: altText,
+                  caption: article.excerpt || article.meta_description || "",
+                  description: article.title,
+                }),
+              });
+            } catch (altErr) { console.error("Failed to set image alt text:", altErr); }
+          }
         } catch (imgErr) { console.error("WP image upload failed:", imgErr); }
       }
 
-      // Yoast SEO
-      if (article.seo_title || article.meta_description || article.seo_keyword) {
-        body.meta = {
-          _yoast_wpseo_title: article.seo_title || article.title,
-          _yoast_wpseo_metadesc: article.meta_description || "",
-          _yoast_wpseo_focuskw: article.seo_keyword || "",
-        };
-      }
+      // Yoast SEO + Jetpack meta
+      body.meta = {
+        _yoast_wpseo_title: article.seo_title || article.title,
+        _yoast_wpseo_metadesc: article.meta_description || "",
+        _yoast_wpseo_focuskw: article.seo_keyword || "",
+        _yoast_wpseo_opengraph_title: article.seo_title || article.title,
+        _yoast_wpseo_opengraph_description: article.meta_description || "",
+        _yoast_wpseo_twitter_title: article.seo_title || article.title,
+        _yoast_wpseo_twitter_description: article.meta_description || "",
+        jetpack_seo_html_title: article.seo_title || article.title,
+        advanced_seo_description: article.meta_description || "",
+      };
 
       const endpoint = `${wpUrl}/wp-json/wp/v2/posts`;
       console.log(`POST (standard) ${endpoint}`);
