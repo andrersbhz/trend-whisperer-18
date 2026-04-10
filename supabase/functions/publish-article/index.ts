@@ -32,7 +32,7 @@ serve(async (req) => {
       .eq("user_id", userId)
       .single();
 
-    if (articleError || !article) throw new Error("Article not found: " + (articleError?.message || ""));
+    if (articleError || !article) throw new Error("Artigo não encontrado: " + (articleError?.message || ""));
 
     // Fetch settings
     const { data: settings, error: settingsError } = await supabase
@@ -41,331 +41,201 @@ serve(async (req) => {
       .eq("user_id", userId)
       .single();
 
-    if (settingsError || !settings) throw new Error("Settings not configured. Go to Settings page.");
+    if (settingsError || !settings) throw new Error("Configurações não encontradas. Vá para a página de Configurações.");
+
+    if (!settings.wordpress_url) throw new Error("URL do WordPress não configurada. Vá para Configurações.");
+    if (!settings.wordpress_app_password) throw new Error("Senha/chave do WordPress não configurada. Vá para Configurações.");
 
     // Update status
     await supabase.from("articles").update({ status: "publishing" }).eq("id", articleId);
 
-    const results: { wordpress?: boolean; facebook?: boolean; instagram?: boolean } = {};
-    const errors: string[] = [];
+    // Prepare WordPress connection
+    let wpUrl = settings.wordpress_url.replace(/\/$/, "");
+    if (!/^https?:\/\//i.test(wpUrl)) wpUrl = `https://${wpUrl}`;
+    const hasPlugin = !settings.wordpress_username || settings.wordpress_username.toLowerCase() === 'autoblog-ai';
 
-    // 1. Publish to WordPress (suporta plugin AutoBlog AI Connector ou REST API padrão)
-    if (settings.wordpress_url && settings.wordpress_app_password) {
-      try {
-        let wpUrl = settings.wordpress_url.replace(/\/$/, "");
-        if (!/^https?:\/\//i.test(wpUrl)) wpUrl = `https://${wpUrl}`;
-        const hasPlugin = !settings.wordpress_username || settings.wordpress_username.toLowerCase() === 'autoblog-ai';
+    // Decrypt password server-side
+    const wpPassword = await decryptField(supabase, settings.wordpress_app_password, encKey) || settings.wordpress_app_password;
 
-        // Decrypt password server-side
-        const wpPassword = await decryptField(supabase, settings.wordpress_app_password, encKey) || settings.wordpress_app_password;
+    console.log(`Publishing to WordPress: ${wpUrl}, mode: ${hasPlugin ? 'plugin' : 'standard'}, user: ${settings.wordpress_username || '(plugin)'}`);
 
-        // Headers conforme o método de autenticação
-        const wpHeaders: Record<string, string> = {
-          "Content-Type": "application/json",
+    // Headers
+    const wpHeaders: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+
+    let publishEndpoint: string;
+
+    if (hasPlugin) {
+      wpHeaders["X-AutoBlog-Key"] = wpPassword;
+      publishEndpoint = `${wpUrl}/wp-json/autoblog-ai/v1/publish`;
+    } else {
+      const auth = btoa(`${settings.wordpress_username}:${wpPassword}`);
+      wpHeaders["Authorization"] = `Basic ${auth}`;
+      publishEndpoint = `${wpUrl}/wp-json/wp/v2/posts`;
+    }
+
+    // Prepare post body
+    const wpBody: Record<string, unknown> = hasPlugin
+      ? {
+          title: article.title,
+          content: article.content || "",
+          excerpt: article.excerpt || article.meta_description || "",
+          status: "publish",
+          seo_title: article.seo_title || article.title,
+          meta_description: article.meta_description || "",
+          seo_keyword: article.seo_keyword || "",
+          featured_image_url: article.featured_image_url || "",
+          categories: [article.category],
+        }
+      : {
+          title: article.title,
+          content: article.content || "",
+          status: "publish",
+          excerpt: article.excerpt || article.meta_description || "",
         };
 
-        let publishEndpoint: string;
+    // Standard mode: handle featured image upload
+    if (!hasPlugin && article.featured_image_url) {
+      try {
+        let featuredMediaId = null;
 
-        if (hasPlugin) {
-          // Modo Plugin AutoBlog AI Connector — usa chave API no header
-          wpHeaders["X-AutoBlog-Key"] = wpPassword;
-          publishEndpoint = `${wpUrl}/wp-json/autoblog-ai/v1/publish`;
-        } else {
-          // Modo padrão WP REST API — usa Application Password
-          const auth = btoa(`${settings.wordpress_username}:${wpPassword}`);
-          wpHeaders["Authorization"] = `Basic ${auth}`;
-          publishEndpoint = `${wpUrl}/wp-json/wp/v2/posts`;
-        }
+        if (article.featured_image_url.startsWith("data:image")) {
+          const base64Data = article.featured_image_url.split(",")[1];
+          const binaryData = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0));
+          const slug = (article.seo_keyword || article.title || "image").replace(/[^a-zA-Z0-9]/g, "-").substring(0, 50);
 
-        // Prepare post body
-        const wpBody: Record<string, unknown> = hasPlugin
-          ? {
-              title: article.title,
-              content: article.content || "",
-              excerpt: article.excerpt || article.meta_description || "",
-              status: "publish",
-              seo_title: article.seo_title || article.title,
-              meta_description: article.meta_description || "",
-              seo_keyword: article.seo_keyword || "",
-              featured_image_url: article.featured_image_url || "",
-              categories: [article.category],
-            }
-          : {
-              title: article.title,
-              content: article.content || "",
-              status: "publish",
-              excerpt: article.excerpt || article.meta_description || "",
-            };
+          const mediaResponse = await fetch(`${wpUrl}/wp-json/wp/v2/media`, {
+            method: "POST",
+            headers: {
+              ...wpHeaders,
+              "Content-Type": "image/png",
+              "Content-Disposition": `attachment; filename="${slug}.png"`,
+            },
+            body: binaryData,
+          });
 
-        // No modo plugin, a imagem é enviada junto no body (URL ou base64)
-        // No modo padrão, precisa fazer upload separado
-        if (!hasPlugin && article.featured_image_url) {
+          if (mediaResponse.ok) {
+            const mediaData = await mediaResponse.json();
+            featuredMediaId = mediaData.id;
+          }
+        } else if (article.featured_image_url.startsWith("http")) {
           try {
-            let featuredMediaId = null;
-
-            if (article.featured_image_url.startsWith("data:image")) {
-              const base64Data = article.featured_image_url.split(",")[1];
-              const binaryData = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0));
-              const slug = (article.seo_keyword || article.title || "image").replace(/[^a-zA-Z0-9]/g, "-").substring(0, 50);
+            const imgResp = await fetch(article.featured_image_url);
+            if (imgResp.ok) {
+              const imgData = new Uint8Array(await imgResp.arrayBuffer());
+              const contentType = imgResp.headers.get("content-type") || "image/jpeg";
+              const ext = contentType.includes("png") ? "png" : "jpg";
+              const slug = (article.seo_keyword || "image").replace(/[^a-zA-Z0-9]/g, "-").substring(0, 50);
 
               const mediaResponse = await fetch(`${wpUrl}/wp-json/wp/v2/media`, {
                 method: "POST",
                 headers: {
                   ...wpHeaders,
-                  "Content-Type": "image/png",
-                  "Content-Disposition": `attachment; filename="${slug}.png"`,
+                  "Content-Type": contentType,
+                  "Content-Disposition": `attachment; filename="${slug}.${ext}"`,
                 },
-                body: binaryData,
+                body: imgData,
               });
 
               if (mediaResponse.ok) {
                 const mediaData = await mediaResponse.json();
                 featuredMediaId = mediaData.id;
               }
-            } else if (article.featured_image_url.startsWith("http")) {
-              try {
-                const imgResp = await fetch(article.featured_image_url);
-                if (imgResp.ok) {
-                  const imgData = new Uint8Array(await imgResp.arrayBuffer());
-                  const contentType = imgResp.headers.get("content-type") || "image/jpeg";
-                  const ext = contentType.includes("png") ? "png" : "jpg";
-                  const slug = (article.seo_keyword || "image").replace(/[^a-zA-Z0-9]/g, "-").substring(0, 50);
-
-                  const mediaResponse = await fetch(`${wpUrl}/wp-json/wp/v2/media`, {
-                    method: "POST",
-                    headers: {
-                      ...wpHeaders,
-                      "Content-Type": contentType,
-                      "Content-Disposition": `attachment; filename="${slug}.${ext}"`,
-                    },
-                    body: imgData,
-                  });
-
-                  if (mediaResponse.ok) {
-                    const mediaData = await mediaResponse.json();
-                    featuredMediaId = mediaData.id;
-                  }
-                }
-              } catch (dlErr) {
-                console.error("Image download failed:", dlErr);
-              }
             }
-
-            if (featuredMediaId) {
-              wpBody.featured_media = featuredMediaId;
-            }
-          } catch (imgErr) {
-            console.error("WP image upload failed:", imgErr);
-          }
-
-          // Yoast SEO meta no modo padrão
-          if (article.seo_title || article.meta_description || article.seo_keyword) {
-            wpBody.meta = {
-              _yoast_wpseo_title: article.seo_title || article.title,
-              _yoast_wpseo_metadesc: article.meta_description || "",
-              _yoast_wpseo_focuskw: article.seo_keyword || "",
-            };
+          } catch (dlErr) {
+            console.error("Image download failed:", dlErr);
           }
         }
 
-        // Enviar o post
-        const wpResponse = await fetch(publishEndpoint, {
-          method: "POST",
-          headers: wpHeaders,
-          body: JSON.stringify(wpBody),
-        });
-
-        if (wpResponse.ok) {
-          const wpData = await wpResponse.json();
-          await supabase.from("articles").update({ wordpress_post_id: String(wpData.id) }).eq("id", articleId);
-          await supabase.from("publish_log").insert({
-            user_id: userId,
-            article_id: articleId,
-            platform: "wordpress",
-            status: "success",
-            published_url: wpData.link,
-          });
-          results.wordpress = true;
-        } else {
-          const errText = await wpResponse.text();
-          const msg = `WordPress ${wpResponse.status}: ${errText.substring(0, 200)}`;
-          errors.push(msg);
-          throw new Error(msg);
+        if (featuredMediaId) {
+          wpBody.featured_media = featuredMediaId;
         }
-      } catch (wpErr: any) {
-        console.error("WordPress publish failed:", wpErr);
-        await supabase.from("publish_log").insert({
-          user_id: userId,
-          article_id: articleId,
-          platform: "wordpress",
-          status: "failed",
-          error_message: wpErr.message?.substring(0, 500),
-        });
+      } catch (imgErr) {
+        console.error("WP image upload failed:", imgErr);
+      }
+
+      // Yoast SEO meta
+      if (article.seo_title || article.meta_description || article.seo_keyword) {
+        wpBody.meta = {
+          _yoast_wpseo_title: article.seo_title || article.title,
+          _yoast_wpseo_metadesc: article.meta_description || "",
+          _yoast_wpseo_focuskw: article.seo_keyword || "",
+        };
       }
     }
 
-    // 2. Post to Facebook (support multiple accounts)
-    const { data: fbAccounts } = await supabase
-      .from("facebook_accounts")
-      .select("*")
-      .eq("user_id", userId)
-      .eq("is_active", true);
+    // Send the post
+    console.log(`POST ${publishEndpoint}`);
+    const wpResponse = await fetch(publishEndpoint, {
+      method: "POST",
+      headers: wpHeaders,
+      body: JSON.stringify(wpBody),
+    });
 
-    // Decrypt facebook account tokens
-    const decryptedFbAccounts = [];
-    for (const acc of (fbAccounts || [])) {
-      const token = await decryptField(supabase, acc.access_token, encKey) || acc.access_token;
-      decryptedFbAccounts.push({ ...acc, access_token: token });
-    }
+    const responseText = await wpResponse.text();
+    console.log(`WordPress response ${wpResponse.status}: ${responseText.substring(0, 300)}`);
 
-    // Also check legacy settings
-    const legacyFbToken = await decryptField(supabase, settings.facebook_access_token, encKey);
-    const legacyFb = settings.facebook_page_id && legacyFbToken;
-    const allFbAccounts = [
-      ...decryptedFbAccounts,
-      ...(legacyFb ? [{ page_id: settings.facebook_page_id, access_token: legacyFbToken, instagram_account_id: settings.instagram_account_id }] : []),
-    ];
+    if (wpResponse.ok) {
+      const wpData = JSON.parse(responseText);
+      await supabase.from("articles").update({
+        wordpress_post_id: String(wpData.id),
+        status: "published",
+        published_at: new Date().toISOString(),
+      }).eq("id", articleId);
 
-    for (const fbAccount of allFbAccounts) {
+      await supabase.from("publish_log").insert({
+        user_id: userId,
+        article_id: articleId,
+        platform: "wordpress",
+        status: "success",
+        published_url: wpData.link,
+      });
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: `✅ Artigo publicado no WordPress! ${wpData.link || ""}`,
+          wpPostId: wpData.id,
+          wpLink: wpData.link,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    } else {
+      // Parse error for better messages
+      let errorDetail = responseText.substring(0, 300);
       try {
-        const wpPostUrl = results.wordpress
-          ? (await supabase.from("publish_log").select("published_url").eq("article_id", articleId).eq("platform", "wordpress").single()).data?.published_url
-          : null;
-
-        const message = `📰 ${article.title}\n\n${article.excerpt || article.meta_description || ""}\n\n${wpPostUrl ? `Leia mais: ${wpPostUrl}` : ""}`.trim();
-
-        const fbResponse = await fetch(
-          `https://graph.facebook.com/v18.0/${fbAccount.page_id}/feed`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              message,
-              link: wpPostUrl || undefined,
-              access_token: fbAccount.access_token,
-            }),
-          }
-        );
-
-        if (fbResponse.ok) {
-          const fbData = await fbResponse.json();
-          await supabase.from("articles").update({ facebook_post_id: fbData.id }).eq("id", articleId);
-          await supabase.from("publish_log").insert({
-            user_id: userId,
-            article_id: articleId,
-            platform: "facebook",
-            status: "success",
-          });
-          results.facebook = true;
-        } else {
-          const errText = await fbResponse.text();
-          throw new Error(`Facebook ${fbResponse.status}: ${errText.substring(0, 200)}`);
+        const errJson = JSON.parse(responseText);
+        if (errJson.code === "rest_cannot_create") {
+          errorDetail = `O usuário "${settings.wordpress_username || 'plugin'}" não tem permissão para criar posts. Verifique se o usuário é Editor ou Administrador no WordPress.`;
+        } else if (errJson.code === "invalid_username" || errJson.code === "incorrect_password") {
+          errorDetail = "Usuário ou senha incorretos. Verifique suas credenciais nas Configurações.";
+        } else if (errJson.message) {
+          errorDetail = errJson.message;
         }
-      } catch (fbErr: any) {
-        console.error("Facebook post failed:", fbErr);
-        errors.push(fbErr.message);
-        await supabase.from("publish_log").insert({
-          user_id: userId,
-          article_id: articleId,
-          platform: "facebook",
-          status: "failed",
-          error_message: fbErr.message?.substring(0, 500),
-        });
-      }
+      } catch {}
 
-      // 3. Instagram via same account
-      if (fbAccount.instagram_account_id && article.featured_image_url && !article.featured_image_url.startsWith("data:")) {
-        try {
-          const caption = `📰 ${article.title}\n\n${article.excerpt || ""}\n\n#noticias #brasil #${(article.category || "").replace(/\s/g, "")}`;
+      await supabase.from("articles").update({ status: "failed" }).eq("id", articleId);
+      await supabase.from("publish_log").insert({
+        user_id: userId,
+        article_id: articleId,
+        platform: "wordpress",
+        status: "failed",
+        error_message: errorDetail.substring(0, 500),
+      });
 
-          const containerResponse = await fetch(
-            `https://graph.facebook.com/v18.0/${fbAccount.instagram_account_id}/media`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                image_url: article.featured_image_url,
-                caption,
-                access_token: fbAccount.access_token,
-              }),
-            }
-          );
-
-          if (containerResponse.ok) {
-            const containerData = await containerResponse.json();
-            // Wait a bit for processing
-            await new Promise(r => setTimeout(r, 3000));
-
-            const publishResponse = await fetch(
-              `https://graph.facebook.com/v18.0/${fbAccount.instagram_account_id}/media_publish`,
-              {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  creation_id: containerData.id,
-                  access_token: fbAccount.access_token,
-                }),
-              }
-            );
-
-            if (publishResponse.ok) {
-              const publishData = await publishResponse.json();
-              await supabase.from("articles").update({ instagram_post_id: publishData.id }).eq("id", articleId);
-              await supabase.from("publish_log").insert({
-                user_id: userId,
-                article_id: articleId,
-                platform: "instagram",
-                status: "success",
-              });
-              results.instagram = true;
-            } else {
-              const errText = await publishResponse.text();
-              throw new Error(`IG publish ${publishResponse.status}: ${errText.substring(0, 200)}`);
-            }
-          } else {
-            const errText = await containerResponse.text();
-            throw new Error(`IG container ${containerResponse.status}: ${errText.substring(0, 200)}`);
-          }
-        } catch (igErr: any) {
-          console.error("Instagram post failed:", igErr);
-          errors.push(igErr.message);
-          await supabase.from("publish_log").insert({
-            user_id: userId,
-            article_id: articleId,
-            platform: "instagram",
-            status: "failed",
-            error_message: igErr.message?.substring(0, 500),
-          });
-        }
-      }
+      return new Response(
+        JSON.stringify({
+          success: false,
+          message: `❌ Erro WordPress: ${errorDetail}`,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
-
-    // Update final status
-    const anySuccess = results.wordpress || results.facebook || results.instagram;
-    const finalStatus = anySuccess ? "published" : "failed";
-    await supabase
-      .from("articles")
-      .update({
-        status: finalStatus,
-        published_at: finalStatus === "published" ? new Date().toISOString() : null,
-      })
-      .eq("id", articleId);
-
-    const summary = `WP: ${results.wordpress ? "✅" : "❌"} | FB: ${results.facebook ? "✅" : "❌"} | IG: ${results.instagram ? "✅" : "❌"}`;
-
-    return new Response(
-      JSON.stringify({
-        success: anySuccess,
-        message: anySuccess ? `Artigo publicado! ${summary}` : `Falha na publicação. ${summary}. Erros: ${errors.join("; ").substring(0, 300)}`,
-        results,
-        errors: errors.length > 0 ? errors : undefined,
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
   } catch (error) {
     console.error("publish-article error:", error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
+      JSON.stringify({ success: false, error: error instanceof Error ? error.message : "Erro desconhecido" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
