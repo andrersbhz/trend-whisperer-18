@@ -69,28 +69,43 @@ serve(async (req) => {
             messages: [
               {
                 role: "system",
-                content: `Você é um jornalista digital brasileiro sênior, especialista em SEO e redação para WordPress.
+                content: `Você é um jornalista digital brasileiro sênior, especialista em SEO avançado e redação para WordPress com Yoast SEO e Jetpack.
 
 REGRAS OBRIGATÓRIAS PARA CADA ARTIGO:
-1. TÍTULO: máximo 60 caracteres, contendo a palavra-chave principal, atrativo e clicável
+
+1. TÍTULO (H1):
+   - Máximo 60 caracteres
+   - DEVE conter a palavra-chave principal (focus keyword)
+   - Atrativo, clicável, formato jornalístico
+
 2. CONTEÚDO EM HTML (para WordPress):
-   - Máximo 2400 caracteres no total do HTML
-   - Use tags <h2> e <h3> para subtítulos (nunca <h1>)
-   - Parágrafos curtos (máx. 3 linhas) com tags <p>
-   - Pelo menos 2 subtítulos H2 e 1 H3
-   - Primeira frase deve ser um gancho forte (lead jornalístico)
-   - Use <strong> para destacar termos importantes
+   - MÍNIMO 1800 caracteres e MÁXIMO 2400 caracteres no HTML total
+   - Comece com um parágrafo introdutório forte (lead jornalístico) que contenha a palavra-chave principal nas primeiras 100 palavras
+   - Use <h2> para subtítulos principais (2-3 subtítulos H2) — cada H2 em <strong> também
+   - Use <h3> para sub-subtítulos (1-2 H3) — cada H3 em <strong> também
+   - NUNCA use <h1> no conteúdo (o título do post já é H1)
+   - Parágrafos curtos (máx 3 linhas) com tags <p>
+   - Use <strong> para destacar a palavra-chave e termos importantes no texto
    - Use <ul>/<li> quando fizer sentido para escaneabilidade
+   - A palavra-chave principal DEVE aparecer: no primeiro parágrafo, em pelo menos 1 subtítulo H2, e distribuída naturalmente pelo texto (densidade 1-2%)
+   - Termine com um parágrafo de conclusão/call-to-action
+
 3. ESTILO JORNALÍSTICO:
-   - Mescle notícia trending com valor evergreen (informação que permanece útil)
+   - Mescle notícia trending com valor evergreen
    - Tom informativo, autoritativo mas acessível
-   - Inclua dados ou contexto que agreguem valor ao leitor
+   - Inclua dados ou contexto relevante
    - Evite linguagem de IA ou frases genéricas
-4. SEO:
-   - seo_keyword: palavra-chave principal de cauda longa (3-5 palavras)
-   - seo_title: até 60 caracteres, com a keyword no início
-   - meta_description: até 155 caracteres, com a keyword e call-to-action sutil
-   - excerpt: resumo em 2 frases curtas para redes sociais`,
+
+4. SEO (Yoast SEO + Jetpack):
+   - seo_keyword: palavra-chave principal de cauda longa (3-5 palavras) — esta é a FOCUS KEYWORD do Yoast
+   - seo_title: até 60 caracteres, com a keyword NO INÍCIO, formato: "Keyword - Complemento | Site"
+   - meta_description: EXATAMENTE entre 120-155 caracteres, com a keyword na primeira metade e um call-to-action sutil no final
+   - excerpt: resumo em 2 frases curtas (máx 160 caracteres) otimizado para compartilhamento em redes sociais (Jetpack)
+   - slug: versão da keyword em formato URL (minúsculas, hífens, sem acentos)
+
+5. IMAGEM DE DESTAQUE:
+   - image_alt: texto alternativo descritivo da imagem contendo a keyword (para SEO de imagens)
+   - image_caption: legenda curta e informativa para a imagem`,
               },
               {
                 role: "user",
@@ -98,7 +113,12 @@ REGRAS OBRIGATÓRIAS PARA CADA ARTIGO:
 
 Data de hoje: ${new Date().toLocaleDateString("pt-BR")}.
 
-O artigo deve misturar a notícia atual com contexto relevante e informação evergreen. Foque em engajar o leitor brasileiro.`,
+IMPORTANTE:
+- O conteúdo HTML DEVE ter entre 1800 e 2400 caracteres
+- A palavra-chave principal deve aparecer no título, primeiro parágrafo, pelo menos 1 H2, e na meta description
+- Todos os campos SEO devem estar preenchidos corretamente para pontuação verde no Yoast SEO
+- Subtítulos devem estar em negrito
+- Gere também os metadados para a imagem de destaque`,
               },
             ],
             tools: [
@@ -106,36 +126,48 @@ O artigo deve misturar a notícia atual com contexto relevante e informação ev
                 type: "function",
                 function: {
                   name: "create_article",
-                  description: "Cria um artigo completo para publicação no WordPress com todos os campos SEO preenchidos.",
+                  description: "Cria um artigo completo para publicação no WordPress com todos os campos SEO (Yoast + Jetpack) preenchidos corretamente.",
                   parameters: {
                     type: "object",
                     properties: {
                       title: {
                         type: "string",
-                        description: "Título do artigo, máximo 60 caracteres, contendo a keyword"
+                        description: "Título H1 do artigo, máximo 60 caracteres, contendo a focus keyword"
                       },
                       content: {
                         type: "string",
-                        description: "Conteúdo completo do artigo em HTML (h2, h3, p, strong, ul/li). Máximo 2400 caracteres."
+                        description: "Conteúdo completo do artigo em HTML (h2, h3, p, strong, ul/li). MÍNIMO 1800 e MÁXIMO 2400 caracteres. Subtítulos em negrito. Keyword distribuída naturalmente."
                       },
                       excerpt: {
                         type: "string",
-                        description: "Resumo em 2 frases curtas para redes sociais"
+                        description: "Resumo em 2 frases curtas (máx 160 chars) para redes sociais (Jetpack sharing)"
                       },
                       seo_keyword: {
                         type: "string",
-                        description: "Palavra-chave principal de cauda longa (3-5 palavras)"
+                        description: "Focus keyword do Yoast SEO: palavra-chave de cauda longa (3-5 palavras)"
                       },
                       seo_title: {
                         type: "string",
-                        description: "Título SEO até 60 caracteres, com keyword no início"
+                        description: "Título SEO (Yoast) até 60 chars, keyword no início"
                       },
                       meta_description: {
                         type: "string",
-                        description: "Meta descrição até 155 caracteres com keyword e CTA sutil"
+                        description: "Meta descrição (Yoast) entre 120-155 chars com keyword na primeira metade e CTA sutil"
+                      },
+                      slug: {
+                        type: "string",
+                        description: "Slug para URL: keyword em minúsculas, sem acentos, separada por hífens"
+                      },
+                      image_alt: {
+                        type: "string",
+                        description: "Texto alternativo da imagem de destaque contendo a keyword"
+                      },
+                      image_caption: {
+                        type: "string",
+                        description: "Legenda curta para a imagem de destaque"
                       }
                     },
-                    required: ["title", "content", "excerpt", "seo_keyword", "seo_title", "meta_description"],
+                    required: ["title", "content", "excerpt", "seo_keyword", "seo_title", "meta_description", "slug", "image_alt", "image_caption"],
                     additionalProperties: false
                   }
                 }
