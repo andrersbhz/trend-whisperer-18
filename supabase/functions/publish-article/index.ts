@@ -6,6 +6,12 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+async function decryptField(supabase: any, val: string | null, encKey: string): Promise<string | null> {
+  if (!val || !val.startsWith("ENCRYPTED:")) return val;
+  const { data } = await supabase.rpc("decrypt_credential", { val, enc_key: encKey });
+  return data || val;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -15,6 +21,7 @@ serve(async (req) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const encKey = Deno.env.get("DB_ENCRYPTION_KEY") || "";
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Fetch article
@@ -48,6 +55,9 @@ serve(async (req) => {
         const wpUrl = settings.wordpress_url.replace(/\/$/, "");
         const hasPlugin = !settings.wordpress_username || settings.wordpress_username.toLowerCase() === 'autoblog-ai';
 
+        // Decrypt password server-side
+        const wpPassword = await decryptField(supabase, settings.wordpress_app_password, encKey) || settings.wordpress_app_password;
+
         // Headers conforme o método de autenticação
         const wpHeaders: Record<string, string> = {
           "Content-Type": "application/json",
@@ -57,11 +67,11 @@ serve(async (req) => {
 
         if (hasPlugin) {
           // Modo Plugin AutoBlog AI Connector — usa chave API no header
-          wpHeaders["X-AutoBlog-Key"] = settings.wordpress_app_password;
+          wpHeaders["X-AutoBlog-Key"] = wpPassword;
           publishEndpoint = `${wpUrl}/wp-json/autoblog-ai/v1/publish`;
         } else {
           // Modo padrão WP REST API — usa Application Password
-          const auth = btoa(`${settings.wordpress_username}:${settings.wordpress_app_password}`);
+          const auth = btoa(`${settings.wordpress_username}:${wpPassword}`);
           wpHeaders["Authorization"] = `Basic ${auth}`;
           publishEndpoint = `${wpUrl}/wp-json/wp/v2/posts`;
         }
@@ -200,11 +210,19 @@ serve(async (req) => {
       .eq("user_id", userId)
       .eq("is_active", true);
 
+    // Decrypt facebook account tokens
+    const decryptedFbAccounts = [];
+    for (const acc of (fbAccounts || [])) {
+      const token = await decryptField(supabase, acc.access_token, encKey) || acc.access_token;
+      decryptedFbAccounts.push({ ...acc, access_token: token });
+    }
+
     // Also check legacy settings
-    const legacyFb = settings.facebook_page_id && settings.facebook_access_token;
+    const legacyFbToken = await decryptField(supabase, settings.facebook_access_token, encKey);
+    const legacyFb = settings.facebook_page_id && legacyFbToken;
     const allFbAccounts = [
-      ...(fbAccounts || []),
-      ...(legacyFb ? [{ page_id: settings.facebook_page_id, access_token: settings.facebook_access_token, instagram_account_id: settings.instagram_account_id }] : []),
+      ...decryptedFbAccounts,
+      ...(legacyFb ? [{ page_id: settings.facebook_page_id, access_token: legacyFbToken, instagram_account_id: settings.instagram_account_id }] : []),
     ];
 
     for (const fbAccount of allFbAccounts) {

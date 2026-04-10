@@ -14,6 +14,21 @@ export type Database = {
   }
   public: {
     Tables: {
+      _internal_config: {
+        Row: {
+          key: string
+          value: string
+        }
+        Insert: {
+          key: string
+          value: string
+        }
+        Update: {
+          key?: string
+          value?: string
+        }
+        Relationships: []
+      }
       articles: {
         Row: {
           category: string
@@ -246,6 +261,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      decrypt_credential: {
+        Args: { enc_key: string; val: string }
+        Returns: string
+      }
+      encrypt_credential: { Args: { val: string }; Returns: string }
       get_credentials_status: { Args: never; Returns: Json }
     }
     Enums: {
