@@ -85,6 +85,18 @@ serve(async (req) => {
       res = await fetch(testEndpoint, {
         headers: { "X-AutoBlog-Key": wpPassword },
       });
+
+      // Fallback: if plugin not installed, try standard REST API
+      if (res.status === 404) {
+        console.log("Plugin endpoint not found (404), falling back to standard WP REST API...");
+        const fallbackUser = wpUsername || "admin";
+        testEndpoint = `${finalUrl}/wp-json/wp/v2/users/me`;
+        const auth = btoa(`${fallbackUser}:${wpPassword}`);
+        res = await fetch(testEndpoint, {
+          headers: { Authorization: `Basic ${auth}` },
+        });
+        // Update response text since we got a new response
+      }
     } else {
       testEndpoint = `${finalUrl}/wp-json/wp/v2/users/me`;
       const auth = btoa(`${wpUsername}:${wpPassword}`);
