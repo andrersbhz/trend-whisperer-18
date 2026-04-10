@@ -1,15 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { Save, Loader2 } from 'lucide-react';
-import ConnectionCard from '@/components/ConnectionCard';
 import WordPressSettings from '@/components/settings/WordPressSettings';
 import FacebookSettings from '@/components/settings/FacebookSettings';
 import GoogleAnalyticsSettings from '@/components/settings/GoogleAnalyticsSettings';
@@ -41,35 +35,50 @@ const defaultSettings: UserSettings = {
   auto_publish: false,
 };
 
+interface CredentialsStatus {
+  has_wp_password: boolean;
+  has_fb_token: boolean;
+}
+
 const SettingsPage = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
+  const [credStatus, setCredStatus] = useState<CredentialsStatus>({ has_wp_password: false, has_fb_token: false });
 
   useEffect(() => {
     if (!user) return;
     const fetchSettings = async () => {
+      // Fetch non-sensitive columns (sensitive ones are revoked from SELECT)
       const { data } = await supabase
         .from('user_settings')
-        .select('*')
+        .select('wordpress_url, wordpress_username, google_analytics_property_id, facebook_page_id, instagram_account_id, categories, articles_per_day, auto_publish')
         .eq('user_id', user.id)
         .maybeSingle();
+
       if (data) {
         setSettings({
           wordpress_url: data.wordpress_url || '',
           wordpress_username: data.wordpress_username || '',
-          wordpress_app_password: data.wordpress_app_password || '',
+          wordpress_app_password: '', // Never read from client
           facebook_page_id: data.facebook_page_id || '',
-          facebook_access_token: data.facebook_access_token || '',
+          facebook_access_token: '', // Never read from client
           instagram_account_id: data.instagram_account_id || '',
-          google_analytics_property_id: (data as any).google_analytics_property_id || '',
+          google_analytics_property_id: data.google_analytics_property_id || '',
           categories: data.categories || defaultSettings.categories,
           articles_per_day: data.articles_per_day || 10,
           auto_publish: data.auto_publish || false,
         });
       }
+
+      // Check if sensitive credentials exist via secure function
+      const { data: status } = await supabase.rpc('get_credentials_status');
+      if (status) {
+        setCredStatus(status as unknown as CredentialsStatus);
+      }
+
       setLoading(false);
     };
     fetchSettings();
@@ -79,12 +88,37 @@ const SettingsPage = () => {
     if (!user) return;
     setSaving(true);
     try {
-      const { error } = await supabase.from('user_settings').upsert({
+      // Build upsert payload, only include password fields if user entered new values
+      const payload: Record<string, unknown> = {
         user_id: user.id,
-        ...settings,
-      }, { onConflict: 'user_id' });
+        wordpress_url: settings.wordpress_url,
+        wordpress_username: settings.wordpress_username,
+        facebook_page_id: settings.facebook_page_id,
+        instagram_account_id: settings.instagram_account_id,
+        google_analytics_property_id: settings.google_analytics_property_id,
+        categories: settings.categories,
+        articles_per_day: settings.articles_per_day,
+        auto_publish: settings.auto_publish,
+      };
+
+      // Only update sensitive fields if user typed new values
+      if (settings.wordpress_app_password) {
+        payload.wordpress_app_password = settings.wordpress_app_password;
+      }
+      if (settings.facebook_access_token) {
+        payload.facebook_access_token = settings.facebook_access_token;
+      }
+
+      const { error } = await supabase.from('user_settings').upsert(payload as any, { onConflict: 'user_id' });
       if (error) throw error;
       toast({ title: 'Salvo!', description: 'Configurações atualizadas com sucesso.' });
+
+      // Refresh credentials status
+      const { data: status } = await supabase.rpc('get_credentials_status');
+      if (status) setCredStatus(status as unknown as CredentialsStatus);
+
+      // Clear password fields after save
+      setSettings(prev => ({ ...prev, wordpress_app_password: '', facebook_access_token: '' }));
     } catch (e: any) {
       toast({ title: 'Erro', description: e.message, variant: 'destructive' });
     } finally {
@@ -111,7 +145,7 @@ const SettingsPage = () => {
         <p className="text-muted-foreground text-sm mt-1">Configure suas integrações e preferências</p>
       </div>
 
-      <WordPressSettings settings={settings} onChange={updateSettings} />
+      <WordPressSettings settings={settings} onChange={updateSettings} hasWpPassword={credStatus.has_wp_password} />
       <FacebookSettings settings={settings} onChange={updateSettings} />
       <GoogleAnalyticsSettings settings={settings} onChange={updateSettings} />
       <AutomationSettings settings={settings} onChange={updateSettings} />

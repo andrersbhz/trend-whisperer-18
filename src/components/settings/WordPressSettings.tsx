@@ -12,43 +12,38 @@ import type { UserSettings } from '@/pages/SettingsPage';
 interface Props {
   settings: UserSettings;
   onChange: (partial: Partial<UserSettings>) => void;
+  hasWpPassword?: boolean;
 }
 
-const WordPressSettings = ({ settings, onChange }: Props) => {
-  const connected = !!(settings.wordpress_url && settings.wordpress_app_password);
+const WordPressSettings = ({ settings, onChange, hasWpPassword }: Props) => {
+  const connected = !!(settings.wordpress_url && (settings.wordpress_app_password || hasWpPassword));
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<'success' | 'error' | null>(null);
   const { toast } = useToast();
 
   const testConnection = async () => {
-    if (!settings.wordpress_url || !settings.wordpress_app_password) {
-      toast({ title: 'Preencha URL e Chave/Senha', variant: 'destructive' });
+    if (!settings.wordpress_url) {
+      toast({ title: 'Preencha a URL do WordPress', variant: 'destructive' });
       return;
     }
+    if (!settings.wordpress_app_password && !hasWpPassword) {
+      toast({ title: 'Preencha a Chave/Senha', variant: 'destructive' });
+      return;
+    }
+
     setTesting(true);
     setTestResult(null);
     try {
-      const wpUrl = settings.wordpress_url.replace(/\/$/, '');
-      const isPlugin = !settings.wordpress_username || settings.wordpress_username.toLowerCase() === 'autoblog-ai';
+      // Use edge function to test — credentials are read server-side
+      const { data, error } = await supabase.functions.invoke('test-wp-connection');
+      if (error) throw error;
 
-      let res: Response;
-      if (isPlugin) {
-        res = await fetch(`${wpUrl}/wp-json/autoblog-ai/v1/status`, {
-          headers: { 'X-AutoBlog-Key': settings.wordpress_app_password },
-        });
-      } else {
-        const auth = btoa(`${settings.wordpress_username}:${settings.wordpress_app_password}`);
-        res = await fetch(`${wpUrl}/wp-json/wp/v2/users/me`, {
-          headers: { Authorization: `Basic ${auth}` },
-        });
-      }
-
-      if (res.ok) {
+      if (data?.success) {
         setTestResult('success');
         toast({ title: '✅ Conexão WordPress OK!' });
       } else {
         setTestResult('error');
-        toast({ title: `❌ Erro ${res.status}`, variant: 'destructive' });
+        toast({ title: `❌ ${data?.error || 'Erro na conexão'}`, variant: 'destructive' });
       }
     } catch (e: any) {
       setTestResult('error');
@@ -93,13 +88,13 @@ const WordPressSettings = ({ settings, onChange }: Props) => {
         <div className="space-y-1.5">
           <Label className="text-xs">Chave API / Senha de Aplicativo</Label>
           <PasswordInput
-            placeholder="Cole a chave do plugin ou senha de aplicativo"
+            placeholder={hasWpPassword && !settings.wordpress_app_password ? '••••••••  (salva no servidor)' : 'Cole a chave do plugin ou senha de aplicativo'}
             value={settings.wordpress_app_password}
             onChange={(e) => onChange({ wordpress_app_password: e.target.value })}
             className="h-9 text-sm"
           />
           <p className="text-[10px] text-muted-foreground">
-            Plugin: copie da página Configurações → AutoBlog AI no WordPress. Padrão: gere em Usuários → Perfil → Senhas de Aplicativo.
+            Deixe em branco para manter a senha atual. Plugin: copie da página Configurações → AutoBlog AI no WordPress.
           </p>
         </div>
         <Button
