@@ -7,6 +7,7 @@ import { Save, Loader2 } from 'lucide-react';
 import WordPressSettings from '@/components/settings/WordPressSettings';
 import GoogleAnalyticsSettings from '@/components/settings/GoogleAnalyticsSettings';
 import AutomationSettings from '@/components/settings/AutomationSettings';
+import { getErrorMessage, runBackendMutation, runBackendQuery } from '@/lib/backend';
 
 export interface UserSettings {
   wordpress_url: string;
@@ -50,41 +51,49 @@ const SettingsPage = () => {
 
   useEffect(() => {
     if (!user) return;
+
     const fetchSettings = async () => {
-      // Fetch non-sensitive columns (sensitive ones are revoked from SELECT)
-      const { data } = await supabase
-        .from('user_settings')
-        .select('wordpress_url, wordpress_username, google_analytics_property_id, facebook_page_id, instagram_account_id, categories, articles_per_day, auto_publish')
-        .eq('user_id', user.id)
-        .maybeSingle();
+      try {
+        const [data, status] = await Promise.all([
+          runBackendQuery(() =>
+            supabase
+              .from('user_settings')
+              .select('wordpress_url, wordpress_username, google_analytics_property_id, facebook_page_id, instagram_account_id, categories, articles_per_day, auto_publish')
+              .eq('user_id', user.id)
+              .maybeSingle(),
+          ),
+          runBackendQuery(() => supabase.rpc('get_credentials_status')),
+        ]);
 
-      setHasExistingSettings(!!data);
+        setHasExistingSettings(!!data);
 
-      if (data) {
-        setSettings({
-          wordpress_url: data.wordpress_url || '',
-          wordpress_username: data.wordpress_username || '',
-          wordpress_app_password: '', // Never read from client
-          facebook_page_id: data.facebook_page_id || '',
-          facebook_access_token: '', // Never read from client
-          instagram_account_id: data.instagram_account_id || '',
-          google_analytics_property_id: data.google_analytics_property_id || '',
-          categories: data.categories || defaultSettings.categories,
-          articles_per_day: data.articles_per_day || 10,
-          auto_publish: data.auto_publish || false,
-        });
+        if (data) {
+          setSettings({
+            wordpress_url: data.wordpress_url || '',
+            wordpress_username: data.wordpress_username || '',
+            wordpress_app_password: '',
+            facebook_page_id: data.facebook_page_id || '',
+            facebook_access_token: '',
+            instagram_account_id: data.instagram_account_id || '',
+            google_analytics_property_id: data.google_analytics_property_id || '',
+            categories: data.categories || defaultSettings.categories,
+            articles_per_day: data.articles_per_day || 10,
+            auto_publish: data.auto_publish || false,
+          });
+        }
+
+        if (status) {
+          setCredStatus(status as unknown as CredentialsStatus);
+        }
+      } catch (error) {
+        toast({ title: 'Erro ao carregar configurações', description: getErrorMessage(error), variant: 'destructive' });
+      } finally {
+        setLoading(false);
       }
-
-      // Check if sensitive credentials exist via secure function
-      const { data: status } = await supabase.rpc('get_credentials_status');
-      if (status) {
-        setCredStatus(status as unknown as CredentialsStatus);
-      }
-
-      setLoading(false);
     };
+
     fetchSettings();
-  }, [user]);
+  }, [toast, user]);
 
   const handleSave = async () => {
     if (!user) return;
@@ -108,22 +117,21 @@ const SettingsPage = () => {
         payload.facebook_access_token = settings.facebook_access_token;
       }
 
-      const query = hasExistingSettings
-        ? supabase.from('user_settings').update(payload as any).eq('user_id', user.id)
-        : supabase.from('user_settings').insert({ user_id: user.id, ...payload } as any);
-
-      const { error } = await query;
-      if (error) throw error;
+      await runBackendMutation(() =>
+        hasExistingSettings
+          ? supabase.from('user_settings').update(payload as any).eq('user_id', user.id)
+          : supabase.from('user_settings').insert({ user_id: user.id, ...payload } as any),
+      );
 
       setHasExistingSettings(true);
       toast({ title: 'Salvo!', description: 'Configurações atualizadas com sucesso.' });
 
-      const { data: status } = await supabase.rpc('get_credentials_status');
+      const status = await runBackendQuery(() => supabase.rpc('get_credentials_status'));
       if (status) setCredStatus(status as unknown as CredentialsStatus);
 
       setSettings(prev => ({ ...prev, wordpress_app_password: '', facebook_access_token: '' }));
-    } catch (e: any) {
-      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+    } catch (error) {
+      toast({ title: 'Erro', description: getErrorMessage(error), variant: 'destructive' });
     } finally {
       setSaving(false);
     }

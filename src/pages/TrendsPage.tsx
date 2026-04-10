@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { RefreshCw, TrendingUp, Loader2 } from 'lucide-react';
+import { getErrorMessage, runBackendQuery } from '@/lib/backend';
 
 const TrendsPage = () => {
   const { user } = useAuth();
@@ -16,14 +17,24 @@ const TrendsPage = () => {
 
   const fetchTopics = async () => {
     if (!user) return;
-    const { data } = await supabase
-      .from('trending_topics')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('fetched_at', { ascending: false })
-      .limit(50);
-    setTopics(data || []);
-    setLoading(false);
+
+    try {
+      const data = await runBackendQuery(() =>
+        supabase
+          .from('trending_topics')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('fetched_at', { ascending: false })
+          .limit(50),
+      );
+
+      setTopics(data || []);
+    } catch (error) {
+      setTopics([]);
+      toast({ title: 'Erro ao carregar tendências', description: getErrorMessage(error), variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -33,14 +44,16 @@ const TrendsPage = () => {
   const handleFetchTrends = async () => {
     setFetching(true);
     try {
-      const { data, error } = await supabase.functions.invoke('fetch-trends', {
-        body: { userId: user?.id },
-      });
-      if (error) throw error;
+      const data = await runBackendQuery(() =>
+        supabase.functions.invoke('fetch-trends', {
+          body: { userId: user?.id },
+        }),
+      );
+
       toast({ title: 'Tendências atualizadas!', description: data?.message });
       fetchTopics();
-    } catch (e: any) {
-      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+    } catch (error) {
+      toast({ title: 'Erro', description: getErrorMessage(error), variant: 'destructive' });
     } finally {
       setFetching(false);
     }

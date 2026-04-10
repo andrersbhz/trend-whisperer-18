@@ -26,11 +26,13 @@ const Auth = () => {
     try {
       if (isLogin) {
         await signIn(email, password);
+        navigate('/');
       } else {
         await signUp(email, password);
         toast({ title: 'Conta criada!', description: 'Verifique seu email para confirmar.' });
+        setIsLogin(true);
+        return;
       }
-      navigate('/');
     } catch (error: any) {
       toast({ title: 'Erro', description: error.message, variant: 'destructive' });
     } finally {

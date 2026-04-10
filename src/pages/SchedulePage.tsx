@@ -6,9 +6,12 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, Clock, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useToast } from '@/hooks/use-toast';
+import { getErrorMessage, runBackendQuery } from '@/lib/backend';
 
 const SchedulePage = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [articles, setArticles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -17,22 +20,26 @@ const SchedulePage = () => {
 
     const fetch = async () => {
       try {
-        const { data, error } = await supabase
-          .from('articles')
-          .select('id, title, category, scheduled_at, status')
-          .eq('user_id', user.id)
-          .not('scheduled_at', 'is', null)
-          .order('scheduled_at', { ascending: true });
+        const data = await runBackendQuery(() =>
+          supabase
+            .from('articles')
+            .select('id, title, category, scheduled_at, status')
+            .eq('user_id', user.id)
+            .not('scheduled_at', 'is', null)
+            .order('scheduled_at', { ascending: true }),
+        );
 
-        if (error) throw error;
         setArticles(data || []);
+      } catch (error) {
+        setArticles([]);
+        toast({ title: 'Erro ao carregar agendamentos', description: getErrorMessage(error), variant: 'destructive' });
       } finally {
         setLoading(false);
       }
     };
 
     fetch();
-  }, [user]);
+  }, [toast, user]);
 
   if (loading) {
     return (

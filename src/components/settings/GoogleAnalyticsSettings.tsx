@@ -3,17 +3,19 @@ import { Label } from '@/components/ui/label';
 import { BarChart3 } from 'lucide-react';
 import ConnectionCard from '@/components/ConnectionCard';
 import type { UserSettings } from '@/pages/SettingsPage';
+import { forwardRef } from 'react';
 
 interface Props {
   settings: UserSettings;
   onChange: (partial: Partial<UserSettings>) => void;
 }
 
-const GoogleAnalyticsSettings = ({ settings, onChange }: Props) => {
+const GoogleAnalyticsSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChange }, ref) => {
   const connected = !!settings.google_analytics_property_id;
 
   return (
     <ConnectionCard
+      ref={ref}
       icon={<BarChart3 className="h-5 w-5 text-primary" />}
       title="Google Analytics"
       description="Métricas e insights do seu blog"
@@ -37,6 +39,8 @@ const GoogleAnalyticsSettings = ({ settings, onChange }: Props) => {
       </div>
     </ConnectionCard>
   );
-};
+});
+
+GoogleAnalyticsSettings.displayName = 'GoogleAnalyticsSettings';
 
 export default GoogleAnalyticsSettings;
