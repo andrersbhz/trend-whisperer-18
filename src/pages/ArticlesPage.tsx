@@ -33,7 +33,7 @@ const ArticlesPage = () => {
       const data = await runBackendQuery(() =>
         supabase
           .from('articles')
-          .select('id, title, status, category, seo_keyword, meta_description')
+          .select('id, title, status, category, seo_keyword, meta_description, featured_image_url')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false }),
       );
