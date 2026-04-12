@@ -44,7 +44,10 @@ serve(async (req) => {
     if (settingsError || !settings) throw new Error("Configurações não encontradas. Vá para a página de Configurações.");
 
     if (!settings.wordpress_url) throw new Error("URL do WordPress não configurada. Vá para Configurações.");
-    if (!settings.wordpress_app_password) throw new Error("Senha/chave do WordPress não configurada. Vá para Configurações.");
+    if (!settings.wordpress_app_password) throw new Error("Senha de Aplicativo do WordPress não configurada. Vá para Configurações.");
+    if (!settings.wordpress_username?.trim()) {
+      throw new Error("Usuário do WordPress não configurado. Use seu usuário real do WordPress junto com uma Senha de Aplicativo.");
+    }
 
     // Update status
     await supabase.from("articles").update({ status: "publishing" }).eq("id", articleId);
@@ -52,7 +55,8 @@ serve(async (req) => {
     // Prepare WordPress connection
     let wpUrl = settings.wordpress_url.replace(/\/$/, "");
     if (!/^https?:\/\//i.test(wpUrl)) wpUrl = `https://${wpUrl}`;
-    const hasPlugin = !settings.wordpress_username || settings.wordpress_username.toLowerCase() === 'autoblog-ai';
+    const normalizedUsername = settings.wordpress_username.trim();
+    const hasPlugin = normalizedUsername.toLowerCase() === 'autoblog-ai';
     const wpPassword = await decryptField(supabase, settings.wordpress_app_password, encKey) || settings.wordpress_app_password;
 
     // --- Helper: publish via standard REST API ---
@@ -150,7 +154,6 @@ serve(async (req) => {
 
     // --- Determine auth and attempt publish ---
     let wpResponse: Response;
-    let usePlugin = hasPlugin;
 
     if (hasPlugin) {
       // Try plugin first
@@ -173,17 +176,11 @@ serve(async (req) => {
         body: JSON.stringify(pluginBody),
       });
 
-      // Fallback: if plugin endpoint not found (404), try standard REST API with password as Application Password
       if (wpResponse.status === 404) {
-        console.log("Plugin endpoint not found (404), falling back to standard WP REST API...");
-        // Use "admin" as default username for Application Password auth
-        const fallbackUser = settings.wordpress_username || "admin";
-        const auth = btoa(`${fallbackUser}:${wpPassword}`);
-        wpResponse = await publishStandard(`Basic ${auth}`);
-        usePlugin = false;
+        throw new Error("O plugin AutoBlog AI Connector não está instalado nesse WordPress. Conecte usando usuário real do WordPress + Senha de Aplicativo.");
       }
     } else {
-      const auth = btoa(`${settings.wordpress_username}:${wpPassword}`);
+      const auth = btoa(`${normalizedUsername}:${wpPassword}`);
       wpResponse = await publishStandard(`Basic ${auth}`);
     }
 
@@ -192,8 +189,11 @@ serve(async (req) => {
 
     if (wpResponse.ok) {
       const wpData = JSON.parse(responseText);
+      const wpPostId = wpData.id ?? wpData.post_id ?? null;
+      const wpLink = wpData.link ?? wpData.guid?.rendered ?? null;
+
       await supabase.from("articles").update({
-        wordpress_post_id: String(wpData.id),
+        wordpress_post_id: wpPostId ? String(wpPostId) : null,
         status: "published",
         published_at: new Date().toISOString(),
       }).eq("id", articleId);
@@ -203,15 +203,15 @@ serve(async (req) => {
         article_id: articleId,
         platform: "wordpress",
         status: "success",
-        published_url: wpData.link,
+        published_url: wpLink,
       });
 
       return new Response(
         JSON.stringify({
           success: true,
-          message: `✅ Artigo publicado no WordPress! ${wpData.link || ""}`,
-          wpPostId: wpData.id,
-          wpLink: wpData.link,
+          message: `✅ Artigo publicado no WordPress! ${wpLink || ""}`,
+          wpPostId,
+          wpLink,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -221,9 +221,11 @@ serve(async (req) => {
       try {
         const errJson = JSON.parse(responseText);
         if (errJson.code === "rest_cannot_create") {
-          errorDetail = `O usuário "${settings.wordpress_username || 'plugin'}" não tem permissão para criar posts. Verifique se o usuário é Editor ou Administrador no WordPress.`;
+          errorDetail = `O usuário "${normalizedUsername}" não tem permissão para criar posts. Verifique se ele é Editor ou Administrador no WordPress.`;
         } else if (errJson.code === "invalid_username" || errJson.code === "incorrect_password") {
           errorDetail = "Usuário ou senha incorretos. Verifique suas credenciais nas Configurações.";
+        } else if (errJson.code === "rest_no_route") {
+          errorDetail = "A rota da API do WordPress não foi encontrada. Verifique a URL do site e se a REST API está ativa.";
         } else if (errJson.message) {
           errorDetail = errJson.message;
         }

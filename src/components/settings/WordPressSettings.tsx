@@ -16,7 +16,7 @@ interface Props {
 }
 
 const WordPressSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChange, hasWpPassword }, ref) => {
-  const connected = !!(settings.wordpress_url && (settings.wordpress_app_password || hasWpPassword));
+  const connected = !!(settings.wordpress_url && settings.wordpress_username && (settings.wordpress_app_password || hasWpPassword));
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<'success' | 'error' | null>(null);
   const { toast } = useToast();
@@ -26,8 +26,12 @@ const WordPressSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChang
       toast({ title: 'Preencha a URL do WordPress', variant: 'destructive' });
       return;
     }
+    if (!settings.wordpress_username.trim()) {
+      toast({ title: 'Preencha o usuário do WordPress', variant: 'destructive' });
+      return;
+    }
     if (!settings.wordpress_app_password && !hasWpPassword) {
-      toast({ title: 'Preencha a Chave/Senha', variant: 'destructive' });
+      toast({ title: 'Preencha a Senha de Aplicativo', variant: 'destructive' });
       return;
     }
 
@@ -63,15 +67,14 @@ const WordPressSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChang
       ref={ref}
       icon={<Globe className="h-5 w-5 text-primary" />}
       title="WordPress"
-      description="Publicação automática via Plugin AutoBlog AI ou REST API"
+      description="Publicação automática via REST API nativa do WordPress"
       connected={connected}
       connectedInfo={connected ? `Conectado a ${settings.wordpress_url}` : undefined}
       onDisconnect={() => onChange({ wordpress_url: '', wordpress_username: '', wordpress_app_password: '' })}
     >
       <div className="space-y-3">
         <div className="p-2.5 rounded-lg bg-accent/30 border border-accent/50 text-xs text-muted-foreground">
-          <strong className="text-foreground">💡 Plugin recomendado:</strong> Instale o plugin <code className="text-primary">AutoBlog AI Connector</code> no WordPress. 
-          Se usar o plugin, deixe o campo Usuário vazio ou digite <code className="text-primary">autoblog-ai</code>.
+          <strong className="text-foreground">✅ Forma correta de conectar:</strong> no WordPress, vá em <code className="text-primary">Usuários → Perfil</code>, gere uma <strong>Senha de Aplicativo</strong> e use aqui o <strong>usuário real do WordPress</strong>. Esse usuário precisa ser <strong>Editor</strong> ou <strong>Administrador</strong>.
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs">URL do WordPress</Label>
@@ -83,24 +86,24 @@ const WordPressSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChang
           />
         </div>
         <div className="space-y-1.5">
-          <Label className="text-xs">Usuário <span className="text-muted-foreground">(vazio = modo Plugin)</span></Label>
+          <Label className="text-xs">Usuário do WordPress</Label>
           <Input
-            placeholder="admin ou deixe vazio para modo plugin"
+            placeholder="seu-usuario-no-wordpress"
             value={settings.wordpress_username}
             onChange={(e) => onChange({ wordpress_username: e.target.value })}
             className="h-9 text-sm"
           />
         </div>
         <div className="space-y-1.5">
-          <Label className="text-xs">Chave API / Senha de Aplicativo</Label>
+          <Label className="text-xs">Senha de Aplicativo</Label>
           <PasswordInput
-            placeholder={hasWpPassword && !settings.wordpress_app_password ? '••••••••  (salva no servidor)' : 'Cole a chave do plugin ou senha de aplicativo'}
+            placeholder={hasWpPassword && !settings.wordpress_app_password ? '••••••••  (salva no servidor)' : 'Cole a Senha de Aplicativo gerada no WordPress'}
             value={settings.wordpress_app_password}
             onChange={(e) => onChange({ wordpress_app_password: e.target.value })}
             className="h-9 text-sm"
           />
           <p className="text-[10px] text-muted-foreground">
-            Deixe em branco para manter a senha atual. Plugin: copie da página Configurações → AutoBlog AI no WordPress.
+            Deixe em branco para manter a senha atual. Não use a senha de login normal do WordPress.
           </p>
         </div>
         <Button

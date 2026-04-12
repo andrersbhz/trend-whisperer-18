@@ -46,7 +46,7 @@ serve(async (req) => {
 
     // Merge: body params override DB values
     const wpUrl = (bodyParams.wordpress_url || settings?.wordpress_url || "").replace(/\/$/, "");
-    const wpUsername = bodyParams.wordpress_username ?? settings?.wordpress_username ?? "";
+    const wpUsername = (bodyParams.wordpress_username ?? settings?.wordpress_username ?? "").trim();
     const rawBodyPwd = bodyParams.wordpress_app_password;
     
     if (!wpUrl) {
@@ -71,9 +71,16 @@ serve(async (req) => {
       );
     }
 
+    if (!wpUsername) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Informe o usuário do WordPress. A conexão correta usa usuário real + Senha de Aplicativo." }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     let finalUrl = wpUrl;
     if (!/^https?:\/\//i.test(finalUrl)) finalUrl = `https://${finalUrl}`;
-    const isPlugin = !wpUsername || wpUsername.toLowerCase() === "autoblog-ai";
+    const isPlugin = wpUsername.toLowerCase() === "autoblog-ai";
 
     console.log(`Testing WP: ${finalUrl}, user: ${wpUsername || '(plugin)'}, mode: ${isPlugin ? 'plugin' : 'standard'}`);
 
@@ -86,16 +93,11 @@ serve(async (req) => {
         headers: { "X-AutoBlog-Key": wpPassword },
       });
 
-      // Fallback: if plugin not installed, try standard REST API
       if (res.status === 404) {
-        console.log("Plugin endpoint not found (404), falling back to standard WP REST API...");
-        const fallbackUser = wpUsername || "admin";
-        testEndpoint = `${finalUrl}/wp-json/wp/v2/users/me`;
-        const auth = btoa(`${fallbackUser}:${wpPassword}`);
-        res = await fetch(testEndpoint, {
-          headers: { Authorization: `Basic ${auth}` },
-        });
-        // Update response text since we got a new response
+        return new Response(
+          JSON.stringify({ success: false, error: "O endpoint do plugin não existe nesse WordPress. Use usuário real do WordPress + Senha de Aplicativo." }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
       }
     } else {
       testEndpoint = `${finalUrl}/wp-json/wp/v2/users/me`;
@@ -139,6 +141,8 @@ serve(async (req) => {
           errorDetail = "Senha de aplicativo incorreta. Gere uma nova em WordPress → Usuários → Perfil → Senhas de Aplicativo.";
         } else if (errJson.code === "rest_not_logged_in") {
           errorDetail = "Autenticação falhou. Verifique se a Senha de Aplicativo está correta (não é a senha de login).";
+        } else if (errJson.code === "rest_cannot_create") {
+          errorDetail = `O usuário \"${wpUsername}\" não tem permissão para publicar. Use um perfil Editor ou Administrador no WordPress.`;
         } else if (errJson.message) {
           errorDetail = `WordPress: ${errJson.message}`;
         }
