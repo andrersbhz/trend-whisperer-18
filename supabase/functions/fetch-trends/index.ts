@@ -6,6 +6,52 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const TOP_PORTALS = [
+  "G1 (g1.globo.com)",
+  "UOL (uol.com.br)",
+  "Folha de S.Paulo (folha.uol.com.br)",
+  "Estadão (estadao.com.br)",
+  "R7 (r7.com)",
+  "Terra (terra.com.br)",
+  "iG (ig.com.br)",
+  "Metrópoles (metropoles.com)",
+  "CNN Brasil (cnnbrasil.com.br)",
+  "Correio Braziliense (correiobraziliense.com.br)",
+];
+
+const EVERGREEN_TOPICS: Record<string, string[]> = {
+  esportes: [
+    "Dicas para começar a correr: guia completo para iniciantes",
+    "Melhores exercícios para emagrecer com saúde",
+    "Como montar um treino funcional em casa",
+  ],
+  politica: [
+    "Como funciona o sistema eleitoral brasileiro",
+    "Entenda a divisão dos três poderes no Brasil",
+    "Direitos e deveres do cidadão brasileiro",
+  ],
+  policia: [
+    "Como registrar um boletim de ocorrência online",
+    "Dicas de segurança para evitar golpes digitais",
+    "Como funciona o sistema penitenciário brasileiro",
+  ],
+  saude: [
+    "Alimentos que fortalecem a imunidade naturalmente",
+    "Como melhorar a qualidade do sono: guia completo",
+    "Benefícios da meditação para saúde mental",
+  ],
+  celebridades: [
+    "Os maiores artistas brasileiros de todos os tempos",
+    "Histórias de superação de celebridades brasileiras",
+    "Influenciadores digitais que mudaram o mercado no Brasil",
+  ],
+  financas: [
+    "Como começar a investir com pouco dinheiro",
+    "Guia completo de educação financeira para iniciantes",
+    "Melhores investimentos de renda fixa no Brasil",
+  ],
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -20,7 +66,7 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Fetch user settings for categories
+    // Fetch user settings
     const { data: settings } = await supabase
       .from("user_settings")
       .select("categories")
@@ -29,21 +75,21 @@ serve(async (req) => {
 
     const categories = settings?.categories || ["esportes", "politica", "policia", "saude", "celebridades", "financas"];
 
-    const categoryKeywords: Record<string, string[]> = {
-      esportes: ["futebol brasileiro", "campeonato brasileiro", "seleção brasileira", "NBA Brasil", "UFC"],
-      politica: ["política Brasil", "congresso nacional", "governo federal", "eleições Brasil"],
-      policia: ["segurança pública Brasil", "operação policial", "criminalidade Brasil"],
-      saude: ["saúde Brasil", "SUS", "bem-estar", "saúde mental", "fitness"],
-      celebridades: ["celebridades brasileiras", "famosos Brasil", "novelas", "BBB"],
-      financas: ["economia Brasil", "bolsa de valores", "dólar", "investimentos", "Selic", "inflação"],
-    };
+    // Fetch existing topics to avoid duplicates
+    const { data: existingTopics } = await supabase
+      .from("trending_topics")
+      .select("topic")
+      .eq("user_id", userId);
 
-    // Use AI to identify trending topics for each category
+    const existingSet = new Set(
+      (existingTopics || []).map((t: { topic: string }) => t.topic.toLowerCase().trim())
+    );
+
+    const today = new Date().toLocaleDateString("pt-BR");
     const allTopics: Array<{ topic: string; category: string; search_volume: string }> = [];
 
+    // 1. Fetch trending topics from AI grounded in real sources
     for (const category of categories) {
-      const keywords = categoryKeywords[category] || [category];
-
       try {
         const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",
@@ -52,23 +98,31 @@ serve(async (req) => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            model: "google/gemini-3-flash-preview",
+            model: "google/gemini-2.5-flash",
             messages: [
               {
                 role: "system",
-                content: `Você é um analista de tendências de busca do Brasil. Identifique os assuntos mais buscados e comentados no Brasil HOJE nas categorias solicitadas.
+                content: `Você é um analista de tendências jornalísticas do Brasil. Sua função é identificar os assuntos REAIS mais buscados e comentados no Brasil HOJE.
+
+FONTES OBRIGATÓRIAS para consultar:
+- Google Trends Brasil (trends.google.com.br)
+- ${TOP_PORTALS.join("\n- ")}
+
+REGRAS:
+1. Retorne APENAS assuntos REAIS que estão sendo noticiados HOJE ${today}
+2. Cada tópico deve ser específico (nome de pessoa, evento, lei, time, etc.) — NÃO genérico
+3. NÃO repita assuntos entre si — cada um deve ser único e distinto
+4. Priorize notícias que estão em MAIS de um portal (cross-referência)
+5. Inclua contexto suficiente no nome do tópico para ser pesquisável
 
 Responda APENAS em JSON válido, array de objetos:
-[
-  {"topic": "assunto específico e atual", "search_volume": "alto/médio"},
-  ...
-]
+[{"topic": "assunto específico e atual", "search_volume": "alto/médio/baixo"}]
 
-Retorne exatamente 3 tópicos atuais e relevantes. Foque em notícias reais e eventos recentes.`,
+Retorne exatamente 5 tópicos.`,
               },
               {
                 role: "user",
-                content: `Quais são os 3 assuntos mais falados no Brasil HOJE na categoria "${category}"? Palavras-chave relacionadas: ${keywords.join(", ")}. Foque em assuntos reais e atuais de hoje, ${new Date().toLocaleDateString("pt-BR")}.`,
+                content: `Categoria: "${category}". Quais são os 5 assuntos mais falados no Brasil HOJE (${today}) nesta categoria? Busque nos portais: G1, UOL, Folha, Estadão, R7, Terra, Metrópoles, CNN Brasil. Foque em notícias que aparecem em múltiplos portais.`,
               },
             ],
           }),
@@ -83,11 +137,15 @@ Retorne exatamente 3 tópicos atuais e relevantes. Foque em notícias reais e ev
             const topics = JSON.parse(content);
             if (Array.isArray(topics)) {
               for (const t of topics) {
-                allTopics.push({
-                  topic: t.topic,
-                  category,
-                  search_volume: t.search_volume || "médio",
-                });
+                const topicLower = t.topic?.toLowerCase().trim();
+                if (topicLower && !existingSet.has(topicLower)) {
+                  allTopics.push({
+                    topic: t.topic,
+                    category,
+                    search_volume: t.search_volume || "médio",
+                  });
+                  existingSet.add(topicLower);
+                }
               }
             }
           } catch {
@@ -95,24 +153,44 @@ Retorne exatamente 3 tópicos atuais e relevantes. Foque em notícias reais e ev
           }
         }
 
-        // Rate limiting
-        await new Promise((r) => setTimeout(r, 1000));
+        await new Promise((r) => setTimeout(r, 1500));
       } catch (err) {
         console.error(`Error fetching trends for ${category}:`, err);
       }
     }
 
-    // Delete old unused topics for this user
+    // 2. Add evergreen topics (1 per category, avoiding duplicates)
+    for (const category of categories) {
+      const evTopics = EVERGREEN_TOPICS[category] || [];
+      if (evTopics.length > 0) {
+        // Pick a random evergreen that isn't already used
+        const available = evTopics.filter((t) => !existingSet.has(t.toLowerCase().trim()));
+        if (available.length > 0) {
+          const picked = available[Math.floor(Math.random() * available.length)];
+          allTopics.push({
+            topic: picked,
+            category,
+            search_volume: "evergreen",
+          });
+          existingSet.add(picked.toLowerCase().trim());
+        }
+      }
+    }
+
+    // 3. Final deduplication by similarity (remove topics that are too similar)
+    const dedupedTopics = deduplicateBySimilarity(allTopics);
+
+    // 4. Delete old unused topics for this user
     await supabase
       .from("trending_topics")
       .delete()
       .eq("user_id", userId)
       .eq("used", false);
 
-    // Insert new topics
-    if (allTopics.length > 0) {
+    // 5. Insert new topics
+    if (dedupedTopics.length > 0) {
       await supabase.from("trending_topics").insert(
-        allTopics.map((t) => ({
+        dedupedTopics.map((t) => ({
           user_id: userId,
           topic: t.topic,
           category: t.category,
@@ -124,8 +202,8 @@ Retorne exatamente 3 tópicos atuais e relevantes. Foque em notícias reais e ev
     return new Response(
       JSON.stringify({
         success: true,
-        message: `${allTopics.length} tendências encontradas em ${categories.length} categorias!`,
-        topics: allTopics.length,
+        message: `${dedupedTopics.length} tendências encontradas (${categories.length} categorias + evergreen)!`,
+        topics: dedupedTopics.length,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
@@ -137,3 +215,45 @@ Retorne exatamente 3 tópicos atuais e relevantes. Foque em notícias reais e ev
     );
   }
 });
+
+/**
+ * Remove topics that are too similar to each other based on word overlap.
+ */
+function deduplicateBySimilarity(
+  topics: Array<{ topic: string; category: string; search_volume: string }>
+): Array<{ topic: string; category: string; search_volume: string }> {
+  const result: typeof topics = [];
+
+  for (const topic of topics) {
+    const words = new Set(
+      topic.topic
+        .toLowerCase()
+        .replace(/[^\w\sáàãâéêíóôõúç]/g, "")
+        .split(/\s+/)
+        .filter((w) => w.length > 3)
+    );
+
+    const isDuplicate = result.some((existing) => {
+      const existingWords = new Set(
+        existing.topic
+          .toLowerCase()
+          .replace(/[^\w\sáàãâéêíóôõúç]/g, "")
+          .split(/\s+/)
+          .filter((w) => w.length > 3)
+      );
+
+      // Calculate Jaccard similarity
+      const intersection = [...words].filter((w) => existingWords.has(w)).length;
+      const union = new Set([...words, ...existingWords]).size;
+      const similarity = union > 0 ? intersection / union : 0;
+
+      return similarity > 0.5;
+    });
+
+    if (!isDuplicate) {
+      result.push(topic);
+    }
+  }
+
+  return result;
+}
