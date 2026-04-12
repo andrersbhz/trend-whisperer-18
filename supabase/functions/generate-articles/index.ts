@@ -123,7 +123,7 @@ const IMAGE_PROMPT_TEMPLATE = (title: string, category: string) =>
 
 async function generateImageGemini(apiKey: string, title: string, category: string): Promise<string | null> {
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${apiKey}`;
     const resp = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
