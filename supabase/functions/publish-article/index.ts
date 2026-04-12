@@ -189,18 +189,19 @@ serve(async (req) => {
       const wpPostId = rawData?.id ?? rawData?.post_id ?? null;
       let wpLink = rawData?.link ?? rawData?.guid?.rendered ?? null;
 
-      // Step 2: Update post to "publish" status (separate call to avoid Bit Social crash)
+      // Step 2: Update post to "publish" status + set Yoast SEO meta
       if (wpPostId) {
         const auth = btoa(`${normalizedUsername}:${wpPassword}`);
         const updateBody: Record<string, unknown> = { status: "publish" };
 
-        // Also set Yoast SEO meta in the same update
-        if (article.seo_title || article.meta_description || article.seo_keyword) {
-          updateBody.meta = {
-            _yoast_wpseo_title: article.seo_title || article.title,
-            _yoast_wpseo_metadesc: article.meta_description || "",
-            _yoast_wpseo_focuskw: article.seo_keyword || "",
-          };
+        // Set Yoast SEO meta fields (focus keyword, meta description, SEO title)
+        const yoastMeta: Record<string, string> = {};
+        if (article.seo_title) yoastMeta._yoast_wpseo_title = article.seo_title;
+        if (article.meta_description) yoastMeta._yoast_wpseo_metadesc = article.meta_description;
+        if (article.seo_keyword) yoastMeta._yoast_wpseo_focuskw = article.seo_keyword;
+
+        if (Object.keys(yoastMeta).length > 0) {
+          updateBody.meta = yoastMeta;
         }
 
         try {
@@ -212,10 +213,25 @@ serve(async (req) => {
           if (publishResp.ok) {
             const publishData = await publishResp.json();
             wpLink = publishData?.link || wpLink;
-            console.log(`Post ${wpPostId} published successfully`);
+            console.log(`Post ${wpPostId} published with Yoast SEO meta: focuskw="${article.seo_keyword}", metadesc="${article.meta_description?.substring(0, 50)}..."`);
           } else {
             const errText = await publishResp.text();
             console.error(`Failed to publish post ${wpPostId}: ${publishResp.status} ${errText.substring(0, 200)}`);
+
+            // If meta update fails (unregistered keys), retry without meta
+            if (errText.includes("rest_invalid_param") || errText.includes("meta")) {
+              console.log("Retrying publish without meta (Yoast may not be installed)...");
+              const retryResp = await fetch(`${wpUrl}/wp-json/wp/v2/posts/${wpPostId}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json", "Authorization": `Basic ${auth}` },
+                body: JSON.stringify({ status: "publish" }),
+              });
+              if (retryResp.ok) {
+                const retryData = await retryResp.json();
+                wpLink = retryData?.link || wpLink;
+                console.log(`Post ${wpPostId} published (without Yoast meta - plugin may not be installed)`);
+              }
+            }
           }
         } catch (pubErr) {
           console.error("Error publishing post:", pubErr);
