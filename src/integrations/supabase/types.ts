@@ -222,6 +222,7 @@ export type Database = {
           wordpress_app_password: string | null
           wordpress_url: string | null
           wordpress_username: string | null
+          writer_prompt: string | null
         }
         Insert: {
           articles_per_day?: number | null
@@ -239,6 +240,7 @@ export type Database = {
           wordpress_app_password?: string | null
           wordpress_url?: string | null
           wordpress_username?: string | null
+          writer_prompt?: string | null
         }
         Update: {
           articles_per_day?: number | null
@@ -256,6 +258,7 @@ export type Database = {
           wordpress_app_password?: string | null
           wordpress_url?: string | null
           wordpress_username?: string | null
+          writer_prompt?: string | null
         }
         Relationships: []
       }

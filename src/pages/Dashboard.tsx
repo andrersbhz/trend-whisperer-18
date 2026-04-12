@@ -4,9 +4,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FileText, TrendingUp, CheckCircle, Clock, Sparkles, RefreshCw } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { FileText, TrendingUp, CheckCircle, Clock, Sparkles, RefreshCw, Save, Loader2, PenTool } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { getErrorMessage, runBackendQuery } from '@/lib/backend';
+import { getErrorMessage, runBackendQuery, runBackendMutation } from '@/lib/backend';
+
+const DEFAULT_WRITER_PROMPT = `Você é um jornalista digital brasileiro experiente. Escreva artigos informativos, com linguagem clara e acessível, otimizados para SEO. Use dados e fatos reais. Tom autoritativo mas acessível. Foque em entregar valor ao leitor com informações práticas e atualizadas.`;
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -14,12 +18,15 @@ const Dashboard = () => {
   const [stats, setStats] = useState({ total: 0, published: 0, pending: 0, trending: 0, failed: 0 });
   const [recentArticles, setRecentArticles] = useState<any[]>([]);
   const [generating, setGenerating] = useState(false);
+  const [writerPrompt, setWriterPrompt] = useState(DEFAULT_WRITER_PROMPT);
+  const [savingPrompt, setSavingPrompt] = useState(false);
+  const [promptLoaded, setPromptLoaded] = useState(false);
 
   const fetchStats = async () => {
     if (!user) return;
 
     try {
-      const [articles, trendingTopics, recent] = await Promise.all([
+      const [articles, trendingTopics, recent, settings] = await Promise.all([
         runBackendQuery(() => supabase.from('articles').select('id, status').eq('user_id', user.id)),
         runBackendQuery(() => supabase.from('trending_topics').select('id').eq('user_id', user.id).eq('used', false)),
         runBackendQuery(() =>
@@ -29,6 +36,13 @@ const Dashboard = () => {
             .eq('user_id', user.id)
             .order('created_at', { ascending: false })
             .limit(5),
+        ),
+        runBackendQuery(() =>
+          supabase
+            .from('user_settings')
+            .select('writer_prompt')
+            .eq('user_id', user.id)
+            .maybeSingle(),
         ),
       ]);
 
@@ -40,6 +54,11 @@ const Dashboard = () => {
         failed: (articles || []).filter((a) => a.status === 'failed').length,
       });
       setRecentArticles(recent || []);
+
+      if (settings?.writer_prompt) {
+        setWriterPrompt(settings.writer_prompt);
+      }
+      setPromptLoaded(true);
     } catch (error) {
       setStats({ total: 0, published: 0, pending: 0, trending: 0, failed: 0 });
       setRecentArticles([]);
@@ -50,6 +69,24 @@ const Dashboard = () => {
   useEffect(() => {
     fetchStats();
   }, [user]);
+
+  const handleSavePrompt = async () => {
+    if (!user) return;
+    setSavingPrompt(true);
+    try {
+      await runBackendMutation(() =>
+        supabase
+          .from('user_settings')
+          .update({ writer_prompt: writerPrompt } as any)
+          .eq('user_id', user.id),
+      );
+      toast({ title: 'Prompt salvo!', description: 'O perfil do escritor foi atualizado.' });
+    } catch (error) {
+      toast({ title: 'Erro', description: getErrorMessage(error), variant: 'destructive' });
+    } finally {
+      setSavingPrompt(false);
+    }
+  };
 
   const handleGenerateArticles = async () => {
     setGenerating(true);
@@ -105,7 +142,7 @@ const Dashboard = () => {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {statCards.map((stat) => (
           <Card key={stat.label} className={`glass-card ${stat.glow}`}>
             <CardContent className="p-5">
@@ -120,6 +157,44 @@ const Dashboard = () => {
           </Card>
         ))}
       </div>
+
+      {/* Writer Profile Prompt */}
+      <Card className="glass-card neon-border-lilac">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <PenTool className="h-5 w-5 text-primary" />
+            <CardTitle className="text-lg text-foreground">Perfil do Escritor</CardTitle>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Defina como a IA deve escrever seus artigos. Este prompt será usado em toda geração automática para garantir consistência de estilo e máxima otimização SEO.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="writer-prompt">Prompt de estilo e SEO</Label>
+            <Textarea
+              id="writer-prompt"
+              value={writerPrompt}
+              onChange={(e) => setWriterPrompt(e.target.value)}
+              placeholder="Ex: Sou um jornalista especializado em tecnologia. Escreva artigos com tom informal mas informativo, use listas e subtítulos, otimize para SEO com keywords de cauda longa..."
+              className="min-h-[160px] text-sm"
+              disabled={!promptLoaded}
+            />
+            <p className="text-xs text-muted-foreground">
+              Dica: Inclua seu nicho, tom de voz desejado, público-alvo, técnicas de SEO preferidas (cauda longa, LSI keywords, featured snippets, etc.)
+            </p>
+          </div>
+          <Button
+            onClick={handleSavePrompt}
+            disabled={savingPrompt || !promptLoaded}
+            variant="outline"
+            className="w-full sm:w-auto"
+          >
+            {savingPrompt ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+            Salvar Perfil
+          </Button>
+        </CardContent>
+      </Card>
 
       {stats.failed > 0 && (
         <Card className="glass-card border-destructive/30">
