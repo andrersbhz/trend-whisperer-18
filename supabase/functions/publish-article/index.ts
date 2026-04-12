@@ -188,9 +188,10 @@ serve(async (req) => {
     console.log(`WordPress response ${wpResponse.status}: ${responseText.substring(0, 300)}`);
 
     if (wpResponse.ok) {
-      const wpData = JSON.parse(responseText);
-      const wpPostId = wpData.id ?? wpData.post_id ?? null;
-      const wpLink = wpData.link ?? wpData.guid?.rendered ?? null;
+      const rawData = JSON.parse(responseText);
+      const wpData = Array.isArray(rawData) ? rawData[0] : rawData;
+      const wpPostId = wpData?.id ?? wpData?.post_id ?? null;
+      const wpLink = wpData?.link ?? wpData?.guid?.rendered ?? null;
 
       await supabase.from("articles").update({
         wordpress_post_id: wpPostId ? String(wpPostId) : null,
