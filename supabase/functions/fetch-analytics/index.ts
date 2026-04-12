@@ -116,7 +116,15 @@ serve(async (req) => {
     const saJson = Deno.env.get("GOOGLE_SERVICE_ACCOUNT_JSON");
     if (!saJson) throw new Error("GOOGLE_SERVICE_ACCOUNT_JSON not configured");
 
-    const serviceAccount = JSON.parse(saJson);
+    let serviceAccount: { client_email: string; private_key: string };
+    try {
+      serviceAccount = JSON.parse(saJson);
+    } catch {
+      throw new Error("GOOGLE_SERVICE_ACCOUNT_JSON is not valid JSON. Please re-enter the full JSON key file content.");
+    }
+
+    if (!serviceAccount.client_email) throw new Error("Service Account JSON missing 'client_email' field");
+    if (!serviceAccount.private_key) throw new Error("Service Account JSON missing 'private_key' field");
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
