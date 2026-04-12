@@ -62,6 +62,56 @@ serve(async (req) => {
     const wpPassword = await decryptField(supabase, settings.wordpress_app_password, encKey) || settings.wordpress_app_password;
     console.log(`WP Config: url=${wpUrl}, user=${normalizedUsername}, pwd_len=${wpPassword?.length}, pwd_start=${wpPassword?.substring(0,4)}`);
 
+    // --- Helper: find or create WP category ---
+    async function resolveWpCategory(authHeader: string, categoryName: string): Promise<number | null> {
+      const categoryLabels: Record<string, string> = {
+        esportes: "Esportes",
+        politica: "Política",
+        policia: "Polícia",
+        saude: "Saúde e Bem-Estar",
+        celebridades: "Celebridades",
+        financas: "Finanças",
+      };
+      const label = categoryLabels[categoryName] || categoryName;
+      const slug = categoryName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-");
+
+      try {
+        // Search existing categories
+        const searchResp = await fetch(`${wpUrl}/wp-json/wp/v2/categories?search=${encodeURIComponent(label)}&per_page=100`, {
+          headers: { Authorization: authHeader },
+        });
+        if (searchResp.ok) {
+          const cats = await searchResp.json();
+          const match = cats.find((c: any) =>
+            c.slug === slug || c.name.toLowerCase() === label.toLowerCase()
+          );
+          if (match) { console.log(`Found WP category: ${match.name} (id=${match.id})`); return match.id; }
+        }
+
+        // Also try by slug directly
+        const slugResp = await fetch(`${wpUrl}/wp-json/wp/v2/categories?slug=${slug}`, {
+          headers: { Authorization: authHeader },
+        });
+        if (slugResp.ok) {
+          const slugCats = await slugResp.json();
+          if (slugCats.length > 0) { console.log(`Found WP category by slug: ${slugCats[0].name} (id=${slugCats[0].id})`); return slugCats[0].id; }
+        }
+
+        // Create category if not found
+        const createResp = await fetch(`${wpUrl}/wp-json/wp/v2/categories`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: authHeader },
+          body: JSON.stringify({ name: label, slug }),
+        });
+        if (createResp.ok) {
+          const newCat = await createResp.json();
+          console.log(`Created WP category: ${newCat.name} (id=${newCat.id})`);
+          return newCat.id;
+        }
+      } catch (err) { console.error("Category resolution error:", err); }
+      return null;
+    }
+
     // --- Helper: publish via standard REST API ---
     async function publishStandard(authHeader: string) {
       const headers: Record<string, string> = {
@@ -71,9 +121,15 @@ serve(async (req) => {
       const body: Record<string, unknown> = {
         title: article.title,
         content: article.content || "",
-        status: "draft", // Create as draft first to avoid Bit Social plugin crash
+        status: "draft",
         excerpt: article.excerpt || article.meta_description || "",
       };
+
+      // Resolve WordPress category
+      const wpCategoryId = await resolveWpCategory(authHeader, article.category);
+      if (wpCategoryId) {
+        body.categories = [wpCategoryId];
+      }
 
       // Set slug if available
       if (article.seo_keyword) {
