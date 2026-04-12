@@ -122,25 +122,22 @@ const IMAGE_PROMPT_TEMPLATE = (title: string, category: string) =>
   `Create a professional, photorealistic news article featured image about: "${title}" (category: ${category}). Requirements: Editorial/journalistic style, visually represents the article topic, NO text overlay, NO watermarks, NO logos, high quality, 16:9 aspect ratio, vibrant colors, professional lighting, suitable as a WordPress featured image.`;
 
 async function generateImageGemini(apiKey: string, title: string, category: string): Promise<string | null> {
-  // Try multiple Gemini image-capable models
-  const models = [
-    "gemini-2.0-flash-exp-image-generation",
-    "gemini-2.0-flash-thinking-exp",
-  ];
+  const models = ["gemini-3.1-flash-image-preview", "gemini-2.5-flash-image"];
   
   for (const model of models) {
     try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
       const resp = await fetch(url, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
         body: JSON.stringify({
-          contents: [{ role: "user", parts: [{ text: IMAGE_PROMPT_TEMPLATE(title, category) }] }],
+          contents: [{ parts: [{ text: IMAGE_PROMPT_TEMPLATE(title, category) }] }],
           generationConfig: { responseModalities: ["IMAGE", "TEXT"] },
         }),
       });
       if (!resp.ok) {
-        console.warn(`Gemini image model ${model} failed: ${resp.status}`);
+        const errBody = await resp.text().catch(() => "");
+        console.warn(`Gemini image model ${model} failed ${resp.status}: ${errBody.substring(0, 200)}`);
         continue;
       }
       const data = await resp.json();
@@ -150,36 +147,11 @@ async function generateImageGemini(apiKey: string, title: string, category: stri
         console.log(`Image generated successfully with model: ${model}`);
         return `data:${imgPart.inlineData.mimeType};base64,${imgPart.inlineData.data}`;
       }
+      console.warn(`Model ${model} returned no image data`);
     } catch (err) {
       console.warn(`Gemini image model ${model} error:`, err);
     }
   }
-  
-  // Fallback: try Imagen API
-  try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
-    const resp = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        instances: [{ prompt: IMAGE_PROMPT_TEMPLATE(title, category) }],
-        parameters: { sampleCount: 1, aspectRatio: "16:9" },
-      }),
-    });
-    if (resp.ok) {
-      const data = await resp.json();
-      const img = data.predictions?.[0];
-      if (img?.bytesBase64Encoded) {
-        console.log("Image generated successfully with Imagen 3.0");
-        return `data:image/png;base64,${img.bytesBase64Encoded}`;
-      }
-    } else {
-      console.warn(`Imagen API failed: ${resp.status}`);
-    }
-  } catch (err) {
-    console.warn("Imagen API error:", err);
-  }
-  
   return null;
 }
 
