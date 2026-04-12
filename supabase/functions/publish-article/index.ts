@@ -209,6 +209,7 @@ serve(async (req) => {
         }
       }
 
+      await supabase.from("articles").update({
         wordpress_post_id: wpPostId ? String(wpPostId) : null,
         status: "published",
         published_at: new Date().toISOString(),
