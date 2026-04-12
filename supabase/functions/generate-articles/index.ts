@@ -6,6 +6,142 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// ── AI provider abstraction ──────────────────────────────────────────────
+
+interface AIResponse { title: string; content: string; excerpt: string; seo_keyword: string; seo_title: string; meta_description: string; slug: string; image_alt: string; image_caption: string; }
+
+async function callGeminiDirect(apiKey: string, systemPrompt: string, userPrompt: string): Promise<AIResponse> {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+
+  const functionDeclaration = {
+    name: "create_article",
+    description: "Cria um artigo completo para publicação no WordPress com todos os campos SEO.",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        title: { type: "STRING", description: "Título H1 do artigo, máximo 60 caracteres" },
+        content: { type: "STRING", description: "Conteúdo HTML completo (1800-2400 chars)" },
+        excerpt: { type: "STRING", description: "Resumo para redes sociais (máx 160 chars)" },
+        seo_keyword: { type: "STRING", description: "Focus keyword do Yoast SEO (3-5 palavras)" },
+        seo_title: { type: "STRING", description: "Título SEO até 60 chars" },
+        meta_description: { type: "STRING", description: "Meta descrição 120-155 chars" },
+        slug: { type: "STRING", description: "Slug para URL" },
+        image_alt: { type: "STRING", description: "Texto alternativo da imagem" },
+        image_caption: { type: "STRING", description: "Legenda da imagem" },
+      },
+      required: ["title", "content", "excerpt", "seo_keyword", "seo_title", "meta_description", "slug", "image_alt", "image_caption"],
+    },
+  };
+
+  const resp = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      system_instruction: { parts: [{ text: systemPrompt }] },
+      contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+      tools: [{ function_declarations: [functionDeclaration] }],
+      tool_config: { function_calling_config: { mode: "ANY", allowed_function_names: ["create_article"] } },
+    }),
+  });
+
+  if (!resp.ok) {
+    const errText = await resp.text();
+    throw new Error(`Gemini API error ${resp.status}: ${errText}`);
+  }
+
+  const data = await resp.json();
+  const fnCall = data.candidates?.[0]?.content?.parts?.find((p: any) => p.functionCall);
+  if (!fnCall?.functionCall?.args) throw new Error("Gemini did not return function call");
+  return fnCall.functionCall.args as AIResponse;
+}
+
+async function callLovableGateway(apiKey: string, systemPrompt: string, userPrompt: string): Promise<AIResponse> {
+  const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "openai/gpt-5-mini",
+      messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }],
+      tools: [{
+        type: "function",
+        function: {
+          name: "create_article",
+          description: "Cria um artigo completo para publicação no WordPress.",
+          parameters: {
+            type: "object",
+            properties: {
+              title: { type: "string" }, content: { type: "string" }, excerpt: { type: "string" },
+              seo_keyword: { type: "string" }, seo_title: { type: "string" }, meta_description: { type: "string" },
+              slug: { type: "string" }, image_alt: { type: "string" }, image_caption: { type: "string" },
+            },
+            required: ["title", "content", "excerpt", "seo_keyword", "seo_title", "meta_description", "slug", "image_alt", "image_caption"],
+            additionalProperties: false,
+          },
+        },
+      }],
+      tool_choice: { type: "function", function: { name: "create_article" } },
+    }),
+  });
+
+  if (!resp.ok) {
+    const errText = await resp.text();
+    throw new Error(`Gateway error ${resp.status}: ${errText}`);
+  }
+
+  const aiData = await resp.json();
+  const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+  if (toolCall?.function?.arguments) return JSON.parse(toolCall.function.arguments);
+
+  let content = aiData.choices?.[0]?.message?.content || "";
+  content = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+  return JSON.parse(content);
+}
+
+async function generateImage(lovableApiKey: string, title: string): Promise<string | null> {
+  try {
+    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${lovableApiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "google/gemini-3.1-flash-image-preview",
+        messages: [{
+          role: "user",
+          content: `Create a professional, photorealistic news article featured image for: "${title}". 
+Requirements: Editorial/journalistic style, NO text overlay, NO watermarks, NO logos, high quality, 16:9, vibrant colors, professional lighting.`,
+        }],
+        modalities: ["image", "text"],
+      }),
+    });
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    return data.choices?.[0]?.message?.images?.[0]?.image_url?.url || null;
+  } catch { return null; }
+}
+
+// ── System + User prompts ─────────────────────────────────────────────────
+
+const SYSTEM_PROMPT = `Você é um jornalista digital brasileiro sênior, especialista em SEO avançado e redação para WordPress com Yoast SEO e Jetpack.
+
+REGRAS OBRIGATÓRIAS PARA CADA ARTIGO:
+
+1. TÍTULO (H1): Máximo 60 caracteres, DEVE conter a palavra-chave principal, atrativo e clicável.
+
+2. CONTEÚDO EM HTML: MÍNIMO 1800 e MÁXIMO 2400 caracteres no HTML total. Lead jornalístico com keyword nas primeiras 100 palavras. Use <h2>/<h3> com <strong>. NUNCA use <h1>. Parágrafos curtos (<p>). <strong> para keywords. <ul>/<li> para escaneabilidade. Keyword no primeiro parágrafo, em 1+ H2, densidade 1-2%. Conclusão com CTA.
+
+3. ESTILO: Mescle notícia trending com valor evergreen. Tom informativo e autoritativo. Inclua dados relevantes. Evite linguagem de IA.
+
+4. SEO (Yoast + Jetpack): seo_keyword: cauda longa 3-5 palavras. seo_title: até 60 chars, keyword no início. meta_description: 120-155 chars, keyword na primeira metade, CTA sutil. excerpt: 2 frases (máx 160 chars). slug: keyword em formato URL.
+
+5. IMAGEM: image_alt descritivo com keyword. image_caption legenda informativa.`;
+
+function buildUserPrompt(topic: string, category: string): string {
+  return `Escreva um artigo jornalístico completo sobre: "${topic}" (categoria: ${category}).
+Data de hoje: ${new Date().toLocaleDateString("pt-BR")}.
+IMPORTANTE: Conteúdo HTML entre 1800-2400 chars. Keyword no título, primeiro parágrafo, 1+ H2, meta description. Todos os campos SEO preenchidos. Subtítulos em negrito. Gere metadados para imagem de destaque.`;
+}
+
+// ── Main handler ──────────────────────────────────────────────────────────
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -17,39 +153,41 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Fetch user settings
-    const { data: settings } = await supabase
-      .from("user_settings")
-      .select("*")
-      .eq("user_id", userId)
-      .single();
-
+    // Fetch settings + decrypt gemini key
+    const { data: settings } = await supabase.from("user_settings").select("*").eq("user_id", userId).single();
     const categories = settings?.categories || ["esportes", "politica", "policia", "saude", "celebridades", "financas"];
 
-    // Fetch trending topics that haven't been used
-    const { data: topics } = await supabase
-      .from("trending_topics")
-      .select("*")
-      .eq("user_id", userId)
-      .eq("used", false)
-      .limit(10);
+    // Decrypt Gemini API key if present
+    let geminiApiKey: string | null = null;
+    if (settings?.gemini_api_key) {
+      const { data: decrypted } = await supabase.rpc("decrypt_credential", {
+        enc_key: "",
+        val: settings.gemini_api_key,
+      });
+      if (decrypted && typeof decrypted === "string" && decrypted.length > 5) {
+        geminiApiKey = decrypted;
+      }
+    }
 
-    // If no trends, use fallback topics
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const useGemini = !!geminiApiKey;
+
+    if (!useGemini && !LOVABLE_API_KEY) {
+      throw new Error("Nenhuma chave de IA configurada. Configure sua chave Gemini nas configurações.");
+    }
+
+    console.log(`Using AI provider: ${useGemini ? "Google Gemini (user key)" : "Lovable AI Gateway"}`);
+
+    // Fetch trending topics
+    const { data: topics } = await supabase.from("trending_topics").select("*").eq("user_id", userId).eq("used", false).limit(10);
+
     const topicsToUse = topics && topics.length > 0
       ? topics
-      : categories.map((cat: string) => ({
-          topic: getDefaultTopic(cat),
-          category: cat,
-          id: null,
-        }));
+      : categories.map((cat: string) => ({ topic: getDefaultTopic(cat), category: cat, id: null }));
 
     const articlesPerDay = settings?.articles_per_day || 10;
     const intervalHours = 24 / articlesPerDay;
     const now = new Date();
-
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
-
     const generatedArticles = [];
 
     for (let i = 0; i < Math.min(articlesPerDay, topicsToUse.length); i++) {
@@ -57,207 +195,38 @@ serve(async (req) => {
       const scheduledAt = new Date(now.getTime() + i * intervalHours * 60 * 60 * 1000);
 
       try {
-        // Usar tool calling para output estruturado — mais confiável que pedir JSON na mensagem
-        const articleResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${LOVABLE_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "openai/gpt-5-mini",
-            messages: [
-              {
-                role: "system",
-                content: `Você é um jornalista digital brasileiro sênior, especialista em SEO avançado e redação para WordPress com Yoast SEO e Jetpack.
+        const userPrompt = buildUserPrompt(topic.topic, topic.category);
 
-REGRAS OBRIGATÓRIAS PARA CADA ARTIGO:
-
-1. TÍTULO (H1):
-   - Máximo 60 caracteres
-   - DEVE conter a palavra-chave principal (focus keyword)
-   - Atrativo, clicável, formato jornalístico
-
-2. CONTEÚDO EM HTML (para WordPress):
-   - MÍNIMO 1800 caracteres e MÁXIMO 2400 caracteres no HTML total
-   - Comece com um parágrafo introdutório forte (lead jornalístico) que contenha a palavra-chave principal nas primeiras 100 palavras
-   - Use <h2> para subtítulos principais (2-3 subtítulos H2) — cada H2 em <strong> também
-   - Use <h3> para sub-subtítulos (1-2 H3) — cada H3 em <strong> também
-   - NUNCA use <h1> no conteúdo (o título do post já é H1)
-   - Parágrafos curtos (máx 3 linhas) com tags <p>
-   - Use <strong> para destacar a palavra-chave e termos importantes no texto
-   - Use <ul>/<li> quando fizer sentido para escaneabilidade
-   - A palavra-chave principal DEVE aparecer: no primeiro parágrafo, em pelo menos 1 subtítulo H2, e distribuída naturalmente pelo texto (densidade 1-2%)
-   - Termine com um parágrafo de conclusão/call-to-action
-
-3. ESTILO JORNALÍSTICO:
-   - Mescle notícia trending com valor evergreen
-   - Tom informativo, autoritativo mas acessível
-   - Inclua dados ou contexto relevante
-   - Evite linguagem de IA ou frases genéricas
-
-4. SEO (Yoast SEO + Jetpack):
-   - seo_keyword: palavra-chave principal de cauda longa (3-5 palavras) — esta é a FOCUS KEYWORD do Yoast
-   - seo_title: até 60 caracteres, com a keyword NO INÍCIO, formato: "Keyword - Complemento | Site"
-   - meta_description: EXATAMENTE entre 120-155 caracteres, com a keyword na primeira metade e um call-to-action sutil no final
-   - excerpt: resumo em 2 frases curtas (máx 160 caracteres) otimizado para compartilhamento em redes sociais (Jetpack)
-   - slug: versão da keyword em formato URL (minúsculas, hífens, sem acentos)
-
-5. IMAGEM DE DESTAQUE:
-   - image_alt: texto alternativo descritivo da imagem contendo a keyword (para SEO de imagens)
-   - image_caption: legenda curta e informativa para a imagem`,
-              },
-              {
-                role: "user",
-                content: `Escreva um artigo jornalístico completo sobre: "${topic.topic}" (categoria: ${topic.category}).
-
-Data de hoje: ${new Date().toLocaleDateString("pt-BR")}.
-
-IMPORTANTE:
-- O conteúdo HTML DEVE ter entre 1800 e 2400 caracteres
-- A palavra-chave principal deve aparecer no título, primeiro parágrafo, pelo menos 1 H2, e na meta description
-- Todos os campos SEO devem estar preenchidos corretamente para pontuação verde no Yoast SEO
-- Subtítulos devem estar em negrito
-- Gere também os metadados para a imagem de destaque`,
-              },
-            ],
-            tools: [
-              {
-                type: "function",
-                function: {
-                  name: "create_article",
-                  description: "Cria um artigo completo para publicação no WordPress com todos os campos SEO (Yoast + Jetpack) preenchidos corretamente.",
-                  parameters: {
-                    type: "object",
-                    properties: {
-                      title: {
-                        type: "string",
-                        description: "Título H1 do artigo, máximo 60 caracteres, contendo a focus keyword"
-                      },
-                      content: {
-                        type: "string",
-                        description: "Conteúdo completo do artigo em HTML (h2, h3, p, strong, ul/li). MÍNIMO 1800 e MÁXIMO 2400 caracteres. Subtítulos em negrito. Keyword distribuída naturalmente."
-                      },
-                      excerpt: {
-                        type: "string",
-                        description: "Resumo em 2 frases curtas (máx 160 chars) para redes sociais (Jetpack sharing)"
-                      },
-                      seo_keyword: {
-                        type: "string",
-                        description: "Focus keyword do Yoast SEO: palavra-chave de cauda longa (3-5 palavras)"
-                      },
-                      seo_title: {
-                        type: "string",
-                        description: "Título SEO (Yoast) até 60 chars, keyword no início"
-                      },
-                      meta_description: {
-                        type: "string",
-                        description: "Meta descrição (Yoast) entre 120-155 chars com keyword na primeira metade e CTA sutil"
-                      },
-                      slug: {
-                        type: "string",
-                        description: "Slug para URL: keyword em minúsculas, sem acentos, separada por hífens"
-                      },
-                      image_alt: {
-                        type: "string",
-                        description: "Texto alternativo da imagem de destaque contendo a keyword"
-                      },
-                      image_caption: {
-                        type: "string",
-                        description: "Legenda curta para a imagem de destaque"
-                      }
-                    },
-                    required: ["title", "content", "excerpt", "seo_keyword", "seo_title", "meta_description", "slug", "image_alt", "image_caption"],
-                    additionalProperties: false
-                  }
-                }
-              }
-            ],
-            tool_choice: { type: "function", function: { name: "create_article" } },
-          }),
-        });
-
-        if (!articleResponse.ok) {
-          const errText = await articleResponse.text();
-          console.error(`AI error for topic ${topic.topic}: ${articleResponse.status} - ${errText}`);
-
-          // Handle rate limits
-          if (articleResponse.status === 429) {
+        let parsed: AIResponse;
+        try {
+          parsed = useGemini
+            ? await callGeminiDirect(geminiApiKey!, SYSTEM_PROMPT, userPrompt)
+            : await callLovableGateway(LOVABLE_API_KEY!, SYSTEM_PROMPT, userPrompt);
+        } catch (aiErr: any) {
+          console.error(`AI error for topic ${topic.topic}:`, aiErr.message);
+          if (aiErr.message?.includes("429")) {
             console.log("Rate limited, waiting 10 seconds...");
             await new Promise((r) => setTimeout(r, 10000));
           }
           continue;
         }
 
-        const aiData = await articleResponse.json();
-
-        // Extrair dados do tool call
-        let parsed;
-        try {
-          const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
-          if (toolCall?.function?.arguments) {
-            parsed = JSON.parse(toolCall.function.arguments);
-          } else {
-            // Fallback: tentar parse do content direto
-            let content = aiData.choices?.[0]?.message?.content || "";
-            content = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-            parsed = JSON.parse(content);
-          }
-        } catch {
-          console.error("Failed to parse AI response for topic:", topic.topic);
-          continue;
-        }
-
-        // Validar campos obrigatórios e tamanho do conteúdo
         if (!parsed.title || !parsed.content) {
           console.error("Missing required fields for topic:", topic.topic);
           continue;
         }
 
-        // Validar tamanho mínimo do conteúdo
-        const contentLength = parsed.content.length;
-        if (contentLength < 1800) {
-          console.warn(`Content too short (${contentLength} chars) for topic: ${topic.topic}, but proceeding`);
+        if (parsed.content.length < 1800) {
+          console.warn(`Content short (${parsed.content.length} chars) for: ${topic.topic}`);
         }
 
-        // Gerar imagem destacada
-        let featuredImageUrl = null;
-        try {
-          const imageResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${LOVABLE_API_KEY}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              model: "google/gemini-3.1-flash-image-preview",
-              messages: [
-                {
-                  role: "user",
-                  content: `Create a professional, photorealistic news article featured image for: "${parsed.title}". 
-Requirements:
-- Editorial/journalistic style, suitable for a professional news website
-- NO text overlay, NO watermarks, NO logos
-- High quality, 16:9 aspect ratio (1200x675px)
-- Vibrant, eye-catching colors
-- The image should visually represent the topic and evoke the emotion of the article
-- Professional lighting and composition`,
-                },
-              ],
-              modalities: ["image", "text"],
-            }),
-          });
-
-          if (imageResponse.ok) {
-            const imageData = await imageResponse.json();
-            const imageUrl = imageData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-            if (imageUrl) featuredImageUrl = imageUrl;
-          }
-        } catch (imgErr) {
-          console.error("Image generation failed:", imgErr);
+        // Generate featured image (always uses Lovable gateway for images)
+        let featuredImageUrl: string | null = null;
+        if (LOVABLE_API_KEY) {
+          featuredImageUrl = await generateImage(LOVABLE_API_KEY, parsed.title);
         }
 
-        // Salvar no banco de dados
+        // Save to database
         const { data: article, error: insertError } = await supabase.from("articles").insert({
           user_id: userId,
           title: parsed.title,
@@ -273,31 +242,21 @@ Requirements:
           trending_topic: topic.topic,
         }).select().single();
 
-        if (insertError) {
-          console.error("Insert error:", insertError);
-          continue;
-        }
+        if (insertError) { console.error("Insert error:", insertError); continue; }
 
-        // Marcar tópico como usado
         if (topic.id) {
           await supabase.from("trending_topics").update({ used: true }).eq("id", topic.id);
         }
 
         generatedArticles.push(article);
-
-        // Rate limiting — aguardar entre requisições
-        await new Promise((resolve) => setTimeout(resolve, 3000));
+        await new Promise((resolve) => setTimeout(resolve, useGemini ? 2000 : 3000));
       } catch (err) {
         console.error(`Error generating article for ${topic.topic}:`, err);
       }
     }
 
     return new Response(
-      JSON.stringify({
-        success: true,
-        message: `${generatedArticles.length} artigos gerados com sucesso!`,
-        articles: generatedArticles.length,
-      }),
+      JSON.stringify({ success: true, message: `${generatedArticles.length} artigos gerados com sucesso!`, articles: generatedArticles.length, provider: useGemini ? "gemini" : "lovable" }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
