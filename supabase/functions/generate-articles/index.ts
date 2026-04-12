@@ -118,18 +118,45 @@ async function callLovableGateway(apiKey: string, systemPrompt: string, userProm
   return JSON.parse(content);
 }
 
-async function generateImage(lovableApiKey: string, title: string): Promise<string | null> {
+const IMAGE_PROMPT_TEMPLATE = (title: string, category: string) =>
+  `Create a professional, photorealistic news article featured image about: "${title}" (category: ${category}). Requirements: Editorial/journalistic style, visually represents the article topic, NO text overlay, NO watermarks, NO logos, high quality, 16:9 aspect ratio, vibrant colors, professional lighting, suitable as a WordPress featured image.`;
+
+async function generateImageGemini(apiKey: string, title: string, category: string): Promise<string | null> {
+  try {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`;
+    const resp = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ role: "user", parts: [{ text: IMAGE_PROMPT_TEMPLATE(title, category) }] }],
+        generationConfig: { responseModalities: ["IMAGE", "TEXT"] },
+      }),
+    });
+    if (!resp.ok) {
+      console.warn(`Gemini image generation failed: ${resp.status}`);
+      return null;
+    }
+    const data = await resp.json();
+    const parts = data.candidates?.[0]?.content?.parts || [];
+    const imgPart = parts.find((p: any) => p.inlineData?.mimeType?.startsWith("image/"));
+    if (imgPart?.inlineData) {
+      return `data:${imgPart.inlineData.mimeType};base64,${imgPart.inlineData.data}`;
+    }
+    return null;
+  } catch (err) {
+    console.warn("Gemini image generation error:", err);
+    return null;
+  }
+}
+
+async function generateImageGateway(lovableApiKey: string, title: string, category: string): Promise<string | null> {
   try {
     const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: { Authorization: `Bearer ${lovableApiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         model: "google/gemini-3.1-flash-image-preview",
-        messages: [{
-          role: "user",
-          content: `Create a professional, photorealistic news article featured image for: "${title}". 
-Requirements: Editorial/journalistic style, NO text overlay, NO watermarks, NO logos, high quality, 16:9, vibrant colors, professional lighting.`,
-        }],
+        messages: [{ role: "user", content: IMAGE_PROMPT_TEMPLATE(title, category) }],
         modalities: ["image", "text"],
       }),
     });
