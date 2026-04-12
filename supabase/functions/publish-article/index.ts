@@ -191,9 +191,12 @@ serve(async (req) => {
 
     if (wpResponse.ok) {
       const rawData = JSON.parse(responseText);
-      const wpData = Array.isArray(rawData) ? rawData[0] : rawData;
-      const wpPostId = wpData?.id ?? wpData?.post_id ?? null;
-      const wpLink = wpData?.link ?? wpData?.guid?.rendered ?? null;
+      // If response is an array, the POST was likely converted to GET by a redirect
+      if (Array.isArray(rawData)) {
+        throw new Error("WordPress retornou uma listagem em vez de criar o post. Verifique se a URL usa HTTPS e se as credenciais estão corretas.");
+      }
+      const wpPostId = rawData?.id ?? rawData?.post_id ?? null;
+      const wpLink = rawData?.link ?? rawData?.guid?.rendered ?? null;
 
       await supabase.from("articles").update({
         wordpress_post_id: wpPostId ? String(wpPostId) : null,
