@@ -60,6 +60,7 @@ serve(async (req) => {
     const normalizedUsername = settings.wordpress_username.trim();
     const hasPlugin = normalizedUsername.toLowerCase() === 'autoblog-ai';
     const wpPassword = await decryptField(supabase, settings.wordpress_app_password, encKey) || settings.wordpress_app_password;
+    console.log(`WP Config: url=${wpUrl}, user=${normalizedUsername}, pwd_len=${wpPassword?.length}, pwd_start=${wpPassword?.substring(0,4)}`);
 
     // --- Helper: publish via standard REST API ---
     async function publishStandard(authHeader: string) {
