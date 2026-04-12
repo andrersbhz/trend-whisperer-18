@@ -22,6 +22,7 @@ export interface UserSettings {
   categories: string[];
   articles_per_day: number;
   auto_publish: boolean;
+  writer_prompt: string;
 }
 
 const defaultSettings: UserSettings = {
@@ -36,6 +37,7 @@ const defaultSettings: UserSettings = {
   categories: ['esportes', 'politica', 'policia', 'saude', 'celebridades', 'financas'],
   articles_per_day: 10,
   auto_publish: false,
+  writer_prompt: '',
 };
 
 interface CredentialsStatus {
@@ -62,7 +64,7 @@ const SettingsPage = () => {
           runBackendQuery(() =>
             supabase
               .from('user_settings')
-              .select('wordpress_url, wordpress_username, google_analytics_property_id, facebook_page_id, instagram_account_id, categories, articles_per_day, auto_publish')
+              .select('wordpress_url, wordpress_username, google_analytics_property_id, facebook_page_id, instagram_account_id, categories, articles_per_day, auto_publish, writer_prompt')
               .eq('user_id', user.id)
               .maybeSingle(),
           ),
@@ -84,6 +86,7 @@ const SettingsPage = () => {
             categories: data.categories || defaultSettings.categories,
             articles_per_day: data.articles_per_day || 10,
             auto_publish: data.auto_publish || false,
+            writer_prompt: (data as any).writer_prompt || '',
           });
         }
 
@@ -113,6 +116,7 @@ const SettingsPage = () => {
         categories: settings.categories,
         articles_per_day: settings.articles_per_day,
         auto_publish: settings.auto_publish,
+        writer_prompt: settings.writer_prompt,
       };
 
       if (settings.wordpress_app_password) {
