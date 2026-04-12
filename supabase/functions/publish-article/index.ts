@@ -187,26 +187,38 @@ serve(async (req) => {
         throw new Error("WordPress retornou uma listagem em vez de criar o post. Verifique se a URL usa HTTPS e se as credenciais estão corretas.");
       }
       const wpPostId = rawData?.id ?? rawData?.post_id ?? null;
-      const wpLink = rawData?.link ?? rawData?.guid?.rendered ?? null;
+      let wpLink = rawData?.link ?? rawData?.guid?.rendered ?? null;
 
-      // Try to set Yoast SEO meta (non-blocking - won't fail if Yoast not installed)
-      if (wpPostId && (article.seo_title || article.meta_description || article.seo_keyword)) {
+      // Step 2: Update post to "publish" status (separate call to avoid Bit Social crash)
+      if (wpPostId) {
+        const auth = btoa(`${normalizedUsername}:${wpPassword}`);
+        const updateBody: Record<string, unknown> = { status: "publish" };
+
+        // Also set Yoast SEO meta in the same update
+        if (article.seo_title || article.meta_description || article.seo_keyword) {
+          updateBody.meta = {
+            _yoast_wpseo_title: article.seo_title || article.title,
+            _yoast_wpseo_metadesc: article.meta_description || "",
+            _yoast_wpseo_focuskw: article.seo_keyword || "",
+          };
+        }
+
         try {
-          const auth = btoa(`${normalizedUsername}:${wpPassword}`);
-          await fetch(`${wpUrl}/wp-json/wp/v2/posts/${wpPostId}`, {
+          const publishResp = await fetch(`${wpUrl}/wp-json/wp/v2/posts/${wpPostId}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json", "Authorization": `Basic ${auth}` },
-            body: JSON.stringify({
-              meta: {
-                _yoast_wpseo_title: article.seo_title || article.title,
-                _yoast_wpseo_metadesc: article.meta_description || "",
-                _yoast_wpseo_focuskw: article.seo_keyword || "",
-              },
-            }),
+            body: JSON.stringify(updateBody),
           });
-          console.log("Yoast SEO meta updated for post", wpPostId);
-        } catch (yoastErr) {
-          console.warn("Could not set Yoast meta (plugin may not be installed):", yoastErr);
+          if (publishResp.ok) {
+            const publishData = await publishResp.json();
+            wpLink = publishData?.link || wpLink;
+            console.log(`Post ${wpPostId} published successfully`);
+          } else {
+            const errText = await publishResp.text();
+            console.error(`Failed to publish post ${wpPostId}: ${publishResp.status} ${errText.substring(0, 200)}`);
+          }
+        } catch (pubErr) {
+          console.error("Error publishing post:", pubErr);
         }
       }
 
