@@ -6,6 +6,27 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// ── Helpers ───────────────────────────────────────────────────────────────
+
+function stripHtml(text: string): string {
+  return text.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function sanitizeSeoFields(parsed: AIResponse): AIResponse {
+  return {
+    ...parsed,
+    title: stripHtml(parsed.title),
+    excerpt: stripHtml(parsed.excerpt),
+    seo_keyword: stripHtml(parsed.seo_keyword),
+    seo_title: stripHtml(parsed.seo_title),
+    meta_description: stripHtml(parsed.meta_description),
+    slug: parsed.slug,
+    image_alt: stripHtml(parsed.image_alt),
+    image_caption: stripHtml(parsed.image_caption),
+    // content keeps HTML intentionally
+  };
+}
+
 // ── AI provider abstraction ──────────────────────────────────────────────
 
 interface AIResponse { title: string; content: string; excerpt: string; seo_keyword: string; seo_title: string; meta_description: string; slug: string; image_alt: string; image_caption: string; }
