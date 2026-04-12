@@ -174,7 +174,7 @@ async function generateImageGateway(lovableApiKey: string, title: string, catego
 
 // ── System + User prompts ─────────────────────────────────────────────────
 
-const SYSTEM_PROMPT = `Você é um jornalista digital brasileiro sênior, especialista em SEO avançado e redação para WordPress com Yoast SEO e Jetpack.
+const BASE_SYSTEM_PROMPT = `Você é um jornalista digital brasileiro sênior, especialista em SEO avançado e redação para WordPress com Yoast SEO e Jetpack.
 
 REGRAS OBRIGATÓRIAS PARA CADA ARTIGO:
 
@@ -182,16 +182,32 @@ REGRAS OBRIGATÓRIAS PARA CADA ARTIGO:
 
 2. CONTEÚDO EM HTML: MÍNIMO 1800 e MÁXIMO 2400 caracteres no HTML total. Lead jornalístico com keyword nas primeiras 100 palavras. Use <h2>/<h3> com <strong>. NUNCA use <h1>. Parágrafos curtos (<p>). <strong> para keywords. <ul>/<li> para escaneabilidade. Keyword no primeiro parágrafo, em 1+ H2, densidade 1-2%. Conclusão com CTA.
 
-3. ESTILO: Mescle notícia trending com valor evergreen. Tom informativo e autoritativo. Inclua dados relevantes. Evite linguagem de IA.
+3. SEO AVANÇADO:
+   - Use LSI keywords (Latent Semantic Indexing) naturalmente no texto
+   - Otimize para Featured Snippets: inclua parágrafos de definição curtos (40-60 palavras)
+   - Inclua perguntas (People Also Ask) como subtítulos H2/H3
+   - Use schema-friendly structure para FAQ e HowTo snippets
+   - Internal linking friendly: mencione termos relacionados que podem linkar para outros artigos
+   - Use keyword de cauda longa (long-tail) como foco principal
+   - E-E-A-T: demonstre expertise, experiência, autoridade e confiabilidade
 
-4. SEO (Yoast + Jetpack): seo_keyword: cauda longa 3-5 palavras. seo_title: até 60 chars, keyword no início. meta_description: 120-155 chars, keyword na primeira metade, CTA sutil. excerpt: 2 frases (máx 160 chars). slug: keyword em formato URL.
+4. ESTILO: Mescle notícia trending com valor evergreen. Tom informativo e autoritativo. Inclua dados relevantes. Evite linguagem de IA.
 
-5. IMAGEM: image_alt descritivo com keyword. image_caption legenda informativa.`;
+5. SEO (Yoast + Jetpack): seo_keyword: cauda longa 3-5 palavras. seo_title: até 60 chars, keyword no início. meta_description: 120-155 chars, keyword na primeira metade, CTA sutil. excerpt: 2 frases (máx 160 chars). slug: keyword em formato URL.
+
+6. IMAGEM: image_alt descritivo com keyword. image_caption legenda informativa.`;
+
+function buildSystemPrompt(writerPrompt?: string | null): string {
+  if (writerPrompt && writerPrompt.trim().length > 10) {
+    return `${BASE_SYSTEM_PROMPT}\n\nPERFIL DO ESCRITOR (instruções adicionais do usuário):\n${writerPrompt.trim()}`;
+  }
+  return BASE_SYSTEM_PROMPT;
+}
 
 function buildUserPrompt(topic: string, category: string): string {
   return `Escreva um artigo jornalístico completo sobre: "${topic}" (categoria: ${category}).
 Data de hoje: ${new Date().toLocaleDateString("pt-BR")}.
-IMPORTANTE: Conteúdo HTML entre 1800-2400 chars. Keyword no título, primeiro parágrafo, 1+ H2, meta description. Todos os campos SEO preenchidos. Subtítulos em negrito. Gere metadados para imagem de destaque.`;
+IMPORTANTE: Conteúdo HTML entre 1800-2400 chars. Keyword no título, primeiro parágrafo, 1+ H2, meta description. Todos os campos SEO preenchidos. Subtítulos em negrito. Gere metadados para imagem de destaque. Use técnicas avançadas de SEO: LSI keywords, otimize para featured snippets, inclua perguntas frequentes como subtítulos, keyword de cauda longa.`;
 }
 
 // ── Main handler ──────────────────────────────────────────────────────────
