@@ -151,7 +151,7 @@ Retorne exatamente 5 tópicos.`,
               }
             }
           } catch {
-            console.error("Failed to parse trends for category:", category);
+          console.error("Failed to parse trends for category:", category, content.substring(0, 200));
           }
         }
 
