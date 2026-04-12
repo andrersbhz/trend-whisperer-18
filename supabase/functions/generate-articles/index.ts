@@ -122,31 +122,65 @@ const IMAGE_PROMPT_TEMPLATE = (title: string, category: string) =>
   `Create a professional, photorealistic news article featured image about: "${title}" (category: ${category}). Requirements: Editorial/journalistic style, visually represents the article topic, NO text overlay, NO watermarks, NO logos, high quality, 16:9 aspect ratio, vibrant colors, professional lighting, suitable as a WordPress featured image.`;
 
 async function generateImageGemini(apiKey: string, title: string, category: string): Promise<string | null> {
+  // Try multiple Gemini image-capable models
+  const models = [
+    "gemini-2.0-flash-exp-image-generation",
+    "gemini-2.0-flash-thinking-exp",
+  ];
+  
+  for (const model of models) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      const resp = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{ text: IMAGE_PROMPT_TEMPLATE(title, category) }] }],
+          generationConfig: { responseModalities: ["IMAGE", "TEXT"] },
+        }),
+      });
+      if (!resp.ok) {
+        console.warn(`Gemini image model ${model} failed: ${resp.status}`);
+        continue;
+      }
+      const data = await resp.json();
+      const parts = data.candidates?.[0]?.content?.parts || [];
+      const imgPart = parts.find((p: any) => p.inlineData?.mimeType?.startsWith("image/"));
+      if (imgPart?.inlineData) {
+        console.log(`Image generated successfully with model: ${model}`);
+        return `data:${imgPart.inlineData.mimeType};base64,${imgPart.inlineData.data}`;
+      }
+    } catch (err) {
+      console.warn(`Gemini image model ${model} error:`, err);
+    }
+  }
+  
+  // Fallback: try Imagen API
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
     const resp = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ text: IMAGE_PROMPT_TEMPLATE(title, category) }] }],
-        generationConfig: { responseModalities: ["IMAGE", "TEXT"] },
+        instances: [{ prompt: IMAGE_PROMPT_TEMPLATE(title, category) }],
+        parameters: { sampleCount: 1, aspectRatio: "16:9" },
       }),
     });
-    if (!resp.ok) {
-      console.warn(`Gemini image generation failed: ${resp.status}`);
-      return null;
+    if (resp.ok) {
+      const data = await resp.json();
+      const img = data.predictions?.[0];
+      if (img?.bytesBase64Encoded) {
+        console.log("Image generated successfully with Imagen 3.0");
+        return `data:image/png;base64,${img.bytesBase64Encoded}`;
+      }
+    } else {
+      console.warn(`Imagen API failed: ${resp.status}`);
     }
-    const data = await resp.json();
-    const parts = data.candidates?.[0]?.content?.parts || [];
-    const imgPart = parts.find((p: any) => p.inlineData?.mimeType?.startsWith("image/"));
-    if (imgPart?.inlineData) {
-      return `data:${imgPart.inlineData.mimeType};base64,${imgPart.inlineData.data}`;
-    }
-    return null;
   } catch (err) {
-    console.warn("Gemini image generation error:", err);
-    return null;
+    console.warn("Imagen API error:", err);
   }
+  
+  return null;
 }
 
 async function generateImageGateway(lovableApiKey: string, title: string, category: string): Promise<string | null> {
