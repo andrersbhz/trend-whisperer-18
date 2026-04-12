@@ -188,7 +188,27 @@ serve(async (req) => {
       const wpPostId = rawData?.id ?? rawData?.post_id ?? null;
       const wpLink = rawData?.link ?? rawData?.guid?.rendered ?? null;
 
-      await supabase.from("articles").update({
+      // Try to set Yoast SEO meta (non-blocking - won't fail if Yoast not installed)
+      if (wpPostId && (article.seo_title || article.meta_description || article.seo_keyword)) {
+        try {
+          const auth = btoa(`${normalizedUsername}:${wpPassword}`);
+          await fetch(`${wpUrl}/wp-json/wp/v2/posts/${wpPostId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json", "Authorization": `Basic ${auth}` },
+            body: JSON.stringify({
+              meta: {
+                _yoast_wpseo_title: article.seo_title || article.title,
+                _yoast_wpseo_metadesc: article.meta_description || "",
+                _yoast_wpseo_focuskw: article.seo_keyword || "",
+              },
+            }),
+          });
+          console.log("Yoast SEO meta updated for post", wpPostId);
+        } catch (yoastErr) {
+          console.warn("Could not set Yoast meta (plugin may not be installed):", yoastErr);
+        }
+      }
+
         wordpress_post_id: wpPostId ? String(wpPostId) : null,
         status: "published",
         published_at: new Date().toISOString(),
