@@ -55,6 +55,8 @@ serve(async (req) => {
     // Prepare WordPress connection
     let wpUrl = settings.wordpress_url.replace(/\/$/, "");
     if (!/^https?:\/\//i.test(wpUrl)) wpUrl = `https://${wpUrl}`;
+    // Force HTTPS to prevent redirect stripping POST body
+    wpUrl = wpUrl.replace(/^http:\/\//i, "https://");
     const normalizedUsername = settings.wordpress_username.trim();
     const hasPlugin = normalizedUsername.toLowerCase() === 'autoblog-ai';
     const wpPassword = await decryptField(supabase, settings.wordpress_app_password, encKey) || settings.wordpress_app_password;
