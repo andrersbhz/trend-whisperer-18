@@ -55,9 +55,12 @@ serve(async (req) => {
     // Prepare WordPress connection
     let wpUrl = settings.wordpress_url.replace(/\/$/, "");
     if (!/^https?:\/\//i.test(wpUrl)) wpUrl = `https://${wpUrl}`;
+    // Force HTTPS to prevent redirect stripping POST body
+    wpUrl = wpUrl.replace(/^http:\/\//i, "https://");
     const normalizedUsername = settings.wordpress_username.trim();
     const hasPlugin = normalizedUsername.toLowerCase() === 'autoblog-ai';
     const wpPassword = await decryptField(supabase, settings.wordpress_app_password, encKey) || settings.wordpress_app_password;
+    console.log(`WP Config: url=${wpUrl}, user=${normalizedUsername}, pwd_len=${wpPassword?.length}, pwd_start=${wpPassword?.substring(0,4)}`);
 
     // --- Helper: publish via standard REST API ---
     async function publishStandard(authHeader: string) {
@@ -68,7 +71,7 @@ serve(async (req) => {
       const body: Record<string, unknown> = {
         title: article.title,
         content: article.content || "",
-        status: "publish",
+        status: "draft", // Create as draft first to avoid Bit Social plugin crash
         excerpt: article.excerpt || article.meta_description || "",
       };
 
@@ -134,18 +137,8 @@ serve(async (req) => {
         } catch (imgErr) { console.error("WP image upload failed:", imgErr); }
       }
 
-      // Yoast SEO + Jetpack meta
-      body.meta = {
-        _yoast_wpseo_title: article.seo_title || article.title,
-        _yoast_wpseo_metadesc: article.meta_description || "",
-        _yoast_wpseo_focuskw: article.seo_keyword || "",
-        _yoast_wpseo_opengraph_title: article.seo_title || article.title,
-        _yoast_wpseo_opengraph_description: article.meta_description || "",
-        _yoast_wpseo_twitter_title: article.seo_title || article.title,
-        _yoast_wpseo_twitter_description: article.meta_description || "",
-        jetpack_seo_html_title: article.seo_title || article.title,
-        advanced_seo_description: article.meta_description || "",
-      };
+      // Note: Yoast SEO meta fields will be set via a separate update after post creation
+      // to avoid WordPress crashing if Yoast is not installed or meta keys are unregistered
 
       const endpoint = `${wpUrl}/wp-json/wp/v2/posts`;
       console.log(`POST (standard) ${endpoint}`);
@@ -189,9 +182,45 @@ serve(async (req) => {
 
     if (wpResponse.ok) {
       const rawData = JSON.parse(responseText);
-      const wpData = Array.isArray(rawData) ? rawData[0] : rawData;
-      const wpPostId = wpData?.id ?? wpData?.post_id ?? null;
-      const wpLink = wpData?.link ?? wpData?.guid?.rendered ?? null;
+      // If response is an array, the POST was likely converted to GET by a redirect
+      if (Array.isArray(rawData)) {
+        throw new Error("WordPress retornou uma listagem em vez de criar o post. Verifique se a URL usa HTTPS e se as credenciais estão corretas.");
+      }
+      const wpPostId = rawData?.id ?? rawData?.post_id ?? null;
+      let wpLink = rawData?.link ?? rawData?.guid?.rendered ?? null;
+
+      // Step 2: Update post to "publish" status (separate call to avoid Bit Social crash)
+      if (wpPostId) {
+        const auth = btoa(`${normalizedUsername}:${wpPassword}`);
+        const updateBody: Record<string, unknown> = { status: "publish" };
+
+        // Also set Yoast SEO meta in the same update
+        if (article.seo_title || article.meta_description || article.seo_keyword) {
+          updateBody.meta = {
+            _yoast_wpseo_title: article.seo_title || article.title,
+            _yoast_wpseo_metadesc: article.meta_description || "",
+            _yoast_wpseo_focuskw: article.seo_keyword || "",
+          };
+        }
+
+        try {
+          const publishResp = await fetch(`${wpUrl}/wp-json/wp/v2/posts/${wpPostId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json", "Authorization": `Basic ${auth}` },
+            body: JSON.stringify(updateBody),
+          });
+          if (publishResp.ok) {
+            const publishData = await publishResp.json();
+            wpLink = publishData?.link || wpLink;
+            console.log(`Post ${wpPostId} published successfully`);
+          } else {
+            const errText = await publishResp.text();
+            console.error(`Failed to publish post ${wpPostId}: ${publishResp.status} ${errText.substring(0, 200)}`);
+          }
+        } catch (pubErr) {
+          console.error("Error publishing post:", pubErr);
+        }
+      }
 
       await supabase.from("articles").update({
         wordpress_post_id: wpPostId ? String(wpPostId) : null,
