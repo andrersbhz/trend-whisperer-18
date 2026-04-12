@@ -118,18 +118,51 @@ async function callLovableGateway(apiKey: string, systemPrompt: string, userProm
   return JSON.parse(content);
 }
 
-async function generateImage(lovableApiKey: string, title: string): Promise<string | null> {
+const IMAGE_PROMPT_TEMPLATE = (title: string, category: string) =>
+  `Create a professional, photorealistic news article featured image about: "${title}" (category: ${category}). Requirements: Editorial/journalistic style, visually represents the article topic, NO text overlay, NO watermarks, NO logos, high quality, 16:9 aspect ratio, vibrant colors, professional lighting, suitable as a WordPress featured image.`;
+
+async function generateImageGemini(apiKey: string, title: string, category: string): Promise<string | null> {
+  const models = ["gemini-3.1-flash-image-preview", "gemini-2.5-flash-image"];
+  
+  for (const model of models) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+      const resp = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: IMAGE_PROMPT_TEMPLATE(title, category) }] }],
+          generationConfig: { responseModalities: ["IMAGE", "TEXT"] },
+        }),
+      });
+      if (!resp.ok) {
+        const errBody = await resp.text().catch(() => "");
+        console.warn(`Gemini image model ${model} failed ${resp.status}: ${errBody.substring(0, 200)}`);
+        continue;
+      }
+      const data = await resp.json();
+      const parts = data.candidates?.[0]?.content?.parts || [];
+      const imgPart = parts.find((p: any) => p.inlineData?.mimeType?.startsWith("image/"));
+      if (imgPart?.inlineData) {
+        console.log(`Image generated successfully with model: ${model}`);
+        return `data:${imgPart.inlineData.mimeType};base64,${imgPart.inlineData.data}`;
+      }
+      console.warn(`Model ${model} returned no image data`);
+    } catch (err) {
+      console.warn(`Gemini image model ${model} error:`, err);
+    }
+  }
+  return null;
+}
+
+async function generateImageGateway(lovableApiKey: string, title: string, category: string): Promise<string | null> {
   try {
     const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: { Authorization: `Bearer ${lovableApiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         model: "google/gemini-3.1-flash-image-preview",
-        messages: [{
-          role: "user",
-          content: `Create a professional, photorealistic news article featured image for: "${title}". 
-Requirements: Editorial/journalistic style, NO text overlay, NO watermarks, NO logos, high quality, 16:9, vibrant colors, professional lighting.`,
-        }],
+        messages: [{ role: "user", content: IMAGE_PROMPT_TEMPLATE(title, category) }],
         modalities: ["image", "text"],
       }),
     });
@@ -242,10 +275,20 @@ serve(async (req) => {
           console.warn(`Content short (${parsed.content.length} chars) for: ${topic.topic}`);
         }
 
-        // Generate featured image (always uses Lovable gateway for images)
+        // Generate featured image: try Gemini direct first, then Lovable gateway
         let featuredImageUrl: string | null = null;
-        if (LOVABLE_API_KEY) {
-          featuredImageUrl = await generateImage(LOVABLE_API_KEY, parsed.title);
+        if (useGemini && geminiApiKey) {
+          console.log(`Generating image with Gemini for: ${parsed.title}`);
+          featuredImageUrl = await generateImageGemini(geminiApiKey, parsed.title, topic.category);
+        }
+        if (!featuredImageUrl && LOVABLE_API_KEY) {
+          console.log(`Generating image with Lovable gateway for: ${parsed.title}`);
+          featuredImageUrl = await generateImageGateway(LOVABLE_API_KEY, parsed.title, topic.category);
+        }
+        if (featuredImageUrl) {
+          console.log(`Featured image generated (${featuredImageUrl.startsWith("data:") ? "base64" : "url"}, ${featuredImageUrl.length} chars)`);
+        } else {
+          console.warn(`No featured image generated for: ${parsed.title}`);
         }
 
         // Save to database
