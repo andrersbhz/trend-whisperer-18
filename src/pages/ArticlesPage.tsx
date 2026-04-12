@@ -24,6 +24,7 @@ const ArticlesPage = () => {
   const [preview, setPreview] = useState<any | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [regeneratingImages, setRegeneratingImages] = useState(false);
 
   const fetchArticles = async () => {
     if (!user) return;
