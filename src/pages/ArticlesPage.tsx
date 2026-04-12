@@ -121,6 +121,25 @@ const ArticlesPage = () => {
     }
   };
 
+  const handleRegenerateImages = async () => {
+    const withoutImage = articles.filter(a => !a.featured_image_url && a.status !== 'generating');
+    if (!user || withoutImage.length === 0) return;
+    setRegeneratingImages(true);
+    try {
+      const data = await runBackendQuery(() =>
+        supabase.functions.invoke('regenerate-image', {
+          body: { userId: user.id, articleIds: withoutImage.map(a => a.id) },
+        }),
+      );
+      toast({ title: 'Imagens geradas!', description: data?.message || `${data?.updated || 0} imagens criadas.` });
+      fetchArticles();
+    } catch (error) {
+      toast({ title: 'Erro', description: getErrorMessage(error), variant: 'destructive' });
+    } finally {
+      setRegeneratingImages(false);
+    }
+  };
+
   const statusColors: Record<string, string> = {
     draft: 'bg-muted text-muted-foreground',
     generating: 'bg-warning/20 text-warning',
