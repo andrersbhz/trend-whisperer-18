@@ -71,7 +71,7 @@ serve(async (req) => {
       const body: Record<string, unknown> = {
         title: article.title,
         content: article.content || "",
-        status: "publish",
+        status: "draft", // Create as draft first to avoid Bit Social plugin crash
         excerpt: article.excerpt || article.meta_description || "",
       };
 
