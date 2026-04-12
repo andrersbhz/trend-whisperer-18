@@ -220,7 +220,7 @@ serve(async (req) => {
 
         let parsed: AIResponse;
         try {
-          parsed = useGemini
+          const raw = useGemini
             ? await callGeminiDirect(geminiApiKey!, SYSTEM_PROMPT, userPrompt)
             : await callLovableGateway(LOVABLE_API_KEY!, SYSTEM_PROMPT, userPrompt);
         } catch (aiErr: any) {
