@@ -269,10 +269,20 @@ serve(async (req) => {
           console.warn(`Content short (${parsed.content.length} chars) for: ${topic.topic}`);
         }
 
-        // Generate featured image (always uses Lovable gateway for images)
+        // Generate featured image: try Gemini direct first, then Lovable gateway
         let featuredImageUrl: string | null = null;
-        if (LOVABLE_API_KEY) {
-          featuredImageUrl = await generateImage(LOVABLE_API_KEY, parsed.title);
+        if (useGemini && geminiApiKey) {
+          console.log(`Generating image with Gemini for: ${parsed.title}`);
+          featuredImageUrl = await generateImageGemini(geminiApiKey, parsed.title, topic.category);
+        }
+        if (!featuredImageUrl && LOVABLE_API_KEY) {
+          console.log(`Generating image with Lovable gateway for: ${parsed.title}`);
+          featuredImageUrl = await generateImageGateway(LOVABLE_API_KEY, parsed.title, topic.category);
+        }
+        if (featuredImageUrl) {
+          console.log(`Featured image generated (${featuredImageUrl.startsWith("data:") ? "base64" : "url"}, ${featuredImageUrl.length} chars)`);
+        } else {
+          console.warn(`No featured image generated for: ${parsed.title}`);
         }
 
         // Save to database
