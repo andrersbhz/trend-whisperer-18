@@ -134,10 +134,12 @@ Retorne exatamente 5 tópicos.`,
           const data = await response.json();
           let content = data.choices?.[0]?.message?.content || "";
           content = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+          console.log(`Category ${category}: AI returned ${content.length} chars`);
 
           try {
             const topics = JSON.parse(content);
             if (Array.isArray(topics)) {
+              let added = 0;
               for (const t of topics) {
                 const topicLower = t.topic?.toLowerCase().trim();
                 if (topicLower && !existingSet.has(topicLower)) {
@@ -147,12 +149,16 @@ Retorne exatamente 5 tópicos.`,
                     search_volume: t.search_volume || "médio",
                   });
                   existingSet.add(topicLower);
+                  added++;
                 }
               }
+              console.log(`Category ${category}: ${added} new topics added (${topics.length} returned)`);
             }
           } catch {
-          console.error("Failed to parse trends for category:", category, content.substring(0, 200));
+            console.error("Failed to parse trends for category:", category, content.substring(0, 200));
           }
+        } else {
+          console.error(`AI request failed for ${category}: ${response.status}`);
         }
 
         await new Promise((r) => setTimeout(r, 1500));
