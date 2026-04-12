@@ -223,6 +223,7 @@ serve(async (req) => {
           const raw = useGemini
             ? await callGeminiDirect(geminiApiKey!, SYSTEM_PROMPT, userPrompt)
             : await callLovableGateway(LOVABLE_API_KEY!, SYSTEM_PROMPT, userPrompt);
+          parsed = sanitizeSeoFields(raw);
         } catch (aiErr: any) {
           console.error(`AI error for topic ${topic.topic}:`, aiErr.message);
           if (aiErr.message?.includes("429")) {
