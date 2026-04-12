@@ -75,15 +75,17 @@ serve(async (req) => {
 
     const categories = settings?.categories || ["esportes", "politica", "policia", "saude", "celebridades", "financas"];
 
-    // Fetch existing topics to avoid duplicates
+    // Fetch only USED topics to avoid duplicates (unused ones will be deleted)
     const { data: existingTopics } = await supabase
       .from("trending_topics")
       .select("topic")
-      .eq("user_id", userId);
+      .eq("user_id", userId)
+      .eq("used", true);
 
     const existingSet = new Set(
       (existingTopics || []).map((t: { topic: string }) => t.topic.toLowerCase().trim())
     );
+    console.log(`Found ${existingSet.size} used topics to avoid duplicating`);
 
     const today = new Date().toLocaleDateString("pt-BR");
     const allTopics: Array<{ topic: string; category: string; search_volume: string }> = [];
