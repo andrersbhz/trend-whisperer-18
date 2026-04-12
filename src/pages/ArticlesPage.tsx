@@ -168,9 +168,22 @@ const ArticlesPage = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold neon-text-lilac">Artigos</h1>
-        <p className="text-muted-foreground text-sm mt-1">{articles.length} artigos gerados</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold neon-text-lilac">Artigos</h1>
+          <p className="text-muted-foreground text-sm mt-1">{articles.length} artigos gerados</p>
+        </div>
+        {articles.filter(a => !a.featured_image_url && a.status !== 'generating').length > 0 && (
+          <Button
+            onClick={handleRegenerateImages}
+            disabled={regeneratingImages}
+            variant="outline"
+            className="gap-2"
+          >
+            {regeneratingImages ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
+            {regeneratingImages ? 'Gerando imagens...' : `Gerar imagens (${articles.filter(a => !a.featured_image_url && a.status !== 'generating').length})`}
+          </Button>
+        )}
       </div>
 
       {articles.length === 0 ? (
