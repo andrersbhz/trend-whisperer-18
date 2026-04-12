@@ -225,7 +225,8 @@ serve(async (req) => {
 
     // Fetch settings + decrypt gemini key
     const { data: settings } = await supabase.from("user_settings").select("*").eq("user_id", userId).single();
-    const categories = settings?.categories || ["esportes", "politica", "policia", "saude", "celebridades", "financas"];
+    const writerPrompt = settings?.writer_prompt || null;
+    const systemPrompt = buildSystemPrompt(writerPrompt);
 
     // Decrypt Gemini API key if present
     let geminiApiKey: string | null = null;
@@ -270,8 +271,8 @@ serve(async (req) => {
         let parsed: AIResponse;
         try {
           const raw = useGemini
-            ? await callGeminiDirect(geminiApiKey!, SYSTEM_PROMPT, userPrompt)
-            : await callLovableGateway(LOVABLE_API_KEY!, SYSTEM_PROMPT, userPrompt);
+            ? await callGeminiDirect(geminiApiKey!, systemPrompt, userPrompt)
+            : await callLovableGateway(LOVABLE_API_KEY!, systemPrompt, userPrompt);
           parsed = sanitizeSeoFields(raw);
         } catch (aiErr: any) {
           console.error(`AI error for topic ${topic.topic}:`, aiErr.message);
