@@ -136,18 +136,8 @@ serve(async (req) => {
         } catch (imgErr) { console.error("WP image upload failed:", imgErr); }
       }
 
-      // Yoast SEO + Jetpack meta
-      body.meta = {
-        _yoast_wpseo_title: article.seo_title || article.title,
-        _yoast_wpseo_metadesc: article.meta_description || "",
-        _yoast_wpseo_focuskw: article.seo_keyword || "",
-        _yoast_wpseo_opengraph_title: article.seo_title || article.title,
-        _yoast_wpseo_opengraph_description: article.meta_description || "",
-        _yoast_wpseo_twitter_title: article.seo_title || article.title,
-        _yoast_wpseo_twitter_description: article.meta_description || "",
-        jetpack_seo_html_title: article.seo_title || article.title,
-        advanced_seo_description: article.meta_description || "",
-      };
+      // Note: Yoast SEO meta fields will be set via a separate update after post creation
+      // to avoid WordPress crashing if Yoast is not installed or meta keys are unregistered
 
       const endpoint = `${wpUrl}/wp-json/wp/v2/posts`;
       console.log(`POST (standard) ${endpoint}`);
