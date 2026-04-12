@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Send, Eye, Trash2, Loader2, FileText, RotateCcw } from 'lucide-react';
+import { Send, Eye, Trash2, Loader2, FileText, RotateCcw, ImagePlus } from 'lucide-react';
 import { getErrorMessage, runBackendMutation, runBackendQuery } from '@/lib/backend';
 import {
   Dialog,
@@ -24,6 +24,7 @@ const ArticlesPage = () => {
   const [preview, setPreview] = useState<any | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [regeneratingImages, setRegeneratingImages] = useState(false);
 
   const fetchArticles = async () => {
     if (!user) return;
@@ -32,7 +33,7 @@ const ArticlesPage = () => {
       const data = await runBackendQuery(() =>
         supabase
           .from('articles')
-          .select('id, title, status, category, seo_keyword, meta_description')
+          .select('id, title, status, category, seo_keyword, meta_description, featured_image_url')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false }),
       );
@@ -120,6 +121,25 @@ const ArticlesPage = () => {
     }
   };
 
+  const handleRegenerateImages = async () => {
+    const withoutImage = articles.filter(a => !a.featured_image_url && a.status !== 'generating');
+    if (!user || withoutImage.length === 0) return;
+    setRegeneratingImages(true);
+    try {
+      const data = await runBackendQuery(() =>
+        supabase.functions.invoke('regenerate-image', {
+          body: { userId: user.id, articleIds: withoutImage.map(a => a.id) },
+        }),
+      );
+      toast({ title: 'Imagens geradas!', description: data?.message || `${data?.updated || 0} imagens criadas.` });
+      fetchArticles();
+    } catch (error) {
+      toast({ title: 'Erro', description: getErrorMessage(error), variant: 'destructive' });
+    } finally {
+      setRegeneratingImages(false);
+    }
+  };
+
   const statusColors: Record<string, string> = {
     draft: 'bg-muted text-muted-foreground',
     generating: 'bg-warning/20 text-warning',
@@ -148,9 +168,22 @@ const ArticlesPage = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold neon-text-lilac">Artigos</h1>
-        <p className="text-muted-foreground text-sm mt-1">{articles.length} artigos gerados</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold neon-text-lilac">Artigos</h1>
+          <p className="text-muted-foreground text-sm mt-1">{articles.length} artigos gerados</p>
+        </div>
+        {articles.filter(a => !a.featured_image_url && a.status !== 'generating').length > 0 && (
+          <Button
+            onClick={handleRegenerateImages}
+            disabled={regeneratingImages}
+            variant="outline"
+            className="gap-2"
+          >
+            {regeneratingImages ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
+            {regeneratingImages ? 'Gerando imagens...' : `Gerar imagens (${articles.filter(a => !a.featured_image_url && a.status !== 'generating').length})`}
+          </Button>
+        )}
       </div>
 
       {articles.length === 0 ? (
