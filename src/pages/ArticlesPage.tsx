@@ -40,6 +40,7 @@ const ArticlesPage = () => {
 
       setArticles(data || []);
     } catch (error) {
+      console.error('[ArticlesPage] fetchArticles error:', error);
       setArticles([]);
       toast({ title: 'Erro ao carregar artigos', description: getErrorMessage(error), variant: 'destructive' });
     } finally {
