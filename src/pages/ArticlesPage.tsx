@@ -25,9 +25,17 @@ const ArticlesPage = () => {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [regeneratingImages, setRegeneratingImages] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
 
-  const fetchArticles = async () => {
+  const PAGE_SIZE = 20;
+
+  const fetchArticles = async (options?: { append?: boolean }) => {
     if (!user) return;
+
+    const append = options?.append ?? false;
+    const from = append ? articles.length : 0;
+    const to = from + PAGE_SIZE - 1;
 
     try {
       const data = await runBackendQuery(() =>
@@ -35,20 +43,28 @@ const ArticlesPage = () => {
           .from('articles')
           .select('id, title, status, category, seo_keyword, meta_description, featured_image_url')
           .eq('user_id', user.id)
-          .order('created_at', { ascending: false }),
+          .order('created_at', { ascending: false })
+          .range(from, to),
       );
 
-      setArticles(data || []);
+      setHasMore((data || []).length === PAGE_SIZE);
+      setArticles((current) => (append ? [...current, ...(data || [])] : data || []));
     } catch (error) {
       console.error('[ArticlesPage] fetchArticles error:', error);
-      setArticles([]);
+      if (!append) {
+        setArticles([]);
+      }
       toast({ title: 'Erro ao carregar artigos', description: getErrorMessage(error), variant: 'destructive' });
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
   useEffect(() => {
+    setLoading(true);
+    setLoadingMore(false);
+    setHasMore(false);
     fetchArticles();
   }, [user]);
 
@@ -261,6 +277,23 @@ const ArticlesPage = () => {
               </CardContent>
             </Card>
           ))}
+        </div>
+      )}
+
+      {articles.length > 0 && hasMore && (
+        <div className="flex justify-center">
+          <Button
+            variant="outline"
+            onClick={() => {
+              setLoadingMore(true);
+              fetchArticles({ append: true });
+            }}
+            disabled={loadingMore}
+            className="gap-2"
+          >
+            {loadingMore ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            {loadingMore ? 'Carregando...' : 'Carregar mais'}
+          </Button>
         </div>
       )}
 
