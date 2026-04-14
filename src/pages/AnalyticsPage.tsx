@@ -81,12 +81,15 @@ const AnalyticsPage = () => {
   const [loadingTips, setLoadingTips] = useState(false);
   const [gaConnected, setGaConnected] = useState(false);
   const [articleStats, setArticleStats] = useState({ total: 0, published: 0, failed: 0 });
+  const [metaMetrics, setMetaMetrics] = useState<any[] | null>(null);
+  const [loadingMeta, setLoadingMeta] = useState(false);
 
   useEffect(() => {
     if (!user) return;
     checkGaConnection();
     fetchArticleStats();
     fetchSocialMetrics();
+    fetchMetaMetrics();
   }, [user]);
 
   const fetchArticleStats = async () => {
