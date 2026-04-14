@@ -782,6 +782,9 @@ const AnalyticsPage = () => {
       {/* Social Metrics */}
       {socialSection}
 
+      {/* Jetpack Stats */}
+      {jetpackSection}
+
       {/* Main Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {analytics?.dailyViews && analytics.dailyViews.length > 0 && (
