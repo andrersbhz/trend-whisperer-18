@@ -58,29 +58,54 @@ const AutomationSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChan
         </CardContent>
       </Card>
 
-      {/* Automation Settings */}
+      {/* Robô de Publicação */}
       <Card className="shadow-card">
         <CardHeader>
           <div className="flex items-center gap-2">
             <Settings className="h-5 w-5 text-primary" />
-            <CardTitle className="text-lg">Automação</CardTitle>
+            <CardTitle className="text-lg">🤖 Robô de Publicação Automática</CardTitle>
           </div>
-          <CardDescription>Configure como os artigos devem ser gerados</CardDescription>
+          <CardDescription>
+            Configure quantas postagens o robô deve fazer por dia e se deve publicar automaticamente no WordPress.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Postagens por dia */}
           <div className="space-y-2">
-            <Label>Artigos por dia</Label>
+            <Label className="text-sm font-semibold">Postagens por dia</Label>
+            <p className="text-xs text-muted-foreground">
+              Defina a quantidade de postagens a serem criadas e publicadas por dia. Os horários serão divididos em espaços iguais dentro de 24 horas.
+            </p>
             <Input
               type="number"
               min={1}
               max={20}
               value={settings.articles_per_day}
-              onChange={(e) => onChange({ articles_per_day: parseInt(e.target.value) || 10 })}
+              onChange={(e) => onChange({ articles_per_day: Math.max(1, Math.min(20, parseInt(e.target.value) || 3)) })}
+            />
+            {settings.articles_per_day > 0 && (
+              <p className="text-xs text-muted-foreground bg-muted/50 p-2 rounded-md">
+                ⏰ Intervalo entre postagens: <strong>~{Math.round(24 / settings.articles_per_day * 60)} minutos</strong> ({(24 / settings.articles_per_day).toFixed(1)}h)
+              </p>
+            )}
+          </div>
+
+          {/* Publicação automática */}
+          <div className="flex items-center justify-between p-4 rounded-lg border border-primary/20 bg-primary/5">
+            <div>
+              <p className="text-sm font-semibold text-foreground">Publicação automática no WordPress</p>
+              <p className="text-xs text-muted-foreground">Quando ativado, os artigos gerados serão publicados automaticamente no horário agendado</p>
+            </div>
+            <Switch
+              checked={settings.auto_publish}
+              onCheckedChange={(checked) => onChange({ auto_publish: checked })}
             />
           </div>
 
+          {/* Categorias */}
           <div className="space-y-3">
-            <Label>Categorias ativas</Label>
+            <Label className="text-sm font-semibold">Categorias ativas</Label>
+            <p className="text-xs text-muted-foreground">Selecione os temas que o robô deve cobrir nas postagens</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {allCategories.map((cat) => (
                 <label key={cat.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted/50 cursor-pointer">
@@ -92,17 +117,6 @@ const AutomationSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChan
                 </label>
               ))}
             </div>
-          </div>
-
-          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-            <div>
-              <p className="text-sm font-medium text-foreground">Publicação automática</p>
-              <p className="text-xs text-muted-foreground">Publicar artigos automaticamente após geração</p>
-            </div>
-            <Switch
-              checked={settings.auto_publish}
-              onCheckedChange={(checked) => onChange({ auto_publish: checked })}
-            />
           </div>
         </CardContent>
       </Card>
