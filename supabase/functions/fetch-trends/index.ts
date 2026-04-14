@@ -258,7 +258,11 @@ function deduplicateBySimilarity(
       const union = new Set([...words, ...existingWords]).size;
       const similarity = union > 0 ? intersection / union : 0;
 
-      return similarity > 0.5;
+      // Also check if any significant word (>5 chars) appears in both
+      const longWords = [...words].filter((w) => w.length > 5);
+      const hasSharedKeyword = longWords.some((w) => existingWords.has(w));
+
+      return similarity > 0.35 || (hasSharedKeyword && similarity > 0.2);
     });
 
     if (!isDuplicate) {
