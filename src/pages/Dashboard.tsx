@@ -318,9 +318,23 @@ const Dashboard = () => {
 
       {stats.failed > 0 && (
         <Card className="glass-card border-destructive/30">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-3 w-3 rounded-full bg-destructive animate-pulse-dot" />
-            <p className="text-sm text-destructive">{stats.failed} artigo(s) falharam na publicação. Vá em Artigos para tentar novamente.</p>
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <div className="h-3 w-3 rounded-full bg-destructive animate-pulse-dot" />
+              <CardTitle className="text-sm text-destructive">{stats.failed} artigo(s) falharam na publicação</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {recentErrors.length > 0 ? (
+              recentErrors.map((err) => (
+                <div key={err.id} className="p-2 rounded bg-destructive/5 border border-destructive/10">
+                  <p className="text-xs text-destructive font-medium truncate">{err.error_message || 'Erro desconhecido'}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{new Date(err.created_at).toLocaleString('pt-BR')}</p>
+                </div>
+              ))
+            ) : (
+              <p className="text-xs text-muted-foreground">Vá em Artigos para tentar novamente.</p>
+            )}
           </CardContent>
         </Card>
       )}
