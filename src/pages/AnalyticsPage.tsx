@@ -34,8 +34,25 @@ interface AnalyticsData {
 }
 
 interface SocialMetrics {
-  facebook: { posts: number; reach: number; engagement: number; likes: number; shares: number };
-  instagram: { posts: number; reach: number; engagement: number; likes: number; comments: number };
+  publish_log: {
+    wordpress: { total: number; success: number; failed: number; recent: { date: string; url: string }[] };
+    facebook: { total: number; success: number; failed: number };
+    instagram: { total: number; success: number; failed: number };
+  };
+  jetpack: {
+    posts_with_sharing: number;
+    total_shares: number;
+    shares_by_network: Record<string, number>;
+  };
+  summary: {
+    total_published_wp: number;
+    total_shared_social: number;
+    total_facebook: number;
+    total_instagram: number;
+    total_twitter: number;
+    total_linkedin: number;
+    total_tumblr: number;
+  };
 }
 
 interface AiTip {
