@@ -56,6 +56,22 @@ interface SocialMetrics {
   };
 }
 
+interface JetpackStats {
+  available: boolean;
+  summary?: {
+    views: number; visitors: number; likes: number; comments: number;
+    followers: number; shares: number; posts: number;
+    views_today: number; views_yesterday: number;
+    views_best_day: string | null; views_best_day_total: number;
+  };
+  topPosts?: { title: string; views: number; url: string }[];
+  dailyViews?: { date: string; views: number }[];
+  referrers?: { name: string; views: number }[];
+  searchTerms?: { term: string; views: number }[];
+  countries?: { country: string; views: number }[];
+  publicizeConnections?: { service: string; external_name: string; status: string }[];
+}
+
 interface AiTip {
   category: string;
   tip: string;
