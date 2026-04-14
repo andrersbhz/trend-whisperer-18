@@ -16,10 +16,10 @@ serve(async (req) => {
     const { accessToken } = await req.json();
     if (!accessToken) throw new Error("accessToken is required");
 
-    // Fetch all pages the user manages
+    // Fetch all pages the user manages (use query param for better compatibility)
+    const fields = "id,name,access_token,category,picture{url},fan_count,instagram_business_account{id,name,username,profile_picture_url,followers_count}";
     const pagesRes = await fetch(
-      `${GRAPH_API}/me/accounts?fields=id,name,access_token,category,picture{url},fan_count,instagram_business_account{id,name,username,profile_picture_url,followers_count}&limit=100`,
-      { headers: { Authorization: `Bearer ${accessToken}` } }
+      `${GRAPH_API}/me/accounts?fields=${fields}&limit=100&access_token=${encodeURIComponent(accessToken)}`
     );
 
     if (!pagesRes.ok) {
