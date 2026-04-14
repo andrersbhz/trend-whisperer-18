@@ -8,7 +8,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { FileText, TrendingUp, CheckCircle, Clock, Sparkles, RefreshCw, Save, Loader2, PenTool, Bot } from 'lucide-react';
+import {
+  FileText, TrendingUp, CheckCircle, Clock, Sparkles, RefreshCw, Save, Loader2,
+  PenTool, Bot, Facebook, Instagram, Users, Heart, MessageCircle, Share2, Eye, ThumbsUp,
+} from 'lucide-react';
 import AIProvidersPanel from '@/components/dashboard/AIProvidersPanel';
 import { useToast } from '@/hooks/use-toast';
 import { getErrorMessage, runBackendQuery, runBackendMutation } from '@/lib/backend';
@@ -28,6 +31,8 @@ const Dashboard = () => {
   const [articlesPerDay, setArticlesPerDay] = useState(10);
   const [autoPublish, setAutoPublish] = useState(false);
   const [savingAuto, setSavingAuto] = useState(false);
+  const [metaMetrics, setMetaMetrics] = useState<any[] | null>(null);
+  const [loadingMeta, setLoadingMeta] = useState(false);
 
   const fetchStats = async () => {
     if (!user) return;
@@ -90,7 +95,30 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchStats();
+    fetchMetaMetrics();
   }, [user]);
+
+  const fetchMetaMetrics = async () => {
+    if (!user) return;
+    setLoadingMeta(true);
+    try {
+      const data = await runBackendQuery(() =>
+        supabase.functions.invoke('fetch-meta-metrics', { body: { userId: user.id } }),
+      );
+      if (data?.pages) {
+        const validPages = (data.pages as any[]).filter((pg: any) => {
+          const hasFbData = pg.facebook && !pg.facebook.error && (pg.facebook.fan_count || pg.facebook.followers_count);
+          const hasIgData = pg.instagram && !pg.instagram.error && (pg.instagram.followers_count || pg.instagram.media_count);
+          return hasFbData || hasIgData;
+        });
+        setMetaMetrics(validPages.length > 0 ? validPages : null);
+      }
+    } catch {
+      setMetaMetrics(null);
+    } finally {
+      setLoadingMeta(false);
+    }
+  };
 
   const getFunctionErrorMessage = async (error: unknown) => {
     const response = typeof error === 'object' && error && 'context' in error
@@ -230,7 +258,129 @@ const Dashboard = () => {
         ))}
       </div>
 
-      <AIProvidersPanel />
+      {/* Meta Social Cards */}
+      {loadingMeta && (
+        <div className="flex items-center gap-2 text-muted-foreground text-sm">
+          <Loader2 className="h-4 w-4 animate-spin" /> Carregando métricas das redes sociais...
+        </div>
+      )}
+      {metaMetrics && metaMetrics.length > 0 && (
+        <div className="space-y-4">
+          {metaMetrics.map((pg: any, idx: number) => (
+            <Card key={idx} className="glass-card neon-border-pink overflow-hidden">
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-3">
+                  {pg.facebook?.picture?.data?.url ? (
+                    <img src={pg.facebook.picture.data.url} alt={pg.page_name} className="w-10 h-10 rounded-full border-2 border-accent/30" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center">
+                      <Facebook className="h-5 w-5 text-accent" />
+                    </div>
+                  )}
+                  <div>
+                    <CardTitle className="text-base text-foreground">{pg.page_name || 'Página'}</CardTitle>
+                    {pg.facebook?.category && (
+                      <p className="text-xs text-muted-foreground">{pg.facebook.category}</p>
+                    )}
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Facebook Metrics */}
+                {pg.facebook && !pg.facebook.error && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <Facebook className="h-4 w-4 text-accent" />
+                      <span className="text-sm font-semibold text-foreground">Facebook</span>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      {[
+                        { icon: Users, label: 'Seguidores', value: pg.facebook.followers_count || pg.facebook.fan_count || 0, color: 'text-accent' },
+                        { icon: ThumbsUp, label: 'Curtidas', value: pg.facebook.fan_count || 0, color: 'text-primary' },
+                        { icon: MessageCircle, label: 'Falando sobre', value: pg.facebook.talking_about_count || 0, color: 'text-warning' },
+                        { icon: Eye, label: 'Check-ins', value: pg.facebook.were_here_count || 0, color: 'text-muted-foreground' },
+                      ].map((m) => (
+                        <div key={m.label} className="p-3 rounded-xl bg-secondary/40 border border-border/50">
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <m.icon className={`h-3.5 w-3.5 ${m.color}`} />
+                            <span className="text-[11px] text-muted-foreground">{m.label}</span>
+                          </div>
+                          <p className="text-xl font-bold text-foreground">{(m.value || 0).toLocaleString('pt-BR')}</p>
+                        </div>
+                      ))}
+                    </div>
+                    {pg.facebook.post_stats && (
+                      <div className="mt-3 p-3 rounded-xl bg-secondary/20 border border-border/30">
+                        <p className="text-xs font-medium text-muted-foreground mb-2">Últimos {pg.facebook.post_stats.total_posts} posts</p>
+                        <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 text-center">
+                          {[
+                            { label: 'Curtidas', value: pg.facebook.post_stats.total_likes },
+                            { label: 'Comentários', value: pg.facebook.post_stats.total_comments },
+                            { label: 'Reações', value: pg.facebook.post_stats.total_reactions },
+                            { label: 'Compartilh.', value: pg.facebook.post_stats.total_shares },
+                            { label: 'Eng. Médio', value: pg.facebook.post_stats.avg_engagement },
+                          ].map((s) => (
+                            <div key={s.label}>
+                              <p className="text-sm font-bold text-foreground">{(s.value || 0).toLocaleString('pt-BR')}</p>
+                              <p className="text-[10px] text-muted-foreground">{s.label}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Instagram Metrics */}
+                {pg.instagram && !pg.instagram.error && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <Instagram className="h-4 w-4 text-primary" />
+                      <span className="text-sm font-semibold text-foreground">
+                        Instagram {pg.instagram.username ? `@${pg.instagram.username}` : ''}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      {[
+                        { icon: Users, label: 'Seguidores', value: pg.instagram.followers_count || 0, color: 'text-primary' },
+                        { icon: Users, label: 'Seguindo', value: pg.instagram.follows_count || 0, color: 'text-muted-foreground' },
+                        { icon: FileText, label: 'Publicações', value: pg.instagram.media_count || 0, color: 'text-accent' },
+                        { icon: Heart, label: 'Eng. Médio', value: pg.instagram.post_stats?.avg_engagement || 0, color: 'text-destructive' },
+                      ].map((m) => (
+                        <div key={m.label} className="p-3 rounded-xl bg-secondary/40 border border-border/50">
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <m.icon className={`h-3.5 w-3.5 ${m.color}`} />
+                            <span className="text-[11px] text-muted-foreground">{m.label}</span>
+                          </div>
+                          <p className="text-xl font-bold text-foreground">{(m.value || 0).toLocaleString('pt-BR')}</p>
+                        </div>
+                      ))}
+                    </div>
+                    {pg.instagram.post_stats && (
+                      <div className="mt-3 p-3 rounded-xl bg-secondary/20 border border-border/30">
+                        <p className="text-xs font-medium text-muted-foreground mb-2">Últimos {pg.instagram.post_stats.total_posts} posts</p>
+                        <div className="grid grid-cols-3 gap-2 text-center">
+                          {[
+                            { label: 'Curtidas', value: pg.instagram.post_stats.total_likes },
+                            { label: 'Comentários', value: pg.instagram.post_stats.total_comments },
+                            { label: 'Eng. Médio', value: pg.instagram.post_stats.avg_engagement },
+                          ].map((s) => (
+                            <div key={s.label}>
+                              <p className="text-sm font-bold text-foreground">{(s.value || 0).toLocaleString('pt-BR')}</p>
+                              <p className="text-[10px] text-muted-foreground">{s.label}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
 
       {/* Automation Robot */}
       <Card className="glass-card neon-border-pink">
