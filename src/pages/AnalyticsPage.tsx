@@ -126,6 +126,26 @@ const AnalyticsPage = () => {
     }
   };
 
+  const fetchMetaMetrics = async () => {
+    if (!user) return;
+    setLoadingMeta(true);
+    try {
+      const data = await runBackendQuery(() =>
+        supabase.functions.invoke('fetch-meta-metrics', {
+          body: { userId: user.id },
+        }),
+      );
+      if (data?.pages) {
+        setMetaMetrics(data.pages);
+      }
+    } catch (error) {
+      console.error('Meta metrics error:', error);
+      setMetaMetrics(null);
+    } finally {
+      setLoadingMeta(false);
+    }
+  };
+
   const checkGaConnection = async () => {
     if (!user) return;
 
