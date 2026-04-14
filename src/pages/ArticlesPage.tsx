@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Send, Eye, Trash2, Loader2, FileText, RotateCcw, ImagePlus } from 'lucide-react';
+import { Send, Eye, Trash2, Loader2, FileText, RotateCcw, ImagePlus, Sparkles } from 'lucide-react';
 import { getErrorMessage, runBackendMutation, runBackendQuery } from '@/lib/backend';
 import {
   Dialog,
@@ -25,6 +25,7 @@ const ArticlesPage = () => {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [regeneratingImages, setRegeneratingImages] = useState(false);
+  const [generating, setGenerating] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
 
@@ -67,6 +68,28 @@ const ArticlesPage = () => {
     setHasMore(false);
     fetchArticles();
   }, [user]);
+
+  const handleGenerate = async () => {
+    if (!user) return;
+    setGenerating(true);
+    try {
+      const data = await runBackendQuery(() =>
+        supabase.functions.invoke('generate-articles', {
+          body: { userId: user.id },
+        }),
+      );
+      toast({
+        title: data?.success ? 'Artigos gerados!' : 'Atenção',
+        description: data?.message || data?.error || 'Verifique o resultado.',
+        variant: data?.success ? 'default' : 'destructive',
+      });
+      fetchArticles();
+    } catch (error) {
+      toast({ title: 'Erro ao gerar artigos', description: getErrorMessage(error), variant: 'destructive' });
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   const handlePublish = async (articleId: string) => {
     setPublishing(articleId);
@@ -185,22 +208,32 @@ const ArticlesPage = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold neon-text-lilac">Artigos</h1>
           <p className="text-muted-foreground text-sm mt-1">{articles.length} artigos gerados</p>
         </div>
-        {articles.filter(a => !a.featured_image_url && a.status !== 'generating').length > 0 && (
+        <div className="flex gap-2 flex-wrap">
           <Button
-            onClick={handleRegenerateImages}
-            disabled={regeneratingImages}
-            variant="outline"
-            className="gap-2"
+            onClick={handleGenerate}
+            disabled={generating}
+            className="gradient-primary gap-2"
           >
-            {regeneratingImages ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
-            {regeneratingImages ? 'Gerando imagens...' : `Gerar imagens (${articles.filter(a => !a.featured_image_url && a.status !== 'generating').length})`}
+            {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+            {generating ? 'Gerando artigos...' : 'Gerar Artigos'}
           </Button>
-        )}
+          {articles.filter(a => !a.featured_image_url && a.status !== 'generating').length > 0 && (
+            <Button
+              onClick={handleRegenerateImages}
+              disabled={regeneratingImages}
+              variant="outline"
+              className="gap-2"
+            >
+              {regeneratingImages ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
+              {regeneratingImages ? 'Gerando imagens...' : `Gerar imagens (${articles.filter(a => !a.featured_image_url && a.status !== 'generating').length})`}
+            </Button>
+          )}
+        </div>
       </div>
 
       {articles.length === 0 ? (
@@ -208,7 +241,7 @@ const ArticlesPage = () => {
           <CardContent className="py-16 text-center">
             <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <p className="text-muted-foreground">Nenhum artigo encontrado.</p>
-            <p className="text-sm text-muted-foreground mt-1">Vá ao Dashboard e clique em "Gerar Artigos"</p>
+            <p className="text-sm text-muted-foreground mt-1">Clique em "Gerar Artigos" acima para começar</p>
           </CardContent>
         </Card>
       ) : (
