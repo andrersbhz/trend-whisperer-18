@@ -99,6 +99,8 @@ const AnalyticsPage = () => {
   const [articleStats, setArticleStats] = useState({ total: 0, published: 0, failed: 0 });
   const [metaMetrics, setMetaMetrics] = useState<any[] | null>(null);
   const [loadingMeta, setLoadingMeta] = useState(false);
+  const [jetpackStats, setJetpackStats] = useState<JetpackStats | null>(null);
+  const [loadingJetpack, setLoadingJetpack] = useState(false);
 
   useEffect(() => {
     if (!user) return;
