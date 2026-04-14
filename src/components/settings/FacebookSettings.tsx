@@ -4,7 +4,7 @@ import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Facebook, Plus, Trash2, Loader2 } from 'lucide-react';
+import { Facebook, Plus, Trash2, Loader2, Search, Instagram, Users, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -20,6 +20,22 @@ interface FacebookAccount {
   is_active: boolean;
 }
 
+interface MetaPage {
+  page_id: string;
+  page_name: string;
+  category: string | null;
+  picture_url: string | null;
+  fan_count: number;
+  page_access_token: string;
+  instagram: {
+    id: string;
+    name: string;
+    username: string;
+    profile_picture_url: string | null;
+    followers_count: number;
+  } | null;
+}
+
 interface Props {
   settings: UserSettings;
   onChange: (partial: Partial<UserSettings>) => void;
@@ -31,6 +47,11 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
   const [accounts, setAccounts] = useState<FacebookAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
+  const [showDiscover, setShowDiscover] = useState(false);
+  const [userAccessToken, setUserAccessToken] = useState('');
+  const [discoverLoading, setDiscoverLoading] = useState(false);
+  const [metaPages, setMetaPages] = useState<MetaPage[]>([]);
+  const [connectingPageId, setConnectingPageId] = useState<string | null>(null);
   const [newAccount, setNewAccount] = useState({ page_name: '', page_id: '', access_token: '', instagram_account_id: '' });
   const [saving, setSaving] = useState(false);
 
@@ -48,6 +69,51 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
   useEffect(() => {
     fetchAccounts();
   }, [user]);
+
+  const handleDiscoverPages = async () => {
+    if (!userAccessToken) {
+      toast({ title: 'Erro', description: 'Insira seu User Access Token da Meta', variant: 'destructive' });
+      return;
+    }
+    setDiscoverLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('fetch-meta-pages', {
+        body: { accessToken: userAccessToken },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      setMetaPages(data?.pages || []);
+      if ((data?.pages || []).length === 0) {
+        toast({ title: 'Nenhuma página encontrada', description: 'Esse token não tem páginas associadas.' });
+      }
+    } catch (e: any) {
+      toast({ title: 'Erro ao buscar páginas', description: e.message, variant: 'destructive' });
+      setMetaPages([]);
+    } finally {
+      setDiscoverLoading(false);
+    }
+  };
+
+  const handleConnectPage = async (page: MetaPage) => {
+    if (!user) return;
+    setConnectingPageId(page.page_id);
+    try {
+      const { error } = await supabase.from('facebook_accounts').insert({
+        user_id: user.id,
+        page_name: page.page_name,
+        page_id: page.page_id,
+        access_token: page.page_access_token,
+        instagram_account_id: page.instagram?.id || null,
+      } as any);
+      if (error) throw error;
+      toast({ title: 'Página conectada!', description: `${page.page_name} foi adicionada com sucesso.` });
+      fetchAccounts();
+    } catch (e: any) {
+      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+    } finally {
+      setConnectingPageId(null);
+    }
+  };
 
   const handleAdd = async () => {
     if (!user || !newAccount.page_id || !newAccount.access_token) {
@@ -82,6 +148,7 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
   };
 
   const connected = accounts.length > 0;
+  const connectedPageIds = new Set(accounts.map((a) => a.page_id));
 
   return (
     <ConnectionCard
@@ -104,6 +171,7 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
           </div>
         ) : (
           <>
+            {/* Connected accounts */}
             {accounts.map((acc) => (
               <div key={acc.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
                 <div className="min-w-0 flex-1">
@@ -115,7 +183,10 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">ID: {acc.page_id}</p>
                   {acc.instagram_account_id && (
-                    <p className="text-xs text-muted-foreground">IG: {acc.instagram_account_id}</p>
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <Instagram className="h-3 w-3 text-muted-foreground" />
+                      <p className="text-xs text-muted-foreground">{acc.instagram_account_id}</p>
+                    </div>
                   )}
                 </div>
                 <Button size="sm" variant="ghost" className="text-destructive shrink-0" onClick={() => handleDelete(acc.id)}>
@@ -124,7 +195,94 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
               </div>
             ))}
 
-            {showAdd ? (
+            {/* Discover pages from Meta */}
+            {showDiscover ? (
+              <div className="space-y-3 p-3 rounded-lg border border-primary/30 bg-primary/5">
+                <div className="flex items-center gap-2 mb-1">
+                  <Search className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-medium text-foreground">Descobrir Páginas da Meta</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Cole seu <strong>User Access Token</strong> do Meta para listar todas as páginas que você administra.
+                </p>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">User Access Token</Label>
+                  <PasswordInput
+                    placeholder="EAAxxxxxxx..."
+                    value={userAccessToken}
+                    onChange={(e) => setUserAccessToken(e.target.value)}
+                    className="h-9 text-sm"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={handleDiscoverPages} disabled={discoverLoading} className="gradient-primary">
+                    {discoverLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4 mr-1" />}
+                    Buscar Páginas
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => { setShowDiscover(false); setMetaPages([]); setUserAccessToken(''); }}>
+                    Cancelar
+                  </Button>
+                </div>
+
+                {/* Meta pages list */}
+                {metaPages.length > 0 && (
+                  <div className="space-y-2 mt-2">
+                    <p className="text-xs font-medium text-foreground">{metaPages.length} página(s) encontrada(s):</p>
+                    {metaPages.map((page) => {
+                      const alreadyConnected = connectedPageIds.has(page.page_id);
+                      return (
+                        <div key={page.page_id} className="flex items-center gap-3 p-3 rounded-lg bg-background border border-border">
+                          {page.picture_url ? (
+                            <img src={page.picture_url} alt={page.page_name} className="w-10 h-10 rounded-lg object-cover" />
+                          ) : (
+                            <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
+                              <Facebook className="h-5 w-5 text-muted-foreground" />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-foreground truncate">{page.page_name}</p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              {page.category && (
+                                <Badge variant="secondary" className="text-[10px] h-4">{page.category}</Badge>
+                              )}
+                              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                <Users className="h-3 w-3" /> {page.fan_count.toLocaleString()}
+                              </span>
+                            </div>
+                            {page.instagram && (
+                              <div className="flex items-center gap-1.5 mt-1">
+                                <Instagram className="h-3 w-3 text-muted-foreground" />
+                                <span className="text-xs text-muted-foreground">@{page.instagram.username}</span>
+                                <span className="text-xs text-muted-foreground">• {page.instagram.followers_count.toLocaleString()} seguidores</span>
+                              </div>
+                            )}
+                          </div>
+                          {alreadyConnected ? (
+                            <Badge variant="outline" className="shrink-0 text-success border-success/30">
+                              <CheckCircle2 className="h-3 w-3 mr-1" /> Conectada
+                            </Badge>
+                          ) : (
+                            <Button
+                              size="sm"
+                              onClick={() => handleConnectPage(page)}
+                              disabled={connectingPageId === page.page_id}
+                              className="shrink-0 gradient-primary"
+                            >
+                              {connectingPageId === page.page_id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Plus className="h-4 w-4 mr-1" />
+                              )}
+                              Conectar
+                            </Button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            ) : showAdd ? (
               <div className="space-y-3 p-3 rounded-lg border border-primary/30 bg-primary/5">
                 <div className="space-y-1.5">
                   <Label className="text-xs">Nome da Página (opcional)</Label>
@@ -150,10 +308,16 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
                 </div>
               </div>
             ) : (
-              <Button variant="outline" size="sm" className="w-full" onClick={() => setShowAdd(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Adicionar Conta
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" className="flex-1" onClick={() => setShowDiscover(true)}>
+                  <Search className="h-4 w-4 mr-2" />
+                  Descobrir Páginas
+                </Button>
+                <Button variant="outline" size="sm" className="flex-1" onClick={() => setShowAdd(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Adicionar Manual
+                </Button>
+              </div>
             )}
           </>
         )}
