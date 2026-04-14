@@ -271,6 +271,31 @@ async function generateImageGemini(apiKey: string, title: string, category: stri
   return null;
 }
 
+async function generateImageDallE(apiKey: string, title: string, category: string): Promise<string | null> {
+  try {
+    const resp = await fetch("https://api.openai.com/v1/images/generations", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "dall-e-3",
+        prompt: IMAGE_PROMPT_TEMPLATE(title, category),
+        n: 1,
+        size: "1792x1024",
+        quality: "standard",
+        response_format: "b64_json",
+      }),
+    });
+    if (!resp.ok) { console.warn(`DALL-E failed ${resp.status}`); return null; }
+    const data = await resp.json();
+    const b64 = data.data?.[0]?.b64_json;
+    if (b64) {
+      console.log("Image generated with DALL-E 3");
+      return `data:image/png;base64,${b64}`;
+    }
+  } catch (err) { console.warn("DALL-E error:", err); }
+  return null;
+}
+
 async function generateImageGateway(lovableApiKey: string, title: string, category: string): Promise<string | null> {
   try {
     const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -441,6 +466,9 @@ serve(async (req) => {
         let featuredImageUrl: string | null = null;
         if (geminiApiKey) {
           featuredImageUrl = await generateImageGemini(geminiApiKey, parsed.title, topic.category);
+        }
+        if (!featuredImageUrl && openaiApiKey) {
+          featuredImageUrl = await generateImageDallE(openaiApiKey, parsed.title, topic.category);
         }
         if (!featuredImageUrl && LOVABLE_API_KEY) {
           featuredImageUrl = await generateImageGateway(LOVABLE_API_KEY, parsed.title, topic.category);
