@@ -23,7 +23,6 @@ function sanitizeSeoFields(parsed: AIResponse): AIResponse {
     slug: parsed.slug,
     image_alt: stripHtml(parsed.image_alt),
     image_caption: stripHtml(parsed.image_caption),
-    // content keeps HTML intentionally
   };
 }
 
@@ -31,6 +30,10 @@ function sanitizeSeoFields(parsed: AIResponse): AIResponse {
 
 function isTransientError(msg: string): boolean {
   return /429|503|504|RESOURCE_EXHAUSTED|UNAVAILABLE|high demand|temporarily|timeout/i.test(msg);
+}
+
+function isBillingError(msg: string): boolean {
+  return /402|payment_required|Not enough credits|spending cap|RESOURCE_EXHAUSTED/i.test(msg);
 }
 
 async function withRetry<T>(fn: () => Promise<T>, maxRetries = 2, baseDelayMs = 5000): Promise<T> {
@@ -41,7 +44,7 @@ async function withRetry<T>(fn: () => Promise<T>, maxRetries = 2, baseDelayMs = 
     } catch (err: any) {
       lastErr = err instanceof Error ? err : new Error(String(err));
       const msg = lastErr.message;
-      if (attempt < maxRetries && isTransientError(msg)) {
+      if (attempt < maxRetries && isTransientError(msg) && !isBillingError(msg)) {
         const delay = baseDelayMs * (attempt + 1);
         console.log(`[Retry] Attempt ${attempt + 1} failed (transient), retrying in ${delay}ms...`);
         await new Promise((r) => setTimeout(r, delay));
@@ -57,6 +60,18 @@ async function withRetry<T>(fn: () => Promise<T>, maxRetries = 2, baseDelayMs = 
 
 interface AIResponse { title: string; content: string; excerpt: string; seo_keyword: string; seo_title: string; meta_description: string; slug: string; image_alt: string; image_caption: string; }
 
+const ARTICLE_TOOL_PARAMS = {
+  title: "Título H1 do artigo, máximo 60 caracteres",
+  content: "Conteúdo HTML completo (1800-2400 chars)",
+  excerpt: "Resumo para redes sociais (máx 160 chars)",
+  seo_keyword: "Focus keyword do Yoast SEO (3-5 palavras)",
+  seo_title: "Título SEO até 60 chars",
+  meta_description: "Meta descrição 120-155 chars",
+  slug: "Slug para URL",
+  image_alt: "Texto alternativo da imagem",
+  image_caption: "Legenda da imagem",
+};
+
 async function callGeminiDirect(apiKey: string, systemPrompt: string, userPrompt: string): Promise<AIResponse> {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
@@ -65,18 +80,8 @@ async function callGeminiDirect(apiKey: string, systemPrompt: string, userPrompt
     description: "Cria um artigo completo para publicação no WordPress com todos os campos SEO.",
     parameters: {
       type: "OBJECT",
-      properties: {
-        title: { type: "STRING", description: "Título H1 do artigo, máximo 60 caracteres" },
-        content: { type: "STRING", description: "Conteúdo HTML completo (1800-2400 chars)" },
-        excerpt: { type: "STRING", description: "Resumo para redes sociais (máx 160 chars)" },
-        seo_keyword: { type: "STRING", description: "Focus keyword do Yoast SEO (3-5 palavras)" },
-        seo_title: { type: "STRING", description: "Título SEO até 60 chars" },
-        meta_description: { type: "STRING", description: "Meta descrição 120-155 chars" },
-        slug: { type: "STRING", description: "Slug para URL" },
-        image_alt: { type: "STRING", description: "Texto alternativo da imagem" },
-        image_caption: { type: "STRING", description: "Legenda da imagem" },
-      },
-      required: ["title", "content", "excerpt", "seo_keyword", "seo_title", "meta_description", "slug", "image_alt", "image_caption"],
+      properties: Object.fromEntries(Object.entries(ARTICLE_TOOL_PARAMS).map(([k, v]) => [k, { type: "STRING", description: v }])),
+      required: Object.keys(ARTICLE_TOOL_PARAMS),
     },
   };
 
@@ -102,12 +107,12 @@ async function callGeminiDirect(apiKey: string, systemPrompt: string, userPrompt
   return fnCall.functionCall.args as AIResponse;
 }
 
-async function callLovableGateway(apiKey: string, systemPrompt: string, userPrompt: string): Promise<AIResponse> {
-  const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+async function callOpenAIDirect(apiKey: string, systemPrompt: string, userPrompt: string): Promise<AIResponse> {
+  const resp = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "openai/gpt-5-mini",
+      model: "gpt-4o-mini",
       messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }],
       tools: [{
         type: "function",
@@ -116,12 +121,45 @@ async function callLovableGateway(apiKey: string, systemPrompt: string, userProm
           description: "Cria um artigo completo para publicação no WordPress.",
           parameters: {
             type: "object",
-            properties: {
-              title: { type: "string" }, content: { type: "string" }, excerpt: { type: "string" },
-              seo_keyword: { type: "string" }, seo_title: { type: "string" }, meta_description: { type: "string" },
-              slug: { type: "string" }, image_alt: { type: "string" }, image_caption: { type: "string" },
-            },
-            required: ["title", "content", "excerpt", "seo_keyword", "seo_title", "meta_description", "slug", "image_alt", "image_caption"],
+            properties: Object.fromEntries(Object.entries(ARTICLE_TOOL_PARAMS).map(([k, v]) => [k, { type: "string", description: v }])),
+            required: Object.keys(ARTICLE_TOOL_PARAMS),
+            additionalProperties: false,
+          },
+        },
+      }],
+      tool_choice: { type: "function", function: { name: "create_article" } },
+    }),
+  });
+
+  if (!resp.ok) {
+    const errText = await resp.text();
+    throw new Error(`OpenAI API error ${resp.status}: ${errText}`);
+  }
+
+  const aiData = await resp.json();
+  const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+  if (toolCall?.function?.arguments) return JSON.parse(toolCall.function.arguments);
+  let content = aiData.choices?.[0]?.message?.content || "";
+  content = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+  return JSON.parse(content);
+}
+
+async function callLovableGateway(apiKey: string, systemPrompt: string, userPrompt: string): Promise<AIResponse> {
+  const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "google/gemini-3-flash-preview",
+      messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }],
+      tools: [{
+        type: "function",
+        function: {
+          name: "create_article",
+          description: "Cria um artigo completo para publicação no WordPress.",
+          parameters: {
+            type: "object",
+            properties: Object.fromEntries(Object.entries(ARTICLE_TOOL_PARAMS).map(([k, v]) => [k, { type: "string", description: v }])),
+            required: Object.keys(ARTICLE_TOOL_PARAMS),
             additionalProperties: false,
           },
         },
@@ -138,18 +176,41 @@ async function callLovableGateway(apiKey: string, systemPrompt: string, userProm
   const aiData = await resp.json();
   const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
   if (toolCall?.function?.arguments) return JSON.parse(toolCall.function.arguments);
-
   let content = aiData.choices?.[0]?.message?.content || "";
   content = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
   return JSON.parse(content);
 }
+
+// ── Multi-provider fallback for text ─────────────────────────────────────
+
+interface ProviderConfig {
+  name: string;
+  call: (systemPrompt: string, userPrompt: string) => Promise<AIResponse>;
+}
+
+async function callWithFallback(providers: ProviderConfig[], systemPrompt: string, userPrompt: string): Promise<{ result: AIResponse; provider: string }> {
+  const errors: string[] = [];
+  for (const provider of providers) {
+    try {
+      console.log(`[AI] Trying provider: ${provider.name}`);
+      const result = await withRetry(() => provider.call(systemPrompt, userPrompt), 1, 3000);
+      return { result, provider: provider.name };
+    } catch (err: any) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn(`[AI] Provider ${provider.name} failed: ${msg.substring(0, 200)}`);
+      errors.push(`${provider.name}: ${msg}`);
+    }
+  }
+  throw new Error(`Todos os provedores de IA falharam:\n${errors.join("\n")}`);
+}
+
+// ── Image generation ─────────────────────────────────────────────────────
 
 const IMAGE_PROMPT_TEMPLATE = (title: string, category: string) =>
   `Create a professional, photorealistic news article featured image about: "${title}" (category: ${category}). Requirements: Editorial/journalistic style, visually represents the article topic, NO text overlay, NO watermarks, NO logos, high quality, 16:9 aspect ratio, vibrant colors, professional lighting, suitable as a WordPress featured image.`;
 
 async function generateImageGemini(apiKey: string, title: string, category: string): Promise<string | null> {
   const models = ["gemini-3.1-flash-image-preview", "gemini-2.5-flash-image"];
-  
   for (const model of models) {
     try {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
@@ -161,22 +222,14 @@ async function generateImageGemini(apiKey: string, title: string, category: stri
           generationConfig: { responseModalities: ["IMAGE", "TEXT"] },
         }),
       });
-      if (!resp.ok) {
-        const errBody = await resp.text().catch(() => "");
-        console.warn(`Gemini image model ${model} failed ${resp.status}: ${errBody.substring(0, 200)}`);
-        continue;
-      }
+      if (!resp.ok) { console.warn(`Image model ${model} failed ${resp.status}`); continue; }
       const data = await resp.json();
-      const parts = data.candidates?.[0]?.content?.parts || [];
-      const imgPart = parts.find((p: any) => p.inlineData?.mimeType?.startsWith("image/"));
+      const imgPart = data.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData?.mimeType?.startsWith("image/"));
       if (imgPart?.inlineData) {
-        console.log(`Image generated successfully with model: ${model}`);
+        console.log(`Image generated with model: ${model}`);
         return `data:${imgPart.inlineData.mimeType};base64,${imgPart.inlineData.data}`;
       }
-      console.warn(`Model ${model} returned no image data`);
-    } catch (err) {
-      console.warn(`Gemini image model ${model} error:`, err);
-    }
+    } catch (err) { console.warn(`Image model ${model} error:`, err); }
   }
   return null;
 }
@@ -249,30 +302,44 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Fetch settings + decrypt gemini key
+    // Fetch settings + decrypt keys
     const { data: settings } = await supabase.from("user_settings").select("*").eq("user_id", userId).single();
     const writerPrompt = settings?.writer_prompt || null;
     const systemPrompt = buildSystemPrompt(writerPrompt);
 
+    // Decrypt Gemini key
     let geminiApiKey: string | null = null;
     if (settings?.gemini_api_key) {
-      const { data: decrypted } = await supabase.rpc("decrypt_credential", {
-        enc_key: "",
-        val: settings.gemini_api_key,
-      });
-      if (decrypted && typeof decrypted === "string" && decrypted.length > 5) {
-        geminiApiKey = decrypted;
-      }
+      const { data: decrypted } = await supabase.rpc("decrypt_credential", { enc_key: "", val: settings.gemini_api_key });
+      if (decrypted && typeof decrypted === "string" && decrypted.length > 5) geminiApiKey = decrypted;
+    }
+
+    // Decrypt OpenAI key
+    let openaiApiKey: string | null = null;
+    if (settings?.openai_api_key) {
+      const { data: decrypted } = await supabase.rpc("decrypt_credential", { enc_key: "", val: settings.openai_api_key });
+      if (decrypted && typeof decrypted === "string" && decrypted.length > 5) openaiApiKey = decrypted;
     }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    const useGemini = !!geminiApiKey;
 
-    if (!useGemini && !LOVABLE_API_KEY) {
-      throw new Error("Nenhuma chave de IA configurada. Configure sua chave Gemini nas configurações.");
+    // Build provider chain: Gemini → OpenAI → Lovable AI
+    const providers: ProviderConfig[] = [];
+    if (geminiApiKey) {
+      providers.push({ name: "Gemini", call: (s, u) => callGeminiDirect(geminiApiKey!, s, u) });
+    }
+    if (openaiApiKey) {
+      providers.push({ name: "OpenAI", call: (s, u) => callOpenAIDirect(openaiApiKey!, s, u) });
+    }
+    if (LOVABLE_API_KEY) {
+      providers.push({ name: "Lovable AI", call: (s, u) => callLovableGateway(LOVABLE_API_KEY!, s, u) });
     }
 
-    console.log(`Using AI provider: ${useGemini ? "Google Gemini (user key)" : "Lovable AI Gateway"}`);
+    if (providers.length === 0) {
+      throw new Error("Nenhuma chave de IA configurada. Configure sua chave Gemini ou OpenAI nas configurações.");
+    }
+
+    console.log(`[Pipeline] Available AI providers: ${providers.map(p => p.name).join(" → ")}`);
 
     const { data: topics } = await supabase.from("trending_topics").select("*").eq("user_id", userId).eq("used", false).limit(10);
 
@@ -286,8 +353,11 @@ serve(async (req) => {
     const now = new Date();
     const generatedArticles = [];
     const failureReasons: Array<{ status: number; message: string }> = [];
+    let allProvidersExhausted = false;
 
     for (let i = 0; i < Math.min(articlesPerDay, topicsToUse.length); i++) {
+      if (allProvidersExhausted) break;
+
       const topic = topicsToUse[i];
       const scheduledAt = new Date(now.getTime() + i * intervalHours * 60 * 60 * 1000);
 
@@ -295,71 +365,38 @@ serve(async (req) => {
         const userPrompt = buildUserPrompt(topic.topic, topic.category);
 
         let parsed: AIResponse;
+        let usedProvider: string;
+
         try {
-          // Wrap primary AI call with retry for transient errors
-          if (useGemini) {
-            parsed = sanitizeSeoFields(await withRetry(() => callGeminiDirect(geminiApiKey!, systemPrompt, userPrompt), 2, 5000));
-          } else {
-            parsed = sanitizeSeoFields(await withRetry(() => callLovableGateway(LOVABLE_API_KEY!, systemPrompt, userPrompt), 2, 5000));
+          const result = await callWithFallback(providers, systemPrompt, userPrompt);
+          parsed = sanitizeSeoFields(result.result);
+          usedProvider = result.provider;
+        } catch (err: any) {
+          const msg = err instanceof Error ? err.message : String(err);
+          console.error(`All providers failed for topic ${topic.topic}:`, msg.substring(0, 300));
+          
+          // Check if all failures are billing-related
+          if (isBillingError(msg)) {
+            allProvidersExhausted = true;
+            failureReasons.push({ status: 402, message: msg });
+            break;
           }
-        } catch (aiErr: any) {
-          const primaryMessage = aiErr instanceof Error ? aiErr.message : String(aiErr);
-          console.error(`AI error for topic ${topic.topic} (after retries):`, primaryMessage);
-
-          // If primary was Gemini, try fallback to Gateway (also with retry)
-          if (useGemini && LOVABLE_API_KEY) {
-            console.log(`Gemini failed, falling back to Lovable AI Gateway for: ${topic.topic}`);
-            try {
-              parsed = sanitizeSeoFields(await withRetry(() => callLovableGateway(LOVABLE_API_KEY!, systemPrompt, userPrompt), 1, 3000));
-            } catch (fallbackErr: any) {
-              const fallbackMessage = fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr);
-              console.error(`Fallback also failed for ${topic.topic}:`, fallbackMessage);
-              const combinedMessage = `${primaryMessage} | fallback: ${fallbackMessage}`;
-              // If BOTH are billing errors, stop the whole batch early
-              const isBillingError = /402|payment_required|Not enough credits/i.test(fallbackMessage) && /429|RESOURCE_EXHAUSTED|spending cap/i.test(primaryMessage);
-              const status = /402|payment_required|Not enough credits/i.test(fallbackMessage) ? 402 : /429|RESOURCE_EXHAUSTED|spending cap/i.test(primaryMessage) ? 429 : 500;
-              failureReasons.push({ status, message: combinedMessage });
-              if (isBillingError) {
-                console.log("[Pipeline] Both AI providers exhausted, stopping batch early.");
-                break;
-              }
-              continue;
-            }
-          } else {
-            const status = /402|payment_required|Not enough credits/i.test(primaryMessage) ? 402 : /429|RESOURCE_EXHAUSTED|spending cap/i.test(primaryMessage) ? 429 : 500;
-            failureReasons.push({ status, message: primaryMessage });
-            // If billing error, stop early
-            if (status === 402 || status === 429) {
-              console.log("[Pipeline] AI provider exhausted, stopping batch early.");
-              break;
-            }
-            continue;
-          }
-        }
-
-        if (!parsed.title || !parsed.content) {
-          console.error("Missing required fields for topic:", topic.topic);
-          failureReasons.push({ status: 500, message: `Campos obrigatórios ausentes para o tópico: ${topic.topic}` });
+          failureReasons.push({ status: 500, message: msg });
           continue;
         }
 
-        if (parsed.content.length < 1800) {
-          console.warn(`Content short (${parsed.content.length} chars) for: ${topic.topic}`);
+        if (!parsed.title || !parsed.content) {
+          failureReasons.push({ status: 500, message: `Campos obrigatórios ausentes para: ${topic.topic}` });
+          continue;
         }
 
+        // Generate image
         let featuredImageUrl: string | null = null;
-        if (useGemini && geminiApiKey) {
-          console.log(`Generating image with Gemini for: ${parsed.title}`);
+        if (geminiApiKey) {
           featuredImageUrl = await generateImageGemini(geminiApiKey, parsed.title, topic.category);
         }
         if (!featuredImageUrl && LOVABLE_API_KEY) {
-          console.log(`Generating image with Lovable gateway for: ${parsed.title}`);
           featuredImageUrl = await generateImageGateway(LOVABLE_API_KEY, parsed.title, topic.category);
-        }
-        if (featuredImageUrl) {
-          console.log(`Featured image generated (${featuredImageUrl.startsWith("data:") ? "base64" : "url"}, ${featuredImageUrl.length} chars)`);
-        } else {
-          console.warn(`No featured image generated for: ${parsed.title}`);
         }
 
         const { data: article, error: insertError } = await supabase.from("articles").insert({
@@ -378,8 +415,7 @@ serve(async (req) => {
         }).select().single();
 
         if (insertError) {
-          console.error("Insert error:", insertError);
-          failureReasons.push({ status: 500, message: insertError.message || "Erro ao salvar artigo gerado" });
+          failureReasons.push({ status: 500, message: insertError.message });
           continue;
         }
 
@@ -388,47 +424,34 @@ serve(async (req) => {
         }
 
         generatedArticles.push(article);
-        await new Promise((resolve) => setTimeout(resolve, useGemini ? 2000 : 3000));
+        console.log(`[Pipeline] Article ${i + 1} generated via ${usedProvider}: ${parsed.title}`);
+        await new Promise((resolve) => setTimeout(resolve, 2000));
       } catch (err) {
         console.error(`Error generating article for ${topic.topic}:`, err);
-        failureReasons.push({
-          status: 500,
-          message: err instanceof Error ? err.message : `Erro desconhecido no tópico: ${topic.topic}`,
-        });
+        failureReasons.push({ status: 500, message: err instanceof Error ? err.message : String(err) });
       }
     }
 
-    // Return partial success if some articles were generated
+    // Response
     const totalAttempted = Math.min(articlesPerDay, topicsToUse.length);
-    const failedCount = failureReasons.length;
 
     if (generatedArticles.length === 0) {
-      const hasGatewayCreditError = failureReasons.some(({ status, message }) => status === 402 || /payment_required|Not enough credits/i.test(message));
-      const hasGeminiLimitError = failureReasons.some(({ status, message }) => status === 429 || /RESOURCE_EXHAUSTED|spending cap/i.test(message));
-
-      const errorMessage = hasGatewayCreditError && hasGeminiLimitError
-        ? "Nenhum artigo foi gerado: sua chave Gemini atingiu o limite mensal e o Lovable AI está sem créditos. Adicione créditos em Settings > Workspace > Usage ou aumente o limite da sua chave Gemini."
-        : hasGatewayCreditError
-          ? "Nenhum artigo foi gerado: o Lovable AI está sem créditos. Adicione créditos em Settings > Workspace > Usage."
-          : hasGeminiLimitError
-            ? "Nenhum artigo foi gerado: sua chave Gemini atingiu o limite mensal. Ajuste o spend cap da chave configurada."
-            : failureReasons[0]?.message || "Nenhum artigo pôde ser gerado.";
+      const errorMessage = allProvidersExhausted
+        ? "Nenhum artigo gerado: todos os provedores de IA estão sem saldo. Configure outra chave de IA ou adicione créditos."
+        : failureReasons[0]?.message || "Nenhum artigo pôde ser gerado.";
 
       return new Response(
         JSON.stringify({ error: errorMessage, details: failureReasons.slice(0, 3) }),
-        {
-          status: hasGatewayCreditError ? 402 : hasGeminiLimitError ? 429 : 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
+        { status: allProvidersExhausted ? 402 : 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const message = failedCount > 0
-      ? `${generatedArticles.length} de ${totalAttempted} artigos gerados com sucesso! (${failedCount} falharam por indisponibilidade temporária da IA)`
+    const message = failureReasons.length > 0
+      ? `${generatedArticles.length} de ${totalAttempted} artigos gerados! (${failureReasons.length} falharam)`
       : `${generatedArticles.length} artigos gerados com sucesso!`;
 
     return new Response(
-      JSON.stringify({ success: true, message, articles: generatedArticles.length, failed: failedCount, provider: useGemini ? "gemini" : "lovable" }),
+      JSON.stringify({ success: true, message, articles: generatedArticles.length, failed: failureReasons.length }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
