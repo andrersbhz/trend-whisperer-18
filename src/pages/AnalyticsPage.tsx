@@ -108,6 +108,7 @@ const AnalyticsPage = () => {
     fetchArticleStats();
     fetchSocialMetrics();
     fetchMetaMetrics();
+    fetchJetpackStats();
   }, [user]);
 
   const fetchArticleStats = async () => {
