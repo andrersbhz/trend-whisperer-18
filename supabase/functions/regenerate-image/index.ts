@@ -229,17 +229,7 @@ serve(async (req) => {
       let imageUrl: string | null = null;
       const providerErrors: string[] = [];
 
-      if (geminiApiKey) {
-        try {
-          imageUrl = await generateImageGemini(geminiApiKey, article.title, article.category);
-        } catch (error) {
-          const message = getErrorMessage(error);
-          providerErrors.push(message);
-          if (isBillingIssue(0, message)) quotaFailures += 1;
-        }
-      }
-
-      if (!imageUrl && openaiApiKey) {
+      if (openaiApiKey) {
         try {
           imageUrl = await generateImageDallE(openaiApiKey, article.title, article.category);
         } catch (error) {
@@ -252,6 +242,16 @@ serve(async (req) => {
       if (!imageUrl && LOVABLE_API_KEY) {
         try {
           imageUrl = await generateImageGateway(LOVABLE_API_KEY, article.title, article.category);
+        } catch (error) {
+          const message = getErrorMessage(error);
+          providerErrors.push(message);
+          if (isBillingIssue(0, message)) quotaFailures += 1;
+        }
+      }
+
+      if (!imageUrl && geminiApiKey) {
+        try {
+          imageUrl = await generateImageGemini(geminiApiKey, article.title, article.category);
         } catch (error) {
           const message = getErrorMessage(error);
           providerErrors.push(message);
