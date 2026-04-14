@@ -108,37 +108,17 @@ const AnalyticsPage = () => {
     if (!user) return;
 
     try {
-      const logs = await runBackendQuery(() =>
-        supabase
-          .from('publish_log')
-          .select('platform, status')
-          .eq('user_id', user.id),
+      const data = await runBackendQuery(() =>
+        supabase.functions.invoke('fetch-social-metrics', {
+          body: { userId: user.id },
+        }),
       );
 
-      const fbSuccess = (logs || []).filter(l => l.platform === 'facebook' && l.status === 'success').length;
-      const igSuccess = (logs || []).filter(l => l.platform === 'instagram' && l.status === 'success').length;
-
-      setSocialMetrics({
-        facebook: {
-          posts: fbSuccess,
-          reach: fbSuccess * 850,
-          engagement: fbSuccess * 120,
-          likes: fbSuccess * 45,
-          shares: fbSuccess * 12,
-        },
-        instagram: {
-          posts: igSuccess,
-          reach: igSuccess * 1200,
-          engagement: igSuccess * 180,
-          likes: igSuccess * 95,
-          comments: igSuccess * 15,
-        },
-      });
+      if (data?.metrics) {
+        setSocialMetrics(data.metrics);
+      }
     } catch {
-      setSocialMetrics({
-        facebook: { posts: 0, reach: 0, engagement: 0, likes: 0, shares: 0 },
-        instagram: { posts: 0, reach: 0, engagement: 0, likes: 0, comments: 0 },
-      });
+      setSocialMetrics(null);
     }
   };
 
