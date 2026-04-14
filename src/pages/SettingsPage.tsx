@@ -41,7 +41,7 @@ const defaultSettings: UserSettings = {
   openai_api_key: '',
   groq_api_key: '',
   categories: ['esportes', 'politica', 'policia', 'saude', 'celebridades', 'financas'],
-  articles_per_day: 10,
+  articles_per_day: 3,
   auto_publish: false,
   writer_prompt: '',
 };
@@ -94,7 +94,7 @@ const SettingsPage = () => {
             openai_api_key: '',
             groq_api_key: '',
             categories: data.categories || defaultSettings.categories,
-            articles_per_day: data.articles_per_day || 10,
+            articles_per_day: data.articles_per_day || 3,
             auto_publish: data.auto_publish || false,
             writer_prompt: (data as any).writer_prompt || '',
           });
