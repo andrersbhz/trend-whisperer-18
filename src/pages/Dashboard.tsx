@@ -5,8 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { FileText, TrendingUp, CheckCircle, Clock, Sparkles, RefreshCw, Save, Loader2, PenTool } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { FileText, TrendingUp, CheckCircle, Clock, Sparkles, RefreshCw, Save, Loader2, PenTool, Bot } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getErrorMessage, runBackendQuery, runBackendMutation } from '@/lib/backend';
 
@@ -21,6 +23,9 @@ const Dashboard = () => {
   const [writerPrompt, setWriterPrompt] = useState(DEFAULT_WRITER_PROMPT);
   const [savingPrompt, setSavingPrompt] = useState(false);
   const [promptLoaded, setPromptLoaded] = useState(false);
+  const [articlesPerDay, setArticlesPerDay] = useState(10);
+  const [autoPublish, setAutoPublish] = useState(false);
+  const [savingAuto, setSavingAuto] = useState(false);
 
   const fetchStats = async () => {
     if (!user) return;
@@ -40,7 +45,7 @@ const Dashboard = () => {
         runBackendQuery(() =>
           supabase
             .from('user_settings')
-            .select('writer_prompt')
+            .select('writer_prompt, articles_per_day, auto_publish')
             .eq('user_id', user.id)
             .maybeSingle(),
         ),
@@ -57,6 +62,12 @@ const Dashboard = () => {
 
       if (settings?.writer_prompt) {
         setWriterPrompt(settings.writer_prompt);
+      }
+      if (settings?.articles_per_day) {
+        setArticlesPerDay(settings.articles_per_day);
+      }
+      if (settings?.auto_publish !== null && settings?.auto_publish !== undefined) {
+        setAutoPublish(settings.auto_publish);
       }
       setPromptLoaded(true);
     } catch (error) {
@@ -85,6 +96,24 @@ const Dashboard = () => {
       toast({ title: 'Erro', description: getErrorMessage(error), variant: 'destructive' });
     } finally {
       setSavingPrompt(false);
+    }
+  };
+
+  const handleSaveAutomation = async () => {
+    if (!user) return;
+    setSavingAuto(true);
+    try {
+      await runBackendMutation(() =>
+        supabase
+          .from('user_settings')
+          .update({ articles_per_day: articlesPerDay, auto_publish: autoPublish } as any)
+          .eq('user_id', user.id),
+      );
+      toast({ title: 'Automação salva!', description: `${articlesPerDay} artigos/dia. Publicação automática: ${autoPublish ? 'Ativada' : 'Desativada'}.` });
+    } catch (error) {
+      toast({ title: 'Erro', description: getErrorMessage(error), variant: 'destructive' });
+    } finally {
+      setSavingAuto(false);
     }
   };
 
@@ -157,6 +186,55 @@ const Dashboard = () => {
           </Card>
         ))}
       </div>
+
+      {/* Automation Robot */}
+      <Card className="glass-card neon-border-pink">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Bot className="h-5 w-5 text-accent" />
+            <CardTitle className="text-lg text-foreground">Robô de Publicação Automática</CardTitle>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Configure quantas postagens o robô deve fazer por dia e se deve publicar automaticamente no WordPress.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="articles-per-day">Postagens por dia</Label>
+              <Input
+                id="articles-per-day"
+                type="number"
+                min={1}
+                max={50}
+                value={articlesPerDay}
+                onChange={(e) => setArticlesPerDay(parseInt(e.target.value) || 10)}
+                disabled={!promptLoaded}
+              />
+              <p className="text-xs text-muted-foreground">Quantidade de artigos gerados a cada ciclo (máx. 50)</p>
+            </div>
+            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 h-fit mt-auto">
+              <div>
+                <p className="text-sm font-medium text-foreground">Publicação automática</p>
+                <p className="text-xs text-muted-foreground">Publicar no WordPress automaticamente</p>
+              </div>
+              <Switch
+                checked={autoPublish}
+                onCheckedChange={setAutoPublish}
+                disabled={!promptLoaded}
+              />
+            </div>
+          </div>
+          <Button
+            onClick={handleSaveAutomation}
+            disabled={savingAuto || !promptLoaded}
+            className="gradient-primary w-full sm:w-auto"
+          >
+            {savingAuto ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+            Salvar Automação
+          </Button>
+        </CardContent>
+      </Card>
 
       {/* Writer Profile Prompt */}
       <Card className="glass-card neon-border-lilac">

@@ -271,17 +271,29 @@ serve(async (req) => {
 
         let parsed: AIResponse;
         try {
-          const raw = useGemini
-            ? await callGeminiDirect(geminiApiKey!, systemPrompt, userPrompt)
-            : await callLovableGateway(LOVABLE_API_KEY!, systemPrompt, userPrompt);
-          parsed = sanitizeSeoFields(raw);
+          if (useGemini) {
+            parsed = sanitizeSeoFields(await callGeminiDirect(geminiApiKey!, systemPrompt, userPrompt));
+          } else {
+            parsed = sanitizeSeoFields(await callLovableGateway(LOVABLE_API_KEY!, systemPrompt, userPrompt));
+          }
         } catch (aiErr: any) {
           console.error(`AI error for topic ${topic.topic}:`, aiErr.message);
-          if (aiErr.message?.includes("429")) {
-            console.log("Rate limited, waiting 10 seconds...");
-            await new Promise((r) => setTimeout(r, 10000));
+          // Fallback: if Gemini failed (e.g. 429 rate limit), try Lovable Gateway
+          if (useGemini && LOVABLE_API_KEY) {
+            console.log(`Gemini failed, falling back to Lovable AI Gateway for: ${topic.topic}`);
+            try {
+              parsed = sanitizeSeoFields(await callLovableGateway(LOVABLE_API_KEY!, systemPrompt, userPrompt));
+            } catch (fallbackErr: any) {
+              console.error(`Fallback also failed for ${topic.topic}:`, fallbackErr.message);
+              continue;
+            }
+          } else {
+            if (aiErr.message?.includes("429")) {
+              console.log("Rate limited, waiting 10 seconds...");
+              await new Promise((r) => setTimeout(r, 10000));
+            }
+            continue;
           }
-          continue;
         }
 
         if (!parsed.title || !parsed.content) {
