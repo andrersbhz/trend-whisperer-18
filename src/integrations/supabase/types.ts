@@ -31,6 +31,7 @@ export type Database = {
       }
       articles: {
         Row: {
+          ai_provider: string | null
           category: string
           content: string | null
           created_at: string
@@ -52,6 +53,7 @@ export type Database = {
           wordpress_post_id: string | null
         }
         Insert: {
+          ai_provider?: string | null
           category: string
           content?: string | null
           created_at?: string
@@ -73,6 +75,7 @@ export type Database = {
           wordpress_post_id?: string | null
         }
         Update: {
+          ai_provider?: string | null
           category?: string
           content?: string | null
           created_at?: string

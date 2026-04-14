@@ -459,6 +459,7 @@ serve(async (req) => {
           status: settings?.auto_publish ? "ready" : "draft",
           scheduled_at: scheduledAt.toISOString(),
           trending_topic: topic.topic,
+          ai_provider: usedProvider,
         }).select().single();
 
         if (insertError) {
