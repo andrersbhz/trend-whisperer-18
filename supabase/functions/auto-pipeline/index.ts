@@ -33,7 +33,51 @@ serve(async (req) => {
       const userId = userSettings.user_id;
       console.log(`[Pipeline] Processing user: ${userId}`);
 
-      // Step 1: Fetch trends
+      // Step 1: Publish ready articles FIRST (before generating new ones)
+      try {
+        const { data: readyArticles } = await supabase
+          .from("articles")
+          .select("id")
+          .eq("user_id", userId)
+          .eq("status", "ready")
+          .lte("scheduled_at", new Date().toISOString())
+          .order("scheduled_at", { ascending: true })
+          .limit(10);
+
+        if (readyArticles && readyArticles.length > 0) {
+          let published = 0;
+          for (const article of readyArticles) {
+            try {
+              const pubResp = await fetch(`${supabaseUrl}/functions/v1/publish-article`, {
+                method: "POST",
+                headers: { Authorization: `Bearer ${serviceKey}`, "Content-Type": "application/json" },
+                body: JSON.stringify({ articleId: article.id, userId }),
+              });
+              if (pubResp.ok) {
+                published++;
+              } else {
+                const errBody = await pubResp.text().catch(() => "");
+                console.error(`[Pipeline] Publish failed for article ${article.id}: ${pubResp.status} ${errBody.substring(0, 200)}`);
+              }
+              await new Promise((r) => setTimeout(r, 3000));
+            } catch (e) {
+              console.error(`[Pipeline] Publish error article ${article.id}:`, e);
+            }
+          }
+          results.push({ userId, step: "auto-publish", result: `${published}/${readyArticles.length} published` });
+          console.log(`[Pipeline] Published ${published}/${readyArticles.length} articles for ${userId}`);
+        } else {
+          results.push({ userId, step: "auto-publish", result: "no articles ready" });
+        }
+      } catch (err) {
+        console.error(`[Pipeline] Publish error for ${userId}:`, err);
+        results.push({ userId, step: "auto-publish", result: `error: ${err}` });
+      }
+
+      // Small delay between steps
+      await new Promise((r) => setTimeout(r, 2000));
+
+      // Step 2: Fetch trends
       try {
         const trendResp = await fetch(`${supabaseUrl}/functions/v1/fetch-trends`, {
           method: "POST",
@@ -48,10 +92,9 @@ serve(async (req) => {
         results.push({ userId, step: "fetch-trends", result: `error: ${err}` });
       }
 
-      // Small delay between steps
       await new Promise((r) => setTimeout(r, 2000));
 
-      // Step 2: Generate articles
+      // Step 3: Generate articles
       try {
         const genResp = await fetch(`${supabaseUrl}/functions/v1/generate-articles`, {
           method: "POST",
@@ -59,49 +102,11 @@ serve(async (req) => {
           body: JSON.stringify({ userId }),
         });
         const genData = await genResp.json();
-        results.push({ userId, step: "generate-articles", result: genData.message || "done" });
-        console.log(`[Pipeline] Articles for ${userId}: ${genData.message}`);
+        results.push({ userId, step: "generate-articles", result: genData.message || genData.error || "done" });
+        console.log(`[Pipeline] Articles for ${userId}: ${genData.message || genData.error}`);
       } catch (err) {
         console.error(`[Pipeline] Generation error for ${userId}:`, err);
         results.push({ userId, step: "generate-articles", result: `error: ${err}` });
-      }
-
-      // Small delay
-      await new Promise((r) => setTimeout(r, 2000));
-
-      // Step 3: Auto-publish ready articles that are scheduled for now or past
-      try {
-        const { data: readyArticles } = await supabase
-          .from("articles")
-          .select("id")
-          .eq("user_id", userId)
-          .eq("status", "ready")
-          .lte("scheduled_at", new Date().toISOString())
-          .order("scheduled_at", { ascending: true })
-          .limit(5);
-
-        if (readyArticles && readyArticles.length > 0) {
-          let published = 0;
-          for (const article of readyArticles) {
-            try {
-              const pubResp = await fetch(`${supabaseUrl}/functions/v1/publish-article`, {
-                method: "POST",
-                headers: { Authorization: `Bearer ${serviceKey}`, "Content-Type": "application/json" },
-                body: JSON.stringify({ articleId: article.id, userId }),
-              });
-              if (pubResp.ok) published++;
-              await new Promise((r) => setTimeout(r, 3000));
-            } catch (e) {
-              console.error(`[Pipeline] Publish error article ${article.id}:`, e);
-            }
-          }
-          results.push({ userId, step: "auto-publish", result: `${published}/${readyArticles.length} published` });
-        } else {
-          results.push({ userId, step: "auto-publish", result: "no articles ready" });
-        }
-      } catch (err) {
-        console.error(`[Pipeline] Publish error for ${userId}:`, err);
-        results.push({ userId, step: "auto-publish", result: `error: ${err}` });
       }
     }
 

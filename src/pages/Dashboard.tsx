@@ -19,6 +19,7 @@ const Dashboard = () => {
   const { toast } = useToast();
   const [stats, setStats] = useState({ total: 0, published: 0, pending: 0, trending: 0, failed: 0 });
   const [recentArticles, setRecentArticles] = useState<any[]>([]);
+  const [recentErrors, setRecentErrors] = useState<any[]>([]);
   const [generating, setGenerating] = useState(false);
   const [writerPrompt, setWriterPrompt] = useState(DEFAULT_WRITER_PROMPT);
   const [savingPrompt, setSavingPrompt] = useState(false);
@@ -31,7 +32,7 @@ const Dashboard = () => {
     if (!user) return;
 
     try {
-      const [articles, trendingTopics, recent, settings] = await Promise.all([
+      const [articles, trendingTopics, recent, settings, errors] = await Promise.all([
         runBackendQuery(() => supabase.from('articles').select('id, status').eq('user_id', user.id)),
         runBackendQuery(() => supabase.from('trending_topics').select('id').eq('user_id', user.id).eq('used', false)),
         runBackendQuery(() =>
@@ -49,6 +50,15 @@ const Dashboard = () => {
             .eq('user_id', user.id)
             .maybeSingle(),
         ),
+        runBackendQuery(() =>
+          supabase
+            .from('publish_log')
+            .select('id, article_id, error_message, created_at, status')
+            .eq('user_id', user.id)
+            .eq('status', 'failed')
+            .order('created_at', { ascending: false })
+            .limit(5),
+        ),
       ]);
 
       setStats({
@@ -59,7 +69,7 @@ const Dashboard = () => {
         failed: (articles || []).filter((a) => a.status === 'failed').length,
       });
       setRecentArticles(recent || []);
-
+      setRecentErrors(errors || []);
       if (settings?.writer_prompt) {
         setWriterPrompt(settings.writer_prompt);
       }
@@ -308,9 +318,23 @@ const Dashboard = () => {
 
       {stats.failed > 0 && (
         <Card className="glass-card border-destructive/30">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="h-3 w-3 rounded-full bg-destructive animate-pulse-dot" />
-            <p className="text-sm text-destructive">{stats.failed} artigo(s) falharam na publicação. Vá em Artigos para tentar novamente.</p>
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <div className="h-3 w-3 rounded-full bg-destructive animate-pulse-dot" />
+              <CardTitle className="text-sm text-destructive">{stats.failed} artigo(s) falharam na publicação</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {recentErrors.length > 0 ? (
+              recentErrors.map((err) => (
+                <div key={err.id} className="p-2 rounded bg-destructive/5 border border-destructive/10">
+                  <p className="text-xs text-destructive font-medium truncate">{err.error_message || 'Erro desconhecido'}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{new Date(err.created_at).toLocaleString('pt-BR')}</p>
+                </div>
+              ))
+            ) : (
+              <p className="text-xs text-muted-foreground">Vá em Artigos para tentar novamente.</p>
+            )}
           </CardContent>
         </Card>
       )}

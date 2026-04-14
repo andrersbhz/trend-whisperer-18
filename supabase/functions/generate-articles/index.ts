@@ -27,6 +27,32 @@ function sanitizeSeoFields(parsed: AIResponse): AIResponse {
   };
 }
 
+// ── Retry helper ─────────────────────────────────────────────────────────
+
+function isTransientError(msg: string): boolean {
+  return /429|503|504|RESOURCE_EXHAUSTED|UNAVAILABLE|high demand|temporarily|timeout/i.test(msg);
+}
+
+async function withRetry<T>(fn: () => Promise<T>, maxRetries = 2, baseDelayMs = 5000): Promise<T> {
+  let lastErr: Error | null = null;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (err: any) {
+      lastErr = err instanceof Error ? err : new Error(String(err));
+      const msg = lastErr.message;
+      if (attempt < maxRetries && isTransientError(msg)) {
+        const delay = baseDelayMs * (attempt + 1);
+        console.log(`[Retry] Attempt ${attempt + 1} failed (transient), retrying in ${delay}ms...`);
+        await new Promise((r) => setTimeout(r, delay));
+        continue;
+      }
+      throw lastErr;
+    }
+  }
+  throw lastErr;
+}
+
 // ── AI provider abstraction ──────────────────────────────────────────────
 
 interface AIResponse { title: string; content: string; excerpt: string; seo_keyword: string; seo_title: string; meta_description: string; slug: string; image_alt: string; image_caption: string; }
@@ -270,42 +296,43 @@ serve(async (req) => {
 
         let parsed: AIResponse;
         try {
+          // Wrap primary AI call with retry for transient errors
           if (useGemini) {
-            parsed = sanitizeSeoFields(await callGeminiDirect(geminiApiKey!, systemPrompt, userPrompt));
+            parsed = sanitizeSeoFields(await withRetry(() => callGeminiDirect(geminiApiKey!, systemPrompt, userPrompt), 2, 5000));
           } else {
-            parsed = sanitizeSeoFields(await callLovableGateway(LOVABLE_API_KEY!, systemPrompt, userPrompt));
+            parsed = sanitizeSeoFields(await withRetry(() => callLovableGateway(LOVABLE_API_KEY!, systemPrompt, userPrompt), 2, 5000));
           }
         } catch (aiErr: any) {
           const primaryMessage = aiErr instanceof Error ? aiErr.message : String(aiErr);
-          console.error(`AI error for topic ${topic.topic}:`, primaryMessage);
+          console.error(`AI error for topic ${topic.topic} (after retries):`, primaryMessage);
 
+          // If primary was Gemini, try fallback to Gateway (also with retry)
           if (useGemini && LOVABLE_API_KEY) {
             console.log(`Gemini failed, falling back to Lovable AI Gateway for: ${topic.topic}`);
             try {
-              parsed = sanitizeSeoFields(await callLovableGateway(LOVABLE_API_KEY!, systemPrompt, userPrompt));
+              parsed = sanitizeSeoFields(await withRetry(() => callLovableGateway(LOVABLE_API_KEY!, systemPrompt, userPrompt), 1, 3000));
             } catch (fallbackErr: any) {
               const fallbackMessage = fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr);
               console.error(`Fallback also failed for ${topic.topic}:`, fallbackMessage);
               const combinedMessage = `${primaryMessage} | fallback: ${fallbackMessage}`;
-              const status = /402|payment_required|Not enough credits/i.test(fallbackMessage)
-                ? 402
-                : /429|RESOURCE_EXHAUSTED|spending cap/i.test(primaryMessage)
-                  ? 429
-                  : 500;
+              // If BOTH are billing errors, stop the whole batch early
+              const isBillingError = /402|payment_required|Not enough credits/i.test(fallbackMessage) && /429|RESOURCE_EXHAUSTED|spending cap/i.test(primaryMessage);
+              const status = /402|payment_required|Not enough credits/i.test(fallbackMessage) ? 402 : /429|RESOURCE_EXHAUSTED|spending cap/i.test(primaryMessage) ? 429 : 500;
               failureReasons.push({ status, message: combinedMessage });
+              if (isBillingError) {
+                console.log("[Pipeline] Both AI providers exhausted, stopping batch early.");
+                break;
+              }
               continue;
             }
           } else {
-            if (/429|RESOURCE_EXHAUSTED|spending cap/i.test(primaryMessage)) {
-              console.log("Rate limited, waiting 10 seconds...");
-              await new Promise((r) => setTimeout(r, 10000));
-            }
-            const status = /402|payment_required|Not enough credits/i.test(primaryMessage)
-              ? 402
-              : /429|RESOURCE_EXHAUSTED|spending cap/i.test(primaryMessage)
-                ? 429
-                : 500;
+            const status = /402|payment_required|Not enough credits/i.test(primaryMessage) ? 402 : /429|RESOURCE_EXHAUSTED|spending cap/i.test(primaryMessage) ? 429 : 500;
             failureReasons.push({ status, message: primaryMessage });
+            // If billing error, stop early
+            if (status === 402 || status === 429) {
+              console.log("[Pipeline] AI provider exhausted, stopping batch early.");
+              break;
+            }
             continue;
           }
         }
@@ -371,6 +398,10 @@ serve(async (req) => {
       }
     }
 
+    // Return partial success if some articles were generated
+    const totalAttempted = Math.min(articlesPerDay, topicsToUse.length);
+    const failedCount = failureReasons.length;
+
     if (generatedArticles.length === 0) {
       const hasGatewayCreditError = failureReasons.some(({ status, message }) => status === 402 || /payment_required|Not enough credits/i.test(message));
       const hasGeminiLimitError = failureReasons.some(({ status, message }) => status === 429 || /RESOURCE_EXHAUSTED|spending cap/i.test(message));
@@ -392,8 +423,12 @@ serve(async (req) => {
       );
     }
 
+    const message = failedCount > 0
+      ? `${generatedArticles.length} de ${totalAttempted} artigos gerados com sucesso! (${failedCount} falharam por indisponibilidade temporária da IA)`
+      : `${generatedArticles.length} artigos gerados com sucesso!`;
+
     return new Response(
-      JSON.stringify({ success: true, message: `${generatedArticles.length} artigos gerados com sucesso!`, articles: generatedArticles.length, provider: useGemini ? "gemini" : "lovable" }),
+      JSON.stringify({ success: true, message, articles: generatedArticles.length, failed: failedCount, provider: useGemini ? "gemini" : "lovable" }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
