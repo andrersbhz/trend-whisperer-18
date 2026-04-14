@@ -8,7 +8,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { FileText, TrendingUp, CheckCircle, Clock, Sparkles, RefreshCw, Save, Loader2, PenTool, Bot } from 'lucide-react';
+import {
+  FileText, TrendingUp, CheckCircle, Clock, Sparkles, RefreshCw, Save, Loader2,
+  PenTool, Bot, Facebook, Instagram, Users, Heart, MessageCircle, Share2, Eye, ThumbsUp,
+} from 'lucide-react';
 import AIProvidersPanel from '@/components/dashboard/AIProvidersPanel';
 import { useToast } from '@/hooks/use-toast';
 import { getErrorMessage, runBackendQuery, runBackendMutation } from '@/lib/backend';
