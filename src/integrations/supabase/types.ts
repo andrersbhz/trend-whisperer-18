@@ -131,6 +131,45 @@ export type Database = {
         }
         Relationships: []
       }
+      phone_chips: {
+        Row: {
+          activated_at: string | null
+          created_at: string
+          ddd: string
+          full_number: string | null
+          id: string
+          phone_number: string
+          status: string
+          updated_at: string
+          user_id: string
+          whatsapp_active: boolean | null
+        }
+        Insert: {
+          activated_at?: string | null
+          created_at?: string
+          ddd: string
+          full_number?: string | null
+          id?: string
+          phone_number: string
+          status?: string
+          updated_at?: string
+          user_id: string
+          whatsapp_active?: boolean | null
+        }
+        Update: {
+          activated_at?: string | null
+          created_at?: string
+          ddd?: string
+          full_number?: string | null
+          id?: string
+          phone_number?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+          whatsapp_active?: boolean | null
+        }
+        Relationships: []
+      }
       publish_log: {
         Row: {
           article_id: string
@@ -268,6 +307,48 @@ export type Database = {
           wordpress_url?: string | null
           wordpress_username?: string | null
           writer_prompt?: string | null
+        }
+        Relationships: []
+      }
+      warmup_numbers: {
+        Row: {
+          created_at: string
+          ddd: string
+          full_number: string | null
+          id: string
+          label: string | null
+          last_message_at: string | null
+          message_count: number | null
+          phone_number: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          ddd: string
+          full_number?: string | null
+          id?: string
+          label?: string | null
+          last_message_at?: string | null
+          message_count?: number | null
+          phone_number: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          ddd?: string
+          full_number?: string | null
+          id?: string
+          label?: string | null
+          last_message_at?: string | null
+          message_count?: number | null
+          phone_number?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
