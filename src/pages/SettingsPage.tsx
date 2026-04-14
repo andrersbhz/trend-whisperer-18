@@ -11,6 +11,7 @@ import GeminiSettings from '@/components/settings/GeminiSettings';
 import OpenAISettings from '@/components/settings/OpenAISettings';
 import GroqSettings from '@/components/settings/GroqSettings';
 import JetpackSettings from '@/components/settings/JetpackSettings';
+import FacebookSettings from '@/components/settings/FacebookSettings';
 import { getErrorMessage, runBackendMutation, runBackendQuery } from '@/lib/backend';
 
 export interface UserSettings {
