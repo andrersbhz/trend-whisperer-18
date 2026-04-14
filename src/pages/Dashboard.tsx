@@ -230,6 +230,8 @@ const Dashboard = () => {
         ))}
       </div>
 
+      <AIProvidersPanel />
+
       {/* Automation Robot */}
       <Card className="glass-card neon-border-pink">
         <CardHeader>
