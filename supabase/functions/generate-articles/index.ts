@@ -321,9 +321,16 @@ serve(async (req) => {
       if (decrypted && typeof decrypted === "string" && decrypted.length > 5) openaiApiKey = decrypted;
     }
 
+    // Decrypt Groq key
+    let groqApiKey: string | null = null;
+    if (settings?.groq_api_key) {
+      const { data: decrypted } = await supabase.rpc("decrypt_credential", { enc_key: "", val: settings.groq_api_key });
+      if (decrypted && typeof decrypted === "string" && decrypted.length > 5) groqApiKey = decrypted;
+    }
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
-    // Build provider chain: Gemini → OpenAI → Lovable AI
+    // Build provider chain: Gemini → OpenAI → Groq → Lovable AI
     const providers: ProviderConfig[] = [];
     if (geminiApiKey) {
       providers.push({ name: "Gemini", call: (s, u) => callGeminiDirect(geminiApiKey!, s, u) });
@@ -331,12 +338,15 @@ serve(async (req) => {
     if (openaiApiKey) {
       providers.push({ name: "OpenAI", call: (s, u) => callOpenAIDirect(openaiApiKey!, s, u) });
     }
+    if (groqApiKey) {
+      providers.push({ name: "Groq", call: (s, u) => callGroqDirect(groqApiKey!, s, u) });
+    }
     if (LOVABLE_API_KEY) {
       providers.push({ name: "Lovable AI", call: (s, u) => callLovableGateway(LOVABLE_API_KEY!, s, u) });
     }
 
     if (providers.length === 0) {
-      throw new Error("Nenhuma chave de IA configurada. Configure sua chave Gemini ou OpenAI nas configurações.");
+      throw new Error("Nenhuma chave de IA configurada. Configure sua chave Gemini, OpenAI ou Groq nas configurações.");
     }
 
     console.log(`[Pipeline] Available AI providers: ${providers.map(p => p.name).join(" → ")}`);
