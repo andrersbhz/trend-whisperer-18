@@ -144,6 +144,43 @@ async function callOpenAIDirect(apiKey: string, systemPrompt: string, userPrompt
   return JSON.parse(content);
 }
 
+async function callGroqDirect(apiKey: string, systemPrompt: string, userPrompt: string): Promise<AIResponse> {
+  const resp = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "llama-3.1-70b-versatile",
+      messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }],
+      tools: [{
+        type: "function",
+        function: {
+          name: "create_article",
+          description: "Cria um artigo completo para publicação no WordPress.",
+          parameters: {
+            type: "object",
+            properties: Object.fromEntries(Object.entries(ARTICLE_TOOL_PARAMS).map(([k, v]) => [k, { type: "string", description: v }])),
+            required: Object.keys(ARTICLE_TOOL_PARAMS),
+            additionalProperties: false,
+          },
+        },
+      }],
+      tool_choice: { type: "function", function: { name: "create_article" } },
+    }),
+  });
+
+  if (!resp.ok) {
+    const errText = await resp.text();
+    throw new Error(`Groq API error ${resp.status}: ${errText}`);
+  }
+
+  const aiData = await resp.json();
+  const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+  if (toolCall?.function?.arguments) return JSON.parse(toolCall.function.arguments);
+  let content = aiData.choices?.[0]?.message?.content || "";
+  content = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+  return JSON.parse(content);
+}
+
 async function callLovableGateway(apiKey: string, systemPrompt: string, userPrompt: string): Promise<AIResponse> {
   const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
