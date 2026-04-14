@@ -19,6 +19,7 @@ const Dashboard = () => {
   const { toast } = useToast();
   const [stats, setStats] = useState({ total: 0, published: 0, pending: 0, trending: 0, failed: 0 });
   const [recentArticles, setRecentArticles] = useState<any[]>([]);
+  const [recentErrors, setRecentErrors] = useState<any[]>([]);
   const [generating, setGenerating] = useState(false);
   const [writerPrompt, setWriterPrompt] = useState(DEFAULT_WRITER_PROMPT);
   const [savingPrompt, setSavingPrompt] = useState(false);
@@ -31,7 +32,7 @@ const Dashboard = () => {
     if (!user) return;
 
     try {
-      const [articles, trendingTopics, recent, settings] = await Promise.all([
+      const [articles, trendingTopics, recent, settings, errors] = await Promise.all([
         runBackendQuery(() => supabase.from('articles').select('id, status').eq('user_id', user.id)),
         runBackendQuery(() => supabase.from('trending_topics').select('id').eq('user_id', user.id).eq('used', false)),
         runBackendQuery(() =>
@@ -49,6 +50,15 @@ const Dashboard = () => {
             .eq('user_id', user.id)
             .maybeSingle(),
         ),
+        runBackendQuery(() =>
+          supabase
+            .from('publish_log')
+            .select('id, article_id, error_message, created_at, status')
+            .eq('user_id', user.id)
+            .eq('status', 'failed')
+            .order('created_at', { ascending: false })
+            .limit(5),
+        ),
       ]);
 
       setStats({
@@ -59,7 +69,7 @@ const Dashboard = () => {
         failed: (articles || []).filter((a) => a.status === 'failed').length,
       });
       setRecentArticles(recent || []);
-
+      setRecentErrors(errors || []);
       if (settings?.writer_prompt) {
         setWriterPrompt(settings.writer_prompt);
       }
