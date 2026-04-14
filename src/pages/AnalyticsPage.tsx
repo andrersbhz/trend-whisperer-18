@@ -172,6 +172,25 @@ const AnalyticsPage = () => {
     }
   };
 
+  const fetchJetpackStats = async () => {
+    if (!user) return;
+    setLoadingJetpack(true);
+    try {
+      const data = await runBackendQuery(() =>
+        supabase.functions.invoke('fetch-jetpack-stats', { body: { userId: user.id } }),
+      );
+      if (data?.jetpack?.available) {
+        setJetpackStats(data.jetpack);
+      } else {
+        setJetpackStats(null);
+      }
+    } catch {
+      setJetpackStats(null);
+    } finally {
+      setLoadingJetpack(false);
+    }
+  };
+
   const checkGaConnection = async () => {
     if (!user) return;
 
