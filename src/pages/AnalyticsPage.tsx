@@ -136,7 +136,14 @@ const AnalyticsPage = () => {
         }),
       );
       if (data?.pages) {
-        setMetaMetrics(data.pages);
+        // Filter out pages that only have errors (expired token, etc.)
+        const validPages = (data.pages as any[]).filter((pg: any) => {
+          const hasFbError = pg.facebook?.error;
+          const hasFbData = pg.facebook && !pg.facebook.error && (pg.facebook.fan_count || pg.facebook.followers_count);
+          const hasIgData = pg.instagram && !pg.instagram.error && (pg.instagram.followers_count || pg.instagram.media_count);
+          return hasFbData || hasIgData;
+        });
+        setMetaMetrics(validPages.length > 0 ? validPages : null);
       }
     } catch (error) {
       console.error('Meta metrics error:', error);
@@ -389,9 +396,7 @@ const AnalyticsPage = () => {
               )}
             </>
           )}
-          {pg.facebook?.error && (
-            <Card className="glass-card border-destructive/30"><CardContent className="p-4 text-sm text-destructive">⚠️ {pg.facebook.error}</CardContent></Card>
-          )}
+          {/* Error messages are hidden - only show when there's valid data */}
           {pg.instagram && (
             <>
               <h3 className="text-md font-semibold text-foreground flex items-center gap-2 mt-4">
