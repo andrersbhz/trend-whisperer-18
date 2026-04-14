@@ -31,6 +31,8 @@ const Dashboard = () => {
   const [articlesPerDay, setArticlesPerDay] = useState(10);
   const [autoPublish, setAutoPublish] = useState(false);
   const [savingAuto, setSavingAuto] = useState(false);
+  const [metaMetrics, setMetaMetrics] = useState<any[] | null>(null);
+  const [loadingMeta, setLoadingMeta] = useState(false);
 
   const fetchStats = async () => {
     if (!user) return;
