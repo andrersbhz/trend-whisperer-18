@@ -56,6 +56,22 @@ interface SocialMetrics {
   };
 }
 
+interface JetpackStats {
+  available: boolean;
+  summary?: {
+    views: number; visitors: number; likes: number; comments: number;
+    followers: number; shares: number; posts: number;
+    views_today: number; views_yesterday: number;
+    views_best_day: string | null; views_best_day_total: number;
+  };
+  topPosts?: { title: string; views: number; url: string }[];
+  dailyViews?: { date: string; views: number }[];
+  referrers?: { name: string; views: number }[];
+  searchTerms?: { term: string; views: number }[];
+  countries?: { country: string; views: number }[];
+  publicizeConnections?: { service: string; external_name: string; status: string }[];
+}
+
 interface AiTip {
   category: string;
   tip: string;
@@ -83,6 +99,8 @@ const AnalyticsPage = () => {
   const [articleStats, setArticleStats] = useState({ total: 0, published: 0, failed: 0 });
   const [metaMetrics, setMetaMetrics] = useState<any[] | null>(null);
   const [loadingMeta, setLoadingMeta] = useState(false);
+  const [jetpackStats, setJetpackStats] = useState<JetpackStats | null>(null);
+  const [loadingJetpack, setLoadingJetpack] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -90,6 +108,7 @@ const AnalyticsPage = () => {
     fetchArticleStats();
     fetchSocialMetrics();
     fetchMetaMetrics();
+    fetchJetpackStats();
   }, [user]);
 
   const fetchArticleStats = async () => {
@@ -150,6 +169,25 @@ const AnalyticsPage = () => {
       setMetaMetrics(null);
     } finally {
       setLoadingMeta(false);
+    }
+  };
+
+  const fetchJetpackStats = async () => {
+    if (!user) return;
+    setLoadingJetpack(true);
+    try {
+      const data = await runBackendQuery(() =>
+        supabase.functions.invoke('fetch-jetpack-stats', { body: { userId: user.id } }),
+      );
+      if (data?.jetpack?.available) {
+        setJetpackStats(data.jetpack);
+      } else {
+        setJetpackStats(null);
+      }
+    } catch {
+      setJetpackStats(null);
+    } finally {
+      setLoadingJetpack(false);
     }
   };
 
@@ -491,6 +529,185 @@ const AnalyticsPage = () => {
     </div>
   );
 
+  const jetpackSection = (
+    <div className="space-y-4">
+      <h2 className="text-lg font-semibold neon-text-lilac flex items-center gap-2">
+        <BarChart3 className="h-5 w-5" /> Jetpack Stats
+      </h2>
+
+      {loadingJetpack && (
+        <div className="flex items-center gap-2 text-muted-foreground text-sm">
+          <Loader2 className="h-4 w-4 animate-spin" /> Carregando dados do Jetpack...
+        </div>
+      )}
+
+      {!loadingJetpack && !jetpackStats && (
+        <Card className="glass-card">
+          <CardContent className="p-4 text-center text-sm text-muted-foreground">
+            <BarChart3 className="h-8 w-8 mx-auto mb-2 opacity-50" />
+            Jetpack não disponível. Instale e ative o Jetpack no WordPress para ver estatísticas do site.
+          </CardContent>
+        </Card>
+      )}
+
+      {jetpackStats?.summary && (
+        <>
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3">
+            {[
+              { icon: Eye, label: 'Views Totais', value: jetpackStats.summary.views, color: 'text-primary' },
+              { icon: Users, label: 'Visitantes', value: jetpackStats.summary.visitors, color: 'text-accent' },
+              { icon: Heart, label: 'Curtidas', value: jetpackStats.summary.likes, color: 'text-destructive' },
+              { icon: FileText, label: 'Comentários', value: jetpackStats.summary.comments, color: 'text-warning' },
+              { icon: Users, label: 'Seguidores', value: jetpackStats.summary.followers, color: 'text-primary' },
+              { icon: Eye, label: 'Views Hoje', value: jetpackStats.summary.views_today, color: 'text-primary' },
+              { icon: Eye, label: 'Views Ontem', value: jetpackStats.summary.views_yesterday, color: 'text-muted-foreground' },
+              { icon: Share2, label: 'Compartilh.', value: jetpackStats.summary.shares, color: 'text-accent' },
+              { icon: FileText, label: 'Posts', value: jetpackStats.summary.posts, color: 'text-muted-foreground' },
+              { icon: TrendingUp, label: 'Recorde', value: jetpackStats.summary.views_best_day_total, color: 'text-warning' },
+            ].map((s) => (
+              <Card key={s.label} className="glass-card">
+                <CardContent className="p-4">
+                  <s.icon className={`h-5 w-5 ${s.color} mb-2`} />
+                  <p className="text-xl font-bold text-foreground">{(s.value || 0).toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground">{s.label}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {jetpackStats.summary.views_best_day && (
+            <p className="text-xs text-muted-foreground">
+              📅 Melhor dia: <strong className="text-foreground">{jetpackStats.summary.views_best_day}</strong> com {jetpackStats.summary.views_best_day_total.toLocaleString()} views
+            </p>
+          )}
+        </>
+      )}
+
+      {jetpackStats?.dailyViews && jetpackStats.dailyViews.length > 0 && (
+        <Card className="glass-card">
+          <CardHeader>
+            <CardTitle className="text-sm text-foreground">Visitas Diárias (Jetpack - 30d)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={220}>
+              <AreaChart data={jetpackStats.dailyViews}>
+                <defs>
+                  <linearGradient id="colorJpViews" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(275, 70%, 50%)" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="hsl(275, 70%, 50%)" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(260, 20%, 18%)" />
+                <XAxis dataKey="date" fontSize={10} stroke="hsl(260, 10%, 45%)" />
+                <YAxis fontSize={10} stroke="hsl(260, 10%, 45%)" />
+                <Tooltip contentStyle={customTooltipStyle} />
+                <Area type="monotone" dataKey="views" name="Views" stroke="hsl(275, 70%, 50%)" fill="url(#colorJpViews)" strokeWidth={2} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {jetpackStats?.topPosts && jetpackStats.topPosts.length > 0 && (
+          <Card className="glass-card">
+            <CardHeader>
+              <CardTitle className="text-sm text-foreground">📈 Top Posts (7d)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {jetpackStats.topPosts.map((post, i) => (
+                  <div key={i} className="flex items-center justify-between p-2 rounded-lg hover:bg-secondary/30 transition-colors">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <span className="text-xs font-bold text-primary w-5">{i + 1}</span>
+                      <span className="text-sm text-foreground truncate">{post.title}</span>
+                    </div>
+                    <Badge variant="secondary" className="text-xs bg-primary/10 text-primary shrink-0">{post.views}</Badge>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {jetpackStats?.referrers && jetpackStats.referrers.length > 0 && (
+          <Card className="glass-card">
+            <CardHeader>
+              <CardTitle className="text-sm text-foreground">🔗 Referências (7d)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {jetpackStats.referrers.map((ref, i) => (
+                  <div key={i} className="flex items-center justify-between p-2 rounded-lg hover:bg-secondary/30 transition-colors">
+                    <div className="flex items-center gap-2">
+                      <Globe className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm text-foreground">{ref.name}</span>
+                    </div>
+                    <Badge variant="secondary" className="bg-accent/10 text-accent">{ref.views}</Badge>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {jetpackStats?.searchTerms && jetpackStats.searchTerms.length > 0 && (
+          <Card className="glass-card">
+            <CardHeader>
+              <CardTitle className="text-sm text-foreground">🔍 Termos de Busca (7d)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {jetpackStats.searchTerms.map((t, i) => (
+                  <div key={i} className="flex items-center justify-between p-2 rounded-lg hover:bg-secondary/30 transition-colors">
+                    <span className="text-sm text-foreground">{t.term}</span>
+                    <Badge variant="secondary" className="bg-primary/10 text-primary">{t.views}</Badge>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {jetpackStats?.countries && jetpackStats.countries.length > 0 && (
+          <Card className="glass-card">
+            <CardHeader>
+              <CardTitle className="text-sm text-foreground">🌍 Países (7d)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {jetpackStats.countries.map((c, i) => (
+                  <div key={i} className="flex items-center justify-between p-2 rounded-lg hover:bg-secondary/30 transition-colors">
+                    <span className="text-sm text-foreground">{c.country}</span>
+                    <Badge variant="secondary" className="bg-accent/10 text-accent">{c.views}</Badge>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      {jetpackStats?.publicizeConnections && jetpackStats.publicizeConnections.length > 0 && (
+        <Card className="glass-card">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Send className="h-4 w-4 text-primary" />
+              <p className="text-sm font-medium text-foreground">Conexões Publicize</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {jetpackStats.publicizeConnections.map((c, i) => (
+                <Badge key={i} variant="outline" className="text-xs">
+                  {c.service}{c.external_name ? ` (${c.external_name})` : ''}
+                </Badge>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+
   if (!gaConnected) {
     return (
       <div className="space-y-6">
@@ -499,6 +716,7 @@ const AnalyticsPage = () => {
           <p className="text-muted-foreground text-sm mt-1">Métricas e insights do seu blog</p>
         </div>
         {socialSection}
+        {jetpackSection}
         <Card className="glass-card">
           <CardContent className="py-16 text-center">
             <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -563,6 +781,9 @@ const AnalyticsPage = () => {
 
       {/* Social Metrics */}
       {socialSection}
+
+      {/* Jetpack Stats */}
+      {jetpackSection}
 
       {/* Main Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
