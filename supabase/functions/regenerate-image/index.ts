@@ -114,6 +114,35 @@ async function generateImageGemini(apiKey: string, title: string, category: stri
   throw new ProviderError(errors.join(" | "), 500, false, errors.some((message) => isBillingIssue(0, message)));
 }
 
+async function generateImageDallE(apiKey: string, title: string, category: string): Promise<string> {
+  return await withRetry(async () => {
+    const resp = await fetch("https://api.openai.com/v1/images/generations", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "dall-e-3",
+        prompt: IMAGE_PROMPT_TEMPLATE(title, category),
+        n: 1,
+        size: "1792x1024",
+        quality: "standard",
+        response_format: "b64_json",
+      }),
+    });
+
+    if (!resp.ok) {
+      throw createProviderError("OpenAI DALL-E", resp.status, await readResponseDetails(resp));
+    }
+
+    const data = await resp.json();
+    const b64 = data.data?.[0]?.b64_json;
+    if (!b64) {
+      throw new ProviderError("OpenAI DALL-E não retornou uma imagem válida.", 500, false, false);
+    }
+
+    return `data:image/png;base64,${b64}`;
+  }, 1, 2000);
+}
+
 async function generateImageGateway(lovableApiKey: string, title: string, category: string): Promise<string> {
   const models = ["google/gemini-3.1-flash-image-preview", "google/gemini-2.5-flash-image"];
   const errors: string[] = [];
@@ -165,15 +194,20 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get Gemini key
-    const { data: settings } = await supabase.from("user_settings").select("gemini_api_key").eq("user_id", userId).single();
+    // Get API keys
+    const { data: settings } = await supabase.from("user_settings").select("gemini_api_key, openai_api_key").eq("user_id", userId).single();
     let geminiApiKey: string | null = null;
+    let openaiApiKey: string | null = null;
     if (settings?.gemini_api_key) {
       const { data: decrypted } = await supabase.rpc("decrypt_credential", { enc_key: "", val: settings.gemini_api_key });
       if (decrypted && typeof decrypted === "string" && decrypted.length > 5) geminiApiKey = decrypted;
     }
+    if (settings?.openai_api_key) {
+      const { data: decrypted } = await supabase.rpc("decrypt_credential", { enc_key: "", val: settings.openai_api_key });
+      if (decrypted && typeof decrypted === "string" && decrypted.length > 5) openaiApiKey = decrypted;
+    }
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!geminiApiKey && !LOVABLE_API_KEY) throw new Error("Nenhuma chave de IA configurada.");
+    if (!geminiApiKey && !openaiApiKey && !LOVABLE_API_KEY) throw new Error("Nenhuma chave de IA configurada.");
 
     // Fetch articles without images
     const { data: articles } = await supabase
@@ -198,6 +232,16 @@ serve(async (req) => {
       if (geminiApiKey) {
         try {
           imageUrl = await generateImageGemini(geminiApiKey, article.title, article.category);
+        } catch (error) {
+          const message = getErrorMessage(error);
+          providerErrors.push(message);
+          if (isBillingIssue(0, message)) quotaFailures += 1;
+        }
+      }
+
+      if (!imageUrl && openaiApiKey) {
+        try {
+          imageUrl = await generateImageDallE(openaiApiKey, article.title, article.category);
         } catch (error) {
           const message = getErrorMessage(error);
           providerErrors.push(message);
