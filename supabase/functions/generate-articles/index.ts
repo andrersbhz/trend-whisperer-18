@@ -228,7 +228,6 @@ serve(async (req) => {
     const writerPrompt = settings?.writer_prompt || null;
     const systemPrompt = buildSystemPrompt(writerPrompt);
 
-    // Decrypt Gemini API key if present
     let geminiApiKey: string | null = null;
     if (settings?.gemini_api_key) {
       const { data: decrypted } = await supabase.rpc("decrypt_credential", {
@@ -249,7 +248,6 @@ serve(async (req) => {
 
     console.log(`Using AI provider: ${useGemini ? "Google Gemini (user key)" : "Lovable AI Gateway"}`);
 
-    // Fetch trending topics
     const { data: topics } = await supabase.from("trending_topics").select("*").eq("user_id", userId).eq("used", false).limit(10);
 
     const userCategories = settings?.categories || ["esportes", "politica", "policia", "saude", "celebridades", "financas"];
@@ -261,6 +259,7 @@ serve(async (req) => {
     const intervalHours = 24 / articlesPerDay;
     const now = new Date();
     const generatedArticles = [];
+    const failureReasons: Array<{ status: number; message: string }> = [];
 
     for (let i = 0; i < Math.min(articlesPerDay, topicsToUse.length); i++) {
       const topic = topicsToUse[i];
@@ -277,27 +276,43 @@ serve(async (req) => {
             parsed = sanitizeSeoFields(await callLovableGateway(LOVABLE_API_KEY!, systemPrompt, userPrompt));
           }
         } catch (aiErr: any) {
-          console.error(`AI error for topic ${topic.topic}:`, aiErr.message);
-          // Fallback: if Gemini failed (e.g. 429 rate limit), try Lovable Gateway
+          const primaryMessage = aiErr instanceof Error ? aiErr.message : String(aiErr);
+          console.error(`AI error for topic ${topic.topic}:`, primaryMessage);
+
           if (useGemini && LOVABLE_API_KEY) {
             console.log(`Gemini failed, falling back to Lovable AI Gateway for: ${topic.topic}`);
             try {
               parsed = sanitizeSeoFields(await callLovableGateway(LOVABLE_API_KEY!, systemPrompt, userPrompt));
             } catch (fallbackErr: any) {
-              console.error(`Fallback also failed for ${topic.topic}:`, fallbackErr.message);
+              const fallbackMessage = fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr);
+              console.error(`Fallback also failed for ${topic.topic}:`, fallbackMessage);
+              const combinedMessage = `${primaryMessage} | fallback: ${fallbackMessage}`;
+              const status = /402|payment_required|Not enough credits/i.test(fallbackMessage)
+                ? 402
+                : /429|RESOURCE_EXHAUSTED|spending cap/i.test(primaryMessage)
+                  ? 429
+                  : 500;
+              failureReasons.push({ status, message: combinedMessage });
               continue;
             }
           } else {
-            if (aiErr.message?.includes("429")) {
+            if (/429|RESOURCE_EXHAUSTED|spending cap/i.test(primaryMessage)) {
               console.log("Rate limited, waiting 10 seconds...");
               await new Promise((r) => setTimeout(r, 10000));
             }
+            const status = /402|payment_required|Not enough credits/i.test(primaryMessage)
+              ? 402
+              : /429|RESOURCE_EXHAUSTED|spending cap/i.test(primaryMessage)
+                ? 429
+                : 500;
+            failureReasons.push({ status, message: primaryMessage });
             continue;
           }
         }
 
         if (!parsed.title || !parsed.content) {
           console.error("Missing required fields for topic:", topic.topic);
+          failureReasons.push({ status: 500, message: `Campos obrigatórios ausentes para o tópico: ${topic.topic}` });
           continue;
         }
 
@@ -305,7 +320,6 @@ serve(async (req) => {
           console.warn(`Content short (${parsed.content.length} chars) for: ${topic.topic}`);
         }
 
-        // Generate featured image: try Gemini direct first, then Lovable gateway
         let featuredImageUrl: string | null = null;
         if (useGemini && geminiApiKey) {
           console.log(`Generating image with Gemini for: ${parsed.title}`);
@@ -321,7 +335,6 @@ serve(async (req) => {
           console.warn(`No featured image generated for: ${parsed.title}`);
         }
 
-        // Save to database
         const { data: article, error: insertError } = await supabase.from("articles").insert({
           user_id: userId,
           title: parsed.title,
@@ -337,7 +350,11 @@ serve(async (req) => {
           trending_topic: topic.topic,
         }).select().single();
 
-        if (insertError) { console.error("Insert error:", insertError); continue; }
+        if (insertError) {
+          console.error("Insert error:", insertError);
+          failureReasons.push({ status: 500, message: insertError.message || "Erro ao salvar artigo gerado" });
+          continue;
+        }
 
         if (topic.id) {
           await supabase.from("trending_topics").update({ used: true }).eq("id", topic.id);
@@ -347,7 +364,32 @@ serve(async (req) => {
         await new Promise((resolve) => setTimeout(resolve, useGemini ? 2000 : 3000));
       } catch (err) {
         console.error(`Error generating article for ${topic.topic}:`, err);
+        failureReasons.push({
+          status: 500,
+          message: err instanceof Error ? err.message : `Erro desconhecido no tópico: ${topic.topic}`,
+        });
       }
+    }
+
+    if (generatedArticles.length === 0) {
+      const hasGatewayCreditError = failureReasons.some(({ status, message }) => status === 402 || /payment_required|Not enough credits/i.test(message));
+      const hasGeminiLimitError = failureReasons.some(({ status, message }) => status === 429 || /RESOURCE_EXHAUSTED|spending cap/i.test(message));
+
+      const errorMessage = hasGatewayCreditError && hasGeminiLimitError
+        ? "Nenhum artigo foi gerado: sua chave Gemini atingiu o limite mensal e o Lovable AI está sem créditos. Adicione créditos em Settings > Workspace > Usage ou aumente o limite da sua chave Gemini."
+        : hasGatewayCreditError
+          ? "Nenhum artigo foi gerado: o Lovable AI está sem créditos. Adicione créditos em Settings > Workspace > Usage."
+          : hasGeminiLimitError
+            ? "Nenhum artigo foi gerado: sua chave Gemini atingiu o limite mensal. Ajuste o spend cap da chave configurada."
+            : failureReasons[0]?.message || "Nenhum artigo pôde ser gerado.";
+
+      return new Response(
+        JSON.stringify({ error: errorMessage, details: failureReasons.slice(0, 3) }),
+        {
+          status: hasGatewayCreditError ? 402 : hasGeminiLimitError ? 429 : 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
     }
 
     return new Response(
