@@ -462,16 +462,16 @@ serve(async (req) => {
           continue;
         }
 
-        // Generate image
+        // Generate image: DALL-E → Lovable AI → Gemini
         let featuredImageUrl: string | null = null;
-        if (geminiApiKey) {
-          featuredImageUrl = await generateImageGemini(geminiApiKey, parsed.title, topic.category);
-        }
-        if (!featuredImageUrl && openaiApiKey) {
+        if (openaiApiKey) {
           featuredImageUrl = await generateImageDallE(openaiApiKey, parsed.title, topic.category);
         }
         if (!featuredImageUrl && LOVABLE_API_KEY) {
           featuredImageUrl = await generateImageGateway(LOVABLE_API_KEY, parsed.title, topic.category);
+        }
+        if (!featuredImageUrl && geminiApiKey) {
+          featuredImageUrl = await generateImageGemini(geminiApiKey, parsed.title, topic.category);
         }
 
         const { data: article, error: insertError } = await supabase.from("articles").insert({
