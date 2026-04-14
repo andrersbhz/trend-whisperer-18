@@ -195,6 +195,7 @@ const SettingsPage = () => {
       <GroqSettings settings={settings} onChange={updateSettings} hasGroqKey={credStatus.has_groq_key} />
       <WordPressSettings settings={settings} onChange={updateSettings} hasWpPassword={credStatus.has_wp_password} />
       <JetpackSettings settings={settings} hasWpPassword={credStatus.has_wp_password} />
+      <FacebookSettings settings={settings} onChange={updateSettings} />
       <GoogleAnalyticsSettings settings={settings} onChange={updateSettings} />
       <AutomationSettings settings={settings} onChange={updateSettings} />
 
