@@ -34,7 +34,13 @@ const SchedulePage = () => {
             .order('scheduled_at', { ascending: true }),
         );
 
-        setArticles(data || []);
+        const sorted = (data || []).sort((a: any, b: any) => {
+          const aPub = a.status === 'published';
+          const bPub = b.status === 'published';
+          if (aPub !== bPub) return aPub ? 1 : -1;
+          return new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime();
+        });
+        setArticles(sorted);
       } catch (error) {
         setArticles([]);
         toast({ title: 'Erro ao carregar agendamentos', description: getErrorMessage(error), variant: 'destructive' });
