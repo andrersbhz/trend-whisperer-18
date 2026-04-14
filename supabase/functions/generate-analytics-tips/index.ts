@@ -42,7 +42,7 @@ Exemplo: [{"category":"SEO","tip":"Otimize os meta descriptions...","priority":"
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash-lite",
+        model: "openai/gpt-5-nano",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.7,
       }),
