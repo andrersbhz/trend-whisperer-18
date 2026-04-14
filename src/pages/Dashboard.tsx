@@ -95,7 +95,30 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchStats();
+    fetchMetaMetrics();
   }, [user]);
+
+  const fetchMetaMetrics = async () => {
+    if (!user) return;
+    setLoadingMeta(true);
+    try {
+      const data = await runBackendQuery(() =>
+        supabase.functions.invoke('fetch-meta-metrics', { body: { userId: user.id } }),
+      );
+      if (data?.pages) {
+        const validPages = (data.pages as any[]).filter((pg: any) => {
+          const hasFbData = pg.facebook && !pg.facebook.error && (pg.facebook.fan_count || pg.facebook.followers_count);
+          const hasIgData = pg.instagram && !pg.instagram.error && (pg.instagram.followers_count || pg.instagram.media_count);
+          return hasFbData || hasIgData;
+        });
+        setMetaMetrics(validPages.length > 0 ? validPages : null);
+      }
+    } catch {
+      setMetaMetrics(null);
+    } finally {
+      setLoadingMeta(false);
+    }
+  };
 
   const getFunctionErrorMessage = async (error: unknown) => {
     const response = typeof error === 'object' && error && 'context' in error
