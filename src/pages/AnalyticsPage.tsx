@@ -716,6 +716,7 @@ const AnalyticsPage = () => {
           <p className="text-muted-foreground text-sm mt-1">Métricas e insights do seu blog</p>
         </div>
         {socialSection}
+        {jetpackSection}
         <Card className="glass-card">
           <CardContent className="py-16 text-center">
             <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
