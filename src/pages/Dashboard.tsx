@@ -230,7 +230,7 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold neon-text-lilac">Painel</h1>
@@ -245,7 +245,7 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {statCards.map((stat) => (
           <Card key={stat.label} className={`glass-card ${stat.glow}`}>
-            <CardContent className="p-5">
+            <CardContent className="p-[25px]">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">{stat.label}</p>
@@ -300,7 +300,7 @@ const Dashboard = () => {
                         { icon: MessageCircle, label: 'Falando sobre', value: pg.facebook.talking_about_count || 0, color: 'text-warning' },
                         { icon: Eye, label: 'Check-ins', value: pg.facebook.were_here_count || 0, color: 'text-muted-foreground' },
                       ].map((m) => (
-                        <div key={m.label} className="p-3 rounded-xl bg-secondary/40 border border-border/50">
+                         <div key={m.label} className="p-[25px] rounded-xl bg-secondary/40 border border-border/50">
                           <div className="flex items-center gap-1.5 mb-1">
                             <m.icon className={`h-3.5 w-3.5 ${m.color}`} />
                             <span className="text-[11px] text-muted-foreground">{m.label}</span>
@@ -310,7 +310,7 @@ const Dashboard = () => {
                       ))}
                     </div>
                     {pg.facebook.post_stats && (
-                      <div className="mt-3 p-3 rounded-xl bg-secondary/20 border border-border/30">
+                       <div className="mt-3 p-[25px] rounded-xl bg-secondary/20 border border-border/30">
                         <p className="text-xs font-medium text-muted-foreground mb-2">Últimos {pg.facebook.post_stats.total_posts} posts</p>
                         <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 text-center">
                           {[
@@ -347,7 +347,7 @@ const Dashboard = () => {
                         { icon: FileText, label: 'Publicações', value: pg.instagram.media_count || 0, color: 'text-accent' },
                         { icon: Heart, label: 'Eng. Médio', value: pg.instagram.post_stats?.avg_engagement || 0, color: 'text-destructive' },
                       ].map((m) => (
-                        <div key={m.label} className="p-3 rounded-xl bg-secondary/40 border border-border/50">
+                        <div key={m.label} className="p-[25px] rounded-xl bg-secondary/40 border border-border/50">
                           <div className="flex items-center gap-1.5 mb-1">
                             <m.icon className={`h-3.5 w-3.5 ${m.color}`} />
                             <span className="text-[11px] text-muted-foreground">{m.label}</span>
@@ -357,7 +357,7 @@ const Dashboard = () => {
                       ))}
                     </div>
                     {pg.instagram.post_stats && (
-                      <div className="mt-3 p-3 rounded-xl bg-secondary/20 border border-border/30">
+                      <div className="mt-3 p-[25px] rounded-xl bg-secondary/20 border border-border/30">
                         <p className="text-xs font-medium text-muted-foreground mb-2">Últimos {pg.instagram.post_stats.total_posts} posts</p>
                         <div className="grid grid-cols-3 gap-2 text-center">
                           {[
@@ -408,7 +408,7 @@ const Dashboard = () => {
               />
               <p className="text-xs text-muted-foreground">Quantidade de artigos gerados a cada ciclo (máx. 50)</p>
             </div>
-            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 h-fit mt-auto">
+            <div className="flex items-center justify-between p-[25px] rounded-lg bg-muted/50 h-fit mt-auto">
               <div>
                 <p className="text-sm font-medium text-foreground">Publicação automática</p>
                 <p className="text-xs text-muted-foreground">Publicar no WordPress automaticamente</p>
@@ -480,7 +480,7 @@ const Dashboard = () => {
           <CardContent className="space-y-2">
             {recentErrors.length > 0 ? (
               recentErrors.map((err) => (
-                <div key={err.id} className="p-2 rounded bg-destructive/5 border border-destructive/10">
+                <div key={err.id} className="p-[25px] rounded bg-destructive/5 border border-destructive/10">
                   <p className="text-xs text-destructive font-medium truncate">{err.error_message || 'Erro desconhecido'}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">{new Date(err.created_at).toLocaleString('pt-BR')}</p>
                 </div>
@@ -504,7 +504,7 @@ const Dashboard = () => {
           ) : (
             <div className="space-y-3">
               {recentArticles.map((article) => (
-                <div key={article.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors">
+                <div key={article.id} className="flex items-center justify-between p-[25px] rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors">
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-foreground truncate">{article.title}</p>
                     <div className="flex items-center gap-2 mt-1">

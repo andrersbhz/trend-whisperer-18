@@ -97,7 +97,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
             {navItems.find((i) => i.path === location.pathname)?.label || 'Dashboard'}
           </h2>
         </header>
-        <div className="p-4 lg:p-6 animate-fade-in">{children}</div>
+        <div className="p-6 lg:p-8 animate-fade-in">{children}</div>
       </main>
     </div>
   );
