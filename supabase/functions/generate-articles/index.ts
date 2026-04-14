@@ -252,9 +252,10 @@ serve(async (req) => {
     // Fetch trending topics
     const { data: topics } = await supabase.from("trending_topics").select("*").eq("user_id", userId).eq("used", false).limit(10);
 
+    const userCategories = settings?.categories || ["esportes", "politica", "policia", "saude", "celebridades", "financas"];
     const topicsToUse = topics && topics.length > 0
       ? topics
-      : categories.map((cat: string) => ({ topic: getDefaultTopic(cat), category: cat, id: null }));
+      : userCategories.map((cat: string) => ({ topic: getDefaultTopic(cat), category: cat, id: null }));
 
     const articlesPerDay = settings?.articles_per_day || 10;
     const intervalHours = 24 / articlesPerDay;
