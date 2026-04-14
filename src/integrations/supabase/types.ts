@@ -217,6 +217,7 @@ export type Database = {
           google_analytics_property_id: string | null
           id: string
           instagram_account_id: string | null
+          openai_api_key: string | null
           updated_at: string
           user_id: string
           wordpress_app_password: string | null
@@ -235,6 +236,7 @@ export type Database = {
           google_analytics_property_id?: string | null
           id?: string
           instagram_account_id?: string | null
+          openai_api_key?: string | null
           updated_at?: string
           user_id: string
           wordpress_app_password?: string | null
@@ -253,6 +255,7 @@ export type Database = {
           google_analytics_property_id?: string | null
           id?: string
           instagram_account_id?: string | null
+          openai_api_key?: string | null
           updated_at?: string
           user_id?: string
           wordpress_app_password?: string | null
