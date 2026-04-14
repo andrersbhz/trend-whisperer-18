@@ -9,6 +9,7 @@ import GoogleAnalyticsSettings from '@/components/settings/GoogleAnalyticsSettin
 import AutomationSettings from '@/components/settings/AutomationSettings';
 import GeminiSettings from '@/components/settings/GeminiSettings';
 import OpenAISettings from '@/components/settings/OpenAISettings';
+import GroqSettings from '@/components/settings/GroqSettings';
 import { getErrorMessage, runBackendMutation, runBackendQuery } from '@/lib/backend';
 
 export interface UserSettings {
@@ -21,6 +22,7 @@ export interface UserSettings {
   google_analytics_property_id: string;
   gemini_api_key: string;
   openai_api_key: string;
+  groq_api_key: string;
   categories: string[];
   articles_per_day: number;
   auto_publish: boolean;
@@ -37,6 +39,7 @@ const defaultSettings: UserSettings = {
   google_analytics_property_id: '',
   gemini_api_key: '',
   openai_api_key: '',
+  groq_api_key: '',
   categories: ['esportes', 'politica', 'policia', 'saude', 'celebridades', 'financas'],
   articles_per_day: 10,
   auto_publish: false,
@@ -48,6 +51,7 @@ interface CredentialsStatus {
   has_fb_token: boolean;
   has_gemini_key: boolean;
   has_openai_key: boolean;
+  has_groq_key: boolean;
 }
 
 const SettingsPage = () => {
@@ -57,7 +61,7 @@ const SettingsPage = () => {
   const [saving, setSaving] = useState(false);
   const [hasExistingSettings, setHasExistingSettings] = useState(false);
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
-  const [credStatus, setCredStatus] = useState<CredentialsStatus>({ has_wp_password: false, has_fb_token: false, has_gemini_key: false, has_openai_key: false });
+  const [credStatus, setCredStatus] = useState<CredentialsStatus>({ has_wp_password: false, has_fb_token: false, has_gemini_key: false, has_openai_key: false, has_groq_key: false });
 
   useEffect(() => {
     if (!user) return;
@@ -88,6 +92,7 @@ const SettingsPage = () => {
             google_analytics_property_id: data.google_analytics_property_id || '',
             gemini_api_key: '',
             openai_api_key: '',
+            groq_api_key: '',
             categories: data.categories || defaultSettings.categories,
             articles_per_day: data.articles_per_day || 10,
             auto_publish: data.auto_publish || false,
@@ -136,6 +141,9 @@ const SettingsPage = () => {
       if (settings.openai_api_key) {
         payload.openai_api_key = settings.openai_api_key;
       }
+      if (settings.groq_api_key) {
+        payload.groq_api_key = settings.groq_api_key;
+      }
 
       await runBackendMutation(() =>
         hasExistingSettings
@@ -149,7 +157,7 @@ const SettingsPage = () => {
       const status = await runBackendQuery(() => supabase.rpc('get_credentials_status'));
       if (status) setCredStatus(status as unknown as CredentialsStatus);
 
-      setSettings(prev => ({ ...prev, wordpress_app_password: '', facebook_access_token: '', gemini_api_key: '', openai_api_key: '' }));
+      setSettings(prev => ({ ...prev, wordpress_app_password: '', facebook_access_token: '', gemini_api_key: '', openai_api_key: '', groq_api_key: '' }));
     } catch (error) {
       toast({ title: 'Erro', description: getErrorMessage(error), variant: 'destructive' });
     } finally {
@@ -177,11 +185,12 @@ const SettingsPage = () => {
       </div>
 
       <div className="p-3 rounded-lg bg-accent/20 border border-accent/40 text-xs text-muted-foreground">
-        <strong className="text-foreground">🔄 Sistema Multi-IA:</strong> O sistema tenta gerar artigos na seguinte ordem: <strong>Gemini → OpenAI → Lovable AI</strong>. Se um provedor estiver sem saldo, o próximo é usado automaticamente.
+        <strong className="text-foreground">🔄 Sistema Multi-IA:</strong> O sistema tenta gerar artigos na seguinte ordem: <strong>Gemini → OpenAI → Groq → Lovable AI</strong>. Se um provedor estiver sem saldo, o próximo é usado automaticamente.
       </div>
 
       <GeminiSettings settings={settings} onChange={updateSettings} hasGeminiKey={credStatus.has_gemini_key} />
       <OpenAISettings settings={settings} onChange={updateSettings} hasOpenaiKey={credStatus.has_openai_key} />
+      <GroqSettings settings={settings} onChange={updateSettings} hasGroqKey={credStatus.has_groq_key} />
       <WordPressSettings settings={settings} onChange={updateSettings} hasWpPassword={credStatus.has_wp_password} />
       <GoogleAnalyticsSettings settings={settings} onChange={updateSettings} />
       <AutomationSettings settings={settings} onChange={updateSettings} />

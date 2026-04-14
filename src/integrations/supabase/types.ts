@@ -215,6 +215,7 @@ export type Database = {
           facebook_page_id: string | null
           gemini_api_key: string | null
           google_analytics_property_id: string | null
+          groq_api_key: string | null
           id: string
           instagram_account_id: string | null
           openai_api_key: string | null
@@ -234,6 +235,7 @@ export type Database = {
           facebook_page_id?: string | null
           gemini_api_key?: string | null
           google_analytics_property_id?: string | null
+          groq_api_key?: string | null
           id?: string
           instagram_account_id?: string | null
           openai_api_key?: string | null
@@ -253,6 +255,7 @@ export type Database = {
           facebook_page_id?: string | null
           gemini_api_key?: string | null
           google_analytics_property_id?: string | null
+          groq_api_key?: string | null
           id?: string
           instagram_account_id?: string | null
           openai_api_key?: string | null
