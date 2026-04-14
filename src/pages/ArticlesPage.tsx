@@ -171,7 +171,12 @@ const ArticlesPage = () => {
           body: { userId: user.id, articleIds: withoutImage.map(a => a.id) },
         }),
       );
-      toast({ title: 'Imagens geradas!', description: data?.message || `${data?.updated || 0} imagens criadas.` });
+      const updatedCount = Number(data?.updated ?? 0);
+      toast({
+        title: updatedCount > 0 ? 'Imagens geradas!' : 'Nenhuma imagem gerada',
+        description: data?.message || `${updatedCount} imagens criadas.`,
+        variant: updatedCount > 0 ? 'default' : 'destructive',
+      });
       fetchArticles();
     } catch (error) {
       toast({ title: 'Erro', description: getErrorMessage(error), variant: 'destructive' });
