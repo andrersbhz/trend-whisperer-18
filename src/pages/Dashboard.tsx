@@ -81,6 +81,36 @@ const Dashboard = () => {
     fetchStats();
   }, [user]);
 
+  const getFunctionErrorMessage = async (error: unknown) => {
+    const response = typeof error === 'object' && error && 'context' in error
+      ? (error as { context?: Response }).context
+      : undefined;
+
+    if (response) {
+      try {
+        const payload = await response.clone().json();
+        if (typeof payload?.error === 'string' && payload.error.trim()) {
+          return payload.error;
+        }
+        if (typeof payload?.message === 'string' && payload.message.trim()) {
+          return payload.message;
+        }
+      } catch {
+        // ignore body parse errors and fall back below
+      }
+
+      if (response.status === 402) {
+        return 'O Lovable AI está sem créditos para gerar artigos agora.';
+      }
+
+      if (response.status === 429) {
+        return 'A geração atingiu o limite da IA configurada.';
+      }
+    }
+
+    return getErrorMessage(error);
+  };
+
   const handleSavePrompt = async () => {
     if (!user) return;
     setSavingPrompt(true);
@@ -118,17 +148,19 @@ const Dashboard = () => {
   };
 
   const handleGenerateArticles = async () => {
+    if (!user) return;
+
     setGenerating(true);
     try {
       const data = await runBackendQuery(() =>
         supabase.functions.invoke('generate-articles', {
-          body: { userId: user?.id },
+          body: { userId: user.id },
         }),
       );
       toast({ title: 'Geração iniciada!', description: data?.message || 'Artigos sendo gerados...' });
       setTimeout(fetchStats, 5000);
     } catch (error) {
-      toast({ title: 'Erro', description: getErrorMessage(error), variant: 'destructive' });
+      toast({ title: 'Erro ao gerar artigos', description: await getFunctionErrorMessage(error), variant: 'destructive' });
     } finally {
       setGenerating(false);
     }
