@@ -9,6 +9,7 @@ import {
   BarChart3, TrendingUp, TrendingDown, Eye, MousePointerClick, Users,
   Lightbulb, RefreshCw, Loader2, Globe, Clock, ArrowUpRight, Percent,
   FileText, Smartphone, Monitor, Tablet, Facebook, Instagram, Heart, Share2,
+  Twitter, Linkedin, Send,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -34,8 +35,25 @@ interface AnalyticsData {
 }
 
 interface SocialMetrics {
-  facebook: { posts: number; reach: number; engagement: number; likes: number; shares: number };
-  instagram: { posts: number; reach: number; engagement: number; likes: number; comments: number };
+  publish_log: {
+    wordpress: { total: number; success: number; failed: number; recent: { date: string; url: string }[] };
+    facebook: { total: number; success: number; failed: number };
+    instagram: { total: number; success: number; failed: number };
+  };
+  jetpack: {
+    posts_with_sharing: number;
+    total_shares: number;
+    shares_by_network: Record<string, number>;
+  };
+  summary: {
+    total_published_wp: number;
+    total_shared_social: number;
+    total_facebook: number;
+    total_instagram: number;
+    total_twitter: number;
+    total_linkedin: number;
+    total_tumblr: number;
+  };
 }
 
 interface AiTip {
@@ -91,37 +109,17 @@ const AnalyticsPage = () => {
     if (!user) return;
 
     try {
-      const logs = await runBackendQuery(() =>
-        supabase
-          .from('publish_log')
-          .select('platform, status')
-          .eq('user_id', user.id),
+      const data = await runBackendQuery(() =>
+        supabase.functions.invoke('fetch-social-metrics', {
+          body: { userId: user.id },
+        }),
       );
 
-      const fbSuccess = (logs || []).filter(l => l.platform === 'facebook' && l.status === 'success').length;
-      const igSuccess = (logs || []).filter(l => l.platform === 'instagram' && l.status === 'success').length;
-
-      setSocialMetrics({
-        facebook: {
-          posts: fbSuccess,
-          reach: fbSuccess * 850,
-          engagement: fbSuccess * 120,
-          likes: fbSuccess * 45,
-          shares: fbSuccess * 12,
-        },
-        instagram: {
-          posts: igSuccess,
-          reach: igSuccess * 1200,
-          engagement: igSuccess * 180,
-          likes: igSuccess * 95,
-          comments: igSuccess * 15,
-        },
-      });
+      if (data?.metrics) {
+        setSocialMetrics(data.metrics);
+      }
     } catch {
-      setSocialMetrics({
-        facebook: { posts: 0, reach: 0, engagement: 0, likes: 0, shares: 0 },
-        instagram: { posts: 0, reach: 0, engagement: 0, likes: 0, comments: 0 },
-      });
+      setSocialMetrics(null);
     }
   };
 
@@ -213,19 +211,25 @@ const AnalyticsPage = () => {
     );
   }
 
-  // Social metrics section (always show)
+  const sm = socialMetrics?.summary;
+  const jp = socialMetrics?.jetpack;
+  const pl = socialMetrics?.publish_log;
+
   const socialSection = (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold neon-text-pink flex items-center gap-2">
         <Share2 className="h-5 w-5" /> Redes Sociais
       </h2>
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+
+      {/* Main counters */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
         {[
-          { icon: Facebook, label: 'Posts FB', value: socialMetrics?.facebook.posts || 0, color: 'text-accent' },
-          { icon: Heart, label: 'Likes FB', value: socialMetrics?.facebook.likes || 0, color: 'text-accent' },
-          { icon: Users, label: 'Alcance FB', value: socialMetrics?.facebook.reach || 0, color: 'text-accent' },
-          { icon: Instagram, label: 'Posts IG', value: socialMetrics?.instagram.posts || 0, color: 'text-primary' },
-          { icon: Heart, label: 'Likes IG', value: socialMetrics?.instagram.likes || 0, color: 'text-primary' },
+          { icon: Globe, label: 'Publicados WP', value: sm?.total_published_wp || 0, color: 'text-primary' },
+          { icon: Share2, label: 'Compartilhados', value: sm?.total_shared_social || 0, color: 'text-accent' },
+          { icon: Facebook, label: 'Facebook', value: sm?.total_facebook || 0, color: 'text-accent' },
+          { icon: Instagram, label: 'Instagram', value: sm?.total_instagram || 0, color: 'text-primary' },
+          { icon: Twitter, label: 'Twitter/X', value: sm?.total_twitter || 0, color: 'text-muted-foreground' },
+          { icon: Linkedin, label: 'LinkedIn', value: sm?.total_linkedin || 0, color: 'text-muted-foreground' },
         ].map((s) => (
           <Card key={s.label} className="glass-card neon-border-pink">
             <CardContent className="p-4">
@@ -236,6 +240,50 @@ const AnalyticsPage = () => {
           </Card>
         ))}
       </div>
+
+      {/* Jetpack Publicize details */}
+      {jp && jp.total_shares > 0 && (
+        <Card className="glass-card">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Send className="h-4 w-4 text-primary" />
+              <p className="text-sm font-medium text-foreground">Jetpack Publicize</p>
+              <Badge variant="secondary" className="ml-auto">{jp.total_shares} compartilhamentos</Badge>
+            </div>
+            {Object.keys(jp.shares_by_network).length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(jp.shares_by_network).map(([network, count]) => (
+                  <Badge key={network} variant="outline" className="text-xs">
+                    {network}: {count}
+                  </Badge>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Publish log details */}
+      {pl && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {[
+            { label: 'WordPress', total: pl.wordpress.total, success: pl.wordpress.success, failed: pl.wordpress.failed, color: 'text-primary' },
+            { label: 'Facebook', total: pl.facebook.total, success: pl.facebook.success, failed: pl.facebook.failed, color: 'text-accent' },
+            { label: 'Instagram', total: pl.instagram.total, success: pl.instagram.success, failed: pl.instagram.failed, color: 'text-primary' },
+          ].map((p) => (
+            <Card key={p.label} className="glass-card">
+              <CardContent className="p-4">
+                <p className={`text-sm font-medium ${p.color} mb-2`}>{p.label}</p>
+                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                  <span>Total: <strong className="text-foreground">{p.total}</strong></span>
+                  <Badge variant="secondary" className="bg-primary/10 text-primary text-xs">{p.success} ✓</Badge>
+                  {p.failed > 0 && <Badge variant="destructive" className="text-xs">{p.failed} ✗</Badge>}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 
