@@ -81,12 +81,15 @@ const AnalyticsPage = () => {
   const [loadingTips, setLoadingTips] = useState(false);
   const [gaConnected, setGaConnected] = useState(false);
   const [articleStats, setArticleStats] = useState({ total: 0, published: 0, failed: 0 });
+  const [metaMetrics, setMetaMetrics] = useState<any[] | null>(null);
+  const [loadingMeta, setLoadingMeta] = useState(false);
 
   useEffect(() => {
     if (!user) return;
     checkGaConnection();
     fetchArticleStats();
     fetchSocialMetrics();
+    fetchMetaMetrics();
   }, [user]);
 
   const fetchArticleStats = async () => {
@@ -120,6 +123,26 @@ const AnalyticsPage = () => {
       }
     } catch {
       setSocialMetrics(null);
+    }
+  };
+
+  const fetchMetaMetrics = async () => {
+    if (!user) return;
+    setLoadingMeta(true);
+    try {
+      const data = await runBackendQuery(() =>
+        supabase.functions.invoke('fetch-meta-metrics', {
+          body: { userId: user.id },
+        }),
+      );
+      if (data?.pages) {
+        setMetaMetrics(data.pages);
+      }
+    } catch (error) {
+      console.error('Meta metrics error:', error);
+      setMetaMetrics(null);
+    } finally {
+      setLoadingMeta(false);
     }
   };
 
@@ -283,6 +306,182 @@ const AnalyticsPage = () => {
             </Card>
           ))}
         </div>
+      )}
+
+      {/* === META API METRICS === */}
+      {loadingMeta && (
+        <div className="flex items-center gap-2 text-muted-foreground text-sm">
+          <Loader2 className="h-4 w-4 animate-spin" /> Carregando métricas do Meta...
+        </div>
+      )}
+      {metaMetrics && metaMetrics.length > 0 && metaMetrics.map((pg: any, idx: number) => (
+        <div key={idx} className="space-y-3">
+          <h3 className="text-md font-semibold text-foreground flex items-center gap-2">
+            <Facebook className="h-4 w-4 text-accent" /> {pg.page_name || 'Página'}
+          </h3>
+          {pg.facebook && !pg.facebook.error && (
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {[
+                  { label: 'Seguidores', value: pg.facebook.followers_count || pg.facebook.fan_count || 0 },
+                  { label: 'Curtidas', value: pg.facebook.fan_count || 0 },
+                  { label: 'Falando sobre', value: pg.facebook.talking_about_count || 0 },
+                  { label: 'Check-ins', value: pg.facebook.were_here_count || 0 },
+                ].map((s: any) => (
+                  <Card key={s.label} className="glass-card"><CardContent className="p-3">
+                    <p className="text-lg font-bold text-foreground">{(s.value || 0).toLocaleString()}</p>
+                    <p className="text-xs text-muted-foreground">{s.label}</p>
+                  </CardContent></Card>
+                ))}
+              </div>
+              {pg.facebook.insights && (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {[
+                    { label: 'Impressões (28d)', value: pg.facebook.insights.page_impressions?.total || 0 },
+                    { label: 'Alcance Único', value: pg.facebook.insights.page_impressions_unique?.total || 0 },
+                    { label: 'Engajamento', value: pg.facebook.insights.page_post_engagements?.total || 0 },
+                    { label: 'Engajados', value: pg.facebook.insights.page_engaged_users?.total || 0 },
+                    { label: 'Views Página', value: pg.facebook.insights.page_views_total?.total || 0 },
+                    { label: 'Novos Fãs', value: pg.facebook.insights.page_fan_adds?.total || 0 },
+                    { label: 'Fãs Perdidos', value: pg.facebook.insights.page_fan_removes?.total || 0 },
+                    { label: 'Feedback Neg.', value: pg.facebook.insights.page_negative_feedback?.total || 0 },
+                  ].map((s: any) => (
+                    <Card key={s.label} className="glass-card"><CardContent className="p-3">
+                      <p className="text-lg font-bold text-foreground">{(s.value || 0).toLocaleString()}</p>
+                      <p className="text-xs text-muted-foreground">{s.label}</p>
+                    </CardContent></Card>
+                  ))}
+                </div>
+              )}
+              {pg.facebook.post_stats && (
+                <Card className="glass-card"><CardContent className="p-4">
+                  <p className="text-sm font-medium text-foreground mb-3">📊 Últimos {pg.facebook.post_stats.total_posts} Posts</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-center">
+                    {[
+                      { label: 'Curtidas', value: pg.facebook.post_stats.total_likes },
+                      { label: 'Comentários', value: pg.facebook.post_stats.total_comments },
+                      { label: 'Reações', value: pg.facebook.post_stats.total_reactions },
+                      { label: 'Compartilh.', value: pg.facebook.post_stats.total_shares },
+                      { label: 'Eng. Médio', value: pg.facebook.post_stats.avg_engagement },
+                    ].map((s: any) => (
+                      <div key={s.label}>
+                        <p className="text-lg font-bold text-foreground">{(s.value || 0).toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground">{s.label}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent></Card>
+              )}
+              {pg.facebook.insights?.page_impressions?.daily?.length > 0 && (
+                <Card className="glass-card"><CardHeader><CardTitle className="text-sm text-foreground">Impressões FB (28d)</CardTitle></CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={200}>
+                      <AreaChart data={pg.facebook.insights.page_impressions.daily}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(260, 20%, 18%)" />
+                        <XAxis dataKey="date" fontSize={10} stroke="hsl(260, 10%, 45%)" />
+                        <YAxis fontSize={10} stroke="hsl(260, 10%, 45%)" />
+                        <Tooltip contentStyle={customTooltipStyle} />
+                        <Area type="monotone" dataKey="value" name="Impressões" stroke="hsl(220, 80%, 55%)" fill="hsl(220, 80%, 55%, 0.15)" strokeWidth={2} />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              )}
+            </>
+          )}
+          {pg.facebook?.error && (
+            <Card className="glass-card border-destructive/30"><CardContent className="p-4 text-sm text-destructive">⚠️ {pg.facebook.error}</CardContent></Card>
+          )}
+          {pg.instagram && (
+            <>
+              <h3 className="text-md font-semibold text-foreground flex items-center gap-2 mt-4">
+                <Instagram className="h-4 w-4 text-primary" /> Instagram {pg.instagram.username ? `@${pg.instagram.username}` : ''}
+              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {[
+                  { label: 'Seguidores', value: pg.instagram.followers_count || 0 },
+                  { label: 'Seguindo', value: pg.instagram.follows_count || 0 },
+                  { label: 'Publicações', value: pg.instagram.media_count || 0 },
+                  { label: 'Eng. Médio', value: pg.instagram.post_stats?.avg_engagement || 0 },
+                ].map((s: any) => (
+                  <Card key={s.label} className="glass-card"><CardContent className="p-3">
+                    <p className="text-lg font-bold text-foreground">{(s.value || 0).toLocaleString()}</p>
+                    <p className="text-xs text-muted-foreground">{s.label}</p>
+                  </CardContent></Card>
+                ))}
+              </div>
+              {pg.instagram.insights && (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {[
+                    { label: 'Impressões (28d)', value: pg.instagram.insights.impressions?.total || 0 },
+                    { label: 'Alcance (28d)', value: pg.instagram.insights.reach?.total || 0 },
+                    { label: 'Visitas Perfil', value: pg.instagram.insights.profile_views?.total || 0 },
+                    { label: 'Cliques Site', value: pg.instagram.insights.website_clicks?.total || 0 },
+                  ].map((s: any) => (
+                    <Card key={s.label} className="glass-card"><CardContent className="p-3">
+                      <p className="text-lg font-bold text-foreground">{(s.value || 0).toLocaleString()}</p>
+                      <p className="text-xs text-muted-foreground">{s.label}</p>
+                    </CardContent></Card>
+                  ))}
+                </div>
+              )}
+              {pg.instagram.post_stats && (
+                <Card className="glass-card"><CardContent className="p-4">
+                  <p className="text-sm font-medium text-foreground mb-3">📸 Últimos {pg.instagram.post_stats.total_posts} Posts</p>
+                  <div className="grid grid-cols-3 gap-3 text-center">
+                    {[
+                      { label: 'Curtidas', value: pg.instagram.post_stats.total_likes },
+                      { label: 'Comentários', value: pg.instagram.post_stats.total_comments },
+                      { label: 'Eng. Médio', value: pg.instagram.post_stats.avg_engagement },
+                    ].map((s: any) => (
+                      <div key={s.label}>
+                        <p className="text-lg font-bold text-foreground">{(s.value || 0).toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground">{s.label}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent></Card>
+              )}
+              {pg.instagram.demographics?.audience_country && (
+                <Card className="glass-card"><CardHeader><CardTitle className="text-sm text-foreground">Audiência por País</CardTitle></CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {Object.entries(pg.instagram.demographics.audience_country as Record<string, number>)
+                        .sort(([, a], [, b]) => (b as number) - (a as number)).slice(0, 10)
+                        .map(([country, count]) => (
+                          <div key={country} className="flex items-center justify-between p-2 rounded-lg hover:bg-secondary/30">
+                            <span className="text-sm text-foreground">{country}</span>
+                            <Badge variant="secondary" className="text-xs">{(count as number).toLocaleString()}</Badge>
+                          </div>
+                        ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              {pg.instagram.insights?.reach?.daily?.length > 0 && (
+                <Card className="glass-card"><CardHeader><CardTitle className="text-sm text-foreground">Alcance IG (28d)</CardTitle></CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={200}>
+                      <AreaChart data={pg.instagram.insights.reach.daily}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(260, 20%, 18%)" />
+                        <XAxis dataKey="date" fontSize={10} stroke="hsl(260, 10%, 45%)" />
+                        <YAxis fontSize={10} stroke="hsl(260, 10%, 45%)" />
+                        <Tooltip contentStyle={customTooltipStyle} />
+                        <Area type="monotone" dataKey="value" name="Alcance" stroke="hsl(320, 80%, 55%)" fill="hsl(320, 80%, 55%, 0.15)" strokeWidth={2} />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              )}
+            </>
+          )}
+        </div>
+      ))}
+      {!loadingMeta && (!metaMetrics || metaMetrics.length === 0) && (
+        <Card className="glass-card"><CardContent className="p-4 text-center text-sm text-muted-foreground">
+          <Facebook className="h-8 w-8 mx-auto mb-2 opacity-50" />
+          Conecte sua página do Facebook em Configurações para ver métricas do Meta
+        </CardContent></Card>
       )}
     </div>
   );
