@@ -110,21 +110,24 @@ FONTES OBRIGATÓRIAS para consultar:
 - Google Trends Brasil (trends.google.com.br)
 - ${TOP_PORTALS.join("\n- ")}
 
-REGRAS:
+REGRAS RIGOROSAS:
 1. Retorne APENAS assuntos REAIS que estão sendo noticiados HOJE ${today}
-2. Cada tópico deve ser específico (nome de pessoa, evento, lei, time, etc.) — NÃO genérico
-3. NÃO repita assuntos entre si — cada um deve ser único e distinto
-4. Priorize notícias que estão em MAIS de um portal (cross-referência)
-5. Inclua contexto suficiente no nome do tópico para ser pesquisável
+2. Cada tópico deve ser ESPECÍFICO (nome de pessoa, evento, lei, time, local, etc.) — NUNCA genérico
+3. Cada tópico deve ser sobre um FATO/EVENTO DIFERENTE — proibido repetir o mesmo assunto com palavras diferentes
+4. NÃO retorne tópicos sobre os mesmos personagens, eventos ou situações — cada um deve cobrir uma NOTÍCIA COMPLETAMENTE DISTINTA
+5. Priorize notícias que estão em MAIS de um portal (cross-referência)
+6. Inclua contexto suficiente no nome do tópico para ser pesquisável
+7. NÃO retorne nenhum tópico que seja similar a estes já existentes:
+${[...existingSet].slice(-30).join("\n")}
 
 Responda APENAS em JSON válido, array de objetos:
 [{"topic": "assunto específico e atual", "search_volume": "alto/médio/baixo"}]
 
-Retorne exatamente 5 tópicos.`,
+Retorne exatamente 5 tópicos, todos sobre EVENTOS/FATOS DIFERENTES.`,
               },
               {
                 role: "user",
-                content: `Categoria: "${category}". Quais são os 5 assuntos mais falados no Brasil HOJE (${today}) nesta categoria? Busque nos portais: G1, UOL, Folha, Estadão, R7, Terra, Metrópoles, CNN Brasil. Foque em notícias que aparecem em múltiplos portais.`,
+                content: `Categoria: "${category}". Quais são os 5 assuntos mais falados no Brasil HOJE (${today}) nesta categoria? Cada tópico DEVE ser sobre um evento/fato COMPLETAMENTE DIFERENTE dos outros. Busque nos portais: G1, UOL, Folha, Estadão, R7, Terra, Metrópoles, CNN Brasil.`,
               },
             ],
           }),
