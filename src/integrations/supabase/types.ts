@@ -172,6 +172,39 @@ export type Database = {
           },
         ]
       }
+      terminals: {
+        Row: {
+          country_code: string
+          created_at: string
+          ddd: string
+          id: string
+          label: string | null
+          phone_number: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          country_code?: string
+          created_at?: string
+          ddd: string
+          id?: string
+          label?: string | null
+          phone_number: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          country_code?: string
+          created_at?: string
+          ddd?: string
+          id?: string
+          label?: string | null
+          phone_number?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       trending_topics: {
         Row: {
           category: string
