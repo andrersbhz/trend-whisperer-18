@@ -12,7 +12,6 @@ import {
   Menu,
   X,
   BarChart3,
-  Phone,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -23,7 +22,6 @@ const navItems = [
   { icon: TrendingUp, label: 'Tendências', path: '/trends' },
   { icon: Clock, label: 'Agendamentos', path: '/schedule' },
   { icon: BarChart3, label: 'Analytics', path: '/analytics' },
-  { icon: Phone, label: 'Terminais', path: '/terminals' },
   { icon: Settings, label: 'Configurações', path: '/settings' },
 ];
 
