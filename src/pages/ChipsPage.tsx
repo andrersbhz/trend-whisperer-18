@@ -234,6 +234,37 @@ const ChipsPage = () => {
         <p className="text-muted-foreground text-sm mt-1">Gerencie chips, conecte números e aqueça para WhatsApp</p>
       </div>
 
+      {/* ========== CHIPS CONECTADOS ========== */}
+      {chips.filter(c => c.status === 'active' || c.status === 'sent').length > 0 && (
+        <Card className="glass border-[hsl(var(--success))]/30 shadow-[0_0_20px_hsl(var(--success),0.1)]">
+          <CardHeader className="p-[25px] pb-2">
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <div className="p-2 rounded-lg bg-[hsl(var(--success))]/20">
+                <Wifi className="h-5 w-5 text-[hsl(var(--success))]" />
+              </div>
+              Chips Conectados ({chips.filter(c => c.status === 'active' || c.status === 'sent').length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-[25px] pt-3">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {chips.filter(c => c.status === 'active' || c.status === 'sent').map(chip => (
+                <div key={chip.id} className="glass rounded-xl p-4 border border-[hsl(var(--success))]/30 flex items-center gap-3">
+                  <div className="p-2 rounded-full bg-[hsl(var(--success))]/20">
+                    <Wifi className="h-4 w-4 text-[hsl(var(--success))]" />
+                  </div>
+                  <div>
+                    <p className="font-mono font-bold text-foreground">({chip.ddd}) {chip.phone_number}</p>
+                    <Badge className={`mt-0.5 text-[10px] ${statusColors[chip.status]}`}>
+                      {statusLabels[chip.status]}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* ========== CONECTAR CHIPS ========== */}
       <Card className="glass border-[hsl(30,100%,50%)]/30 shadow-[0_0_20px_hsl(30,100%,50%,0.1)]">
         <CardHeader className="p-[25px] pb-2">
