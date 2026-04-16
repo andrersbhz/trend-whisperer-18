@@ -60,9 +60,13 @@ const JetpackSettings = forwardRef<HTMLDivElement, Props>(({ settings, hasWpPass
       if (data?.success) {
         setTestResult('success');
         setJetpackInfo(data.info || null);
+        localStorage.setItem(JETPACK_STORAGE_KEY, 'success');
+        localStorage.setItem(JETPACK_STORAGE_KEY + '_info', JSON.stringify(data.info || {}));
         toast({ title: '✅ Jetpack conectado!' });
       } else {
         setTestResult('error');
+        localStorage.removeItem(JETPACK_STORAGE_KEY);
+        localStorage.removeItem(JETPACK_STORAGE_KEY + '_info');
         toast({ title: `❌ ${data?.error || 'Jetpack não encontrado'}`, variant: 'destructive' });
       }
     } catch (e: any) {
@@ -84,6 +88,8 @@ const JetpackSettings = forwardRef<HTMLDivElement, Props>(({ settings, hasWpPass
       onDisconnect={() => {
         setTestResult(null);
         setJetpackInfo(null);
+        localStorage.removeItem(JETPACK_STORAGE_KEY);
+        localStorage.removeItem(JETPACK_STORAGE_KEY + '_info');
       }}
     >
       <div className="space-y-3">
