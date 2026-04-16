@@ -11,10 +11,20 @@ interface Props {
   hasWpPassword?: boolean;
 }
 
+const JETPACK_STORAGE_KEY = 'jetpack_connection_status';
+
 const JetpackSettings = forwardRef<HTMLDivElement, Props>(({ settings, hasWpPassword }, ref) => {
   const [testing, setTesting] = useState(false);
-  const [testResult, setTestResult] = useState<'success' | 'error' | null>(null);
-  const [jetpackInfo, setJetpackInfo] = useState<Record<string, string> | null>(null);
+  const [testResult, setTestResult] = useState<'success' | 'error' | null>(() => {
+    const saved = localStorage.getItem(JETPACK_STORAGE_KEY);
+    return saved === 'success' ? 'success' : null;
+  });
+  const [jetpackInfo, setJetpackInfo] = useState<Record<string, string> | null>(() => {
+    try {
+      const saved = localStorage.getItem(JETPACK_STORAGE_KEY + '_info');
+      return saved ? JSON.parse(saved) : null;
+    } catch { return null; }
+  });
   const { toast } = useToast();
 
   const connected = testResult === 'success';
