@@ -11,10 +11,20 @@ interface Props {
   hasWpPassword?: boolean;
 }
 
+const JETPACK_STORAGE_KEY = 'jetpack_connection_status';
+
 const JetpackSettings = forwardRef<HTMLDivElement, Props>(({ settings, hasWpPassword }, ref) => {
   const [testing, setTesting] = useState(false);
-  const [testResult, setTestResult] = useState<'success' | 'error' | null>(null);
-  const [jetpackInfo, setJetpackInfo] = useState<Record<string, string> | null>(null);
+  const [testResult, setTestResult] = useState<'success' | 'error' | null>(() => {
+    const saved = localStorage.getItem(JETPACK_STORAGE_KEY);
+    return saved === 'success' ? 'success' : null;
+  });
+  const [jetpackInfo, setJetpackInfo] = useState<Record<string, string> | null>(() => {
+    try {
+      const saved = localStorage.getItem(JETPACK_STORAGE_KEY + '_info');
+      return saved ? JSON.parse(saved) : null;
+    } catch { return null; }
+  });
   const { toast } = useToast();
 
   const connected = testResult === 'success';
@@ -50,9 +60,13 @@ const JetpackSettings = forwardRef<HTMLDivElement, Props>(({ settings, hasWpPass
       if (data?.success) {
         setTestResult('success');
         setJetpackInfo(data.info || null);
+        localStorage.setItem(JETPACK_STORAGE_KEY, 'success');
+        localStorage.setItem(JETPACK_STORAGE_KEY + '_info', JSON.stringify(data.info || {}));
         toast({ title: '✅ Jetpack conectado!' });
       } else {
         setTestResult('error');
+        localStorage.removeItem(JETPACK_STORAGE_KEY);
+        localStorage.removeItem(JETPACK_STORAGE_KEY + '_info');
         toast({ title: `❌ ${data?.error || 'Jetpack não encontrado'}`, variant: 'destructive' });
       }
     } catch (e: any) {
@@ -74,6 +88,8 @@ const JetpackSettings = forwardRef<HTMLDivElement, Props>(({ settings, hasWpPass
       onDisconnect={() => {
         setTestResult(null);
         setJetpackInfo(null);
+        localStorage.removeItem(JETPACK_STORAGE_KEY);
+        localStorage.removeItem(JETPACK_STORAGE_KEY + '_info');
       }}
     >
       <div className="space-y-3">
