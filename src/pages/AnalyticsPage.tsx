@@ -91,6 +91,7 @@ const CHART_COLORS = [
 const AnalyticsPage = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [socialMetrics, setSocialMetrics] = useState<SocialMetrics | null>(null);
   const [tips, setTips] = useState<AiTip[]>([]);
