@@ -31,7 +31,42 @@ serve(async (req) => {
 
     for (const userSettings of users) {
       const userId = userSettings.user_id;
+      const articlesPerDay = Math.max(userSettings.articles_per_day || 10, 1);
+      const intervalMs = (24 / articlesPerDay) * 60 * 60 * 1000;
       console.log(`[Pipeline] Processing user: ${userId}`);
+
+      // Reagendar itens vencidos antes de publicar para manter a fila organizada
+      try {
+        const now = new Date();
+        const { data: pendingArticles } = await supabase
+          .from("articles")
+          .select("id, scheduled_at, created_at, status")
+          .eq("user_id", userId)
+          .neq("status", "published")
+          .not("scheduled_at", "is", null)
+          .order("scheduled_at", { ascending: true })
+          .order("created_at", { ascending: true });
+
+        const overdue = (pendingArticles || []).filter((article: any) => article.scheduled_at && new Date(article.scheduled_at).getTime() < now.getTime());
+        const future = (pendingArticles || []).filter((article: any) => article.scheduled_at && new Date(article.scheduled_at).getTime() >= now.getTime());
+
+        let queueCursor = future.length > 0
+          ? new Date(future[future.length - 1].scheduled_at)
+          : new Date(now);
+
+        for (const article of overdue) {
+          queueCursor = new Date(Math.max(queueCursor.getTime(), now.getTime()) + intervalMs);
+          await supabase.from("articles").update({ scheduled_at: queueCursor.toISOString() }).eq("id", article.id);
+        }
+
+        if (overdue.length > 0) {
+          console.log(`[Pipeline] Reagendados ${overdue.length} artigos vencidos para ${userId}`);
+          results.push({ userId, step: "reschedule-overdue", result: `${overdue.length} reagendados` });
+        }
+      } catch (err) {
+        console.error(`[Pipeline] Reschedule error for ${userId}:`, err);
+        results.push({ userId, step: "reschedule-overdue", result: `error: ${err}` });
+      }
 
       // Step 1: Publish ready articles FIRST (before generating new ones)
       try {

@@ -308,6 +308,27 @@ serve(async (req) => {
         published_url: wpLink,
       });
 
+      // Keep only the 30 most recent published articles per user
+      try {
+        const { data: oldPublished } = await supabase
+          .from("articles")
+          .select("id")
+          .eq("user_id", userId)
+          .eq("status", "published")
+          .order("published_at", { ascending: false })
+          .order("created_at", { ascending: false })
+          .range(30, 500);
+
+        const oldIds = (oldPublished || []).map((item: any) => item.id);
+        if (oldIds.length > 0) {
+          await supabase.from("publish_log").delete().in("article_id", oldIds);
+          await supabase.from("articles").delete().in("id", oldIds);
+          console.log(`Retention cleanup removed ${oldIds.length} old published articles`);
+        }
+      } catch (cleanupErr) {
+        console.error("Retention cleanup failed:", cleanupErr);
+      }
+
       // Trigger social publishing (Instagram feed + Stories + Facebook page Stories)
       // Fire-and-forget but await briefly so logs are written before response
       try {
