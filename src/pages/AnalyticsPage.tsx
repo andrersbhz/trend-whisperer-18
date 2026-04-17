@@ -523,10 +523,26 @@ const AnalyticsPage = () => {
         </div>
       ))}
       {!loadingMeta && (!metaMetrics || metaMetrics.length === 0) && (
-        <Card className="glass-card"><CardContent className="p-4 text-center text-sm text-muted-foreground">
-          <Facebook className="h-8 w-8 mx-auto mb-2 opacity-50" />
-          Conecte sua página do Facebook em Configurações para ver métricas do Meta
-        </CardContent></Card>
+        <Card className="glass-card neon-border-pink">
+          <CardContent className="p-6 text-center space-y-4">
+            <div className="mx-auto w-14 h-14 rounded-full bg-[#1877F2]/15 flex items-center justify-center ring-2 ring-[#1877F2]/40 shadow-[0_0_20px_rgba(24,119,242,0.45)]">
+              <Facebook className="h-7 w-7 text-[#1877F2]" />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-foreground">Nenhuma página conectada</p>
+              <p className="text-xs text-muted-foreground">
+                Conecte com o Facebook que você está logado no navegador para puxar páginas, Instagram e métricas do Gerenciador de Negócios.
+              </p>
+            </div>
+            <Button
+              onClick={() => navigate('/settings#facebook')}
+              className="bg-[#1877F2] hover:bg-[#166FE5] text-white shadow-[0_0_18px_rgba(24,119,242,0.55)] hover:shadow-[0_0_28px_rgba(24,119,242,0.75)] transition-all"
+            >
+              <Facebook className="h-4 w-4 mr-2" />
+              Conectar com Facebook
+            </Button>
+          </CardContent>
+        </Card>
       )}
     </div>
   );
