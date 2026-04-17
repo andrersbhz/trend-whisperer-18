@@ -271,8 +271,6 @@ async function generateImageGemini(apiKey: string, title: string, category: stri
   return null;
 }
 
-// Words/topics that often trigger DALL-E's content policy filter (400 error).
-// When detected in the title, we use a generic category-based prompt instead.
 const SENSITIVE_TERMS = /\b(pf|polícia|policia|prende|prisão|prisao|preso|presa|fraude|lavagem|crime|criminoso|assassin|morte|morto|morta|tiro|tiroteio|drog|tráfico|trafico|narco|estupro|abuso|violência|violencia|terror|atentado|guerra|conflito|tse|stf|impeachment|julga|condena|investigação|investigacao|operação|operacao|megaoperação|megaoperacao|cpi|escândalo|escandalo|denúncia|denuncia|corrupção|corrupcao|propina|suborno)\b/i;
 
 const SAFE_CATEGORY_PROMPT: Record<string, string> = {
@@ -377,8 +375,11 @@ function buildSystemPrompt(writerPrompt?: string | null): string {
 function buildUserPrompt(topic: string, category: string): string {
   return `Escreva um artigo jornalístico completo sobre: "${topic}" (categoria: ${category}).
 Data de hoje: ${new Date().toLocaleDateString("pt-BR")}.
+
 IMPORTANTE: Conteúdo HTML entre 1800-2400 chars. Keyword no título, primeiro parágrafo, 1+ H2, meta description. Todos os campos SEO preenchidos. Subtítulos em negrito. Gere metadados para imagem de destaque. Use técnicas avançadas de SEO: LSI keywords, otimize para featured snippets, inclua perguntas frequentes como subtítulos, keyword de cauda longa.`;
 }
+
+const MAX_GENERATION_BATCH = 2;
 
 // ── Main handler ──────────────────────────────────────────────────────────
 
@@ -393,26 +394,22 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Fetch settings + decrypt keys
     const { data: settings } = await supabase.from("user_settings").select("*").eq("user_id", userId).single();
     const writerPrompt = settings?.writer_prompt || null;
     const systemPrompt = buildSystemPrompt(writerPrompt);
 
-    // Decrypt Gemini key
     let geminiApiKey: string | null = null;
     if (settings?.gemini_api_key) {
       const { data: decrypted } = await supabase.rpc("decrypt_credential", { enc_key: "", val: settings.gemini_api_key });
       if (decrypted && typeof decrypted === "string" && decrypted.length > 5) geminiApiKey = decrypted;
     }
 
-    // Decrypt OpenAI key
     let openaiApiKey: string | null = null;
     if (settings?.openai_api_key) {
       const { data: decrypted } = await supabase.rpc("decrypt_credential", { enc_key: "", val: settings.openai_api_key });
       if (decrypted && typeof decrypted === "string" && decrypted.length > 5) openaiApiKey = decrypted;
     }
 
-    // Decrypt Groq key
     let groqApiKey: string | null = null;
     if (settings?.groq_api_key) {
       const { data: decrypted } = await supabase.rpc("decrypt_credential", { enc_key: "", val: settings.groq_api_key });
@@ -421,20 +418,11 @@ serve(async (req) => {
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
-    // Build provider chain: Gemini → OpenAI → Groq → Lovable AI
     const providers: ProviderConfig[] = [];
-    if (geminiApiKey) {
-      providers.push({ name: "Gemini", call: (s, u) => callGeminiDirect(geminiApiKey!, s, u) });
-    }
-    if (openaiApiKey) {
-      providers.push({ name: "OpenAI", call: (s, u) => callOpenAIDirect(openaiApiKey!, s, u) });
-    }
-    if (groqApiKey) {
-      providers.push({ name: "Groq", call: (s, u) => callGroqDirect(groqApiKey!, s, u) });
-    }
-    if (LOVABLE_API_KEY) {
-      providers.push({ name: "Lovable AI", call: (s, u) => callLovableGateway(LOVABLE_API_KEY!, s, u) });
-    }
+    if (geminiApiKey) providers.push({ name: "Gemini", call: (s, u) => callGeminiDirect(geminiApiKey!, s, u) });
+    if (openaiApiKey) providers.push({ name: "OpenAI", call: (s, u) => callOpenAIDirect(openaiApiKey!, s, u) });
+    if (groqApiKey) providers.push({ name: "Groq", call: (s, u) => callGroqDirect(groqApiKey!, s, u) });
+    if (LOVABLE_API_KEY) providers.push({ name: "Lovable AI", call: (s, u) => callLovableGateway(LOVABLE_API_KEY!, s, u) });
 
     if (providers.length === 0) {
       throw new Error("Nenhuma chave de IA configurada. Configure sua chave Gemini, OpenAI ou Groq nas configurações.");
@@ -443,24 +431,75 @@ serve(async (req) => {
     console.log(`[Pipeline] Available AI providers: ${providers.map(p => p.name).join(" → ")}`);
 
     const { data: topics } = await supabase.from("trending_topics").select("*").eq("user_id", userId).eq("used", false).limit(10);
-
     const userCategories = settings?.categories || ["esportes", "politica", "policia", "saude", "celebridades", "financas"];
     const topicsToUse = topics && topics.length > 0
       ? topics
       : userCategories.map((cat: string) => ({ topic: getDefaultTopic(cat), category: cat, id: null }));
 
-    const articlesPerDay = settings?.articles_per_day || 10;
-    const intervalHours = 24 / articlesPerDay;
+    const articlesPerDay = Math.max(settings?.articles_per_day || 10, 1);
+    const intervalMs = (24 / articlesPerDay) * 60 * 60 * 1000;
     const now = new Date();
-    const generatedArticles = [];
+    const generatedArticles: any[] = [];
     const failureReasons: Array<{ status: number; message: string }> = [];
     let allProvidersExhausted = false;
+    let rescheduledCount = 0;
 
-    for (let i = 0; i < Math.min(articlesPerDay, topicsToUse.length); i++) {
+    const { data: pendingArticles } = await supabase
+      .from("articles")
+      .select("id, scheduled_at, created_at, status")
+      .eq("user_id", userId)
+      .neq("status", "published")
+      .not("scheduled_at", "is", null)
+      .order("scheduled_at", { ascending: true })
+      .order("created_at", { ascending: true });
+
+    const pendingQueue = (pendingArticles || []) as Array<{ id: string; scheduled_at: string | null; created_at: string; status: string }>;
+    const overdueArticles = pendingQueue.filter((article) => article.scheduled_at && new Date(article.scheduled_at).getTime() < now.getTime());
+    const futureArticles = pendingQueue.filter((article) => article.scheduled_at && new Date(article.scheduled_at).getTime() >= now.getTime());
+
+    let queueCursor = futureArticles.length > 0
+      ? new Date(futureArticles[futureArticles.length - 1].scheduled_at as string)
+      : new Date(now);
+
+    for (const overdueArticle of overdueArticles) {
+      queueCursor = new Date(Math.max(queueCursor.getTime(), now.getTime()) + intervalMs);
+      const nextIso = queueCursor.toISOString();
+      const { error: rescheduleError } = await supabase
+        .from("articles")
+        .update({ scheduled_at: nextIso })
+        .eq("id", overdueArticle.id);
+      if (!rescheduleError) {
+        overdueArticle.scheduled_at = nextIso;
+        rescheduledCount++;
+      }
+    }
+
+    const currentPendingCount = pendingQueue.length;
+    const remainingToTarget = Math.max(0, articlesPerDay - currentPendingCount);
+    const articlesToGenerate = Math.min(MAX_GENERATION_BATCH, remainingToTarget, topicsToUse.length);
+
+    if (articlesToGenerate === 0) {
+      const queueSize = Math.min(currentPendingCount, articlesPerDay);
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: rescheduledCount > 0
+            ? `Fila reorganizada: ${rescheduledCount} agendamentos vencidos foram realocados. Fila atual ${queueSize}/${articlesPerDay}.`
+            : `Fila já está completa com ${queueSize}/${articlesPerDay} artigos agendados.`,
+          articles: 0,
+          failed: 0,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const baseScheduledTime = queueCursor.getTime();
+
+    for (let i = 0; i < articlesToGenerate; i++) {
       if (allProvidersExhausted) break;
 
       const topic = topicsToUse[i];
-      const scheduledAt = new Date(now.getTime() + i * intervalHours * 60 * 60 * 1000);
+      const scheduledAt = new Date(baseScheduledTime + (i + 1) * intervalMs);
 
       try {
         const userPrompt = buildUserPrompt(topic.topic, topic.category);
@@ -475,8 +514,6 @@ serve(async (req) => {
         } catch (err: any) {
           const msg = err instanceof Error ? err.message : String(err);
           console.error(`All providers failed for topic ${topic.topic}:`, msg.substring(0, 300));
-          
-          // Check if all failures are billing-related
           if (isBillingError(msg)) {
             allProvidersExhausted = true;
             failureReasons.push({ status: 402, message: msg });
@@ -491,17 +528,10 @@ serve(async (req) => {
           continue;
         }
 
-        // Generate image: DALL-E → Lovable AI → Gemini
         let featuredImageUrl: string | null = null;
-        if (openaiApiKey) {
-          featuredImageUrl = await generateImageDallE(openaiApiKey, parsed.title, topic.category);
-        }
-        if (!featuredImageUrl && LOVABLE_API_KEY) {
-          featuredImageUrl = await generateImageGateway(LOVABLE_API_KEY, parsed.title, topic.category);
-        }
-        if (!featuredImageUrl && geminiApiKey) {
-          featuredImageUrl = await generateImageGemini(geminiApiKey, parsed.title, topic.category);
-        }
+        if (openaiApiKey) featuredImageUrl = await generateImageDallE(openaiApiKey, parsed.title, topic.category);
+        if (!featuredImageUrl && LOVABLE_API_KEY) featuredImageUrl = await generateImageGateway(LOVABLE_API_KEY, parsed.title, topic.category);
+        if (!featuredImageUrl && geminiApiKey) featuredImageUrl = await generateImageGemini(geminiApiKey, parsed.title, topic.category);
 
         const { data: article, error: insertError } = await supabase.from("articles").insert({
           user_id: userId,
@@ -530,15 +560,14 @@ serve(async (req) => {
 
         generatedArticles.push(article);
         console.log(`[Pipeline] Article ${i + 1} generated via ${usedProvider}: ${parsed.title}`);
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+        await new Promise((resolve) => setTimeout(resolve, 500));
       } catch (err) {
         console.error(`Error generating article for ${topic.topic}:`, err);
         failureReasons.push({ status: 500, message: err instanceof Error ? err.message : String(err) });
       }
     }
 
-    // Response
-    const totalAttempted = Math.min(articlesPerDay, topicsToUse.length);
+    const totalAttempted = articlesToGenerate;
 
     if (generatedArticles.length === 0) {
       const errorMessage = allProvidersExhausted
@@ -551,9 +580,10 @@ serve(async (req) => {
       );
     }
 
+    const queueAfterRun = currentPendingCount + generatedArticles.length;
     const message = failureReasons.length > 0
-      ? `${generatedArticles.length} de ${totalAttempted} artigos gerados! (${failureReasons.length} falharam)`
-      : `${generatedArticles.length} artigos gerados com sucesso!`;
+      ? `${generatedArticles.length} de ${totalAttempted} artigos gerados nesta execução (${failureReasons.length} falharam). Fila atual ${queueAfterRun}/${articlesPerDay}.${rescheduledCount > 0 ? ` ${rescheduledCount} vencidos foram reagendados.` : ""}`
+      : `${generatedArticles.length} artigos gerados nesta execução. Fila atual ${queueAfterRun}/${articlesPerDay}.${rescheduledCount > 0 ? ` ${rescheduledCount} vencidos foram reagendados.` : ""}`;
 
     return new Response(
       JSON.stringify({ success: true, message, articles: generatedArticles.length, failed: failureReasons.length }),
