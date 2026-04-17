@@ -271,21 +271,50 @@ async function generateImageGemini(apiKey: string, title: string, category: stri
   return null;
 }
 
+// Words/topics that often trigger DALL-E's content policy filter (400 error).
+// When detected in the title, we use a generic category-based prompt instead.
+const SENSITIVE_TERMS = /\b(pf|polícia|policia|prende|prisão|prisao|preso|presa|fraude|lavagem|crime|criminoso|assassin|morte|morto|morta|tiro|tiroteio|drog|tráfico|trafico|narco|estupro|abuso|violência|violencia|terror|atentado|guerra|conflito|tse|stf|impeachment|julga|condena|investigação|investigacao|operação|operacao|megaoperação|megaoperacao|cpi|escândalo|escandalo|denúncia|denuncia|corrupção|corrupcao|propina|suborno)\b/i;
+
+const SAFE_CATEGORY_PROMPT: Record<string, string> = {
+  esportes: "A vibrant sports stadium scene with dramatic lighting, cheering crowd silhouettes, no players visible, professional editorial photography style.",
+  politica: "A modern government building exterior with national flags waving, golden hour lighting, wide architectural shot, editorial photography style.",
+  policia: "A modern city street at dusk with blurred lights and a sense of urgency, abstract editorial style, no people or vehicles visible.",
+  saude: "A bright modern hospital corridor with soft natural light, clean medical aesthetic, no people, professional editorial photography.",
+  celebridades: "A red carpet event scene with bright spotlights, golden glamour aesthetic, no faces visible, editorial fashion photography style.",
+  financas: "A modern financial district skyline with glass skyscrapers and stock market screens glowing, golden hour, editorial business photography.",
+  tecnologia: "A futuristic tech workspace with glowing screens and abstract digital elements, modern editorial style, cinematic lighting.",
+  entretenimento: "A vibrant concert or theater stage with dramatic stage lights and bokeh effects, editorial entertainment photography.",
+};
+
+function buildSafeImagePrompt(title: string, category: string): string {
+  if (SENSITIVE_TERMS.test(title)) {
+    const safe = SAFE_CATEGORY_PROMPT[category] || SAFE_CATEGORY_PROMPT.politica;
+    return `Create a professional, photorealistic news article featured image. Scene: ${safe} Requirements: Editorial/journalistic style, NO text overlay, NO watermarks, NO logos, NO recognizable people, high quality, 16:9 aspect ratio, vibrant colors, professional lighting, suitable as a WordPress featured image.`;
+  }
+  return IMAGE_PROMPT_TEMPLATE(title, category);
+}
+
 async function generateImageDallE(apiKey: string, title: string, category: string): Promise<string | null> {
+  const prompt = buildSafeImagePrompt(title, category);
   try {
     const resp = await fetch("https://api.openai.com/v1/images/generations", {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         model: "dall-e-3",
-        prompt: IMAGE_PROMPT_TEMPLATE(title, category),
+        prompt,
         n: 1,
         size: "1792x1024",
         quality: "standard",
         response_format: "b64_json",
       }),
     });
-    if (!resp.ok) { console.warn(`DALL-E failed ${resp.status}`); return null; }
+    if (!resp.ok) {
+      const errBody = await resp.text().catch(() => "");
+      const isPolicy = /content_policy|safety|moderation/i.test(errBody);
+      console.warn(`DALL-E failed ${resp.status}${isPolicy ? " (content policy)" : ""}: ${errBody.substring(0, 200)}`);
+      return null;
+    }
     const data = await resp.json();
     const b64 = data.data?.[0]?.b64_json;
     if (b64) {
