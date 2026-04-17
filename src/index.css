@@ -53,6 +53,7 @@
     --neon-lilac: 270 60% 50%;
     --neon-pink: 320 80% 55%;
     --neon-purple: 275 70% 35%;
+    --subtitle-highlight: 75 100% 50%;
 
     --gradient-primary: linear-gradient(135deg, hsl(270 60% 50%), hsl(320 80% 55%));
     --gradient-neon: linear-gradient(135deg, hsl(270 60% 50%), hsl(275 70% 50%));
@@ -73,6 +74,11 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  h1 + p.text-sm.mt-1 {
+    color: hsl(var(--subtitle-highlight));
+    text-shadow: 0 0 12px hsl(var(--subtitle-highlight) / 0.28);
   }
 }
 
