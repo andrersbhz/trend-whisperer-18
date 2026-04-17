@@ -89,7 +89,7 @@ const SchedulePage = () => {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Agendamentos</h1>
-        <p className="text-sm mt-1" style={{ color: '#bfff00' }}>Artigos agendados para publicação — clique na data para editar</p>
+        <p className="text-sm mt-1">Artigos agendados para publicação automática — clique na data para editar</p>
       </div>
 
       {articles.length === 0 ? (
