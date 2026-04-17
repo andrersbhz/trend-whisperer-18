@@ -16,6 +16,7 @@ import {
   LineChart, Line, PieChart, Pie, Cell, AreaChart, Area, Legend,
 } from 'recharts';
 import { getErrorMessage, runBackendQuery } from '@/lib/backend';
+import { useNavigate } from 'react-router-dom';
 
 interface AnalyticsData {
   pageviews: number;
