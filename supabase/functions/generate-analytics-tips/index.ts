@@ -87,42 +87,90 @@ Exemplo: [{"category":"SEO","tip":"Otimize os meta descriptions...","priority":"
       }
     }
 
+    // Fallback dicas locais (usadas quando IA não disponível ou sem créditos)
+    const fallbackTips = [
+      { category: "SEO", tip: "Otimize meta descriptions e títulos das páginas mais visitadas para aumentar o CTR nos resultados de busca.", priority: "alta" },
+      { category: "Conteúdo", tip: `Sua taxa de rejeição está em ${analytics.bounceRate}%. Melhore a introdução dos artigos e adicione links internos para reter leitores.`, priority: "alta" },
+      { category: "Redes Sociais", tip: "Compartilhe os artigos mais visitados no Facebook e Instagram nos horários de pico (12h e 19h).", priority: "média" },
+      { category: "Experiência do Usuário", tip: "Verifique a velocidade de carregamento mobile — páginas lentas aumentam a rejeição.", priority: "alta" },
+      { category: "Tráfego", tip: "Diversifique fontes de tráfego investindo em SEO de cauda longa e parcerias com outros blogs do nicho.", priority: "média" },
+    ];
+
+    let warning: string | null = null;
+
     // Fallback to Lovable AI
     if (!content) {
       const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-      if (!LOVABLE_API_KEY) throw new Error("Nenhuma API de IA configurada. Configure sua chave Gemini nas configurações.");
-
-      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          messages: [{ role: "user", content: prompt }],
-          temperature: 0.7,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`AI API error: ${response.status}`);
+      if (!LOVABLE_API_KEY) {
+        return new Response(JSON.stringify({ tips: fallbackTips, warning: "Nenhuma chave de IA configurada. Mostrando dicas padrão." }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
 
-      const data = await response.json();
-      content = data.choices?.[0]?.message?.content || "[]";
+      try {
+        const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${LOVABLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "google/gemini-2.5-flash",
+            messages: [{ role: "user", content: prompt }],
+            temperature: 0.7,
+          }),
+        });
+
+        if (response.status === 402) {
+          return new Response(JSON.stringify({ tips: fallbackTips, warning: "Créditos de IA esgotados. Configure sua chave Gemini gratuita nas Configurações para dicas personalizadas." }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        if (response.status === 429) {
+          return new Response(JSON.stringify({ tips: fallbackTips, warning: "Limite de requisições atingido. Tente novamente em alguns minutos." }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        if (!response.ok) {
+          warning = `IA indisponível (${response.status}). Mostrando dicas padrão.`;
+        } else {
+          const data = await response.json();
+          content = data.choices?.[0]?.message?.content || null;
+        }
+      } catch (e) {
+        console.error("Lovable AI error:", e);
+        warning = "Erro ao contatar IA. Mostrando dicas padrão.";
+      }
     }
 
     // Parse the JSON from the AI response
-    const jsonMatch = (content || "[]").match(/\[[\s\S]*\]/);
-    const tips = jsonMatch ? JSON.parse(jsonMatch[0]) : [];
+    let tips = fallbackTips;
+    if (content) {
+      const jsonMatch = content.match(/\[[\s\S]*\]/);
+      if (jsonMatch) {
+        try {
+          const parsed = JSON.parse(jsonMatch[0]);
+          if (Array.isArray(parsed) && parsed.length > 0) tips = parsed;
+        } catch {
+          warning = "Resposta da IA inválida. Mostrando dicas padrão.";
+        }
+      }
+    }
 
-    return new Response(JSON.stringify({ tips }), {
+    return new Response(JSON.stringify({ tips, ...(warning ? { warning } : {}) }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error: any) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 400,
+    console.error("generate-analytics-tips error:", error);
+    return new Response(JSON.stringify({
+      tips: [
+        { category: "SEO", tip: "Otimize títulos e meta descriptions das páginas mais visitadas.", priority: "alta" },
+        { category: "Conteúdo", tip: "Reduza a taxa de rejeição melhorando a introdução dos artigos.", priority: "alta" },
+        { category: "Redes Sociais", tip: "Publique nos horários de pico (12h e 19h).", priority: "média" },
+      ],
+      warning: error.message || "Erro ao gerar dicas",
+    }), {
+      status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
