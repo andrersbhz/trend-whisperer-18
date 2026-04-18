@@ -9,6 +9,31 @@ const corsHeaders = {
 const IMAGE_PROMPT_TEMPLATE = (title: string, category: string) =>
   `Create a professional, photorealistic news article featured image about: "${title}" (category: ${category}). Requirements: Editorial/journalistic style, visually represents the article topic, NO text overlay, NO watermarks, NO logos, high quality, 16:9 aspect ratio, vibrant colors, professional lighting, suitable as a WordPress featured image.`;
 
+// Unsplash Source — fallback grátis quando todos os provedores de IA falharem
+const UNSPLASH_CATEGORY_KEYWORDS: Record<string, string> = {
+  esportes: "sports,stadium,football",
+  politica: "government,politics,parliament",
+  policia: "city,street,night",
+  saude: "health,hospital,medical",
+  celebridades: "celebrity,redcarpet,glamour",
+  financas: "finance,business,stockmarket",
+  tecnologia: "technology,computer,innovation",
+  entretenimento: "concert,stage,entertainment",
+};
+
+function extractKeywords(title: string, max = 2): string[] {
+  const stopwords = new Set(["a","o","as","os","de","da","do","das","dos","e","em","no","na","nos","nas","um","uma","para","por","com","que","se","ao","aos","sobre","pelo","pela","mais","como","ser","seu","sua","the","of","and","to","in","for","on","with","is","are"]);
+  return title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9\s]/g, " ").split(/\s+/).filter((w) => w.length > 3 && !stopwords.has(w)).slice(0, max);
+}
+
+function getUnsplashImageUrl(title: string, category: string): string {
+  const baseKeywords = UNSPLASH_CATEGORY_KEYWORDS[category] || "news,editorial";
+  const titleKeywords = extractKeywords(title).join(",");
+  const query = titleKeywords ? `${titleKeywords},${baseKeywords}` : baseKeywords;
+  const sig = Math.abs(title.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0)) % 10000;
+  return `https://source.unsplash.com/1600x900/?${encodeURIComponent(query)}&sig=${sig}`;
+}
+
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 class ProviderError extends Error {
@@ -187,29 +212,32 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { userId, articleIds } = await req.json();
+    const body = await req.json();
+    const { userId, articleIds, useAi = false } = body;
     if (!userId || !articleIds?.length) throw new Error("userId and articleIds are required");
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get API keys
-    const { data: settings } = await supabase.from("user_settings").select("gemini_api_key, openai_api_key").eq("user_id", userId).single();
+    // Get API keys (only used when useAi=true)
     let geminiApiKey: string | null = null;
     let openaiApiKey: string | null = null;
-    if (settings?.gemini_api_key) {
-      const { data: decrypted } = await supabase.rpc("decrypt_credential", { enc_key: "", val: settings.gemini_api_key });
-      if (decrypted && typeof decrypted === "string" && decrypted.length > 5) geminiApiKey = decrypted;
+    let LOVABLE_API_KEY: string | null = null;
+    if (useAi) {
+      const { data: settings } = await supabase.from("user_settings").select("gemini_api_key, openai_api_key").eq("user_id", userId).single();
+      if (settings?.gemini_api_key) {
+        const { data: decrypted } = await supabase.rpc("decrypt_credential", { enc_key: "", val: settings.gemini_api_key });
+        if (decrypted && typeof decrypted === "string" && decrypted.length > 5) geminiApiKey = decrypted;
+      }
+      if (settings?.openai_api_key) {
+        const { data: decrypted } = await supabase.rpc("decrypt_credential", { enc_key: "", val: settings.openai_api_key });
+        if (decrypted && typeof decrypted === "string" && decrypted.length > 5) openaiApiKey = decrypted;
+      }
+      LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY") || null;
     }
-    if (settings?.openai_api_key) {
-      const { data: decrypted } = await supabase.rpc("decrypt_credential", { enc_key: "", val: settings.openai_api_key });
-      if (decrypted && typeof decrypted === "string" && decrypted.length > 5) openaiApiKey = decrypted;
-    }
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!geminiApiKey && !openaiApiKey && !LOVABLE_API_KEY) throw new Error("Nenhuma chave de IA configurada.");
 
-    // Fetch articles without images
+    // Fetch articles
     const { data: articles } = await supabase
       .from("articles")
       .select("id, title, category, featured_image_url")
@@ -220,70 +248,66 @@ serve(async (req) => {
 
     let updated = 0;
     let failed = 0;
-    let quotaFailures = 0;
+    let unsplashFallbacks = 0;
     const details: Array<{ articleId: string; title: string; reason: string }> = [];
 
     for (const article of articles) {
-      if (article.featured_image_url) { console.log(`Skipping ${article.id} - already has image`); continue; }
+      if (article.featured_image_url) {
+        console.log(`Skipping ${article.id} - already has image`);
+        continue;
+      }
 
       let imageUrl: string | null = null;
       const providerErrors: string[] = [];
 
-      if (openaiApiKey) {
-        try {
-          imageUrl = await generateImageDallE(openaiApiKey, article.title, article.category);
-        } catch (error) {
-          const message = getErrorMessage(error);
-          providerErrors.push(message);
-          if (isBillingIssue(0, message)) quotaFailures += 1;
+      // Try AI providers only if useAi=true
+      if (useAi) {
+        if (openaiApiKey) {
+          try { imageUrl = await generateImageDallE(openaiApiKey, article.title, article.category); }
+          catch (error) { providerErrors.push(getErrorMessage(error)); }
+        }
+        if (!imageUrl && LOVABLE_API_KEY) {
+          try { imageUrl = await generateImageGateway(LOVABLE_API_KEY, article.title, article.category); }
+          catch (error) { providerErrors.push(getErrorMessage(error)); }
+        }
+        if (!imageUrl && geminiApiKey) {
+          try { imageUrl = await generateImageGemini(geminiApiKey, article.title, article.category); }
+          catch (error) { providerErrors.push(getErrorMessage(error)); }
         }
       }
 
-      if (!imageUrl && LOVABLE_API_KEY) {
-        try {
-          imageUrl = await generateImageGateway(LOVABLE_API_KEY, article.title, article.category);
-        } catch (error) {
-          const message = getErrorMessage(error);
-          providerErrors.push(message);
-          if (isBillingIssue(0, message)) quotaFailures += 1;
+      // Fallback grátis: Unsplash Source (sempre funciona)
+      if (!imageUrl) {
+        imageUrl = getUnsplashImageUrl(article.title, article.category);
+        unsplashFallbacks += 1;
+        if (providerErrors.length > 0) {
+          console.warn(`Using Unsplash fallback for "${article.title}" — AI errors: ${providerErrors[0].substring(0, 150)}`);
         }
       }
 
-      if (!imageUrl && geminiApiKey) {
-        try {
-          imageUrl = await generateImageGemini(geminiApiKey, article.title, article.category);
-        } catch (error) {
-          const message = getErrorMessage(error);
-          providerErrors.push(message);
-          if (isBillingIssue(0, message)) quotaFailures += 1;
-        }
-      }
-
-      if (imageUrl) {
-        await supabase.from("articles").update({ featured_image_url: imageUrl }).eq("id", article.id);
-        updated++;
-        console.log(`Image generated for article: ${article.title}`);
-      } else {
+      const { error: updateError } = await supabase.from("articles").update({ featured_image_url: imageUrl }).eq("id", article.id);
+      if (updateError) {
         failed++;
-        const reason = providerErrors[0] || "Nenhum provedor retornou imagem.";
-        details.push({ articleId: article.id, title: article.title, reason });
-        console.warn(`Failed to generate image for: ${article.title} | ${reason}`);
+        details.push({ articleId: article.id, title: article.title, reason: updateError.message });
+      } else {
+        updated++;
+        console.log(`Image set for article: ${article.title}`);
       }
 
-      await sleep(1200);
+      // Throttle só se usou IA
+      if (useAi) await sleep(800);
     }
 
-    const success = updated > 0;
-    const message = success
-      ? failed > 0
-        ? `${updated} imagens geradas. ${failed} falharam por limite de cota ou indisponibilidade temporária.`
-        : `${updated} imagens geradas com sucesso!`
-      : quotaFailures > 0
-        ? "Nenhuma imagem foi gerada: a Gemini atingiu limite/cota e o fallback também falhou ou está sem créditos. Verifique sua cota e tente novamente em alguns minutos."
-        : "Nenhuma imagem foi gerada agora por indisponibilidade temporária dos provedores. Tente novamente em alguns minutos.";
+    const message = updated > 0
+      ? unsplashFallbacks > 0 && useAi
+        ? `${updated} imagens definidas (${unsplashFallbacks} via Unsplash grátis por falha/cota dos provedores de IA).`
+        : unsplashFallbacks === updated
+          ? `${updated} imagens definidas via Unsplash (gratuito).`
+          : `${updated} imagens geradas com sucesso!`
+      : "Nenhuma imagem foi atualizada.";
 
     return new Response(
-      JSON.stringify({ success, message, updated, failed, details: details.slice(0, 3) }),
+      JSON.stringify({ success: updated > 0, message, updated, failed, unsplashFallbacks, details: details.slice(0, 3) }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {

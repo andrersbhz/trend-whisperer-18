@@ -243,6 +243,39 @@ async function callWithFallback(providers: ProviderConfig[], systemPrompt: strin
 
 // ── Image generation ─────────────────────────────────────────────────────
 
+// Unsplash Source — totalmente gratuito, sem chave de API.
+// Retorna sempre uma imagem pública relevante baseada em palavras-chave.
+const UNSPLASH_CATEGORY_KEYWORDS: Record<string, string> = {
+  esportes: "sports,stadium,football",
+  politica: "government,politics,parliament",
+  policia: "city,street,night",
+  saude: "health,hospital,medical",
+  celebridades: "celebrity,redcarpet,glamour",
+  financas: "finance,business,stockmarket",
+  tecnologia: "technology,computer,innovation",
+  entretenimento: "concert,stage,entertainment",
+};
+
+function extractKeywords(title: string, max = 3): string[] {
+  const stopwords = new Set(["a","o","as","os","de","da","do","das","dos","e","em","no","na","nos","nas","um","uma","para","por","com","que","se","ao","aos","à","às","sobre","pelo","pela","mais","como","ser","seu","sua","seus","suas","the","of","and","to","in","for","on","with","is","are"]);
+  return title
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter((w) => w.length > 3 && !stopwords.has(w))
+    .slice(0, max);
+}
+
+function getUnsplashImageUrl(title: string, category: string): string {
+  const baseKeywords = UNSPLASH_CATEGORY_KEYWORDS[category] || "news,editorial";
+  const titleKeywords = extractKeywords(title, 2).join(",");
+  const query = titleKeywords ? `${titleKeywords},${baseKeywords}` : baseKeywords;
+  // Cache-buster baseado no título para garantir imagens diferentes por artigo
+  const sig = Math.abs(title.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0)) % 10000;
+  return `https://source.unsplash.com/1600x900/?${encodeURIComponent(query)}&sig=${sig}`;
+}
+
 const IMAGE_PROMPT_TEMPLATE = (title: string, category: string) =>
   `Create a professional, photorealistic news article featured image about: "${title}" (category: ${category}). Requirements: Editorial/journalistic style, visually represents the article topic, NO text overlay, NO watermarks, NO logos, high quality, 16:9 aspect ratio, vibrant colors, professional lighting, suitable as a WordPress featured image.`;
 
@@ -419,13 +452,14 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
     const providers: ProviderConfig[] = [];
+    // Ordem otimizada para CUSTO ZERO: Groq (grátis 14.4k req/dia) → Gemini (cota free generosa) → OpenAI → Lovable AI
+    if (groqApiKey) providers.push({ name: "Groq", call: (s, u) => callGroqDirect(groqApiKey!, s, u) });
     if (geminiApiKey) providers.push({ name: "Gemini", call: (s, u) => callGeminiDirect(geminiApiKey!, s, u) });
     if (openaiApiKey) providers.push({ name: "OpenAI", call: (s, u) => callOpenAIDirect(openaiApiKey!, s, u) });
-    if (groqApiKey) providers.push({ name: "Groq", call: (s, u) => callGroqDirect(groqApiKey!, s, u) });
     if (LOVABLE_API_KEY) providers.push({ name: "Lovable AI", call: (s, u) => callLovableGateway(LOVABLE_API_KEY!, s, u) });
 
     if (providers.length === 0) {
-      throw new Error("Nenhuma chave de IA configurada. Configure sua chave Gemini, OpenAI ou Groq nas configurações.");
+      throw new Error("Nenhuma chave de IA configurada. Recomendamos Groq (grátis em https://console.groq.com/keys) ou Gemini. Configure em Configurações.");
     }
 
     console.log(`[Pipeline] Available AI providers: ${providers.map(p => p.name).join(" → ")}`);
@@ -528,10 +562,14 @@ serve(async (req) => {
           continue;
         }
 
-        let featuredImageUrl: string | null = null;
-        if (openaiApiKey) featuredImageUrl = await generateImageDallE(openaiApiKey, parsed.title, topic.category);
-        if (!featuredImageUrl && LOVABLE_API_KEY) featuredImageUrl = await generateImageGateway(LOVABLE_API_KEY, parsed.title, topic.category);
-        if (!featuredImageUrl && geminiApiKey) featuredImageUrl = await generateImageGemini(geminiApiKey, parsed.title, topic.category);
+        // ESTRATÉGIA CUSTO ZERO: usa Unsplash Source como imagem padrão (grátis, sem chave).
+        // Geração por IA paga (DALL-E / Gemini Image / Lovable) está desativada por padrão para evitar erros de cota.
+        // Se quiser reativar imagens por IA, troque a linha abaixo pela cadeia comentada.
+        const featuredImageUrl: string = getUnsplashImageUrl(parsed.title, topic.category);
+        // const featuredImageUrl = (openaiApiKey && await generateImageDallE(openaiApiKey, parsed.title, topic.category))
+        //   || (LOVABLE_API_KEY && await generateImageGateway(LOVABLE_API_KEY, parsed.title, topic.category))
+        //   || (geminiApiKey && await generateImageGemini(geminiApiKey, parsed.title, topic.category))
+        //   || getUnsplashImageUrl(parsed.title, topic.category);
 
         const { data: article, error: insertError } = await supabase.from("articles").insert({
           user_id: userId,
