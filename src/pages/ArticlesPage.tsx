@@ -252,9 +252,19 @@ const ArticlesPage = () => {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold neon-text-lilac">Artigos</h1>
-          <p className="text-muted-foreground text-sm mt-1">{articles.length} artigos gerados</p>
+          <p className="text-muted-foreground text-sm mt-1">{articles.length} carregados de {totalCount} no banco</p>
         </div>
         <div className="flex gap-2 flex-wrap">
+          <Button
+            onClick={handleCleanupOld}
+            disabled={cleaningUp}
+            variant="outline"
+            className="gap-2 border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+            title="Apagar artigos com mais de 3 dias"
+          >
+            {cleaningUp ? <Loader2 className="h-4 w-4 animate-spin" /> : <Database className="h-4 w-4" />}
+            {totalCount} no banco — Apagar artigos
+          </Button>
           <Button
             onClick={handleGenerate}
             disabled={generating}
