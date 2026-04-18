@@ -221,7 +221,7 @@ const ArticlesPage = () => {
     }
   };
 
-
+  const statusColors: Record<string, string> = {
     draft: 'bg-muted text-muted-foreground',
     generating: 'bg-warning/20 text-warning',
     ready: 'bg-primary/20 text-primary',
