@@ -562,10 +562,14 @@ serve(async (req) => {
           continue;
         }
 
-        let featuredImageUrl: string | null = null;
-        if (openaiApiKey) featuredImageUrl = await generateImageDallE(openaiApiKey, parsed.title, topic.category);
-        if (!featuredImageUrl && LOVABLE_API_KEY) featuredImageUrl = await generateImageGateway(LOVABLE_API_KEY, parsed.title, topic.category);
-        if (!featuredImageUrl && geminiApiKey) featuredImageUrl = await generateImageGemini(geminiApiKey, parsed.title, topic.category);
+        // ESTRATÉGIA CUSTO ZERO: usa Unsplash Source como imagem padrão (grátis, sem chave).
+        // Geração por IA paga (DALL-E / Gemini Image / Lovable) está desativada por padrão para evitar erros de cota.
+        // Se quiser reativar imagens por IA, troque a linha abaixo pela cadeia comentada.
+        const featuredImageUrl: string = getUnsplashImageUrl(parsed.title, topic.category);
+        // const featuredImageUrl = (openaiApiKey && await generateImageDallE(openaiApiKey, parsed.title, topic.category))
+        //   || (LOVABLE_API_KEY && await generateImageGateway(LOVABLE_API_KEY, parsed.title, topic.category))
+        //   || (geminiApiKey && await generateImageGemini(geminiApiKey, parsed.title, topic.category))
+        //   || getUnsplashImageUrl(parsed.title, topic.category);
 
         const { data: article, error: insertError } = await supabase.from("articles").insert({
           user_id: userId,
