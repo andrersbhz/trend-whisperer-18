@@ -382,55 +382,6 @@ const Dashboard = () => {
       )}
 
 
-      {/* Automation Robot */}
-      <Card className="glass-card neon-border-pink">
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Bot className="h-5 w-5 text-accent" />
-            <CardTitle className="text-lg text-foreground">Robô de Publicação Automática</CardTitle>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Configure quantas postagens o robô deve fazer por dia e se deve publicar automaticamente no WordPress.
-          </p>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="articles-per-day">Postagens por dia</Label>
-              <Input
-                id="articles-per-day"
-                type="number"
-                min={1}
-                max={50}
-                value={articlesPerDay}
-                onChange={(e) => setArticlesPerDay(parseInt(e.target.value) || 10)}
-                disabled={!promptLoaded}
-              />
-              <p className="text-xs text-muted-foreground">Quantidade de artigos gerados a cada ciclo (máx. 50)</p>
-            </div>
-            <div className="flex items-center justify-between p-[25px] rounded-lg bg-muted/50 h-fit mt-auto">
-              <div>
-                <p className="text-sm font-medium text-foreground">Publicação automática</p>
-                <p className="text-xs text-muted-foreground">Publicar no WordPress automaticamente</p>
-              </div>
-              <Switch
-                checked={autoPublish}
-                onCheckedChange={setAutoPublish}
-                disabled={!promptLoaded}
-              />
-            </div>
-          </div>
-          <Button
-            onClick={handleSaveAutomation}
-            disabled={savingAuto || !promptLoaded}
-            className="gradient-primary w-full sm:w-auto"
-          >
-            {savingAuto ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-            Salvar Automação
-          </Button>
-        </CardContent>
-      </Card>
-
       {/* Writer Profile Prompt */}
       <Card className="glass-card neon-border-lilac">
         <CardHeader>
