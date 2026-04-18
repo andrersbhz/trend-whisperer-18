@@ -483,6 +483,7 @@ serve(async (req) => {
       .select("id, scheduled_at, created_at, status")
       .eq("user_id", userId)
       .neq("status", "published")
+      .neq("status", "ready")
       .not("scheduled_at", "is", null)
       .order("scheduled_at", { ascending: true })
       .order("created_at", { ascending: true });
