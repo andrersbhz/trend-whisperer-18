@@ -243,6 +243,39 @@ async function callWithFallback(providers: ProviderConfig[], systemPrompt: strin
 
 // ── Image generation ─────────────────────────────────────────────────────
 
+// Unsplash Source — totalmente gratuito, sem chave de API.
+// Retorna sempre uma imagem pública relevante baseada em palavras-chave.
+const UNSPLASH_CATEGORY_KEYWORDS: Record<string, string> = {
+  esportes: "sports,stadium,football",
+  politica: "government,politics,parliament",
+  policia: "city,street,night",
+  saude: "health,hospital,medical",
+  celebridades: "celebrity,redcarpet,glamour",
+  financas: "finance,business,stockmarket",
+  tecnologia: "technology,computer,innovation",
+  entretenimento: "concert,stage,entertainment",
+};
+
+function extractKeywords(title: string, max = 3): string[] {
+  const stopwords = new Set(["a","o","as","os","de","da","do","das","dos","e","em","no","na","nos","nas","um","uma","para","por","com","que","se","ao","aos","à","às","sobre","pelo","pela","mais","como","ser","seu","sua","seus","suas","the","of","and","to","in","for","on","with","is","are"]);
+  return title
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter((w) => w.length > 3 && !stopwords.has(w))
+    .slice(0, max);
+}
+
+function getUnsplashImageUrl(title: string, category: string): string {
+  const baseKeywords = UNSPLASH_CATEGORY_KEYWORDS[category] || "news,editorial";
+  const titleKeywords = extractKeywords(title, 2).join(",");
+  const query = titleKeywords ? `${titleKeywords},${baseKeywords}` : baseKeywords;
+  // Cache-buster baseado no título para garantir imagens diferentes por artigo
+  const sig = Math.abs(title.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0)) % 10000;
+  return `https://source.unsplash.com/1600x900/?${encodeURIComponent(query)}&sig=${sig}`;
+}
+
 const IMAGE_PROMPT_TEMPLATE = (title: string, category: string) =>
   `Create a professional, photorealistic news article featured image about: "${title}" (category: ${category}). Requirements: Editorial/journalistic style, visually represents the article topic, NO text overlay, NO watermarks, NO logos, high quality, 16:9 aspect ratio, vibrant colors, professional lighting, suitable as a WordPress featured image.`;
 
