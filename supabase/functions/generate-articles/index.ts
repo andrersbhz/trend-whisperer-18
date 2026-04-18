@@ -459,7 +459,7 @@ serve(async (req) => {
     if (LOVABLE_API_KEY) providers.push({ name: "Lovable AI", call: (s, u) => callLovableGateway(LOVABLE_API_KEY!, s, u) });
 
     if (providers.length === 0) {
-      throw new Error("Nenhuma chave de IA configurada. Configure sua chave Gemini, OpenAI ou Groq nas configurações.");
+      throw new Error("Nenhuma chave de IA configurada. Recomendamos Groq (grátis em https://console.groq.com/keys) ou Gemini. Configure em Configurações.");
     }
 
     console.log(`[Pipeline] Available AI providers: ${providers.map(p => p.name).join(" → ")}`);
