@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Send, Eye, Trash2, Loader2, FileText, RotateCcw, ImagePlus, Sparkles } from 'lucide-react';
+import { Send, Eye, Trash2, Loader2, FileText, RotateCcw, ImagePlus, Sparkles, Database } from 'lucide-react';
 import { getErrorMessage, runBackendMutation, runBackendQuery } from '@/lib/backend';
 import {
   Dialog,
@@ -28,6 +28,8 @@ const ArticlesPage = () => {
   const [generating, setGenerating] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
+  const [totalCount, setTotalCount] = useState<number>(0);
+  const [cleaningUp, setCleaningUp] = useState(false);
 
   const PAGE_SIZE = 20;
 
@@ -50,6 +52,17 @@ const ArticlesPage = () => {
 
       setHasMore((data || []).length === PAGE_SIZE);
       setArticles((current) => (append ? [...current, ...(data || [])] : data || []));
+
+      // Total count (separate query for accurate badge)
+      try {
+        const { count } = await supabase
+          .from('articles')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id);
+        setTotalCount(count ?? 0);
+      } catch (e) {
+        console.warn('[ArticlesPage] count error', e);
+      }
     } catch (error) {
       console.error('[ArticlesPage] fetchArticles error:', error);
       if (!append) {
@@ -185,6 +198,29 @@ const ArticlesPage = () => {
     }
   };
 
+  const handleCleanupOld = async () => {
+    if (!user) return;
+    if (!confirm('Apagar TODOS os artigos com mais de 3 dias? Esta ação não pode ser desfeita.')) return;
+    setCleaningUp(true);
+    try {
+      const data = await runBackendQuery(() =>
+        supabase.functions.invoke('cleanup-old-articles', {
+          body: { userId: user.id },
+        }),
+      );
+      const deleted = Number(data?.deleted ?? 0);
+      toast({
+        title: deleted > 0 ? 'Limpeza concluída' : 'Nada para apagar',
+        description: data?.message || `${deleted} artigos removidos.`,
+      });
+      fetchArticles();
+    } catch (error) {
+      toast({ title: 'Erro', description: getErrorMessage(error), variant: 'destructive' });
+    } finally {
+      setCleaningUp(false);
+    }
+  };
+
   const statusColors: Record<string, string> = {
     draft: 'bg-muted text-muted-foreground',
     generating: 'bg-warning/20 text-warning',
@@ -216,9 +252,19 @@ const ArticlesPage = () => {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold neon-text-lilac">Artigos</h1>
-          <p className="text-muted-foreground text-sm mt-1">{articles.length} artigos gerados</p>
+          <p className="text-muted-foreground text-sm mt-1">{articles.length} carregados de {totalCount} no banco</p>
         </div>
         <div className="flex gap-2 flex-wrap">
+          <Button
+            onClick={handleCleanupOld}
+            disabled={cleaningUp}
+            variant="outline"
+            className="gap-2 border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+            title="Apagar artigos com mais de 3 dias"
+          >
+            {cleaningUp ? <Loader2 className="h-4 w-4 animate-spin" /> : <Database className="h-4 w-4" />}
+            {totalCount} no banco — Apagar artigos
+          </Button>
           <Button
             onClick={handleGenerate}
             disabled={generating}
