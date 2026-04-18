@@ -483,6 +483,7 @@ serve(async (req) => {
       .select("id, scheduled_at, created_at, status")
       .eq("user_id", userId)
       .neq("status", "published")
+      .neq("status", "ready")
       .not("scheduled_at", "is", null)
       .order("scheduled_at", { ascending: true })
       .order("created_at", { ascending: true });
@@ -508,7 +509,15 @@ serve(async (req) => {
       }
     }
 
-    const currentPendingCount = pendingQueue.length;
+    // Count "ready" articles too — they shouldn't be rescheduled but DO count toward the daily quota
+    const { count: readyCount } = await supabase
+      .from("articles")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .eq("status", "ready")
+      .not("scheduled_at", "is", null);
+
+    const currentPendingCount = pendingQueue.length + (readyCount || 0);
     const remainingToTarget = Math.max(0, articlesPerDay - currentPendingCount);
     const articlesToGenerate = Math.min(MAX_GENERATION_BATCH, remainingToTarget, topicsToUse.length);
 
