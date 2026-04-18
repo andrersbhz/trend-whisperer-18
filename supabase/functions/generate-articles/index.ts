@@ -618,12 +618,22 @@ serve(async (req) => {
 
     if (generatedArticles.length === 0) {
       const errorMessage = allProvidersExhausted
-        ? "Nenhum artigo gerado: todos os provedores de IA estão sem saldo. Configure outra chave de IA ou adicione créditos."
+        ? "Nenhum artigo gerado: todos os provedores de IA estão sem saldo/quota. Adicione créditos no Lovable AI (Settings → Workspace → Usage) ou configure outra chave de IA nas Configurações."
         : failureReasons[0]?.message || "Nenhum artigo pôde ser gerado.";
 
+      // Sempre retorna 200 com fallback:true para evitar que o cliente trate como erro fatal (tela em branco).
       return new Response(
-        JSON.stringify({ error: errorMessage, details: failureReasons.slice(0, 3) }),
-        { status: allProvidersExhausted ? 402 : 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({
+          success: false,
+          fallback: true,
+          message: errorMessage,
+          warning: errorMessage,
+          articles: 0,
+          failed: failureReasons.length,
+          providersExhausted: allProvidersExhausted,
+          details: failureReasons.slice(0, 3),
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
