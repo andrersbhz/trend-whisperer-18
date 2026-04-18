@@ -198,7 +198,30 @@ const ArticlesPage = () => {
     }
   };
 
-  const statusColors: Record<string, string> = {
+  const handleCleanupOld = async () => {
+    if (!user) return;
+    if (!confirm('Apagar TODOS os artigos com mais de 3 dias? Esta ação não pode ser desfeita.')) return;
+    setCleaningUp(true);
+    try {
+      const data = await runBackendQuery(() =>
+        supabase.functions.invoke('cleanup-old-articles', {
+          body: { userId: user.id },
+        }),
+      );
+      const deleted = Number(data?.deleted ?? 0);
+      toast({
+        title: deleted > 0 ? 'Limpeza concluída' : 'Nada para apagar',
+        description: data?.message || `${deleted} artigos removidos.`,
+      });
+      fetchArticles();
+    } catch (error) {
+      toast({ title: 'Erro', description: getErrorMessage(error), variant: 'destructive' });
+    } finally {
+      setCleaningUp(false);
+    }
+  };
+
+
     draft: 'bg-muted text-muted-foreground',
     generating: 'bg-warning/20 text-warning',
     ready: 'bg-primary/20 text-primary',
