@@ -28,6 +28,8 @@ const ArticlesPage = () => {
   const [generating, setGenerating] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
+  const [totalCount, setTotalCount] = useState<number>(0);
+  const [cleaningUp, setCleaningUp] = useState(false);
 
   const PAGE_SIZE = 20;
 
@@ -50,6 +52,17 @@ const ArticlesPage = () => {
 
       setHasMore((data || []).length === PAGE_SIZE);
       setArticles((current) => (append ? [...current, ...(data || [])] : data || []));
+
+      // Total count (separate query for accurate badge)
+      try {
+        const { count } = await supabase
+          .from('articles')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id);
+        setTotalCount(count ?? 0);
+      } catch (e) {
+        console.warn('[ArticlesPage] count error', e);
+      }
     } catch (error) {
       console.error('[ArticlesPage] fetchArticles error:', error);
       if (!append) {
