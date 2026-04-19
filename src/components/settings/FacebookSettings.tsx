@@ -94,9 +94,29 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
       const { data, error } = await supabase.functions.invoke('facebook-oauth-start');
       if (error) throw error;
       if (!data?.authUrl) throw new Error('URL de autorização não retornada');
-      const popup = window.open(data.authUrl, 'fb-oauth', 'width=600,height=720');
-      if (!popup) {
-        toast({ title: 'Popup bloqueado', description: 'Permita popups para este site e tente novamente.', variant: 'destructive' });
+
+      // O Facebook envia X-Frame-Options: DENY, então NÃO podemos abrir dentro do iframe do preview.
+      // Tentamos abrir no contexto top-level (fora do iframe). Se bloqueado, oferecemos link manual.
+      const features = 'width=600,height=720,noopener=no,noreferrer=no';
+      let popup: Window | null = null;
+      try {
+        // window.top pode lançar SecurityError em alguns navegadores quando cross-origin
+        popup = (window.top || window).open(data.authUrl, 'fb-oauth', features);
+      } catch {
+        popup = window.open(data.authUrl, 'fb-oauth', features);
+      }
+
+      if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+        // Fallback: navega a aba inteira (top-level) para o Facebook
+        toast({
+          title: 'Popup bloqueado',
+          description: 'Abrindo o login do Facebook em nova aba…',
+        });
+        try {
+          (window.top || window).location.assign(data.authUrl);
+        } catch {
+          window.location.assign(data.authUrl);
+        }
         setOauthLoading(false);
       }
     } catch (e: any) {
