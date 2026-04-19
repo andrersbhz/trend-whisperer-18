@@ -299,10 +299,6 @@ const Dashboard = () => {
         </CardContent>
       </Card>
 
-      {/* === ANALYTICS COMPLETO === */}
-      <div className="pt-4 border-t border-border/40">
-        <AnalyticsPage />
-      </div>
     </div>
   );
 };
