@@ -530,10 +530,6 @@ serve(async (req) => {
           try { featuredImageUrl = await generateImageDallE(openaiApiKey, parsed.title, topic.category); }
           catch (imgErr) { console.warn(`[Image] DALL-E falhou para "${parsed.title}":`, imgErr); }
         }
-        if (!featuredImageUrl && LOVABLE_API_KEY) {
-          try { featuredImageUrl = await generateImageGateway(LOVABLE_API_KEY, parsed.title, topic.category); }
-          catch (imgErr) { console.warn(`[Image] Lovable AI Gateway falhou para "${parsed.title}":`, imgErr); }
-        }
         if (!featuredImageUrl) {
           console.warn(`[Image] Nenhum provedor gerou imagem para "${parsed.title}" — artigo criado sem imagem`);
         }
