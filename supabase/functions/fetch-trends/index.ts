@@ -208,7 +208,7 @@ serve(async (req) => {
       if (d && typeof d === "string" && d.length > 5) groqKey = d;
     }
 
-    // Build provider chain: Gemini → OpenAI → Groq → Lovable AI
+    // Build provider chain: Gemini PRIMEIRO (preferência do usuário) → OpenAI → Groq → Lovable AI
     const providers: TrendsProvider[] = [];
     if (geminiKey) {
       const key = geminiKey;
