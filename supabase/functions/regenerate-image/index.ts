@@ -156,7 +156,7 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Carrega chaves de IA do usuário (Gemini + OpenAI) e fallback Lovable AI
+    // Carrega chaves de IA do usuário (Gemini + OpenAI)
     let geminiApiKey: string | null = null;
     let openaiApiKey: string | null = null;
     const { data: settings } = await supabase
@@ -173,9 +173,8 @@ serve(async (req) => {
       const { data: decrypted } = await supabase.rpc("decrypt_credential", { enc_key: "", val: settings.openai_api_key });
       if (decrypted && typeof decrypted === "string" && decrypted.length > 5) openaiApiKey = decrypted;
     }
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY") || null;
 
-    if (!geminiApiKey && !openaiApiKey && !LOVABLE_API_KEY) {
+    if (!geminiApiKey && !openaiApiKey) {
       throw new Error("Nenhum provedor de IA disponível. Configure Gemini ou OpenAI em Configurações.");
     }
 
