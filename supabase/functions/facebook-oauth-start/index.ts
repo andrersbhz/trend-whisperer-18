@@ -25,6 +25,26 @@ const SCOPES = [
   "business_management",
 ].join(",");
 
+const DEFAULT_RETURN_URL = "https://forex.a3solucoesdigitais.com/settings";
+const ALLOWED_RETURN_HOSTS = new Set([
+  "forex.a3solucoesdigitais.com",
+  "trend-whisperer-18.lovable.app",
+  "id-preview--9ad27b4d-8990-47e9-8d43-311f0f7d2680.lovable.app",
+]);
+
+function getSafeReturnUrl(rawValue: unknown) {
+  if (typeof rawValue !== "string" || !rawValue) return DEFAULT_RETURN_URL;
+
+  try {
+    const url = new URL(rawValue);
+    if (!["http:", "https:"].includes(url.protocol)) return DEFAULT_RETURN_URL;
+    if (!ALLOWED_RETURN_HOSTS.has(url.hostname)) return DEFAULT_RETURN_URL;
+    return url.toString();
+  } catch {
+    return DEFAULT_RETURN_URL;
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -56,8 +76,12 @@ serve(async (req) => {
     const appId = Deno.env.get("FACEBOOK_APP_ID");
     if (!appId) throw new Error("FACEBOOK_APP_ID not configured");
 
-    // Random anti-CSRF state
-    const state = crypto.randomUUID() + crypto.randomUUID().replace(/-/g, "");
+    const requestBody = req.method === "POST" ? await req.json().catch(() => ({})) : {};
+    const returnUrl = getSafeReturnUrl(requestBody?.returnUrl);
+
+    // Random anti-CSRF state + return URL for top-level redirect back to the app
+    const stateNonce = crypto.randomUUID() + crypto.randomUUID().replace(/-/g, "");
+    const state = `${stateNonce}::${encodeURIComponent(returnUrl)}`;
 
     // Store state -> user mapping using service role
     const adminSupabase = createClient(
