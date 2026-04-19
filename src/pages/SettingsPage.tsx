@@ -171,6 +171,35 @@ const SettingsPage = () => {
     setSettings((prev) => ({ ...prev, ...partial }));
   };
 
+  const disconnectCredential = async (
+    fields: Partial<Record<keyof UserSettings, null | '' | string[]>>,
+    label: string,
+  ) => {
+    if (!user) return;
+    try {
+      if (hasExistingSettings) {
+        await runBackendMutation(() =>
+          supabase.from('user_settings').update(fields as any).eq('user_id', user.id),
+        );
+      }
+      // Reset local UI state for those fields
+      const localReset: Partial<UserSettings> = {};
+      for (const k of Object.keys(fields) as (keyof UserSettings)[]) {
+        const v = fields[k];
+        (localReset as any)[k] = Array.isArray(v) ? v : '';
+      }
+      setSettings((prev) => ({ ...prev, ...localReset }));
+
+      // Refresh credentials status from server
+      const status = await runBackendQuery(() => supabase.rpc('get_credentials_status'));
+      if (status) setCredStatus(status as unknown as CredentialsStatus);
+
+      toast({ title: 'Desconectado', description: `${label} foi desconectado(a) com sucesso.` });
+    } catch (error) {
+      toast({ title: 'Erro ao desconectar', description: getErrorMessage(error), variant: 'destructive' });
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -190,10 +219,10 @@ const SettingsPage = () => {
         <strong className="text-foreground">🔄 Sistema Multi-IA:</strong> O sistema tenta gerar artigos na seguinte ordem: <strong>Gemini → OpenAI → Groq → Lovable AI</strong>. Para imagens: <strong>DALL-E 3 → Lovable AI → Gemini</strong>. Se um provedor estiver sem saldo, o próximo é usado automaticamente.
       </div>
 
-      <GeminiSettings settings={settings} onChange={updateSettings} hasGeminiKey={credStatus.has_gemini_key} />
-      <OpenAISettings settings={settings} onChange={updateSettings} hasOpenaiKey={credStatus.has_openai_key} />
-      <GroqSettings settings={settings} onChange={updateSettings} hasGroqKey={credStatus.has_groq_key} />
-      <WordPressSettings settings={settings} onChange={updateSettings} hasWpPassword={credStatus.has_wp_password} />
+      <GeminiSettings settings={settings} onChange={updateSettings} hasGeminiKey={credStatus.has_gemini_key} onDisconnect={() => disconnectCredential({ gemini_api_key: '' }, 'Gemini')} />
+      <OpenAISettings settings={settings} onChange={updateSettings} hasOpenaiKey={credStatus.has_openai_key} onDisconnect={() => disconnectCredential({ openai_api_key: '' }, 'OpenAI')} />
+      <GroqSettings settings={settings} onChange={updateSettings} hasGroqKey={credStatus.has_groq_key} onDisconnect={() => disconnectCredential({ groq_api_key: '' }, 'Groq')} />
+      <WordPressSettings settings={settings} onChange={updateSettings} hasWpPassword={credStatus.has_wp_password} onDisconnect={() => disconnectCredential({ wordpress_url: '', wordpress_username: '', wordpress_app_password: '' }, 'WordPress')} />
       <JetpackSettings settings={settings} hasWpPassword={credStatus.has_wp_password} />
       <FacebookSettings settings={settings} onChange={updateSettings} />
       <GoogleAnalyticsSettings settings={settings} onChange={updateSettings} />

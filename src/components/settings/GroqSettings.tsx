@@ -12,9 +12,10 @@ interface Props {
   settings: UserSettings;
   onChange: (partial: Partial<UserSettings>) => void;
   hasGroqKey?: boolean;
+  onDisconnect?: () => void | Promise<void>;
 }
 
-const GroqSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChange, hasGroqKey }, ref) => {
+const GroqSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChange, hasGroqKey, onDisconnect }, ref) => {
   const connected = !!(settings.groq_api_key || hasGroqKey);
   const { toast } = useToast();
   const [testing, setTesting] = useState(false);
@@ -54,7 +55,7 @@ const GroqSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChange, ha
       description="Use sua chave gratuita do Groq como provedor de IA adicional — modelos open-source ultrarrápidos"
       connected={connected}
       connectedInfo={connected ? 'Chave Groq configurada ✓' : undefined}
-      onDisconnect={() => { onChange({ groq_api_key: '' }); setTestResult(null); }}
+      onDisconnect={async () => { await onDisconnect?.(); onChange({ groq_api_key: '' }); setTestResult(null); }}
     >
       <div className="space-y-3">
         <div className="p-2.5 rounded-lg bg-accent/30 border border-accent/50 text-xs text-muted-foreground">

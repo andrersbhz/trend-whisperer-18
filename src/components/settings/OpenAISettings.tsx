@@ -12,9 +12,10 @@ interface Props {
   settings: UserSettings;
   onChange: (partial: Partial<UserSettings>) => void;
   hasOpenaiKey?: boolean;
+  onDisconnect?: () => void | Promise<void>;
 }
 
-const OpenAISettings = forwardRef<HTMLDivElement, Props>(({ settings, onChange, hasOpenaiKey }, ref) => {
+const OpenAISettings = forwardRef<HTMLDivElement, Props>(({ settings, onChange, hasOpenaiKey, onDisconnect }, ref) => {
   const connected = !!(settings.openai_api_key || hasOpenaiKey);
   const { toast } = useToast();
   const [testing, setTesting] = useState(false);
@@ -58,7 +59,8 @@ const OpenAISettings = forwardRef<HTMLDivElement, Props>(({ settings, onChange, 
       description="Use sua própria chave da OpenAI como provedor alternativo de IA para gerar artigos"
       connected={connected}
       connectedInfo={connected ? 'Chave OpenAI configurada ✓' : undefined}
-      onDisconnect={() => {
+      onDisconnect={async () => {
+        await onDisconnect?.();
         onChange({ openai_api_key: '' });
         setTestResult(null);
       }}
