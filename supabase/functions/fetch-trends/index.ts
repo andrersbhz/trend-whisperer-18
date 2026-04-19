@@ -297,16 +297,15 @@ serve(async (req) => {
       await new Promise((r) => setTimeout(r, 1500));
     }
 
-    // 2. Add evergreen topics (1 per category, avoiding duplicates)
-    for (const category of categories) {
-      const evTopics = EVERGREEN_TOPICS[category] || [];
-      if (evTopics.length > 0) {
-        const available = evTopics.filter((t) => !existingSet.has(t.toLowerCase().trim()));
-        if (available.length > 0) {
-          const picked = available[Math.floor(Math.random() * available.length)];
-          allTopics.push({ topic: picked, category, search_volume: "evergreen" });
-          existingSet.add(picked.toLowerCase().trim());
-        }
+    // 2. Add evergreen topics (apenas Saúde/Bem-estar e Finanças, 2 por categoria, sem duplicar)
+    for (const category of Object.keys(EVERGREEN_TOPICS)) {
+      const evTopics = EVERGREEN_TOPICS[category];
+      const available = evTopics.filter((t) => !existingSet.has(t.toLowerCase().trim()));
+      // shuffle and pick up to 2
+      const shuffled = available.sort(() => Math.random() - 0.5).slice(0, 2);
+      for (const picked of shuffled) {
+        allTopics.push({ topic: picked, category, search_volume: "evergreen" });
+        existingSet.add(picked.toLowerCase().trim());
       }
     }
 
