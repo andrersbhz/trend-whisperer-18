@@ -7,7 +7,13 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// Note: Advanced scopes (pages_manage_posts, instagram_content_publish, etc.)
+// require Meta App Review. In Development Mode, only Admins/Developers/Testers
+// of the App can grant them. We request the full set; if your account is a
+// tester on the App, Facebook will allow these scopes through.
 const SCOPES = [
+  "email",
+  "public_profile",
   "pages_show_list",
   "pages_read_engagement",
   "pages_manage_posts",
