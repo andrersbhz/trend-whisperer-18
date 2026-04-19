@@ -13,9 +13,10 @@ interface Props {
   settings: UserSettings;
   onChange: (partial: Partial<UserSettings>) => void;
   hasWpPassword?: boolean;
+  onDisconnect?: () => void | Promise<void>;
 }
 
-const WordPressSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChange, hasWpPassword }, ref) => {
+const WordPressSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChange, hasWpPassword, onDisconnect }, ref) => {
   const connected = !!(settings.wordpress_url && settings.wordpress_username && (settings.wordpress_app_password || hasWpPassword));
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<'success' | 'error' | null>(null);
