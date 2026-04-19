@@ -241,74 +241,7 @@ async function callWithFallback(providers: ProviderConfig[], systemPrompt: strin
   throw new Error(`Todos os provedores de IA falharam:\n${errors.join("\n")}`);
 }
 
-// ── Image fetching (Pexels primeiro, IA como fallback) ──────────────────
-
-const PEXELS_CATEGORY_QUERY: Record<string, string> = {
-  esportes: "sports stadium",
-  politica: "government building brazil",
-  policia: "police car street",
-  saude: "health wellness",
-  celebridades: "red carpet event",
-  financas: "finance business chart",
-  tecnologia: "technology innovation",
-  entretenimento: "concert stage",
-};
-
-function extractKeywords(title: string, max = 4): string[] {
-  const stopwords = new Set(["a","o","as","os","de","da","do","das","dos","e","em","no","na","nos","nas","um","uma","para","por","com","que","se","ao","aos","à","às","sobre","pelo","pela","mais","como","ser","seu","sua","seus","suas","the","of","and","to","in","for","on","with","is","are"]);
-  return title
-    .toLowerCase()
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9\s]/g, " ")
-    .split(/\s+/)
-    .filter((w) => w.length > 3 && !stopwords.has(w))
-    .slice(0, max);
-}
-
-async function searchPexelsImage(apiKey: string, title: string, category: string): Promise<string | null> {
-  const keywords = extractKeywords(title);
-  const categoryQuery = PEXELS_CATEGORY_QUERY[category] || category;
-  // Try keyword-rich query first, then fall back to category-only
-  const queries = [
-    keywords.length > 0 ? keywords.join(" ") : categoryQuery,
-    categoryQuery,
-  ];
-
-  for (const query of queries) {
-    try {
-      const url = `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=15&orientation=landscape&size=large`;
-      const resp = await fetch(url, { headers: { Authorization: apiKey } });
-      if (!resp.ok) {
-        console.warn(`[Pexels] query "${query}" failed: ${resp.status}`);
-        continue;
-      }
-      const data = await resp.json();
-      const photos = data.photos || [];
-      if (photos.length === 0) continue;
-      // Pick a random photo from results for variety
-      const picked = photos[Math.floor(Math.random() * photos.length)];
-      const imageUrl = picked?.src?.large2x || picked?.src?.large || picked?.src?.original;
-      if (imageUrl) {
-        console.log(`[Pexels] Found image for "${query}" (photo ${picked.id})`);
-        return imageUrl;
-      }
-    } catch (err) {
-      console.warn(`[Pexels] query "${query}" threw:`, err);
-    }
-  }
-  return null;
-}
-
-function getFallbackImageUrl(title: string, _category: string): string {
-  // Picsum: placeholder determinístico só se Pexels falhar completamente
-  const seed = Math.abs(title.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0)) % 1000;
-  return `https://picsum.photos/seed/${seed}/1600/900`;
-}
-
-// Mantém a função antiga para compatibilidade (não usada quando Pexels funciona)
-function getUnsplashImageUrl(title: string, category: string): string {
-  return getFallbackImageUrl(title, category);
-}
+// ── Image generation (Gemini exclusivo) ─────────────────────────────────
 
 const IMAGE_PROMPT_TEMPLATE = (title: string, category: string) =>
   `Create a professional, photorealistic news article featured image about: "${title}" (category: ${category}). Requirements: Editorial/journalistic style, visually represents the article topic, NO text overlay, NO watermarks, NO logos, high quality, 16:9 aspect ratio, vibrant colors, professional lighting, suitable as a WordPress featured image.`;
@@ -498,7 +431,6 @@ serve(async (req) => {
     }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    const PEXELS_API_KEY = Deno.env.get("PEXELS_API_KEY");
 
     const providers: ProviderConfig[] = [];
     // Ordem (preferência do usuário): Gemini PRIMEIRO → OpenAI → Groq. Lovable AI DESABILITADO para geração de artigos.
@@ -619,15 +551,17 @@ serve(async (req) => {
           continue;
         }
 
-        // CADEIA DE IMAGEM: Pexels (relevante e grátis) → Picsum (placeholder).
-        // IA de imagem foi removida porque gerava imagens irrelevantes ou bloqueadas por content policy.
+        // GERAÇÃO DE IMAGEM: APENAS Gemini (chave do usuário). Se falhar, salva sem imagem.
         let featuredImageUrl: string | null = null;
-        if (PEXELS_API_KEY) {
-          featuredImageUrl = await searchPexelsImage(PEXELS_API_KEY, parsed.title, topic.category);
-        }
-        if (!featuredImageUrl) {
-          console.warn(`[Image] Pexels failed for "${parsed.title}", using Picsum placeholder`);
-          featuredImageUrl = getFallbackImageUrl(parsed.title, topic.category);
+        if (geminiApiKey) {
+          try {
+            featuredImageUrl = await generateImageGemini(geminiApiKey, parsed.title, topic.category);
+            if (!featuredImageUrl) console.warn(`[Image] Gemini não retornou imagem para "${parsed.title}"`);
+          } catch (imgErr) {
+            console.warn(`[Image] Gemini falhou para "${parsed.title}":`, imgErr);
+          }
+        } else {
+          console.warn(`[Image] Sem chave Gemini configurada — artigo "${parsed.title}" será criado sem imagem`);
         }
 
         const { data: article, error: insertError } = await supabase.from("articles").insert({
