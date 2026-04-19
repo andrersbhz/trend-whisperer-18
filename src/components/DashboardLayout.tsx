@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import {
@@ -11,7 +11,6 @@ import {
   Newspaper,
   Menu,
   X,
-  BarChart3,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -25,60 +24,102 @@ const navItems = [
 ];
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // Close sidebar on route change (mobile)
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [location.pathname]);
+
+  // Lock body scroll when mobile sidebar open
+  useEffect(() => {
+    if (sidebarOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [sidebarOpen]);
+
+  const currentLabel = navItems.find((i) => i.path === location.pathname)?.label || 'Dashboard';
+  const userInitial = (user?.email?.[0] || 'U').toUpperCase();
+
   return (
     <div className="min-h-screen flex bg-background">
+      {/* Mobile overlay */}
       {sidebarOpen && (
-        <div className="fixed inset-0 bg-background/60 backdrop-blur-sm z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
+        <div
+          className="fixed inset-0 bg-background/70 backdrop-blur-sm z-40 lg:hidden animate-fade-in"
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
+        />
       )}
 
       <aside
         className={cn(
-          'fixed lg:static inset-y-0 left-0 z-50 w-64 glass flex flex-col transition-transform duration-200',
+          'fixed lg:sticky top-0 inset-y-0 left-0 z-50 w-72 lg:w-64 h-screen glass flex flex-col transition-transform duration-300 ease-out',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         )}
+        aria-label="Navegação principal"
       >
-        <div className="p-5 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="gradient-primary p-2 rounded-lg shadow-neon-lilac">
+        {/* Brand */}
+        <div className="p-5 flex items-center justify-between border-b border-border/40">
+          <Link to="/" className="flex items-center gap-2.5 group">
+            <div className="gradient-primary p-2 rounded-lg shadow-neon-lilac group-hover:scale-105 transition-transform">
               <Newspaper className="h-5 w-5 text-primary-foreground" />
             </div>
             <span className="font-bold text-lg neon-text-lilac">AutoBlog AI</span>
-          </div>
-          <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-muted-foreground hover:text-foreground">
+          </Link>
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="lg:hidden text-muted-foreground hover:text-foreground p-1.5 rounded-md hover:bg-secondary/50 transition-colors"
+            aria-label="Fechar menu"
+          >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        <nav className="flex-1 px-3 py-4 space-y-1">
+        {/* Nav */}
+        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
           {navItems.map((item) => {
             const active = location.pathname === item.path;
             return (
               <Link
                 key={item.path}
                 to={item.path}
-                onClick={() => setSidebarOpen(false)}
                 className={cn(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200',
+                  'group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200',
                   active
-                    ? 'bg-primary/10 text-primary neon-border-lilac'
-                    : 'text-muted-foreground hover:bg-secondary/50 hover:text-foreground'
+                    ? 'bg-primary/15 text-primary neon-border-lilac shadow-neon-lilac'
+                    : 'text-muted-foreground hover:bg-secondary/50 hover:text-foreground hover:translate-x-0.5'
                 )}
               >
-                <item.icon className="h-4.5 w-4.5" />
-                {item.label}
+                <item.icon className={cn('h-[18px] w-[18px] transition-transform', active && 'scale-110')} />
+                <span className="flex-1">{item.label}</span>
+                {active && <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse-dot" />}
               </Link>
             );
           })}
         </nav>
 
-        <div className="p-3 border-t border-border">
+        {/* User & Logout */}
+        <div className="p-3 border-t border-border/40 space-y-2">
+          {user && (
+            <div className="flex items-center gap-3 px-2 py-2 rounded-lg bg-secondary/30">
+              <div className="h-9 w-9 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-semibold text-sm shrink-0 shadow-neon-lilac">
+                {userInitial}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-medium text-foreground truncate">{user.email}</p>
+                <p className="text-[10px] text-muted-foreground">Conta ativa</p>
+              </div>
+            </div>
+          )}
           <Button
             variant="ghost"
-            className="w-full justify-start text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+            className="w-full justify-start text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
             onClick={signOut}
           >
             <LogOut className="h-4 w-4 mr-3" />
@@ -87,16 +128,26 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
         </div>
       </aside>
 
-      <main className="flex-1 min-w-0">
-        <header className="sticky top-0 z-30 glass border-b border-border px-4 lg:px-6 h-14 flex items-center">
-          <button onClick={() => setSidebarOpen(true)} className="lg:hidden mr-3">
-            <Menu className="h-5 w-5 text-foreground" />
+      <main className="flex-1 min-w-0 flex flex-col">
+        <header className="sticky top-0 z-30 glass border-b border-border/60 px-4 lg:px-8 h-14 flex items-center gap-3">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="lg:hidden -ml-1 p-2 rounded-md hover:bg-secondary/50 text-foreground transition-colors"
+            aria-label="Abrir menu"
+          >
+            <Menu className="h-5 w-5" />
           </button>
-          <h2 className="font-semibold text-foreground">
-            {navItems.find((i) => i.path === location.pathname)?.label || 'Dashboard'}
-          </h2>
+          <h2 className="font-semibold text-foreground truncate">{currentLabel}</h2>
+          <div className="ml-auto flex items-center gap-2">
+            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-success/10 border border-success/20">
+              <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse-dot" />
+              <span className="text-[11px] font-medium text-success">Online</span>
+            </div>
+          </div>
         </header>
-        <div className="p-6 lg:p-8 animate-fade-in">{children}</div>
+        <div className="p-4 sm:p-6 lg:p-8 animate-fade-in flex-1">
+          <div className="page-container">{children}</div>
+        </div>
       </main>
     </div>
   );

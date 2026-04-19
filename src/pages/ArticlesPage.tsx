@@ -249,113 +249,140 @@ const ArticlesPage = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold neon-text-lilac">Artigos</h1>
-          <p className="text-muted-foreground text-sm mt-1">{articles.length} carregados de {totalCount} no banco</p>
+          <h1 className="text-2xl sm:text-3xl font-bold neon-text-lilac">Artigos</h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            <span className="tabular-nums">{articles.length}</span> carregados de{' '}
+            <span className="tabular-nums text-foreground font-medium">{totalCount}</span> no banco
+          </p>
         </div>
         <div className="flex gap-2 flex-wrap">
           <Button
             onClick={handleCleanupOld}
             disabled={cleaningUp}
             variant="outline"
+            size="sm"
             className="gap-2 border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
             title="Apagar artigos com mais de 3 dias"
           >
             {cleaningUp ? <Loader2 className="h-4 w-4 animate-spin" /> : <Database className="h-4 w-4" />}
-            {totalCount} no banco — Apagar artigos
-          </Button>
-          <Button
-            onClick={handleGenerate}
-            disabled={generating}
-            className="gradient-primary gap-2"
-          >
-            {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-            {generating ? 'Gerando artigos...' : 'Gerar Artigos'}
+            <span className="hidden sm:inline">Apagar antigos</span>
+            <span className="sm:hidden">Limpar</span>
           </Button>
           {articles.filter(a => !a.featured_image_url && a.status !== 'generating').length > 0 && (
             <Button
               onClick={handleRegenerateImages}
               disabled={regeneratingImages}
               variant="outline"
+              size="sm"
               className="gap-2"
             >
               {regeneratingImages ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
-              {regeneratingImages ? 'Gerando imagens...' : `Gerar imagens (${articles.filter(a => !a.featured_image_url && a.status !== 'generating').length})`}
+              <span className="hidden sm:inline">{regeneratingImages ? 'Gerando...' : `Gerar imagens (${articles.filter(a => !a.featured_image_url && a.status !== 'generating').length})`}</span>
+              <span className="sm:hidden">Imgs</span>
             </Button>
           )}
+          <Button
+            onClick={handleGenerate}
+            disabled={generating}
+            className="gradient-primary gap-2 shadow-neon-lilac hover:scale-[1.02] transition-transform"
+          >
+            {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+            {generating ? 'Gerando...' : 'Gerar Artigos'}
+          </Button>
         </div>
       </div>
 
       {articles.length === 0 ? (
         <Card className="glass-card">
           <CardContent className="py-16 text-center">
-            <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">Nenhum artigo encontrado.</p>
+            <div className="mx-auto w-16 h-16 rounded-full gradient-primary/20 flex items-center justify-center mb-4 bg-primary/10">
+              <FileText className="h-8 w-8 text-primary" />
+            </div>
+            <p className="text-foreground font-medium">Nenhum artigo encontrado</p>
             <p className="text-sm text-muted-foreground mt-1">Clique em "Gerar Artigos" acima para começar</p>
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4">
-          {articles.map((article) => (
-            <Card key={article.id} className={`glass-card ${article.status === 'failed' ? 'border-destructive/30' : ''}`}>
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Badge className={statusColors[article.status] || ''} variant="secondary">
-                        {statusLabels[article.status] || article.status}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">{article.category}</span>
-                    </div>
-                    <h3 className="font-semibold text-foreground truncate">{article.title}</h3>
-                    {article.seo_keyword && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Palavra-chave: <span className="text-primary">{article.seo_keyword}</span>
-                      </p>
-                    )}
-                    {article.meta_description && (
-                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{article.meta_description}</p>
+        <div className="grid gap-3 sm:gap-4">
+          {articles.map((article, idx) => (
+            <Card
+              key={article.id}
+              className={`glass-card hover-lift overflow-hidden animate-float-up ${article.status === 'failed' ? 'border-destructive/30' : ''}`}
+              style={{ animationDelay: `${Math.min(idx, 10) * 30}ms` }}
+            >
+              <CardContent className="p-0">
+                <div className="flex items-stretch">
+                  {/* Thumbnail */}
+                  <div className="relative w-20 sm:w-28 shrink-0 bg-secondary/40 overflow-hidden">
+                    {article.featured_image_url ? (
+                      <img
+                        src={article.featured_image_url}
+                        alt={article.title}
+                        className="absolute inset-0 w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/10 to-accent/10">
+                        <FileText className="h-6 w-6 text-muted-foreground/60" />
+                      </div>
                     )}
                   </div>
-                  <div className="flex gap-1 shrink-0">
-                    <Button size="sm" variant="ghost" onClick={() => handlePreview(article.id)} className="text-muted-foreground hover:text-foreground">
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    {article.status === 'failed' && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="text-warning hover:text-warning hover:bg-warning/10"
-                        onClick={() => handleRetry(article.id)}
-                        disabled={retrying === article.id}
-                        title="Tentar novamente"
-                      >
-                        {retrying === article.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <RotateCcw className="h-4 w-4" />
-                        )}
+
+                  {/* Content */}
+                  <div className="flex-1 min-w-0 p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                        <Badge className={`${statusColors[article.status] || ''} text-[10px] sm:text-xs`} variant="secondary">
+                          {statusLabels[article.status] || article.status}
+                        </Badge>
+                        <span className="text-[10px] sm:text-xs text-muted-foreground capitalize">{article.category}</span>
+                      </div>
+                      <h3 className="font-semibold text-foreground text-sm sm:text-base line-clamp-2 sm:truncate leading-snug">{article.title}</h3>
+                      {article.seo_keyword && (
+                        <p className="text-[11px] sm:text-xs text-muted-foreground mt-1 truncate">
+                          🔑 <span className="text-primary">{article.seo_keyword}</span>
+                        </p>
+                      )}
+                      {article.meta_description && (
+                        <p className="hidden sm:block text-xs text-muted-foreground mt-1 line-clamp-1">{article.meta_description}</p>
+                      )}
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex gap-1 shrink-0 self-end sm:self-auto">
+                      <Button size="sm" variant="ghost" onClick={() => handlePreview(article.id)} className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground" title="Visualizar">
+                        <Eye className="h-4 w-4" />
                       </Button>
-                    )}
-                    {(article.status === 'ready' || article.status === 'draft') && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="text-primary hover:text-primary hover:bg-primary/10"
-                        onClick={() => handlePublish(article.id)}
-                        disabled={publishing === article.id}
-                      >
-                        {publishing === article.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Send className="h-4 w-4" />
-                        )}
+                      {article.status === 'failed' && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 w-8 p-0 text-warning hover:text-warning hover:bg-warning/10"
+                          onClick={() => handleRetry(article.id)}
+                          disabled={retrying === article.id}
+                          title="Tentar novamente"
+                        >
+                          {retrying === article.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
+                        </Button>
+                      )}
+                      {(article.status === 'ready' || article.status === 'draft') && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 w-8 p-0 text-primary hover:text-primary hover:bg-primary/10"
+                          onClick={() => handlePublish(article.id)}
+                          disabled={publishing === article.id}
+                          title="Publicar"
+                        >
+                          {publishing === article.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                        </Button>
+                      )}
+                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => handleDelete(article.id)} title="Excluir">
+                        <Trash2 className="h-4 w-4" />
                       </Button>
-                    )}
-                    <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => handleDelete(article.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    </div>
                   </div>
                 </div>
               </CardContent>
