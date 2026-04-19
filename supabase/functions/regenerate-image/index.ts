@@ -9,9 +9,63 @@ const corsHeaders = {
 const IMAGE_PROMPT_TEMPLATE = (title: string, category: string) =>
   `Create a professional, photorealistic news article featured image about: "${title}" (category: ${category}). Requirements: Editorial/journalistic style, visually represents the article topic, NO text overlay, NO watermarks, NO logos, high quality, 16:9 aspect ratio, vibrant colors, professional lighting, suitable as a WordPress featured image.`;
 
-// Picsum Photos — fallback grátis e sempre online (Unsplash Source foi descontinuado)
+// ── Pexels (busca imagem real relacionada ao tema) ──────────────────────
+
+const PEXELS_CATEGORY_QUERY: Record<string, string> = {
+  esportes: "sports stadium",
+  politica: "government building brazil",
+  policia: "police car street",
+  saude: "health wellness",
+  celebridades: "red carpet event",
+  financas: "finance business chart",
+  tecnologia: "technology innovation",
+  entretenimento: "concert stage",
+};
+
+function extractKeywords(title: string, max = 4): string[] {
+  const stopwords = new Set(["a","o","as","os","de","da","do","das","dos","e","em","no","na","nos","nas","um","uma","para","por","com","que","se","ao","aos","à","às","sobre","pelo","pela","mais","como","ser","seu","sua","seus","suas","the","of","and","to","in","for","on","with","is","are"]);
+  return title
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter((w) => w.length > 3 && !stopwords.has(w))
+    .slice(0, max);
+}
+
+async function searchPexelsImage(apiKey: string, title: string, category: string): Promise<string | null> {
+  const keywords = extractKeywords(title);
+  const categoryQuery = PEXELS_CATEGORY_QUERY[category] || category;
+  const queries = [
+    keywords.length > 0 ? keywords.join(" ") : categoryQuery,
+    categoryQuery,
+  ];
+  for (const query of queries) {
+    try {
+      const url = `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=15&orientation=landscape&size=large`;
+      const resp = await fetch(url, { headers: { Authorization: apiKey } });
+      if (!resp.ok) {
+        console.warn(`[Pexels] query "${query}" failed: ${resp.status}`);
+        continue;
+      }
+      const data = await resp.json();
+      const photos = data.photos || [];
+      if (photos.length === 0) continue;
+      const picked = photos[Math.floor(Math.random() * photos.length)];
+      const imageUrl = picked?.src?.large2x || picked?.src?.large || picked?.src?.original;
+      if (imageUrl) {
+        console.log(`[Pexels] Found image for "${query}" (photo ${picked.id})`);
+        return imageUrl;
+      }
+    } catch (err) {
+      console.warn(`[Pexels] query "${query}" threw:`, err);
+    }
+  }
+  return null;
+}
+
+// Picsum Photos — fallback quando Pexels falha
 function getFallbackImageUrl(title: string, _category: string): string {
-  // Seed determinístico baseado no título => mesma imagem para o mesmo artigo
   const seed = Math.abs(title.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0)) % 1000;
   return `https://picsum.photos/seed/${seed}/1600/900`;
 }
