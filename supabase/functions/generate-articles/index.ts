@@ -668,7 +668,7 @@ serve(async (req) => {
 
     if (generatedArticles.length === 0) {
       const errorMessage = allProvidersExhausted
-        ? "Nenhum artigo gerado: todos os provedores de IA estão sem saldo/quota. Adicione créditos no Lovable AI (Settings → Workspace → Usage) ou configure outra chave de IA nas Configurações."
+        ? "Nenhum artigo gerado: Gemini/OpenAI/Groq estão sem quota. Adicione créditos no Gemini (AI Studio) ou aguarde a renovação diária do Groq."
         : failureReasons[0]?.message || "Nenhum artigo pôde ser gerado.";
 
       // Sempre retorna 200 com fallback:true para evitar que o cliente trate como erro fatal (tela em branco).
