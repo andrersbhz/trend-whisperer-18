@@ -67,8 +67,12 @@ serve(async (req) => {
 
     if (pages.length === 0) {
       return new Response(
-        JSON.stringify({ success: false, error: "Nenhuma página do Facebook configurada" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({
+          success: true,
+          pages: [],
+          notice: "Nenhuma página do Facebook configurada. Conecte uma página em Configurações.",
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
