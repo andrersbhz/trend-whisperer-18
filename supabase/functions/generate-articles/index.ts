@@ -498,6 +498,7 @@ serve(async (req) => {
     }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const PEXELS_API_KEY = Deno.env.get("PEXELS_API_KEY");
 
     const providers: ProviderConfig[] = [];
     // Ordem (preferência do usuário): Gemini PRIMEIRO → OpenAI → Groq → Lovable AI
@@ -619,21 +620,15 @@ serve(async (req) => {
           continue;
         }
 
-        // CADEIA DE IMAGEM: tenta IA na ordem (Lovable Gateway → Gemini direto → DALL-E) e cai para Picsum se tudo falhar.
-        // Lovable Gateway é primeiro porque é gratuito dentro do crédito Lovable e tem o Nano Banana 2.
+        // CADEIA DE IMAGEM: Pexels (relevante e grátis) → Picsum (placeholder).
+        // IA de imagem foi removida porque gerava imagens irrelevantes ou bloqueadas por content policy.
         let featuredImageUrl: string | null = null;
-        if (LOVABLE_API_KEY) {
-          featuredImageUrl = await generateImageGateway(LOVABLE_API_KEY, parsed.title, topic.category);
-        }
-        if (!featuredImageUrl && geminiApiKey) {
-          featuredImageUrl = await generateImageGemini(geminiApiKey, parsed.title, topic.category);
-        }
-        if (!featuredImageUrl && openaiApiKey) {
-          featuredImageUrl = await generateImageDallE(openaiApiKey, parsed.title, topic.category);
+        if (PEXELS_API_KEY) {
+          featuredImageUrl = await searchPexelsImage(PEXELS_API_KEY, parsed.title, topic.category);
         }
         if (!featuredImageUrl) {
-          console.warn(`[Image] All AI providers failed for "${parsed.title}", using Picsum fallback`);
-          featuredImageUrl = getUnsplashImageUrl(parsed.title, topic.category);
+          console.warn(`[Image] Pexels failed for "${parsed.title}", using Picsum placeholder`);
+          featuredImageUrl = getFallbackImageUrl(parsed.title, topic.category);
         }
 
         const { data: article, error: insertError } = await supabase.from("articles").insert({
