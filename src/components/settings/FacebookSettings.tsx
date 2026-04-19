@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
@@ -44,7 +44,6 @@ interface Props {
 const FacebookSettings = ({ settings, onChange }: Props) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const externalSettingsUrl = 'https://forex.a3solucoesdigitais.com/settings';
   const [accounts, setAccounts] = useState<FacebookAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
@@ -56,6 +55,7 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
   const [newAccount, setNewAccount] = useState({ page_name: '', page_id: '', access_token: '', instagram_account_id: '' });
   const [saving, setSaving] = useState(false);
   const [oauthLoading, setOauthLoading] = useState(false);
+  const autoOauthRequestedRef = useRef(false);
 
   const fetchAccounts = async () => {
     if (!user) return;
@@ -72,7 +72,6 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
     fetchAccounts();
   }, [user]);
 
-  // Listen for OAuth popup completion
   useEffect(() => {
     const onMessage = (e: MessageEvent) => {
       if (e.data?.type === 'fb-oauth-done') {
@@ -89,60 +88,57 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
     return () => window.removeEventListener('message', onMessage);
   }, [user]);
 
-  // Detecta se a app está rodando dentro de um iframe (preview do Lovable).
   const isInIframe = (() => {
     try { return window.self !== window.top; } catch { return true; }
   })();
-  const isPreviewHost = typeof window !== 'undefined' && window.location.hostname.includes('id-preview--');
-  const shouldOpenOutsidePreview = isInIframe || isPreviewHost;
+  const shouldOpenOutsidePreview = isInIframe;
+  const shouldAutoStartOauth = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('facebook_oauth') === '1';
+  const topLevelSettingsUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}/settings?facebook_oauth=1`
+    : '/settings?facebook_oauth=1';
 
-  const handleOAuthConnect = async () => {
+  const requestFacebookAuthUrl = async (returnUrl: string) => {
+    const { data, error } = await supabase.functions.invoke('facebook-oauth-start', {
+      body: { returnUrl },
+    });
+    if (error) throw error;
+    if (!data?.authUrl) throw new Error('URL de autorização não retornada');
+    return data.authUrl as string;
+  };
+
+  useEffect(() => {
+    if (!user || !shouldAutoStartOauth || shouldOpenOutsidePreview || autoOauthRequestedRef.current) return;
+
+    autoOauthRequestedRef.current = true;
     setOauthLoading(true);
 
-    // Abre o popup IMEDIATAMENTE (síncrono ao clique) para evitar bloqueio do navegador.
-    // Depois navegamos o popup para a authUrl quando ela chegar do backend.
-    const popup = window.open(
-      'about:blank',
-      'fb-oauth',
-      'width=600,height=720,menubar=no,toolbar=no,location=yes,status=no'
-    );
-
-    try {
-      // returnUrl serve apenas como fallback caso o popup seja fechado e o callback
-      // precise redirecionar via top-level. No fluxo normal, o popup notifica via postMessage.
-      const returnUrl = shouldOpenOutsidePreview
-        ? externalSettingsUrl
-        : `${window.location.origin}/settings`;
-
-      const { data, error } = await supabase.functions.invoke('facebook-oauth-start', {
-        body: { returnUrl },
-      });
-      if (error) throw error;
-      if (!data?.authUrl) throw new Error('URL de autorização não retornada');
-
-      if (!popup || popup.closed) {
-        // Popup bloqueado pelo navegador — fallback para nova aba
-        toast({
-          title: 'Permita popups',
-          description: 'Seu navegador bloqueou o popup. Abrindo em nova aba…',
-        });
-        window.open(data.authUrl, '_blank', 'noopener,noreferrer');
+    requestFacebookAuthUrl(`${window.location.origin}/settings`)
+      .then((authUrl) => {
+        window.history.replaceState({}, '', '/settings');
+        window.location.assign(authUrl);
+      })
+      .catch((e: any) => {
+        window.history.replaceState({}, '', '/settings');
+        toast({ title: 'Erro', description: e.message, variant: 'destructive' });
         setOauthLoading(false);
-        return;
-      }
+      });
+  }, [user, shouldAutoStartOauth, shouldOpenOutsidePreview, toast]);
 
-      // Aponta o popup já aberto para o login do Facebook (usa a sessão logada do navegador)
-      popup.location.href = data.authUrl;
+  const handleOAuthConnect = async () => {
+    if (shouldOpenOutsidePreview) {
+      toast({
+        title: 'Abrindo fora do preview',
+        description: 'O login do Facebook será iniciado em uma nova aba.',
+      });
+      window.open(topLevelSettingsUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
 
-      // Monitora se o usuário fechou o popup sem concluir
-      const checkClosed = setInterval(() => {
-        if (popup.closed) {
-          clearInterval(checkClosed);
-          setOauthLoading(false);
-        }
-      }, 800);
+    setOauthLoading(true);
+    try {
+      const authUrl = await requestFacebookAuthUrl(`${window.location.origin}/settings`);
+      window.location.assign(authUrl);
     } catch (e: any) {
-      if (popup && !popup.closed) popup.close();
       toast({ title: 'Erro', description: e.message, variant: 'destructive' });
       setOauthLoading(false);
     }
