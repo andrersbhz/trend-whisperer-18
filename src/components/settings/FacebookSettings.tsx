@@ -222,6 +222,17 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
       }}
     >
       <div className="space-y-3">
+        {/* Aviso quando dentro do iframe do preview */}
+        {isInIframe && (
+          <div className="p-3 rounded-lg border border-warning/40 bg-warning/10 text-xs text-foreground">
+            <p className="font-medium mb-1">⚠️ O Facebook bloqueia login dentro do preview do Lovable.</p>
+            <p className="text-muted-foreground">
+              Clique em <strong>Conectar</strong> para abrir a app publicada em uma nova aba e completar o login lá.
+              Depois volte aqui — suas páginas aparecerão automaticamente.
+            </p>
+          </div>
+        )}
+
         {/* Primary OAuth action — always visible at top */}
         <div className="p-3 rounded-lg border border-primary/40 bg-gradient-to-br from-primary/10 to-accent/10">
           <div className="flex items-start gap-3">
