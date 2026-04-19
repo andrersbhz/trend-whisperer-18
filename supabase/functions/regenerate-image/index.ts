@@ -206,7 +206,7 @@ serve(async (req) => {
       let imageUrl: string | null = null;
       const providerErrors: string[] = [];
 
-      // Cadeia: Gemini (chave usuário) → OpenAI DALL-E (chave usuário) → Lovable AI Gateway
+      // Cadeia: Gemini (chave usuário) → OpenAI DALL-E (chave usuário)
       if (geminiApiKey) {
         try { imageUrl = await generateImageGemini(geminiApiKey, article.title, article.category); }
         catch (error) { providerErrors.push(`Gemini: ${getErrorMessage(error)}`); }
@@ -214,10 +214,6 @@ serve(async (req) => {
       if (!imageUrl && openaiApiKey) {
         try { imageUrl = await generateImageDallE(openaiApiKey, article.title, article.category); }
         catch (error) { providerErrors.push(`OpenAI: ${getErrorMessage(error)}`); }
-      }
-      if (!imageUrl && LOVABLE_API_KEY) {
-        try { imageUrl = await generateImageGateway(LOVABLE_API_KEY, article.title, article.category); }
-        catch (error) { providerErrors.push(`Lovable AI: ${getErrorMessage(error)}`); }
       }
 
       if (!imageUrl) {
