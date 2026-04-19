@@ -12,9 +12,10 @@ interface Props {
   settings: UserSettings;
   onChange: (partial: Partial<UserSettings>) => void;
   hasOpenaiKey?: boolean;
+  onDisconnect?: () => void | Promise<void>;
 }
 
-const OpenAISettings = forwardRef<HTMLDivElement, Props>(({ settings, onChange, hasOpenaiKey }, ref) => {
+const OpenAISettings = forwardRef<HTMLDivElement, Props>(({ settings, onChange, hasOpenaiKey, onDisconnect }, ref) => {
   const connected = !!(settings.openai_api_key || hasOpenaiKey);
   const { toast } = useToast();
   const [testing, setTesting] = useState(false);
