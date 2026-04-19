@@ -323,36 +323,6 @@ async function generateImageDallE(apiKey: string, title: string, category: strin
   return null;
 }
 
-async function generateImageGateway(lovableApiKey: string, title: string, category: string): Promise<string | null> {
-  const models = ["google/gemini-3.1-flash-image-preview", "google/gemini-2.5-flash-image"];
-  const prompt = buildSafeImagePrompt(title, category);
-  for (const model of models) {
-    try {
-      const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${lovableApiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model,
-          messages: [{ role: "user", content: prompt }],
-          modalities: ["image", "text"],
-        }),
-      });
-      if (!resp.ok) {
-        console.warn(`[Image Gateway] ${model} returned ${resp.status}`);
-        continue;
-      }
-      const data = await resp.json();
-      const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-      if (imageUrl) {
-        console.log(`[Image Gateway] Generated via ${model}`);
-        return imageUrl;
-      }
-    } catch (err) {
-      console.warn(`[Image Gateway] ${model} threw:`, err);
-    }
-  }
-  return null;
-}
 
 // ── System + User prompts ─────────────────────────────────────────────────
 
@@ -430,7 +400,6 @@ serve(async (req) => {
       if (decrypted && typeof decrypted === "string" && decrypted.length > 5) groqApiKey = decrypted;
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
     const providers: ProviderConfig[] = [];
     // Ordem (preferência do usuário): Gemini PRIMEIRO → OpenAI → Groq. Lovable AI DESABILITADO para geração de artigos.
@@ -560,10 +529,6 @@ serve(async (req) => {
         if (!featuredImageUrl && openaiApiKey) {
           try { featuredImageUrl = await generateImageDallE(openaiApiKey, parsed.title, topic.category); }
           catch (imgErr) { console.warn(`[Image] DALL-E falhou para "${parsed.title}":`, imgErr); }
-        }
-        if (!featuredImageUrl && LOVABLE_API_KEY) {
-          try { featuredImageUrl = await generateImageGateway(LOVABLE_API_KEY, parsed.title, topic.category); }
-          catch (imgErr) { console.warn(`[Image] Lovable AI Gateway falhou para "${parsed.title}":`, imgErr); }
         }
         if (!featuredImageUrl) {
           console.warn(`[Image] Nenhum provedor gerou imagem para "${parsed.title}" — artigo criado sem imagem`);
