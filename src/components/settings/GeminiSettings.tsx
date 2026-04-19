@@ -55,7 +55,7 @@ const GeminiSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChange, 
       description="Use sua própria chave do Google Gemini para gerar artigos sem gastar créditos extras"
       connected={connected}
       connectedInfo={connected ? 'Chave Gemini configurada ✓' : undefined}
-      onDisconnect={() => { onChange({ gemini_api_key: '' }); setTestResult(null); }}
+      onDisconnect={async () => { await onDisconnect?.(); onChange({ gemini_api_key: '' }); setTestResult(null); }}
     >
       <div className="space-y-3">
         <div className="p-2.5 rounded-lg bg-accent/30 border border-accent/50 text-xs text-muted-foreground">
