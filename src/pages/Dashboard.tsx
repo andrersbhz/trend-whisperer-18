@@ -200,6 +200,11 @@ const Dashboard = () => {
         ))}
       </div>
 
+      {/* === ANALYTICS COMPLETO (logo abaixo dos cards) === */}
+      <div className="pt-2">
+        <AnalyticsPage />
+      </div>
+
       <AIProvidersPanel />
 
       {/* Writer Profile Prompt */}
@@ -294,10 +299,6 @@ const Dashboard = () => {
         </CardContent>
       </Card>
 
-      {/* === ANALYTICS COMPLETO === */}
-      <div className="pt-4 border-t border-border/40">
-        <AnalyticsPage />
-      </div>
     </div>
   );
 };
