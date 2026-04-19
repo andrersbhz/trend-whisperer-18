@@ -19,36 +19,23 @@ const TOP_PORTALS = [
   "Correio Braziliense (correiobraziliense.com.br)",
 ];
 
+// Evergreen restrito a Saúde/Bem-estar e Finanças (decisão do usuário)
 const EVERGREEN_TOPICS: Record<string, string[]> = {
-  esportes: [
-    "Dicas para começar a correr: guia completo para iniciantes",
-    "Melhores exercícios para emagrecer com saúde",
-    "Como montar um treino funcional em casa",
-  ],
-  politica: [
-    "Como funciona o sistema eleitoral brasileiro",
-    "Entenda a divisão dos três poderes no Brasil",
-    "Direitos e deveres do cidadão brasileiro",
-  ],
-  policia: [
-    "Como registrar um boletim de ocorrência online",
-    "Dicas de segurança para evitar golpes digitais",
-    "Como funciona o sistema penitenciário brasileiro",
-  ],
   saude: [
     "Alimentos que fortalecem a imunidade naturalmente",
     "Como melhorar a qualidade do sono: guia completo",
     "Benefícios da meditação para saúde mental",
-  ],
-  celebridades: [
-    "Os maiores artistas brasileiros de todos os tempos",
-    "Histórias de superação de celebridades brasileiras",
-    "Influenciadores digitais que mudaram o mercado no Brasil",
+    "Exercícios simples para fazer em casa todos os dias",
+    "Dicas de bem-estar para o dia a dia corrido",
+    "Como reduzir o estresse de forma natural",
   ],
   financas: [
     "Como começar a investir com pouco dinheiro",
     "Guia completo de educação financeira para iniciantes",
     "Melhores investimentos de renda fixa no Brasil",
+    "Como sair das dívidas em 6 meses: passo a passo",
+    "Reserva de emergência: quanto guardar e onde investir",
+    "Planejamento financeiro para a aposentadoria",
   ],
 };
 
@@ -221,7 +208,7 @@ serve(async (req) => {
       if (d && typeof d === "string" && d.length > 5) groqKey = d;
     }
 
-    // Build provider chain: Gemini → OpenAI → Groq → Lovable AI
+    // Build provider chain: Gemini PRIMEIRO (preferência do usuário) → OpenAI → Groq → Lovable AI
     const providers: TrendsProvider[] = [];
     if (geminiKey) {
       const key = geminiKey;
@@ -310,16 +297,15 @@ serve(async (req) => {
       await new Promise((r) => setTimeout(r, 1500));
     }
 
-    // 2. Add evergreen topics (1 per category, avoiding duplicates)
-    for (const category of categories) {
-      const evTopics = EVERGREEN_TOPICS[category] || [];
-      if (evTopics.length > 0) {
-        const available = evTopics.filter((t) => !existingSet.has(t.toLowerCase().trim()));
-        if (available.length > 0) {
-          const picked = available[Math.floor(Math.random() * available.length)];
-          allTopics.push({ topic: picked, category, search_volume: "evergreen" });
-          existingSet.add(picked.toLowerCase().trim());
-        }
+    // 2. Add evergreen topics (apenas Saúde/Bem-estar e Finanças, 2 por categoria, sem duplicar)
+    for (const category of Object.keys(EVERGREEN_TOPICS)) {
+      const evTopics = EVERGREEN_TOPICS[category];
+      const available = evTopics.filter((t) => !existingSet.has(t.toLowerCase().trim()));
+      // shuffle and pick up to 2
+      const shuffled = available.sort(() => Math.random() - 0.5).slice(0, 2);
+      for (const picked of shuffled) {
+        allTopics.push({ topic: picked, category, search_volume: "evergreen" });
+        existingSet.add(picked.toLowerCase().trim());
       }
     }
 

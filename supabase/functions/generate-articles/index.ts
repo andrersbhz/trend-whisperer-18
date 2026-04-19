@@ -241,22 +241,20 @@ async function callWithFallback(providers: ProviderConfig[], systemPrompt: strin
   throw new Error(`Todos os provedores de IA falharam:\n${errors.join("\n")}`);
 }
 
-// ── Image generation ─────────────────────────────────────────────────────
+// ── Image fetching (Pexels primeiro, IA como fallback) ──────────────────
 
-// Unsplash Source — totalmente gratuito, sem chave de API.
-// Retorna sempre uma imagem pública relevante baseada em palavras-chave.
-const UNSPLASH_CATEGORY_KEYWORDS: Record<string, string> = {
-  esportes: "sports,stadium,football",
-  politica: "government,politics,parliament",
-  policia: "city,street,night",
-  saude: "health,hospital,medical",
-  celebridades: "celebrity,redcarpet,glamour",
-  financas: "finance,business,stockmarket",
-  tecnologia: "technology,computer,innovation",
-  entretenimento: "concert,stage,entertainment",
+const PEXELS_CATEGORY_QUERY: Record<string, string> = {
+  esportes: "sports stadium",
+  politica: "government building brazil",
+  policia: "police car street",
+  saude: "health wellness",
+  celebridades: "red carpet event",
+  financas: "finance business chart",
+  tecnologia: "technology innovation",
+  entretenimento: "concert stage",
 };
 
-function extractKeywords(title: string, max = 3): string[] {
+function extractKeywords(title: string, max = 4): string[] {
   const stopwords = new Set(["a","o","as","os","de","da","do","das","dos","e","em","no","na","nos","nas","um","uma","para","por","com","que","se","ao","aos","à","às","sobre","pelo","pela","mais","como","ser","seu","sua","seus","suas","the","of","and","to","in","for","on","with","is","are"]);
   return title
     .toLowerCase()
@@ -267,11 +265,49 @@ function extractKeywords(title: string, max = 3): string[] {
     .slice(0, max);
 }
 
-function getUnsplashImageUrl(title: string, _category: string): string {
-  // Picsum Photos — Unsplash Source foi descontinuado e retorna 503
-  // Seed determinístico baseado no título => mesma imagem para o mesmo artigo
+async function searchPexelsImage(apiKey: string, title: string, category: string): Promise<string | null> {
+  const keywords = extractKeywords(title);
+  const categoryQuery = PEXELS_CATEGORY_QUERY[category] || category;
+  // Try keyword-rich query first, then fall back to category-only
+  const queries = [
+    keywords.length > 0 ? keywords.join(" ") : categoryQuery,
+    categoryQuery,
+  ];
+
+  for (const query of queries) {
+    try {
+      const url = `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=15&orientation=landscape&size=large`;
+      const resp = await fetch(url, { headers: { Authorization: apiKey } });
+      if (!resp.ok) {
+        console.warn(`[Pexels] query "${query}" failed: ${resp.status}`);
+        continue;
+      }
+      const data = await resp.json();
+      const photos = data.photos || [];
+      if (photos.length === 0) continue;
+      // Pick a random photo from results for variety
+      const picked = photos[Math.floor(Math.random() * photos.length)];
+      const imageUrl = picked?.src?.large2x || picked?.src?.large || picked?.src?.original;
+      if (imageUrl) {
+        console.log(`[Pexels] Found image for "${query}" (photo ${picked.id})`);
+        return imageUrl;
+      }
+    } catch (err) {
+      console.warn(`[Pexels] query "${query}" threw:`, err);
+    }
+  }
+  return null;
+}
+
+function getFallbackImageUrl(title: string, _category: string): string {
+  // Picsum: placeholder determinístico só se Pexels falhar completamente
   const seed = Math.abs(title.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0)) % 1000;
   return `https://picsum.photos/seed/${seed}/1600/900`;
+}
+
+// Mantém a função antiga para compatibilidade (não usada quando Pexels funciona)
+function getUnsplashImageUrl(title: string, category: string): string {
+  return getFallbackImageUrl(title, category);
 }
 
 const IMAGE_PROMPT_TEMPLATE = (title: string, category: string) =>
@@ -462,16 +498,17 @@ serve(async (req) => {
     }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const PEXELS_API_KEY = Deno.env.get("PEXELS_API_KEY");
 
     const providers: ProviderConfig[] = [];
-    // Ordem otimizada para CUSTO ZERO: Groq (grátis 14.4k req/dia) → Gemini (cota free generosa) → OpenAI → Lovable AI
-    if (groqApiKey) providers.push({ name: "Groq", call: (s, u) => callGroqDirect(groqApiKey!, s, u) });
+    // Ordem (preferência do usuário): Gemini PRIMEIRO → OpenAI → Groq → Lovable AI
     if (geminiApiKey) providers.push({ name: "Gemini", call: (s, u) => callGeminiDirect(geminiApiKey!, s, u) });
     if (openaiApiKey) providers.push({ name: "OpenAI", call: (s, u) => callOpenAIDirect(openaiApiKey!, s, u) });
+    if (groqApiKey) providers.push({ name: "Groq", call: (s, u) => callGroqDirect(groqApiKey!, s, u) });
     if (LOVABLE_API_KEY) providers.push({ name: "Lovable AI", call: (s, u) => callLovableGateway(LOVABLE_API_KEY!, s, u) });
 
     if (providers.length === 0) {
-      throw new Error("Nenhuma chave de IA configurada. Recomendamos Groq (grátis em https://console.groq.com/keys) ou Gemini. Configure em Configurações.");
+      throw new Error("Nenhuma chave de IA configurada. Configure sua chave Gemini em Configurações.");
     }
 
     console.log(`[Pipeline] Available AI providers: ${providers.map(p => p.name).join(" → ")}`);
@@ -583,21 +620,15 @@ serve(async (req) => {
           continue;
         }
 
-        // CADEIA DE IMAGEM: tenta IA na ordem (Lovable Gateway → Gemini direto → DALL-E) e cai para Picsum se tudo falhar.
-        // Lovable Gateway é primeiro porque é gratuito dentro do crédito Lovable e tem o Nano Banana 2.
+        // CADEIA DE IMAGEM: Pexels (relevante e grátis) → Picsum (placeholder).
+        // IA de imagem foi removida porque gerava imagens irrelevantes ou bloqueadas por content policy.
         let featuredImageUrl: string | null = null;
-        if (LOVABLE_API_KEY) {
-          featuredImageUrl = await generateImageGateway(LOVABLE_API_KEY, parsed.title, topic.category);
-        }
-        if (!featuredImageUrl && geminiApiKey) {
-          featuredImageUrl = await generateImageGemini(geminiApiKey, parsed.title, topic.category);
-        }
-        if (!featuredImageUrl && openaiApiKey) {
-          featuredImageUrl = await generateImageDallE(openaiApiKey, parsed.title, topic.category);
+        if (PEXELS_API_KEY) {
+          featuredImageUrl = await searchPexelsImage(PEXELS_API_KEY, parsed.title, topic.category);
         }
         if (!featuredImageUrl) {
-          console.warn(`[Image] All AI providers failed for "${parsed.title}", using Picsum fallback`);
-          featuredImageUrl = getUnsplashImageUrl(parsed.title, topic.category);
+          console.warn(`[Image] Pexels failed for "${parsed.title}", using Picsum placeholder`);
+          featuredImageUrl = getFallbackImageUrl(parsed.title, topic.category);
         }
 
         const { data: article, error: insertError } = await supabase.from("articles").insert({
