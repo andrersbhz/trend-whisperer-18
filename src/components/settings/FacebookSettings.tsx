@@ -200,6 +200,32 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
       }}
     >
       <div className="space-y-3">
+        {/* Primary OAuth action — always visible at top */}
+        <div className="p-3 rounded-lg border border-primary/40 bg-gradient-to-br from-primary/10 to-accent/10">
+          <div className="flex items-start gap-3">
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground">Login com Facebook (recomendado)</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Conecta automaticamente todas as páginas do seu Business Manager. Tokens válidos por 60 dias.
+              </p>
+            </div>
+            <Button
+              size="sm"
+              onClick={handleOAuthConnect}
+              disabled={oauthLoading}
+              className="gradient-primary shrink-0"
+            >
+              {oauthLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : accounts.length > 0 ? (
+                <><RefreshCw className="h-4 w-4 mr-1.5" />Reconectar</>
+              ) : (
+                <><LogIn className="h-4 w-4 mr-1.5" />Conectar</>
+              )}
+            </Button>
+          </div>
+        </div>
+
         {loading ? (
           <div className="flex justify-center py-4">
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
