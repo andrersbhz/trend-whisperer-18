@@ -24,6 +24,7 @@ const TrendsPage = () => {
           .from('trending_topics')
           .select('*')
           .eq('user_id', user.id)
+          .eq('used', false)
           .order('fetched_at', { ascending: false })
           .limit(50),
       );
