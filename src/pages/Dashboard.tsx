@@ -287,21 +287,25 @@ const Dashboard = () => {
               Nenhum artigo ainda. Clique em "Gerar Artigos" para começar!
             </p>
           ) : (
-            <div className="space-y-3">
-              {recentArticles.map((article) => (
-                <div key={article.id} className="flex items-center justify-between p-[25px] rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors">
+            <div className="space-y-2.5">
+              {recentArticles.map((article, idx) => (
+                <div
+                  key={article.id}
+                  className="flex items-center justify-between gap-3 p-3 sm:p-4 rounded-lg bg-secondary/30 hover:bg-secondary/60 hover:translate-x-1 transition-all duration-200 animate-float-up"
+                  style={{ animationDelay: `${idx * 40}ms` }}
+                >
                   <div className="min-w-0 flex-1">
-                    <p className="font-medium text-foreground truncate">{article.title}</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-xs text-muted-foreground">
+                    <p className="font-medium text-foreground text-sm sm:text-base truncate">{article.title}</p>
+                    <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                      <span className="text-[11px] sm:text-xs text-muted-foreground">
                         {categoryLabels[article.category] || article.category}
                       </span>
                       {article.seo_keyword && (
-                        <span className="text-xs text-muted-foreground">• {article.seo_keyword}</span>
+                        <span className="text-[11px] sm:text-xs text-muted-foreground truncate">• {article.seo_keyword}</span>
                       )}
                     </div>
                   </div>
-                  <Badge className={statusColors[article.status] || ''} variant="secondary">
+                  <Badge className={`${statusColors[article.status] || ''} shrink-0 text-[10px] sm:text-xs`} variant="secondary">
                     {article.status}
                   </Badge>
                 </div>
