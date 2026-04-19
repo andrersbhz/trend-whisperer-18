@@ -287,10 +287,12 @@ serve(async (req) => {
     let unsplashFallbacks = 0;
     const details: Array<{ articleId: string; title: string; reason: string }> = [];
 
-    // source.unsplash.com foi descontinuado e retorna 503 → considerar quebrada
+    const PEXELS_API_KEY = Deno.env.get("PEXELS_API_KEY");
+
+    // Considera quebrada: source.unsplash.com (descontinuado) ou picsum (placeholder genérico)
     const isBrokenImageUrl = (url: string | null | undefined): boolean => {
       if (!url) return true;
-      return /source\.unsplash\.com/i.test(url);
+      return /source\.unsplash\.com|picsum\.photos/i.test(url);
     };
 
     for (const article of articles) {
@@ -302,9 +304,18 @@ serve(async (req) => {
       let imageUrl: string | null = null;
       const providerErrors: string[] = [];
 
-      // Try AI providers only if useAi=true
-      if (useAi) {
-        if (openaiApiKey) {
+      // 1. Pexels primeiro (relevante e grátis)
+      if (PEXELS_API_KEY) {
+        imageUrl = await searchPexelsImage(PEXELS_API_KEY, article.title, article.category);
+      }
+
+      // 2. IA opcional (só se useAi=true e Pexels falhou)
+      if (!imageUrl && useAi) {
+        if (geminiApiKey) {
+          try { imageUrl = await generateImageGemini(geminiApiKey, article.title, article.category); }
+          catch (error) { providerErrors.push(getErrorMessage(error)); }
+        }
+        if (!imageUrl && openaiApiKey) {
           try { imageUrl = await generateImageDallE(openaiApiKey, article.title, article.category); }
           catch (error) { providerErrors.push(getErrorMessage(error)); }
         }
@@ -312,18 +323,14 @@ serve(async (req) => {
           try { imageUrl = await generateImageGateway(LOVABLE_API_KEY, article.title, article.category); }
           catch (error) { providerErrors.push(getErrorMessage(error)); }
         }
-        if (!imageUrl && geminiApiKey) {
-          try { imageUrl = await generateImageGemini(geminiApiKey, article.title, article.category); }
-          catch (error) { providerErrors.push(getErrorMessage(error)); }
-        }
       }
 
-      // Fallback grátis: Picsum Photos (sempre funciona)
+      // 3. Fallback final: Picsum
       if (!imageUrl) {
         imageUrl = getFallbackImageUrl(article.title, article.category);
         unsplashFallbacks += 1;
         if (providerErrors.length > 0) {
-          console.warn(`Using Picsum fallback for "${article.title}" — AI errors: ${providerErrors[0].substring(0, 150)}`);
+          console.warn(`Using Picsum fallback for "${article.title}" — errors: ${providerErrors[0].substring(0, 150)}`);
         }
       }
 
