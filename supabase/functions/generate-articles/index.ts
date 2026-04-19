@@ -323,36 +323,6 @@ async function generateImageDallE(apiKey: string, title: string, category: strin
   return null;
 }
 
-async function generateImageGateway(lovableApiKey: string, title: string, category: string): Promise<string | null> {
-  const models = ["google/gemini-3.1-flash-image-preview", "google/gemini-2.5-flash-image"];
-  const prompt = buildSafeImagePrompt(title, category);
-  for (const model of models) {
-    try {
-      const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${lovableApiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model,
-          messages: [{ role: "user", content: prompt }],
-          modalities: ["image", "text"],
-        }),
-      });
-      if (!resp.ok) {
-        console.warn(`[Image Gateway] ${model} returned ${resp.status}`);
-        continue;
-      }
-      const data = await resp.json();
-      const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-      if (imageUrl) {
-        console.log(`[Image Gateway] Generated via ${model}`);
-        return imageUrl;
-      }
-    } catch (err) {
-      console.warn(`[Image Gateway] ${model} threw:`, err);
-    }
-  }
-  return null;
-}
 
 // ── System + User prompts ─────────────────────────────────────────────────
 
