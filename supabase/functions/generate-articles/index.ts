@@ -431,7 +431,6 @@ serve(async (req) => {
     }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    const PEXELS_API_KEY = Deno.env.get("PEXELS_API_KEY");
 
     const providers: ProviderConfig[] = [];
     // Ordem (preferência do usuário): Gemini PRIMEIRO → OpenAI → Groq. Lovable AI DESABILITADO para geração de artigos.
