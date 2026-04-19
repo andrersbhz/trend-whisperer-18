@@ -143,45 +143,6 @@ async function generateImageDallE(apiKey: string, title: string, category: strin
   }, 1, 2000);
 }
 
-async function generateImageGateway(lovableApiKey: string, title: string, category: string): Promise<string> {
-  const models = ["google/gemini-3.1-flash-image-preview", "google/gemini-2.5-flash-image"];
-  const errors: string[] = [];
-
-  for (const model of models) {
-    try {
-      return await withRetry(async () => {
-        const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${lovableApiKey}`, "Content-Type": "application/json" },
-          body: JSON.stringify({
-            model,
-            messages: [{ role: "user", content: IMAGE_PROMPT_TEMPLATE(title, category) }],
-            modalities: ["image", "text"],
-          }),
-        });
-
-        if (!resp.ok) {
-          throw createProviderError(`Lovable AI image ${model}`, resp.status, await readResponseDetails(resp));
-        }
-
-        const data = await resp.json();
-        const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-
-        if (!imageUrl) {
-          throw new ProviderError(`Lovable AI image ${model} não retornou uma imagem válida.`, 500, false, false);
-        }
-
-        return imageUrl;
-      }, 1, 2000);
-    } catch (error) {
-      const message = getErrorMessage(error);
-      console.warn(message);
-      errors.push(message);
-    }
-  }
-
-  throw new ProviderError(errors.join(" | ") || "Lovable AI Gateway falhou", 500, false, errors.some((message) => isBillingIssue(0, message)));
-}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
