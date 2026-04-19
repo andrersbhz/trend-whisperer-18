@@ -12,9 +12,10 @@ interface Props {
   settings: UserSettings;
   onChange: (partial: Partial<UserSettings>) => void;
   hasGroqKey?: boolean;
+  onDisconnect?: () => void | Promise<void>;
 }
 
-const GroqSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChange, hasGroqKey }, ref) => {
+const GroqSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChange, hasGroqKey, onDisconnect }, ref) => {
   const connected = !!(settings.groq_api_key || hasGroqKey);
   const { toast } = useToast();
   const [testing, setTesting] = useState(false);
