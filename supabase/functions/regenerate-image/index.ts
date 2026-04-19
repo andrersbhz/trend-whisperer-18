@@ -195,7 +195,7 @@ serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { userId, articleIds, useAi = false } = body;
+    const { userId, articleIds, useAi = false, force = false } = body;
     if (!userId || !articleIds?.length) throw new Error("userId and articleIds are required");
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -233,9 +233,15 @@ serve(async (req) => {
     let unsplashFallbacks = 0;
     const details: Array<{ articleId: string; title: string; reason: string }> = [];
 
+    // source.unsplash.com foi descontinuado e retorna 503 → considerar quebrada
+    const isBrokenImageUrl = (url: string | null | undefined): boolean => {
+      if (!url) return true;
+      return /source\.unsplash\.com/i.test(url);
+    };
+
     for (const article of articles) {
-      if (article.featured_image_url) {
-        console.log(`Skipping ${article.id} - already has image`);
+      if (!force && article.featured_image_url && !isBrokenImageUrl(article.featured_image_url)) {
+        console.log(`Skipping ${article.id} - already has valid image`);
         continue;
       }
 
