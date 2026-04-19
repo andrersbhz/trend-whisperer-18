@@ -501,11 +501,10 @@ serve(async (req) => {
     const PEXELS_API_KEY = Deno.env.get("PEXELS_API_KEY");
 
     const providers: ProviderConfig[] = [];
-    // Ordem (preferência do usuário): Gemini PRIMEIRO → OpenAI → Groq → Lovable AI
+    // Ordem (preferência do usuário): Gemini PRIMEIRO → OpenAI → Groq. Lovable AI DESABILITADO para geração de artigos.
     if (geminiApiKey) providers.push({ name: "Gemini", call: (s, u) => callGeminiDirect(geminiApiKey!, s, u) });
     if (openaiApiKey) providers.push({ name: "OpenAI", call: (s, u) => callOpenAIDirect(openaiApiKey!, s, u) });
     if (groqApiKey) providers.push({ name: "Groq", call: (s, u) => callGroqDirect(groqApiKey!, s, u) });
-    if (LOVABLE_API_KEY) providers.push({ name: "Lovable AI", call: (s, u) => callLovableGateway(LOVABLE_API_KEY!, s, u) });
 
     if (providers.length === 0) {
       throw new Error("Nenhuma chave de IA configurada. Configure sua chave Gemini em Configurações.");
