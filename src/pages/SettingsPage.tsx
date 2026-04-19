@@ -171,6 +171,35 @@ const SettingsPage = () => {
     setSettings((prev) => ({ ...prev, ...partial }));
   };
 
+  const disconnectCredential = async (
+    fields: Partial<Record<keyof UserSettings, null | '' | string[]>>,
+    label: string,
+  ) => {
+    if (!user) return;
+    try {
+      if (hasExistingSettings) {
+        await runBackendMutation(() =>
+          supabase.from('user_settings').update(fields as any).eq('user_id', user.id),
+        );
+      }
+      // Reset local UI state for those fields
+      const localReset: Partial<UserSettings> = {};
+      for (const k of Object.keys(fields) as (keyof UserSettings)[]) {
+        const v = fields[k];
+        (localReset as any)[k] = Array.isArray(v) ? v : '';
+      }
+      setSettings((prev) => ({ ...prev, ...localReset }));
+
+      // Refresh credentials status from server
+      const status = await runBackendQuery(() => supabase.rpc('get_credentials_status'));
+      if (status) setCredStatus(status as unknown as CredentialsStatus);
+
+      toast({ title: 'Desconectado', description: `${label} foi desconectado(a) com sucesso.` });
+    } catch (error) {
+      toast({ title: 'Erro ao desconectar', description: getErrorMessage(error), variant: 'destructive' });
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
