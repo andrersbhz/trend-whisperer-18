@@ -200,6 +200,11 @@ const Dashboard = () => {
         ))}
       </div>
 
+      {/* === ANALYTICS COMPLETO (logo abaixo dos cards) === */}
+      <div className="pt-2">
+        <AnalyticsPage />
+      </div>
+
       <AIProvidersPanel />
 
       {/* Writer Profile Prompt */}
