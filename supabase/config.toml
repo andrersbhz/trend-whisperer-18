@@ -1,1 +1,4 @@
 project_id = "bvvhgwkjyfnjroudtbav"
+
+[functions.facebook-oauth-callback]
+verify_jwt = false

@@ -4,7 +4,7 @@ import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Facebook, Plus, Trash2, Loader2, Search, Instagram, Users, CheckCircle2 } from 'lucide-react';
+import { Facebook, Plus, Trash2, Loader2, Search, Instagram, Users, CheckCircle2, LogIn, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -54,6 +54,7 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
   const [connectingPageId, setConnectingPageId] = useState<string | null>(null);
   const [newAccount, setNewAccount] = useState({ page_name: '', page_id: '', access_token: '', instagram_account_id: '' });
   const [saving, setSaving] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState(false);
 
   const fetchAccounts = async () => {
     if (!user) return;
@@ -69,6 +70,40 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
   useEffect(() => {
     fetchAccounts();
   }, [user]);
+
+  // Listen for OAuth popup completion
+  useEffect(() => {
+    const onMessage = (e: MessageEvent) => {
+      if (e.data?.type === 'fb-oauth-done') {
+        if (e.data.success) {
+          toast({ title: 'Facebook conectado!', description: 'Páginas e tokens importados com sucesso.' });
+          fetchAccounts();
+        } else {
+          toast({ title: 'Conexão cancelada ou falhou', variant: 'destructive' });
+        }
+        setOauthLoading(false);
+      }
+    };
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, [user]);
+
+  const handleOAuthConnect = async () => {
+    setOauthLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('facebook-oauth-start');
+      if (error) throw error;
+      if (!data?.authUrl) throw new Error('URL de autorização não retornada');
+      const popup = window.open(data.authUrl, 'fb-oauth', 'width=600,height=720');
+      if (!popup) {
+        toast({ title: 'Popup bloqueado', description: 'Permita popups para este site e tente novamente.', variant: 'destructive' });
+        setOauthLoading(false);
+      }
+    } catch (e: any) {
+      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+      setOauthLoading(false);
+    }
+  };
 
   const handleDiscoverPages = async () => {
     if (!userAccessToken) {
@@ -165,6 +200,32 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
       }}
     >
       <div className="space-y-3">
+        {/* Primary OAuth action — always visible at top */}
+        <div className="p-3 rounded-lg border border-primary/40 bg-gradient-to-br from-primary/10 to-accent/10">
+          <div className="flex items-start gap-3">
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground">Login com Facebook (recomendado)</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Conecta automaticamente todas as páginas do seu Business Manager. Tokens válidos por 60 dias.
+              </p>
+            </div>
+            <Button
+              size="sm"
+              onClick={handleOAuthConnect}
+              disabled={oauthLoading}
+              className="gradient-primary shrink-0"
+            >
+              {oauthLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : accounts.length > 0 ? (
+                <><RefreshCw className="h-4 w-4 mr-1.5" />Reconectar</>
+              ) : (
+                <><LogIn className="h-4 w-4 mr-1.5" />Conectar</>
+              )}
+            </Button>
+          </div>
+        </div>
+
         {loading ? (
           <div className="flex justify-center py-4">
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
