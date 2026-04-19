@@ -114,6 +114,75 @@ async function generateImageGemini(apiKey: string, title: string, category: stri
   throw new ProviderError(errors.join(" | ") || "Falha ao gerar imagem com Gemini", 500, false, errors.some((message) => isBillingIssue(0, message)));
 }
 
+async function generateImageDallE(apiKey: string, title: string, category: string): Promise<string> {
+  return await withRetry(async () => {
+    const resp = await fetch("https://api.openai.com/v1/images/generations", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "dall-e-3",
+        prompt: IMAGE_PROMPT_TEMPLATE(title, category),
+        n: 1,
+        size: "1792x1024",
+        quality: "standard",
+        response_format: "b64_json",
+      }),
+    });
+
+    if (!resp.ok) {
+      throw createProviderError("OpenAI DALL-E", resp.status, await readResponseDetails(resp));
+    }
+
+    const data = await resp.json();
+    const b64 = data.data?.[0]?.b64_json;
+    if (!b64) {
+      throw new ProviderError("OpenAI DALL-E não retornou uma imagem válida.", 500, false, false);
+    }
+
+    return `data:image/png;base64,${b64}`;
+  }, 1, 2000);
+}
+
+async function generateImageGateway(lovableApiKey: string, title: string, category: string): Promise<string> {
+  const models = ["google/gemini-3.1-flash-image-preview", "google/gemini-2.5-flash-image"];
+  const errors: string[] = [];
+
+  for (const model of models) {
+    try {
+      return await withRetry(async () => {
+        const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${lovableApiKey}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model,
+            messages: [{ role: "user", content: IMAGE_PROMPT_TEMPLATE(title, category) }],
+            modalities: ["image", "text"],
+          }),
+        });
+
+        if (!resp.ok) {
+          throw createProviderError(`Lovable AI image ${model}`, resp.status, await readResponseDetails(resp));
+        }
+
+        const data = await resp.json();
+        const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+
+        if (!imageUrl) {
+          throw new ProviderError(`Lovable AI image ${model} não retornou uma imagem válida.`, 500, false, false);
+        }
+
+        return imageUrl;
+      }, 1, 2000);
+    } catch (error) {
+      const message = getErrorMessage(error);
+      console.warn(message);
+      errors.push(message);
+    }
+  }
+
+  throw new ProviderError(errors.join(" | ") || "Lovable AI Gateway falhou", 500, false, errors.some((message) => isBillingIssue(0, message)));
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -126,11 +195,12 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get Gemini API key (única fonte de geração de imagens)
+    // Carrega chaves de IA do usuário (Gemini + OpenAI) e fallback Lovable AI
     let geminiApiKey: string | null = null;
+    let openaiApiKey: string | null = null;
     const { data: settings } = await supabase
       .from("user_settings")
-      .select("gemini_api_key")
+      .select("gemini_api_key, openai_api_key")
       .eq("user_id", userId)
       .single();
 
@@ -138,9 +208,14 @@ serve(async (req) => {
       const { data: decrypted } = await supabase.rpc("decrypt_credential", { enc_key: "", val: settings.gemini_api_key });
       if (decrypted && typeof decrypted === "string" && decrypted.length > 5) geminiApiKey = decrypted;
     }
+    if (settings?.openai_api_key) {
+      const { data: decrypted } = await supabase.rpc("decrypt_credential", { enc_key: "", val: settings.openai_api_key });
+      if (decrypted && typeof decrypted === "string" && decrypted.length > 5) openaiApiKey = decrypted;
+    }
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY") || null;
 
-    if (!geminiApiKey) {
-      throw new Error("Chave do Gemini não configurada. Configure em Configurações > Google Gemini.");
+    if (!geminiApiKey && !openaiApiKey && !LOVABLE_API_KEY) {
+      throw new Error("Nenhum provedor de IA disponível. Configure Gemini ou OpenAI em Configurações.");
     }
 
     // Fetch articles
@@ -169,18 +244,27 @@ serve(async (req) => {
       }
 
       let imageUrl: string | null = null;
-      let errorReason = "";
+      const providerErrors: string[] = [];
 
-      try {
-        imageUrl = await generateImageGemini(geminiApiKey, article.title, article.category);
-      } catch (error) {
-        errorReason = getErrorMessage(error);
-        console.error(`Gemini failed for "${article.title}": ${errorReason}`);
+      // Cadeia: Gemini (chave usuário) → OpenAI DALL-E (chave usuário) → Lovable AI Gateway
+      if (geminiApiKey) {
+        try { imageUrl = await generateImageGemini(geminiApiKey, article.title, article.category); }
+        catch (error) { providerErrors.push(`Gemini: ${getErrorMessage(error)}`); }
+      }
+      if (!imageUrl && openaiApiKey) {
+        try { imageUrl = await generateImageDallE(openaiApiKey, article.title, article.category); }
+        catch (error) { providerErrors.push(`OpenAI: ${getErrorMessage(error)}`); }
+      }
+      if (!imageUrl && LOVABLE_API_KEY) {
+        try { imageUrl = await generateImageGateway(LOVABLE_API_KEY, article.title, article.category); }
+        catch (error) { providerErrors.push(`Lovable AI: ${getErrorMessage(error)}`); }
       }
 
       if (!imageUrl) {
         failed++;
-        details.push({ articleId: article.id, title: article.title, reason: errorReason || "Falha ao gerar imagem" });
+        const reason = providerErrors[0]?.substring(0, 200) || "Todos os provedores de IA falharam";
+        details.push({ articleId: article.id, title: article.title, reason });
+        console.error(`All image providers failed for "${article.title}": ${providerErrors.join(" | ").substring(0, 300)}`);
         continue;
       }
 
@@ -193,13 +277,12 @@ serve(async (req) => {
         console.log(`Image set for article: ${article.title}`);
       }
 
-      // Throttle entre chamadas Gemini
       await sleep(800);
     }
 
     const message = updated > 0
-      ? `${updated} imagens geradas com Gemini${failed > 0 ? ` (${failed} falharam)` : ""}.`
-      : "Nenhuma imagem foi gerada. Verifique sua chave Gemini e cota.";
+      ? `${updated} imagens geradas com IA${failed > 0 ? ` (${failed} falharam)` : ""}.`
+      : "Nenhuma imagem foi gerada. Verifique suas chaves de IA e cota.";
 
     return new Response(
       JSON.stringify({ success: updated > 0, message, updated, failed, details: details.slice(0, 3) }),
