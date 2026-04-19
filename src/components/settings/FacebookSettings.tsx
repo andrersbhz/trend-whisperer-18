@@ -90,7 +90,6 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
   }, [user]);
 
   // Detecta se a app está rodando dentro de um iframe (preview do Lovable).
-  // O Facebook envia X-Frame-Options: DENY, então o popup é bloqueado quando aberto a partir de um iframe.
   const isInIframe = (() => {
     try { return window.self !== window.top; } catch { return true; }
   })();
@@ -99,7 +98,18 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
 
   const handleOAuthConnect = async () => {
     setOauthLoading(true);
+
+    // Abre o popup IMEDIATAMENTE (síncrono ao clique) para evitar bloqueio do navegador.
+    // Depois navegamos o popup para a authUrl quando ela chegar do backend.
+    const popup = window.open(
+      'about:blank',
+      'fb-oauth',
+      'width=600,height=720,menubar=no,toolbar=no,location=yes,status=no'
+    );
+
     try {
+      // returnUrl serve apenas como fallback caso o popup seja fechado e o callback
+      // precise redirecionar via top-level. No fluxo normal, o popup notifica via postMessage.
       const returnUrl = shouldOpenOutsidePreview
         ? externalSettingsUrl
         : `${window.location.origin}/settings`;
@@ -110,21 +120,29 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
       if (error) throw error;
       if (!data?.authUrl) throw new Error('URL de autorização não retornada');
 
-      if (shouldOpenOutsidePreview) {
-        // Dentro do iframe do preview, popups e redirects para Facebook são bloqueados.
-        // Solução: abrir a app publicada/custom em nova aba; o usuário completa o login lá.
+      if (!popup || popup.closed) {
+        // Popup bloqueado pelo navegador — fallback para nova aba
         toast({
-          title: 'Abra fora do preview',
-          description: 'O Facebook bloqueia login dentro do preview. Abrindo a app publicada em nova aba…',
+          title: 'Permita popups',
+          description: 'Seu navegador bloqueou o popup. Abrindo em nova aba…',
         });
-        window.open(externalSettingsUrl, '_blank', 'noopener,noreferrer');
+        window.open(data.authUrl, '_blank', 'noopener,noreferrer');
         setOauthLoading(false);
         return;
       }
 
-      toast({ title: 'Redirecionando', description: 'Abrindo o login do Facebook…' });
-      window.location.assign(data.authUrl);
+      // Aponta o popup já aberto para o login do Facebook (usa a sessão logada do navegador)
+      popup.location.href = data.authUrl;
+
+      // Monitora se o usuário fechou o popup sem concluir
+      const checkClosed = setInterval(() => {
+        if (popup.closed) {
+          clearInterval(checkClosed);
+          setOauthLoading(false);
+        }
+      }, 800);
     } catch (e: any) {
+      if (popup && !popup.closed) popup.close();
       toast({ title: 'Erro', description: e.message, variant: 'destructive' });
       setOauthLoading(false);
     }
@@ -225,16 +243,7 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
       }}
     >
       <div className="space-y-3">
-        {/* Aviso quando dentro do iframe do preview */}
-        {shouldOpenOutsidePreview && (
-          <div className="p-3 rounded-lg border border-warning/40 bg-warning/10 text-xs text-foreground">
-            <p className="font-medium mb-1">⚠️ O Facebook bloqueia login dentro do preview do Lovable.</p>
-            <p className="text-muted-foreground">
-              Clique em <strong>Conectar</strong> para abrir a app publicada em uma nova aba e completar o login lá.
-              Depois volte aqui — suas páginas aparecerão automaticamente.
-            </p>
-          </div>
-        )}
+
 
         {/* Primary OAuth action — always visible at top */}
         <div className="p-3 rounded-lg border border-primary/40 bg-gradient-to-br from-primary/10 to-accent/10">
