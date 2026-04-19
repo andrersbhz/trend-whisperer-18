@@ -12,9 +12,10 @@ interface Props {
   settings: UserSettings;
   onChange: (partial: Partial<UserSettings>) => void;
   hasGeminiKey?: boolean;
+  onDisconnect?: () => void | Promise<void>;
 }
 
-const GeminiSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChange, hasGeminiKey }, ref) => {
+const GeminiSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChange, hasGeminiKey, onDisconnect }, ref) => {
   const connected = !!(settings.gemini_api_key || hasGeminiKey);
   const { toast } = useToast();
   const [testing, setTesting] = useState(false);
