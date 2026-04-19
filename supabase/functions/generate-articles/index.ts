@@ -551,17 +551,22 @@ serve(async (req) => {
           continue;
         }
 
-        // GERAÇÃO DE IMAGEM: APENAS Gemini (chave do usuário). Se falhar, salva sem imagem.
+        // GERAÇÃO DE IMAGEM: cadeia Gemini → OpenAI DALL-E → Lovable AI Gateway
         let featuredImageUrl: string | null = null;
         if (geminiApiKey) {
-          try {
-            featuredImageUrl = await generateImageGemini(geminiApiKey, parsed.title, topic.category);
-            if (!featuredImageUrl) console.warn(`[Image] Gemini não retornou imagem para "${parsed.title}"`);
-          } catch (imgErr) {
-            console.warn(`[Image] Gemini falhou para "${parsed.title}":`, imgErr);
-          }
-        } else {
-          console.warn(`[Image] Sem chave Gemini configurada — artigo "${parsed.title}" será criado sem imagem`);
+          try { featuredImageUrl = await generateImageGemini(geminiApiKey, parsed.title, topic.category); }
+          catch (imgErr) { console.warn(`[Image] Gemini falhou para "${parsed.title}":`, imgErr); }
+        }
+        if (!featuredImageUrl && openaiApiKey) {
+          try { featuredImageUrl = await generateImageDallE(openaiApiKey, parsed.title, topic.category); }
+          catch (imgErr) { console.warn(`[Image] DALL-E falhou para "${parsed.title}":`, imgErr); }
+        }
+        if (!featuredImageUrl && LOVABLE_API_KEY) {
+          try { featuredImageUrl = await generateImageGateway(LOVABLE_API_KEY, parsed.title, topic.category); }
+          catch (imgErr) { console.warn(`[Image] Lovable AI Gateway falhou para "${parsed.title}":`, imgErr); }
+        }
+        if (!featuredImageUrl) {
+          console.warn(`[Image] Nenhum provedor gerou imagem para "${parsed.title}" — artigo criado sem imagem`);
         }
 
         const { data: article, error: insertError } = await supabase.from("articles").insert({
