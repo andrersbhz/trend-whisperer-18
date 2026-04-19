@@ -551,15 +551,17 @@ serve(async (req) => {
           continue;
         }
 
-        // CADEIA DE IMAGEM: Pexels (relevante e grátis) → Picsum (placeholder).
-        // IA de imagem foi removida porque gerava imagens irrelevantes ou bloqueadas por content policy.
+        // GERAÇÃO DE IMAGEM: APENAS Gemini (chave do usuário). Se falhar, salva sem imagem.
         let featuredImageUrl: string | null = null;
-        if (PEXELS_API_KEY) {
-          featuredImageUrl = await searchPexelsImage(PEXELS_API_KEY, parsed.title, topic.category);
-        }
-        if (!featuredImageUrl) {
-          console.warn(`[Image] Pexels failed for "${parsed.title}", using Picsum placeholder`);
-          featuredImageUrl = getFallbackImageUrl(parsed.title, topic.category);
+        if (geminiApiKey) {
+          try {
+            featuredImageUrl = await generateImageGemini(geminiApiKey, parsed.title, topic.category);
+            if (!featuredImageUrl) console.warn(`[Image] Gemini não retornou imagem para "${parsed.title}"`);
+          } catch (imgErr) {
+            console.warn(`[Image] Gemini falhou para "${parsed.title}":`, imgErr);
+          }
+        } else {
+          console.warn(`[Image] Sem chave Gemini configurada — artigo "${parsed.title}" será criado sem imagem`);
         }
 
         const { data: article, error: insertError } = await supabase.from("articles").insert({
