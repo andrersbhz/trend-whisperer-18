@@ -165,35 +165,47 @@ const Dashboard = () => {
   };
 
   const statCards = [
-    { icon: FileText, label: 'Total Artigos', value: stats.total, color: 'text-primary', glow: 'neon-border-lilac' },
-    { icon: CheckCircle, label: 'Publicados', value: stats.published, color: 'text-primary', glow: 'neon-border-lilac' },
-    { icon: Clock, label: 'Pendentes', value: stats.pending, color: 'text-warning', glow: '' },
-    { icon: TrendingUp, label: 'Tendências', value: stats.trending, color: 'text-accent', glow: 'neon-border-pink' },
+    { icon: FileText, label: 'Total Artigos', value: stats.total, color: 'text-primary', accent: 'from-primary/20 to-transparent', glow: 'neon-border-lilac' },
+    { icon: CheckCircle, label: 'Publicados', value: stats.published, color: 'text-success', accent: 'from-success/20 to-transparent', glow: '' },
+    { icon: Clock, label: 'Pendentes', value: stats.pending, color: 'text-warning', accent: 'from-warning/20 to-transparent', glow: '' },
+    { icon: TrendingUp, label: 'Tendências', value: stats.trending, color: 'text-accent', accent: 'from-accent/20 to-transparent', glow: 'neon-border-pink' },
   ];
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 lg:space-y-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold neon-text-lilac">Painel</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold neon-text-lilac">Painel</h1>
           <p className="text-muted-foreground text-sm mt-1">Visão geral, métricas e geração de conteúdo</p>
         </div>
-        <Button onClick={handleGenerateArticles} disabled={generating} className="gradient-primary text-primary-foreground shadow-neon-lilac hover:shadow-neon-lilac">
+        <Button
+          onClick={handleGenerateArticles}
+          disabled={generating}
+          size="lg"
+          className="gradient-primary text-primary-foreground shadow-neon-lilac hover:shadow-neon-lilac hover:scale-[1.02] transition-transform w-full sm:w-auto"
+        >
           {generating ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
           Gerar Artigos
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {statCards.map((stat) => (
-          <Card key={stat.label} className={`glass-card ${stat.glow}`}>
-            <CardContent className="p-[25px]">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">{stat.label}</p>
-                  <p className="text-2xl font-bold text-foreground mt-1">{stat.value}</p>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        {statCards.map((stat, i) => (
+          <Card
+            key={stat.label}
+            className={`glass-card hover-lift ${stat.glow} relative overflow-hidden animate-float-up`}
+            style={{ animationDelay: `${i * 60}ms` }}
+          >
+            <div className={`absolute inset-0 bg-gradient-to-br ${stat.accent} pointer-events-none opacity-50`} />
+            <CardContent className="p-4 sm:p-5 relative">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-[11px] sm:text-xs uppercase tracking-wider text-muted-foreground font-medium">{stat.label}</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-foreground mt-1.5 tabular-nums">{stat.value}</p>
                 </div>
-                <stat.icon className={`h-8 w-8 ${stat.color} opacity-80`} />
+                <div className={`p-2 rounded-lg bg-background/40 ${stat.color}`}>
+                  <stat.icon className="h-5 w-5" />
+                </div>
               </div>
             </CardContent>
           </Card>
