@@ -9,67 +9,6 @@ const corsHeaders = {
 const IMAGE_PROMPT_TEMPLATE = (title: string, category: string) =>
   `Create a professional, photorealistic news article featured image about: "${title}" (category: ${category}). Requirements: Editorial/journalistic style, visually represents the article topic, NO text overlay, NO watermarks, NO logos, high quality, 16:9 aspect ratio, vibrant colors, professional lighting, suitable as a WordPress featured image.`;
 
-// ── Pexels (busca imagem real relacionada ao tema) ──────────────────────
-
-const PEXELS_CATEGORY_QUERY: Record<string, string> = {
-  esportes: "sports stadium",
-  politica: "government building brazil",
-  policia: "police car street",
-  saude: "health wellness",
-  celebridades: "red carpet event",
-  financas: "finance business chart",
-  tecnologia: "technology innovation",
-  entretenimento: "concert stage",
-};
-
-function extractKeywords(title: string, max = 4): string[] {
-  const stopwords = new Set(["a","o","as","os","de","da","do","das","dos","e","em","no","na","nos","nas","um","uma","para","por","com","que","se","ao","aos","à","às","sobre","pelo","pela","mais","como","ser","seu","sua","seus","suas","the","of","and","to","in","for","on","with","is","are"]);
-  return title
-    .toLowerCase()
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9\s]/g, " ")
-    .split(/\s+/)
-    .filter((w) => w.length > 3 && !stopwords.has(w))
-    .slice(0, max);
-}
-
-async function searchPexelsImage(apiKey: string, title: string, category: string): Promise<string | null> {
-  const keywords = extractKeywords(title);
-  const categoryQuery = PEXELS_CATEGORY_QUERY[category] || category;
-  const queries = [
-    keywords.length > 0 ? keywords.join(" ") : categoryQuery,
-    categoryQuery,
-  ];
-  for (const query of queries) {
-    try {
-      const url = `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=15&orientation=landscape&size=large`;
-      const resp = await fetch(url, { headers: { Authorization: apiKey } });
-      if (!resp.ok) {
-        console.warn(`[Pexels] query "${query}" failed: ${resp.status}`);
-        continue;
-      }
-      const data = await resp.json();
-      const photos = data.photos || [];
-      if (photos.length === 0) continue;
-      const picked = photos[Math.floor(Math.random() * photos.length)];
-      const imageUrl = picked?.src?.large2x || picked?.src?.large || picked?.src?.original;
-      if (imageUrl) {
-        console.log(`[Pexels] Found image for "${query}" (photo ${picked.id})`);
-        return imageUrl;
-      }
-    } catch (err) {
-      console.warn(`[Pexels] query "${query}" threw:`, err);
-    }
-  }
-  return null;
-}
-
-// Picsum Photos — fallback quando Pexels falha
-function getFallbackImageUrl(title: string, _category: string): string {
-  const seed = Math.abs(title.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0)) % 1000;
-  return `https://picsum.photos/seed/${seed}/1600/900`;
-}
-
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 class ProviderError extends Error {
@@ -172,76 +111,7 @@ async function generateImageGemini(apiKey: string, title: string, category: stri
     }
   }
 
-  throw new ProviderError(errors.join(" | "), 500, false, errors.some((message) => isBillingIssue(0, message)));
-}
-
-async function generateImageDallE(apiKey: string, title: string, category: string): Promise<string> {
-  return await withRetry(async () => {
-    const resp = await fetch("https://api.openai.com/v1/images/generations", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "dall-e-3",
-        prompt: IMAGE_PROMPT_TEMPLATE(title, category),
-        n: 1,
-        size: "1792x1024",
-        quality: "standard",
-        response_format: "b64_json",
-      }),
-    });
-
-    if (!resp.ok) {
-      throw createProviderError("OpenAI DALL-E", resp.status, await readResponseDetails(resp));
-    }
-
-    const data = await resp.json();
-    const b64 = data.data?.[0]?.b64_json;
-    if (!b64) {
-      throw new ProviderError("OpenAI DALL-E não retornou uma imagem válida.", 500, false, false);
-    }
-
-    return `data:image/png;base64,${b64}`;
-  }, 1, 2000);
-}
-
-async function generateImageGateway(lovableApiKey: string, title: string, category: string): Promise<string> {
-  const models = ["google/gemini-3.1-flash-image-preview", "google/gemini-2.5-flash-image"];
-  const errors: string[] = [];
-
-  for (const model of models) {
-    try {
-      return await withRetry(async () => {
-        const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${lovableApiKey}`, "Content-Type": "application/json" },
-          body: JSON.stringify({
-            model,
-            messages: [{ role: "user", content: IMAGE_PROMPT_TEMPLATE(title, category) }],
-            modalities: ["image", "text"],
-          }),
-        });
-
-        if (!resp.ok) {
-          throw createProviderError(`Lovable AI image ${model}`, resp.status, await readResponseDetails(resp));
-        }
-
-        const data = await resp.json();
-        const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-
-        if (!imageUrl) {
-          throw new ProviderError(`Lovable AI image ${model} não retornou uma imagem válida.`, 500, false, false);
-        }
-
-        return imageUrl;
-      }, 1, 2000);
-    } catch (error) {
-      const message = getErrorMessage(error);
-      console.warn(message);
-      errors.push(message);
-    }
-  }
-
-  throw new ProviderError(errors.join(" | "), 500, false, errors.some((message) => isBillingIssue(0, message)));
+  throw new ProviderError(errors.join(" | ") || "Falha ao gerar imagem com Gemini", 500, false, errors.some((message) => isBillingIssue(0, message)));
 }
 
 serve(async (req) => {
@@ -249,28 +119,28 @@ serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { userId, articleIds, useAi = false, force = false } = body;
+    const { userId, articleIds, force = false } = body;
     if (!userId || !articleIds?.length) throw new Error("userId and articleIds are required");
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get API keys (only used when useAi=true)
+    // Get Gemini API key (única fonte de geração de imagens)
     let geminiApiKey: string | null = null;
-    let openaiApiKey: string | null = null;
-    let LOVABLE_API_KEY: string | null = null;
-    if (useAi) {
-      const { data: settings } = await supabase.from("user_settings").select("gemini_api_key, openai_api_key").eq("user_id", userId).single();
-      if (settings?.gemini_api_key) {
-        const { data: decrypted } = await supabase.rpc("decrypt_credential", { enc_key: "", val: settings.gemini_api_key });
-        if (decrypted && typeof decrypted === "string" && decrypted.length > 5) geminiApiKey = decrypted;
-      }
-      if (settings?.openai_api_key) {
-        const { data: decrypted } = await supabase.rpc("decrypt_credential", { enc_key: "", val: settings.openai_api_key });
-        if (decrypted && typeof decrypted === "string" && decrypted.length > 5) openaiApiKey = decrypted;
-      }
-      LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY") || null;
+    const { data: settings } = await supabase
+      .from("user_settings")
+      .select("gemini_api_key")
+      .eq("user_id", userId)
+      .single();
+
+    if (settings?.gemini_api_key) {
+      const { data: decrypted } = await supabase.rpc("decrypt_credential", { enc_key: "", val: settings.gemini_api_key });
+      if (decrypted && typeof decrypted === "string" && decrypted.length > 5) geminiApiKey = decrypted;
+    }
+
+    if (!geminiApiKey) {
+      throw new Error("Chave do Gemini não configurada. Configure em Configurações > Google Gemini.");
     }
 
     // Fetch articles
@@ -284,15 +154,12 @@ serve(async (req) => {
 
     let updated = 0;
     let failed = 0;
-    let unsplashFallbacks = 0;
     const details: Array<{ articleId: string; title: string; reason: string }> = [];
 
-    const PEXELS_API_KEY = Deno.env.get("PEXELS_API_KEY");
-
-    // Considera quebrada: source.unsplash.com (descontinuado) ou picsum (placeholder genérico)
+    // Considera quebrada: source.unsplash.com (descontinuado), picsum (placeholder) ou pexels (legado)
     const isBrokenImageUrl = (url: string | null | undefined): boolean => {
       if (!url) return true;
-      return /source\.unsplash\.com|picsum\.photos/i.test(url);
+      return /source\.unsplash\.com|picsum\.photos|images\.pexels\.com/i.test(url);
     };
 
     for (const article of articles) {
@@ -302,36 +169,19 @@ serve(async (req) => {
       }
 
       let imageUrl: string | null = null;
-      const providerErrors: string[] = [];
+      let errorReason = "";
 
-      // 1. Pexels primeiro (relevante e grátis)
-      if (PEXELS_API_KEY) {
-        imageUrl = await searchPexelsImage(PEXELS_API_KEY, article.title, article.category);
+      try {
+        imageUrl = await generateImageGemini(geminiApiKey, article.title, article.category);
+      } catch (error) {
+        errorReason = getErrorMessage(error);
+        console.error(`Gemini failed for "${article.title}": ${errorReason}`);
       }
 
-      // 2. IA opcional (só se useAi=true e Pexels falhou)
-      if (!imageUrl && useAi) {
-        if (geminiApiKey) {
-          try { imageUrl = await generateImageGemini(geminiApiKey, article.title, article.category); }
-          catch (error) { providerErrors.push(getErrorMessage(error)); }
-        }
-        if (!imageUrl && openaiApiKey) {
-          try { imageUrl = await generateImageDallE(openaiApiKey, article.title, article.category); }
-          catch (error) { providerErrors.push(getErrorMessage(error)); }
-        }
-        if (!imageUrl && LOVABLE_API_KEY) {
-          try { imageUrl = await generateImageGateway(LOVABLE_API_KEY, article.title, article.category); }
-          catch (error) { providerErrors.push(getErrorMessage(error)); }
-        }
-      }
-
-      // 3. Fallback final: Picsum
       if (!imageUrl) {
-        imageUrl = getFallbackImageUrl(article.title, article.category);
-        unsplashFallbacks += 1;
-        if (providerErrors.length > 0) {
-          console.warn(`Using Picsum fallback for "${article.title}" — errors: ${providerErrors[0].substring(0, 150)}`);
-        }
+        failed++;
+        details.push({ articleId: article.id, title: article.title, reason: errorReason || "Falha ao gerar imagem" });
+        continue;
       }
 
       const { error: updateError } = await supabase.from("articles").update({ featured_image_url: imageUrl }).eq("id", article.id);
@@ -343,20 +193,16 @@ serve(async (req) => {
         console.log(`Image set for article: ${article.title}`);
       }
 
-      // Throttle só se usou IA
-      if (useAi) await sleep(800);
+      // Throttle entre chamadas Gemini
+      await sleep(800);
     }
 
     const message = updated > 0
-      ? unsplashFallbacks > 0 && useAi
-        ? `${updated} imagens definidas (${unsplashFallbacks} via Unsplash grátis por falha/cota dos provedores de IA).`
-        : unsplashFallbacks === updated
-          ? `${updated} imagens definidas via Unsplash (gratuito).`
-          : `${updated} imagens geradas com sucesso!`
-      : "Nenhuma imagem foi atualizada.";
+      ? `${updated} imagens geradas com Gemini${failed > 0 ? ` (${failed} falharam)` : ""}.`
+      : "Nenhuma imagem foi gerada. Verifique sua chave Gemini e cota.";
 
     return new Response(
-      JSON.stringify({ success: updated > 0, message, updated, failed, unsplashFallbacks, details: details.slice(0, 3) }),
+      JSON.stringify({ success: updated > 0, message, updated, failed, details: details.slice(0, 3) }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
