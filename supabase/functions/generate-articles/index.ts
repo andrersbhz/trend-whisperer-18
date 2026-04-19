@@ -267,13 +267,11 @@ function extractKeywords(title: string, max = 3): string[] {
     .slice(0, max);
 }
 
-function getUnsplashImageUrl(title: string, category: string): string {
-  const baseKeywords = UNSPLASH_CATEGORY_KEYWORDS[category] || "news,editorial";
-  const titleKeywords = extractKeywords(title, 2).join(",");
-  const query = titleKeywords ? `${titleKeywords},${baseKeywords}` : baseKeywords;
-  // Cache-buster baseado no título para garantir imagens diferentes por artigo
-  const sig = Math.abs(title.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0)) % 10000;
-  return `https://source.unsplash.com/1600x900/?${encodeURIComponent(query)}&sig=${sig}`;
+function getUnsplashImageUrl(title: string, _category: string): string {
+  // Picsum Photos — Unsplash Source foi descontinuado e retorna 503
+  // Seed determinístico baseado no título => mesma imagem para o mesmo artigo
+  const seed = Math.abs(title.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0)) % 1000;
+  return `https://picsum.photos/seed/${seed}/1600/900`;
 }
 
 const IMAGE_PROMPT_TEMPLATE = (title: string, category: string) =>
