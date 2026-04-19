@@ -355,20 +355,34 @@ async function generateImageDallE(apiKey: string, title: string, category: strin
 }
 
 async function generateImageGateway(lovableApiKey: string, title: string, category: string): Promise<string | null> {
-  try {
-    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${lovableApiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "google/gemini-3.1-flash-image-preview",
-        messages: [{ role: "user", content: IMAGE_PROMPT_TEMPLATE(title, category) }],
-        modalities: ["image", "text"],
-      }),
-    });
-    if (!resp.ok) return null;
-    const data = await resp.json();
-    return data.choices?.[0]?.message?.images?.[0]?.image_url?.url || null;
-  } catch { return null; }
+  const models = ["google/gemini-3.1-flash-image-preview", "google/gemini-2.5-flash-image"];
+  const prompt = buildSafeImagePrompt(title, category);
+  for (const model of models) {
+    try {
+      const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${lovableApiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model,
+          messages: [{ role: "user", content: prompt }],
+          modalities: ["image", "text"],
+        }),
+      });
+      if (!resp.ok) {
+        console.warn(`[Image Gateway] ${model} returned ${resp.status}`);
+        continue;
+      }
+      const data = await resp.json();
+      const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+      if (imageUrl) {
+        console.log(`[Image Gateway] Generated via ${model}`);
+        return imageUrl;
+      }
+    } catch (err) {
+      console.warn(`[Image Gateway] ${model} threw:`, err);
+    }
+  }
+  return null;
 }
 
 // ── System + User prompts ─────────────────────────────────────────────────
@@ -569,14 +583,22 @@ serve(async (req) => {
           continue;
         }
 
-        // ESTRATÉGIA CUSTO ZERO: usa Unsplash Source como imagem padrão (grátis, sem chave).
-        // Geração por IA paga (DALL-E / Gemini Image / Lovable) está desativada por padrão para evitar erros de cota.
-        // Se quiser reativar imagens por IA, troque a linha abaixo pela cadeia comentada.
-        const featuredImageUrl: string = getUnsplashImageUrl(parsed.title, topic.category);
-        // const featuredImageUrl = (openaiApiKey && await generateImageDallE(openaiApiKey, parsed.title, topic.category))
-        //   || (LOVABLE_API_KEY && await generateImageGateway(LOVABLE_API_KEY, parsed.title, topic.category))
-        //   || (geminiApiKey && await generateImageGemini(geminiApiKey, parsed.title, topic.category))
-        //   || getUnsplashImageUrl(parsed.title, topic.category);
+        // CADEIA DE IMAGEM: tenta IA na ordem (Lovable Gateway → Gemini direto → DALL-E) e cai para Picsum se tudo falhar.
+        // Lovable Gateway é primeiro porque é gratuito dentro do crédito Lovable e tem o Nano Banana 2.
+        let featuredImageUrl: string | null = null;
+        if (LOVABLE_API_KEY) {
+          featuredImageUrl = await generateImageGateway(LOVABLE_API_KEY, parsed.title, topic.category);
+        }
+        if (!featuredImageUrl && geminiApiKey) {
+          featuredImageUrl = await generateImageGemini(geminiApiKey, parsed.title, topic.category);
+        }
+        if (!featuredImageUrl && openaiApiKey) {
+          featuredImageUrl = await generateImageDallE(openaiApiKey, parsed.title, topic.category);
+        }
+        if (!featuredImageUrl) {
+          console.warn(`[Image] All AI providers failed for "${parsed.title}", using Picsum fallback`);
+          featuredImageUrl = getUnsplashImageUrl(parsed.title, topic.category);
+        }
 
         const { data: article, error: insertError } = await supabase.from("articles").insert({
           user_id: userId,
