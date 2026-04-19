@@ -44,6 +44,7 @@ interface Props {
 const FacebookSettings = ({ settings, onChange }: Props) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const externalSettingsUrl = 'https://forex.a3solucoesdigitais.com/settings';
   const [accounts, setAccounts] = useState<FacebookAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
@@ -93,9 +94,7 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
   })();
   const shouldOpenOutsidePreview = isInIframe;
   const shouldAutoStartOauth = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('facebook_oauth') === '1';
-  const topLevelSettingsUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}/settings?facebook_oauth=1`
-    : '/settings?facebook_oauth=1';
+  const topLevelSettingsUrl = `${externalSettingsUrl}?facebook_oauth=1`;
 
   const requestFacebookAuthUrl = async (returnUrl: string) => {
     const { data, error } = await supabase.functions.invoke('facebook-oauth-start', {
@@ -112,7 +111,7 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
     autoOauthRequestedRef.current = true;
     setOauthLoading(true);
 
-    requestFacebookAuthUrl(`${window.location.origin}/settings`)
+    requestFacebookAuthUrl(externalSettingsUrl)
       .then((authUrl) => {
         window.history.replaceState({}, '', '/settings');
         window.location.assign(authUrl);
