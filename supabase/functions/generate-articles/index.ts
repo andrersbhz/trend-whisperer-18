@@ -241,22 +241,20 @@ async function callWithFallback(providers: ProviderConfig[], systemPrompt: strin
   throw new Error(`Todos os provedores de IA falharam:\n${errors.join("\n")}`);
 }
 
-// ── Image generation ─────────────────────────────────────────────────────
+// ── Image fetching (Pexels primeiro, IA como fallback) ──────────────────
 
-// Unsplash Source — totalmente gratuito, sem chave de API.
-// Retorna sempre uma imagem pública relevante baseada em palavras-chave.
-const UNSPLASH_CATEGORY_KEYWORDS: Record<string, string> = {
-  esportes: "sports,stadium,football",
-  politica: "government,politics,parliament",
-  policia: "city,street,night",
-  saude: "health,hospital,medical",
-  celebridades: "celebrity,redcarpet,glamour",
-  financas: "finance,business,stockmarket",
-  tecnologia: "technology,computer,innovation",
-  entretenimento: "concert,stage,entertainment",
+const PEXELS_CATEGORY_QUERY: Record<string, string> = {
+  esportes: "sports stadium",
+  politica: "government building brazil",
+  policia: "police car street",
+  saude: "health wellness",
+  celebridades: "red carpet event",
+  financas: "finance business chart",
+  tecnologia: "technology innovation",
+  entretenimento: "concert stage",
 };
 
-function extractKeywords(title: string, max = 3): string[] {
+function extractKeywords(title: string, max = 4): string[] {
   const stopwords = new Set(["a","o","as","os","de","da","do","das","dos","e","em","no","na","nos","nas","um","uma","para","por","com","que","se","ao","aos","à","às","sobre","pelo","pela","mais","como","ser","seu","sua","seus","suas","the","of","and","to","in","for","on","with","is","are"]);
   return title
     .toLowerCase()
@@ -267,11 +265,49 @@ function extractKeywords(title: string, max = 3): string[] {
     .slice(0, max);
 }
 
-function getUnsplashImageUrl(title: string, _category: string): string {
-  // Picsum Photos — Unsplash Source foi descontinuado e retorna 503
-  // Seed determinístico baseado no título => mesma imagem para o mesmo artigo
+async function searchPexelsImage(apiKey: string, title: string, category: string): Promise<string | null> {
+  const keywords = extractKeywords(title);
+  const categoryQuery = PEXELS_CATEGORY_QUERY[category] || category;
+  // Try keyword-rich query first, then fall back to category-only
+  const queries = [
+    keywords.length > 0 ? keywords.join(" ") : categoryQuery,
+    categoryQuery,
+  ];
+
+  for (const query of queries) {
+    try {
+      const url = `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=15&orientation=landscape&size=large`;
+      const resp = await fetch(url, { headers: { Authorization: apiKey } });
+      if (!resp.ok) {
+        console.warn(`[Pexels] query "${query}" failed: ${resp.status}`);
+        continue;
+      }
+      const data = await resp.json();
+      const photos = data.photos || [];
+      if (photos.length === 0) continue;
+      // Pick a random photo from results for variety
+      const picked = photos[Math.floor(Math.random() * photos.length)];
+      const imageUrl = picked?.src?.large2x || picked?.src?.large || picked?.src?.original;
+      if (imageUrl) {
+        console.log(`[Pexels] Found image for "${query}" (photo ${picked.id})`);
+        return imageUrl;
+      }
+    } catch (err) {
+      console.warn(`[Pexels] query "${query}" threw:`, err);
+    }
+  }
+  return null;
+}
+
+function getFallbackImageUrl(title: string, _category: string): string {
+  // Picsum: placeholder determinístico só se Pexels falhar completamente
   const seed = Math.abs(title.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0)) % 1000;
   return `https://picsum.photos/seed/${seed}/1600/900`;
+}
+
+// Mantém a função antiga para compatibilidade (não usada quando Pexels funciona)
+function getUnsplashImageUrl(title: string, category: string): string {
+  return getFallbackImageUrl(title, category);
 }
 
 const IMAGE_PROMPT_TEMPLATE = (title: string, category: string) =>
