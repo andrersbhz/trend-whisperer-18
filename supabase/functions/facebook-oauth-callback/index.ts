@@ -7,8 +7,22 @@ const corsHeaders = {
 };
 
 const GRAPH_API = "https://graph.facebook.com/v19.0";
+const DEFAULT_RETURN_URL = "https://forex.a3solucoesdigitais.com/settings";
 
-function htmlResponse(title: string, message: string, success: boolean) {
+function getReturnUrlFromState(state: string | null) {
+  if (!state) return DEFAULT_RETURN_URL;
+
+  const parts = state.split("::");
+  if (parts.length < 2) return DEFAULT_RETURN_URL;
+
+  try {
+    return decodeURIComponent(parts.slice(1).join("::"));
+  } catch {
+    return DEFAULT_RETURN_URL;
+  }
+}
+
+function htmlResponse(title: string, message: string, success: boolean, redirectUrl = DEFAULT_RETURN_URL) {
   // Build the redirect URL back to the app (settings page, facebook tab)
   const html = `<!DOCTYPE html>
 <html lang="pt-BR">
@@ -30,12 +44,14 @@ function htmlResponse(title: string, message: string, success: boolean) {
     <div class="icon">${success ? "✅" : "❌"}</div>
     <h1>${title}</h1>
     <p>${message}</p>
-    <button onclick="window.close(); window.opener && window.opener.postMessage({ type: 'fb-oauth-done', success: ${success} }, '*');">Fechar</button>
+    <button onclick="window.opener ? window.close() : window.location.assign(${JSON.stringify(redirectUrl)}); window.opener && window.opener.postMessage({ type: 'fb-oauth-done', success: ${success} }, '*');">${success ? "Voltar ao app" : "Tentar novamente"}</button>
   </div>
   <script>
     if (window.opener) {
       window.opener.postMessage({ type: 'fb-oauth-done', success: ${success} }, '*');
       setTimeout(() => window.close(), 1500);
+    } else {
+      setTimeout(() => window.location.assign(${JSON.stringify(redirectUrl)}), 1800);
     }
   </script>
 </body>
@@ -56,17 +72,19 @@ serve(async (req) => {
     const error = url.searchParams.get("error");
     const errorDesc = url.searchParams.get("error_description");
 
+    const returnUrl = getReturnUrlFromState(state);
+
     if (error) {
-      return htmlResponse("Conexão cancelada", errorDesc || error, false);
+      return htmlResponse("Conexão cancelada", errorDesc || error, false, returnUrl);
     }
     if (!code || !state) {
-      return htmlResponse("Erro", "Parâmetros 'code' ou 'state' ausentes.", false);
+      return htmlResponse("Erro", "Parâmetros 'code' ou 'state' ausentes.", false, returnUrl);
     }
 
     const appId = Deno.env.get("FACEBOOK_APP_ID");
     const appSecret = Deno.env.get("FACEBOOK_APP_SECRET");
     if (!appId || !appSecret) {
-      return htmlResponse("Erro de configuração", "FACEBOOK_APP_ID ou FACEBOOK_APP_SECRET não estão configurados.", false);
+        return htmlResponse("Erro de configuração", "FACEBOOK_APP_ID ou FACEBOOK_APP_SECRET não estão configurados.", false, returnUrl);
     }
 
     const supabase = createClient(
@@ -82,11 +100,11 @@ serve(async (req) => {
       .maybeSingle();
 
     if (!stateRow) {
-      return htmlResponse("Sessão expirada", "Estado OAuth inválido. Tente conectar novamente.", false);
+      return htmlResponse("Sessão expirada", "Estado OAuth inválido. Tente conectar novamente.", false, returnUrl);
     }
     if (new Date(stateRow.expires_at) < new Date()) {
       await supabase.from("facebook_oauth_states").delete().eq("state", state);
-      return htmlResponse("Sessão expirada", "O link expirou. Tente conectar novamente.", false);
+      return htmlResponse("Sessão expirada", "O link expirou. Tente conectar novamente.", false, returnUrl);
     }
 
     const userId = stateRow.user_id;
@@ -106,7 +124,7 @@ serve(async (req) => {
     if (!tokenResp.ok) {
       const errBody = await tokenResp.text();
       console.error("Token exchange failed:", errBody);
-      return htmlResponse("Erro ao trocar código", errBody.substring(0, 200), false);
+      return htmlResponse("Erro ao trocar código", errBody.substring(0, 200), false, returnUrl);
     }
     const tokenData = await tokenResp.json();
     const shortToken = tokenData.access_token;
@@ -129,13 +147,13 @@ serve(async (req) => {
     if (!pagesResp.ok) {
       const errBody = await pagesResp.text();
       console.error("Pages fetch failed:", errBody);
-      return htmlResponse("Erro ao buscar páginas", errBody.substring(0, 200), false);
+      return htmlResponse("Erro ao buscar páginas", errBody.substring(0, 200), false, returnUrl);
     }
     const pagesData = await pagesResp.json();
     const pages = pagesData.data || [];
 
     if (pages.length === 0) {
-      return htmlResponse("Nenhuma página", "Sua conta não administra nenhuma página do Facebook. Verifique no Business Manager.", false);
+      return htmlResponse("Nenhuma página", "Sua conta não administra nenhuma página do Facebook. Verifique no Business Manager.", false, returnUrl);
     }
 
     // Upsert each page into facebook_accounts (encryption trigger handles the access_token)
@@ -183,7 +201,8 @@ serve(async (req) => {
     return htmlResponse(
       "Conectado com sucesso!",
       `${savedCount} de ${pages.length} página(s) do Facebook conectadas. Os tokens são válidos por 60 dias.`,
-      true
+      true,
+      returnUrl
     );
   } catch (err: any) {
     console.error("facebook-oauth-callback error:", err);

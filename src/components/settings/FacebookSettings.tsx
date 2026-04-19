@@ -44,6 +44,7 @@ interface Props {
 const FacebookSettings = ({ settings, onChange }: Props) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const externalSettingsUrl = 'https://forex.a3solucoesdigitais.com/settings';
   const [accounts, setAccounts] = useState<FacebookAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
@@ -93,34 +94,36 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
   const isInIframe = (() => {
     try { return window.self !== window.top; } catch { return true; }
   })();
+  const isPreviewHost = typeof window !== 'undefined' && window.location.hostname.includes('id-preview--');
+  const shouldOpenOutsidePreview = isInIframe || isPreviewHost;
 
   const handleOAuthConnect = async () => {
     setOauthLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('facebook-oauth-start');
+      const returnUrl = shouldOpenOutsidePreview
+        ? externalSettingsUrl
+        : `${window.location.origin}/settings`;
+
+      const { data, error } = await supabase.functions.invoke('facebook-oauth-start', {
+        body: { returnUrl },
+      });
       if (error) throw error;
       if (!data?.authUrl) throw new Error('URL de autorização não retornada');
 
-      if (isInIframe) {
+      if (shouldOpenOutsidePreview) {
         // Dentro do iframe do preview, popups e redirects para Facebook são bloqueados.
-        // Solução: abrir a app publicada em nova aba; o usuário completa o login lá.
-        const publishedUrl = 'https://trend-whisperer-18.lovable.app/settings';
+        // Solução: abrir a app publicada/custom em nova aba; o usuário completa o login lá.
         toast({
           title: 'Abra fora do preview',
           description: 'O Facebook bloqueia login dentro do preview. Abrindo a app publicada em nova aba…',
         });
-        window.open(publishedUrl, '_blank', 'noopener,noreferrer');
+        window.open(externalSettingsUrl, '_blank', 'noopener,noreferrer');
         setOauthLoading(false);
         return;
       }
 
-      // Fora do iframe: abre popup normal
-      const popup = window.open(data.authUrl, 'fb-oauth', 'width=600,height=720');
-      if (!popup) {
-        // Popup bloqueado: faz redirect top-level como fallback
-        toast({ title: 'Popup bloqueado', description: 'Redirecionando para o Facebook…' });
-        window.location.assign(data.authUrl);
-      }
+      toast({ title: 'Redirecionando', description: 'Abrindo o login do Facebook…' });
+      window.location.assign(data.authUrl);
     } catch (e: any) {
       toast({ title: 'Erro', description: e.message, variant: 'destructive' });
       setOauthLoading(false);
@@ -223,7 +226,7 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
     >
       <div className="space-y-3">
         {/* Aviso quando dentro do iframe do preview */}
-        {isInIframe && (
+        {shouldOpenOutsidePreview && (
           <div className="p-3 rounded-lg border border-warning/40 bg-warning/10 text-xs text-foreground">
             <p className="font-medium mb-1">⚠️ O Facebook bloqueia login dentro do preview do Lovable.</p>
             <p className="text-muted-foreground">
