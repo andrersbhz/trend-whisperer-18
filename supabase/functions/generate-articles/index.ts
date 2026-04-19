@@ -400,7 +400,6 @@ serve(async (req) => {
       if (decrypted && typeof decrypted === "string" && decrypted.length > 5) groqApiKey = decrypted;
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
     const providers: ProviderConfig[] = [];
     // Ordem (preferência do usuário): Gemini PRIMEIRO → OpenAI → Groq. Lovable AI DESABILITADO para geração de artigos.
