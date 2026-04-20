@@ -96,6 +96,29 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
   const shouldAutoStartOauth = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('facebook_oauth') === '1';
   const topLevelSettingsUrl = `${externalSettingsUrl}?facebook_oauth=1`;
 
+  const getPopupFeatures = () => {
+    const width = 560;
+    const height = 760;
+    const left = Math.max(0, window.screenX + (window.outerWidth - width) / 2);
+    const top = Math.max(0, window.screenY + (window.outerHeight - height) / 2);
+
+    return [
+      'popup=yes',
+      `width=${width}`,
+      `height=${height}`,
+      `left=${Math.round(left)}`,
+      `top=${Math.round(top)}`,
+      'resizable=yes',
+      'scrollbars=yes',
+    ].join(',');
+  };
+
+  const openOAuthPopup = (url: string) => {
+    const popup = window.open(url, 'facebook-oauth', getPopupFeatures());
+    popup?.focus();
+    return popup;
+  };
+
   const requestFacebookAuthUrl = async (returnUrl: string) => {
     const { data, error } = await supabase.functions.invoke('facebook-oauth-start', {
       body: { returnUrl },
@@ -125,18 +148,31 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
 
   const handleOAuthConnect = async () => {
     if (shouldOpenOutsidePreview) {
+      setOauthLoading(true);
+      const popup = openOAuthPopup(topLevelSettingsUrl);
+
+      if (!popup) {
+        setOauthLoading(false);
+        window.open(topLevelSettingsUrl, '_blank');
+      }
+
       toast({
-        title: 'Abrindo fora do preview',
-        description: 'O login do Facebook será iniciado em uma nova aba.',
+        title: 'Abrindo conexão do Facebook',
+        description: popup
+          ? 'Conclua o login na janela que acabou de abrir.'
+          : 'Seu navegador bloqueou o popup, então abrimos a tela publicada em uma nova aba.',
       });
-      window.open(topLevelSettingsUrl, '_blank', 'noopener,noreferrer');
       return;
     }
 
     setOauthLoading(true);
     try {
       const authUrl = await requestFacebookAuthUrl(`${window.location.origin}/settings`);
-      window.location.assign(authUrl);
+      const popup = openOAuthPopup(authUrl);
+
+      if (!popup) {
+        window.location.assign(authUrl);
+      }
     } catch (e: any) {
       toast({ title: 'Erro', description: e.message, variant: 'destructive' });
       setOauthLoading(false);
@@ -238,6 +274,11 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
       }}
     >
       <div className="space-y-3">
+        {shouldOpenOutsidePreview && (
+          <div className="rounded-lg border border-accent/40 bg-accent/10 p-3 text-xs text-muted-foreground">
+            No preview o Facebook bloqueia OAuth dentro do iframe; por isso o botão abre uma janela externa para concluir a conexão com segurança.
+          </div>
+        )}
 
 
         {/* Primary OAuth action — always visible at top */}
