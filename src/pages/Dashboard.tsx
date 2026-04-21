@@ -70,8 +70,12 @@ const Dashboard = () => {
         failed: (articles || []).filter((a) => a.status === 'failed').length,
       });
 
-      // Aggregate by category
+      // Aggregate by category — start with all known categories so they always appear
+      const ALL_CATEGORIES = ['esportes', 'politica', 'policia', 'saude', 'celebridades', 'financas'];
       const byCat: Record<string, { total: number; published: number; pending: number; failed: number }> = {};
+      ALL_CATEGORIES.forEach((cat) => {
+        byCat[cat] = { total: 0, published: 0, pending: 0, failed: 0 };
+      });
       (articles || []).forEach((a: any) => {
         const cat = a.category || 'outros';
         if (!byCat[cat]) byCat[cat] = { total: 0, published: 0, pending: 0, failed: 0 };
