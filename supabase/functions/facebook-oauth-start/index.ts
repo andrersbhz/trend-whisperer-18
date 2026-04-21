@@ -7,23 +7,30 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Note: Advanced scopes (pages_manage_posts, instagram_content_publish, etc.)
-// require Meta App Review. In Development Mode, only Admins/Developers/Testers
-// of the App can grant them. We request the full set; if your account is a
-// tester on the App, Facebook will allow these scopes through.
-const SCOPES = [
-  "email",
-  "public_profile",
-  "pages_show_list",
-  "pages_read_engagement",
-  "pages_manage_posts",
-  "pages_manage_metadata",
-  "pages_read_user_content",
-  "instagram_basic",
-  "instagram_content_publish",
-  "read_insights",
-  "business_management",
-].join(",");
+// Scopes: only basic scopes are requested by default because advanced scopes
+// (pages_manage_posts, instagram_content_publish, etc.) require the app to
+// have "Facebook Login for Business" + "Pages API" + "Instagram Graph API"
+// products added in the Meta Developer Console, AND the user must be an
+// Admin/Developer/Tester of the App. If those scopes are requested without
+// the products configured, Facebook returns "Invalid Scopes".
+//
+// To enable publishing later:
+// 1) In developers.facebook.com → your App → Add Products: "Facebook Login for Business",
+//    "Pages API" and "Instagram Graph API".
+// 2) In App Roles, add your Facebook user as Admin/Developer/Tester.
+// 3) Add the desired scopes back to ADVANCED_SCOPES below.
+const BASIC_SCOPES = ["email", "public_profile", "pages_show_list"];
+const ADVANCED_SCOPES: string[] = [
+  // "pages_read_engagement",
+  // "pages_manage_posts",
+  // "pages_manage_metadata",
+  // "pages_read_user_content",
+  // "instagram_basic",
+  // "instagram_content_publish",
+  // "read_insights",
+  // "business_management",
+];
+const SCOPES = [...BASIC_SCOPES, ...ADVANCED_SCOPES].join(",");
 
 const DEFAULT_RETURN_URL = "https://forex.a3solucoesdigitais.com/settings";
 const ALLOWED_RETURN_HOSTS = new Set([
