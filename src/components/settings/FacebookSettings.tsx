@@ -142,15 +142,17 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
     return data.authUrl as string;
   };
 
-  const handleOAuthConnect = async () => {
-    if (oauthLoading) return;
-    setOauthLoading(true);
+  const isInIframe = (() => {
+    try { return window.self !== window.top; } catch { return true; }
+  })();
 
-    // 1) Open the popup IMMEDIATELY (synchronously) inside the click handler.
-    //    This is required so popup blockers don't block it. We point it to a
-    //    lightweight loading page first, then navigate it to the Facebook URL.
+  const shouldAutoStartOauth =
+    typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).get('facebook_oauth') === '1';
+
+  const startOauthPopup = async () => {
+    // Open popup synchronously (required to avoid popup blockers)
     const popup = window.open('about:blank', 'facebook-oauth', getPopupFeatures());
-
     if (!popup) {
       setOauthLoading(false);
       toast({
@@ -160,17 +162,13 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
       });
       return;
     }
-
     popupRef.current = popup;
 
-    // Friendly loading screen while we fetch the auth URL
     try {
       popup.document.write(`<!doctype html><html><head><title>Conectando ao Facebook…</title><meta charset="utf-8"/></head><body style="font-family:-apple-system,sans-serif;background:#0b0b14;color:#e5e5e5;display:flex;align-items:center;justify-content:center;height:100vh;margin:0"><div style="text-align:center"><div style="font-size:2rem">⏳</div><p>Preparando conexão segura…</p></div></body></html>`);
     } catch {}
 
     try {
-      // Always send users back to the published domain — Facebook OAuth doesn't
-      // play well with iframe-only preview URLs and the popup is top-level anyway.
       const authUrl = await requestFacebookAuthUrl(externalSettingsUrl);
       popup.location.replace(authUrl);
       popup.focus();
@@ -181,6 +179,45 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
       toast({ title: 'Erro', description: e.message, variant: 'destructive' });
     }
   };
+
+  const handleOAuthConnect = async () => {
+    if (oauthLoading) return;
+
+    // Inside the Lovable preview iframe, Facebook returns X-Frame-Options that
+    // block its OAuth dialog from rendering — even popups inherit the iframe
+    // ancestor. We must escape to the top-level domain first.
+    if (isInIframe) {
+      const externalUrl = `${externalSettingsUrl}?facebook_oauth=1`;
+      // Try to break out of the iframe directly to top
+      try {
+        if (window.top && window.top !== window.self) {
+          window.top.location.href = externalUrl;
+          return;
+        }
+      } catch {
+        // cross-origin: fall through to opening a new tab
+      }
+      window.open(externalUrl, '_blank', 'noopener');
+      toast({
+        title: 'Abrindo app publicado',
+        description: 'Conclua o login do Facebook na nova aba que acabou de abrir.',
+      });
+      return;
+    }
+
+    setOauthLoading(true);
+    await startOauthPopup();
+  };
+
+  // Auto-start OAuth when arriving from the preview with ?facebook_oauth=1
+  useEffect(() => {
+    if (!user || !shouldAutoStartOauth || isInIframe) return;
+    // Clean the URL so refreshes don't re-trigger
+    window.history.replaceState({}, '', '/settings');
+    setOauthLoading(true);
+    startOauthPopup();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   const handleDiscoverPages = async () => {
     if (!userAccessToken) {
@@ -278,7 +315,9 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
     >
       <div className="space-y-3">
         <div className="rounded-lg border border-accent/40 bg-accent/10 p-3 text-xs text-muted-foreground">
-          O login do Facebook abre em uma janela popup. Conclua o login lá e a janela fechará automaticamente ao terminar.
+          {isInIframe
+            ? 'No preview do Lovable o Facebook bloqueia o login (X-Frame-Options). Ao clicar em Conectar, abrimos o app publicado em uma nova aba para concluir o login com segurança.'
+            : 'O login do Facebook abre em uma janela popup. Conclua o login lá e a janela fechará automaticamente ao terminar.'}
         </div>
 
 
