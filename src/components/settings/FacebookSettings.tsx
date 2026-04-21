@@ -44,7 +44,7 @@ interface Props {
 const FacebookSettings = ({ settings, onChange }: Props) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const externalSettingsUrl = 'https://forex.a3solucoesdigitais.com/settings';
+  const returnUrl = typeof window !== 'undefined' ? `${window.location.origin}/settings` : '/settings';
   const [accounts, setAccounts] = useState<FacebookAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
@@ -142,14 +142,6 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
     return data.authUrl as string;
   };
 
-  const isInIframe = (() => {
-    try { return window.self !== window.top; } catch { return true; }
-  })();
-
-  const shouldAutoStartOauth =
-    typeof window !== 'undefined' &&
-    new URLSearchParams(window.location.search).get('facebook_oauth') === '1';
-
   const startOauthPopup = async () => {
     // Open popup synchronously (required to avoid popup blockers)
     const popup = window.open('about:blank', 'facebook-oauth', getPopupFeatures());
@@ -169,7 +161,7 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
     } catch {}
 
     try {
-      const authUrl = await requestFacebookAuthUrl(externalSettingsUrl);
+      const authUrl = await requestFacebookAuthUrl(returnUrl);
       popup.location.replace(authUrl);
       popup.focus();
       watchPopupClosed(popup);
@@ -182,42 +174,9 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
 
   const handleOAuthConnect = async () => {
     if (oauthLoading) return;
-
-    // Inside the Lovable preview iframe, Facebook returns X-Frame-Options that
-    // block its OAuth dialog from rendering — even popups inherit the iframe
-    // ancestor. We must escape to the top-level domain first.
-    if (isInIframe) {
-      const externalUrl = `${externalSettingsUrl}?facebook_oauth=1`;
-      // Try to break out of the iframe directly to top
-      try {
-        if (window.top && window.top !== window.self) {
-          window.top.location.href = externalUrl;
-          return;
-        }
-      } catch {
-        // cross-origin: fall through to opening a new tab
-      }
-      window.open(externalUrl, '_blank', 'noopener');
-      toast({
-        title: 'Abrindo app publicado',
-        description: 'Conclua o login do Facebook na nova aba que acabou de abrir.',
-      });
-      return;
-    }
-
     setOauthLoading(true);
     await startOauthPopup();
   };
-
-  // Auto-start OAuth when arriving from the preview with ?facebook_oauth=1
-  useEffect(() => {
-    if (!user || !shouldAutoStartOauth || isInIframe) return;
-    // Clean the URL so refreshes don't re-trigger
-    window.history.replaceState({}, '', '/settings');
-    setOauthLoading(true);
-    startOauthPopup();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
 
   const handleDiscoverPages = async () => {
     if (!userAccessToken) {
@@ -315,9 +274,7 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
     >
       <div className="space-y-3">
         <div className="rounded-lg border border-accent/40 bg-accent/10 p-3 text-xs text-muted-foreground">
-          {isInIframe
-            ? 'No preview do Lovable o Facebook bloqueia o login (X-Frame-Options). Ao clicar em Conectar, abrimos o app publicado em uma nova aba para concluir o login com segurança.'
-            : 'O login do Facebook abre em uma janela popup. Conclua o login lá e a janela fechará automaticamente ao terminar.'}
+          O login do Facebook abre em uma janela popup. Conclua o login lá e a janela fechará automaticamente ao terminar.
         </div>
 
 
