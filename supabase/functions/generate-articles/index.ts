@@ -413,11 +413,53 @@ serve(async (req) => {
 
     console.log(`[Pipeline] Available AI providers: ${providers.map(p => p.name).join(" → ")}`);
 
-    const { data: topics } = await supabase.from("trending_topics").select("*").eq("user_id", userId).eq("used", false).limit(10);
-    const userCategories = settings?.categories || ["esportes", "politica", "policia", "saude", "celebridades", "financas"];
-    const topicsToUse = topics && topics.length > 0
-      ? topics
-      : userCategories.map((cat: string) => ({ topic: getDefaultTopic(cat), category: cat, id: null }));
+    const { data: topics } = await supabase.from("trending_topics").select("*").eq("user_id", userId).eq("used", false);
+    const userCategories: string[] = settings?.categories || ["esportes", "politica", "policia", "saude", "celebridades", "financas"];
+
+    // Conta artigos criados nas últimas 24h por categoria para priorizar as mais defasadas
+    const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const { data: recentArticles } = await supabase
+      .from("articles")
+      .select("category")
+      .eq("user_id", userId)
+      .gte("created_at", since24h);
+    const countsByCategory: Record<string, number> = {};
+    for (const cat of userCategories) countsByCategory[cat] = 0;
+    for (const a of (recentArticles || [])) {
+      if (a.category in countsByCategory) countsByCategory[a.category]++;
+    }
+    console.log(`[Pipeline] Artigos últimas 24h por categoria:`, countsByCategory);
+
+    // Agrupa tópicos disponíveis por categoria
+    const topicsByCategory: Record<string, any[]> = {};
+    for (const cat of userCategories) topicsByCategory[cat] = [];
+    for (const t of (topics || [])) {
+      if (t.category in topicsByCategory) topicsByCategory[t.category].push(t);
+    }
+    // Garante fallback (default topic) para categorias SEM tópicos disponíveis
+    for (const cat of userCategories) {
+      if (topicsByCategory[cat].length === 0) {
+        topicsByCategory[cat].push({ topic: getDefaultTopic(cat), category: cat, id: null });
+      }
+    }
+
+    // Ordena categorias: as com menos artigos nas últimas 24h primeiro (balanceamento)
+    const sortedCategories = [...userCategories].sort((a, b) => countsByCategory[a] - countsByCategory[b]);
+
+    // Round-robin: intercala um tópico de cada categoria, começando pelas mais defasadas
+    const topicsToUse: any[] = [];
+    let added = true;
+    while (added && topicsToUse.length < 50) {
+      added = false;
+      for (const cat of sortedCategories) {
+        const next = topicsByCategory[cat].shift();
+        if (next) {
+          topicsToUse.push(next);
+          added = true;
+        }
+      }
+    }
+    console.log(`[Pipeline] Ordem de tópicos balanceada (primeiros 5):`, topicsToUse.slice(0, 5).map(t => t.category).join(" → "));
 
     const articlesPerDay = Math.max(settings?.articles_per_day || 10, 1);
     const intervalMs = (24 / articlesPerDay) * 60 * 60 * 1000;
