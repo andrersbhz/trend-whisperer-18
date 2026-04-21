@@ -256,7 +256,7 @@ const Dashboard = () => {
         <CardContent>
           {categoryStats.length === 0 ? (
             <p className="text-muted-foreground text-sm py-8 text-center">
-              Nenhum artigo gerado ainda. Os dados aparecerão aqui após a primeira geração.
+              Nenhuma categoria configurada.
             </p>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
