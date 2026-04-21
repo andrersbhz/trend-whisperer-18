@@ -274,9 +274,7 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
     >
       <div className="space-y-3">
         <div className="rounded-lg border border-accent/40 bg-accent/10 p-3 text-xs text-muted-foreground">
-          {isInIframe
-            ? 'No preview do Lovable o Facebook bloqueia o login (X-Frame-Options). Ao clicar em Conectar, abrimos o app publicado em uma nova aba para concluir o login com segurança.'
-            : 'O login do Facebook abre em uma janela popup. Conclua o login lá e a janela fechará automaticamente ao terminar.'}
+          O login do Facebook abre em uma janela popup. Conclua o login lá e a janela fechará automaticamente ao terminar.
         </div>
 
 
