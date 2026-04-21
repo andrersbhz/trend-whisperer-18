@@ -23,6 +23,7 @@ const Dashboard = () => {
   const [stats, setStats] = useState({ total: 0, published: 0, pending: 0, trending: 0, failed: 0 });
   const [recentArticles, setRecentArticles] = useState<any[]>([]);
   const [recentErrors, setRecentErrors] = useState<any[]>([]);
+  const [categoryStats, setCategoryStats] = useState<Array<{ category: string; total: number; published: number; pending: number; failed: number }>>([]);
   const [generating, setGenerating] = useState(false);
   const [writerPrompt, setWriterPrompt] = useState(DEFAULT_WRITER_PROMPT);
   const [savingPrompt, setSavingPrompt] = useState(false);
