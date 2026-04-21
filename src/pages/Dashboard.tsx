@@ -238,6 +238,69 @@ const Dashboard = () => {
 
       <AIProvidersPanel />
 
+      {/* Métricas por Categoria */}
+      <Card className="glass-card neon-border-pink">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5 text-accent" />
+            <CardTitle className="text-lg text-foreground">Métricas por Categoria</CardTitle>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Distribuição de artigos por categoria, com status de publicação.
+          </p>
+        </CardHeader>
+        <CardContent>
+          {categoryStats.length === 0 ? (
+            <p className="text-muted-foreground text-sm py-8 text-center">
+              Nenhum artigo gerado ainda. Os dados aparecerão aqui após a primeira geração.
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {categoryStats.map((c, idx) => {
+                const pct = stats.total > 0 ? Math.round((c.total / stats.total) * 100) : 0;
+                return (
+                  <div
+                    key={c.category}
+                    className="p-4 rounded-lg bg-secondary/30 hover:bg-secondary/60 transition-all duration-200 border border-border/40 animate-float-up"
+                    style={{ animationDelay: `${idx * 50}ms` }}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-foreground truncate">
+                        {categoryLabels[c.category] || c.category}
+                      </span>
+                      <Badge variant="secondary" className="bg-primary/15 text-primary text-[10px] shrink-0">
+                        {pct}%
+                      </Badge>
+                    </div>
+                    <p className="text-2xl font-bold text-foreground tabular-nums mb-3">{c.total}</p>
+                    <div className="h-1.5 w-full rounded-full bg-background/50 overflow-hidden mb-3">
+                      <div
+                        className="h-full gradient-primary transition-all duration-500"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between gap-2 text-[11px]">
+                      <div className="flex items-center gap-1 text-success">
+                        <CheckCircle className="h-3 w-3" />
+                        <span className="tabular-nums">{c.published}</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-warning">
+                        <Clock className="h-3 w-3" />
+                        <span className="tabular-nums">{c.pending}</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-destructive">
+                        <span className="h-2 w-2 rounded-full bg-destructive" />
+                        <span className="tabular-nums">{c.failed}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Writer Profile Prompt */}
       <Card className="glass-card neon-border-lilac">
         <CardHeader>
