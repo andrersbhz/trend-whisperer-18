@@ -34,7 +34,7 @@ const Dashboard = () => {
 
     try {
       const [articles, trendingTopics, recent, settings, errors] = await Promise.all([
-        runBackendQuery(() => supabase.from('articles').select('id, status').eq('user_id', user.id)),
+        runBackendQuery(() => supabase.from('articles').select('id, status, category').eq('user_id', user.id)),
         runBackendQuery(() => supabase.from('trending_topics').select('id').eq('user_id', user.id).eq('used', false)),
         runBackendQuery(() =>
           supabase
@@ -69,6 +69,23 @@ const Dashboard = () => {
         trending: trendingTopics?.length || 0,
         failed: (articles || []).filter((a) => a.status === 'failed').length,
       });
+
+      // Aggregate by category
+      const byCat: Record<string, { total: number; published: number; pending: number; failed: number }> = {};
+      (articles || []).forEach((a: any) => {
+        const cat = a.category || 'outros';
+        if (!byCat[cat]) byCat[cat] = { total: 0, published: 0, pending: 0, failed: 0 };
+        byCat[cat].total += 1;
+        if (a.status === 'published') byCat[cat].published += 1;
+        else if (a.status === 'failed') byCat[cat].failed += 1;
+        else if (a.status === 'ready' || a.status === 'draft' || a.status === 'generating') byCat[cat].pending += 1;
+      });
+      setCategoryStats(
+        Object.entries(byCat)
+          .map(([category, v]) => ({ category, ...v }))
+          .sort((a, b) => b.total - a.total),
+      );
+
       setRecentArticles(recent || []);
       setRecentErrors(errors || []);
       if (settings?.writer_prompt) {
@@ -78,6 +95,7 @@ const Dashboard = () => {
     } catch (error) {
       setStats({ total: 0, published: 0, pending: 0, trending: 0, failed: 0 });
       setRecentArticles([]);
+      setCategoryStats([]);
       toast({ title: 'Erro ao carregar painel', description: getErrorMessage(error), variant: 'destructive' });
     }
   };
