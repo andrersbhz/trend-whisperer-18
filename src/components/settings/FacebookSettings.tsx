@@ -44,7 +44,7 @@ interface Props {
 const FacebookSettings = ({ settings, onChange }: Props) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const externalSettingsUrl = 'https://forex.a3solucoesdigitais.com/settings';
+  const returnUrl = typeof window !== 'undefined' ? `${window.location.origin}/settings` : '/settings';
   const [accounts, setAccounts] = useState<FacebookAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
