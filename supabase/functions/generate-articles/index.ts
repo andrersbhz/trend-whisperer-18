@@ -430,36 +430,58 @@ serve(async (req) => {
     }
     console.log(`[Pipeline] Artigos últimas 24h por categoria:`, countsByCategory);
 
-    // Agrupa tópicos disponíveis por categoria
+    // Score de prioridade por volume de busca (quanto maior, mais "em alta")
+    const volumeScore = (v: string | null | undefined): number => {
+      const s = (v || "").toLowerCase();
+      if (s.includes("alto") || s === "high") return 3;
+      if (s.includes("médio") || s.includes("medio") || s === "medium") return 2;
+      if (s.includes("baixo") || s === "low") return 1;
+      if (s.includes("evergreen")) return 0;
+      return 1;
+    };
+
+    // Agrupa tópicos disponíveis por categoria + ordena cada categoria por volume DESC (alto primeiro)
     const topicsByCategory: Record<string, any[]> = {};
     for (const cat of userCategories) topicsByCategory[cat] = [];
     for (const t of (topics || [])) {
       if (t.category in topicsByCategory) topicsByCategory[t.category].push(t);
     }
-    // Garante fallback (default topic) para categorias SEM tópicos disponíveis
+    for (const cat of userCategories) {
+      topicsByCategory[cat].sort((a, b) => volumeScore(b.search_volume) - volumeScore(a.search_volume));
+    }
+    // Fallback (default topic) para categorias SEM tópicos disponíveis
     for (const cat of userCategories) {
       if (topicsByCategory[cat].length === 0) {
-        topicsByCategory[cat].push({ topic: getDefaultTopic(cat), category: cat, id: null });
+        topicsByCategory[cat].push({ topic: getDefaultTopic(cat), category: cat, id: null, search_volume: "evergreen" });
       }
     }
 
-    // Ordena categorias: as com menos artigos nas últimas 24h primeiro (balanceamento)
-    const sortedCategories = [...userCategories].sort((a, b) => countsByCategory[a] - countsByCategory[b]);
+    // Score combinado: prioriza categorias com tópicos QUENTES (alta busca),
+    // mas penaliza levemente categorias já saturadas nas últimas 24h para garantir variedade.
+    // peakScore = melhor volume disponível na categoria - (artigos recentes * 0.5)
+    const categoryPriority = (cat: string): number => {
+      const top = topicsByCategory[cat][0];
+      const peak = top ? volumeScore(top.search_volume) : 0;
+      const recent = countsByCategory[cat] || 0;
+      return peak * 10 - recent * 0.5;
+    };
 
-    // Round-robin: intercala um tópico de cada categoria, começando pelas mais defasadas
+    // Round-robin ponderado: a cada rodada reordena por prioridade atual,
+    // pegando 1 tópico da categoria mais "quente vs saturada" do momento.
     const topicsToUse: any[] = [];
-    let added = true;
-    while (added && topicsToUse.length < 50) {
-      added = false;
-      for (const cat of sortedCategories) {
-        const next = topicsByCategory[cat].shift();
-        if (next) {
-          topicsToUse.push(next);
-          added = true;
-        }
-      }
+    while (topicsToUse.length < 50) {
+      const available = userCategories.filter((c) => topicsByCategory[c].length > 0);
+      if (available.length === 0) break;
+      available.sort((a, b) => categoryPriority(b) - categoryPriority(a));
+      const cat = available[0];
+      const next = topicsByCategory[cat].shift();
+      if (!next) break;
+      topicsToUse.push(next);
+      // simula que a categoria "ganhou" um post para o próximo cálculo
+      countsByCategory[cat] = (countsByCategory[cat] || 0) + 1;
     }
-    console.log(`[Pipeline] Ordem de tópicos balanceada (primeiros 5):`, topicsToUse.slice(0, 5).map(t => t.category).join(" → "));
+    console.log(`[Pipeline] Ordem priorizando ALTA (primeiros 8):`,
+      topicsToUse.slice(0, 8).map(t => `${t.category}[${t.search_volume || "?"}]`).join(" → "));
 
     const articlesPerDay = Math.max(settings?.articles_per_day || 10, 1);
     const intervalMs = (24 / articlesPerDay) * 60 * 60 * 1000;
