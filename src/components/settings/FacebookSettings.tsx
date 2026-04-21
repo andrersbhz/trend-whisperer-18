@@ -56,7 +56,7 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
   const [newAccount, setNewAccount] = useState({ page_name: '', page_id: '', access_token: '', instagram_account_id: '' });
   const [saving, setSaving] = useState(false);
   const [oauthLoading, setOauthLoading] = useState(false);
-  const autoOauthRequestedRef = useRef(false);
+  
 
   const fetchAccounts = async () => {
     if (!user) return;
