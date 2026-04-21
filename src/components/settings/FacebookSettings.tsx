@@ -277,11 +277,9 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
       }}
     >
       <div className="space-y-3">
-        {shouldOpenOutsidePreview && (
-          <div className="rounded-lg border border-accent/40 bg-accent/10 p-3 text-xs text-muted-foreground">
-            No preview o Facebook bloqueia OAuth dentro do iframe; por isso o botão abre uma janela externa para concluir a conexão com segurança.
-          </div>
-        )}
+        <div className="rounded-lg border border-accent/40 bg-accent/10 p-3 text-xs text-muted-foreground">
+          O login do Facebook abre em uma janela popup. Conclua o login lá e a janela fechará automaticamente ao terminar.
+        </div>
 
 
         {/* Primary OAuth action — always visible at top */}
