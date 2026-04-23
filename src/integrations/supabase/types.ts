@@ -36,12 +36,10 @@ export type Database = {
           content: string | null
           created_at: string
           excerpt: string | null
-          facebook_post_id: string | null
           fact_check_notes: string | null
           fact_check_status: string | null
           featured_image_url: string | null
           id: string
-          instagram_post_id: string | null
           meta_description: string | null
           published_at: string | null
           research_references: Json | null
@@ -63,12 +61,10 @@ export type Database = {
           content?: string | null
           created_at?: string
           excerpt?: string | null
-          facebook_post_id?: string | null
           fact_check_notes?: string | null
           fact_check_status?: string | null
           featured_image_url?: string | null
           id?: string
-          instagram_post_id?: string | null
           meta_description?: string | null
           published_at?: string | null
           research_references?: Json | null
@@ -90,12 +86,10 @@ export type Database = {
           content?: string | null
           created_at?: string
           excerpt?: string | null
-          facebook_post_id?: string | null
           fact_check_notes?: string | null
           fact_check_status?: string | null
           featured_image_url?: string | null
           id?: string
-          instagram_post_id?: string | null
           meta_description?: string | null
           published_at?: string | null
           research_references?: Json | null
