@@ -13,8 +13,12 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { accessToken } = await req.json();
-    if (!accessToken) throw new Error("accessToken is required");
+    const body = await req.json();
+    const accessToken = (body?.accessToken || "").trim();
+    if (!accessToken) throw new Error("accessToken é obrigatório");
+    if (!accessToken.startsWith("EAA")) {
+      throw new Error("Token inválido. Tokens da Meta começam com 'EAA'. Cole apenas o token (sem 'Bearer' ou aspas).");
+    }
 
     // Fetch all pages the user manages (use query param for better compatibility)
     const fields = "id,name,access_token,category,picture{url},fan_count,instagram_business_account{id,name,username,profile_picture_url,followers_count}";
@@ -23,8 +27,16 @@ serve(async (req) => {
     );
 
     if (!pagesRes.ok) {
-      const err = await pagesRes.json();
-      throw new Error(err.error?.message || `Meta API error: ${pagesRes.status}`);
+      const err = await pagesRes.json().catch(() => ({}));
+      const fbMsg = err?.error?.message || "";
+      const code = err?.error?.code;
+      // Common: 190 = invalid/expired token
+      if (code === 190 || /access token/i.test(fbMsg)) {
+        throw new Error(
+          "Token de acesso inválido ou expirado. Gere um novo User Access Token em developers.facebook.com → Graph API Explorer e tente novamente."
+        );
+      }
+      throw new Error(fbMsg || `Meta API error: ${pagesRes.status}`);
     }
 
     const pagesData = await pagesRes.json();
