@@ -81,37 +81,43 @@ serve(async (req) => {
     }
     const userId = userData.user.id;
 
-    const appId = Deno.env.get("FACEBOOK_APP_ID");
-    if (!appId) throw new Error("FACEBOOK_APP_ID not configured");
+    const appId = Deno.env.get(\"FACEBOOK_APP_ID\");
+    if (!appId) throw new Error(\"FACEBOOK_APP_ID not configured\");
 
-    const requestBody = req.method === "POST" ? await req.json().catch(() => ({})) : {};
+    const requestBody = req.method === \"POST\" ? await req.json().catch(() => ({})) : {};
     const returnUrl = getSafeReturnUrl(requestBody?.returnUrl);
 
-    // Random anti-CSRF state + return URL for top-level redirect back to the app
-    const stateNonce = crypto.randomUUID() + crypto.randomUUID().replace(/-/g, "");
+    // Get the base project URL from SUPABASE_URL (e.g., https://bvvhgwkjyfnjroudtbav.supabase.co)
+    const supabaseUrl = Deno.env.get(\"SUPABASE_URL\")?.replace(/\\/$/, \"\");
+    const redirectUri = `${supabaseUrl}/functions/v1/facebook-oauth-callback`;
+
+    // Construct exactly like the reference link provided by user
+    // Reference: https://www.facebook.com/v19.0/dialog/oauth?client_id=1251536133529856&redirect_uri=https%3A%2F%2Fbvvhgwkjyfnjroudtbav.supabase.co%2Ffunctions%2Fv1%2Ffacebook-oauth-callback&state=c8c89cc7-b67d-4f8c-b494-d3c7a8f89a2f35149f51a87d414c9f26aa466bb2611e%3A%3Ahttps%253A%252F%252Fforex.a3solucoesdigitais.com%252Fsettings&scope=email%2Cpublic_profile%2Cpages_show_list&response_type=code
+    
+    const stateNonce = crypto.randomUUID().replace(/-/g, \"\") + crypto.randomUUID().replace(/-/g, \"\");
+    // User requested state to look like: nonce::encodedUrl
     const state = `${stateNonce}::${encodeURIComponent(returnUrl)}`;
 
     // Store state -> user mapping using service role
     const adminSupabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+      Deno.env.get(\"SUPABASE_URL\")!,
+      Deno.env.get(\"SUPABASE_SERVICE_ROLE_KEY\")!
     );
 
     const { error: insertErr } = await adminSupabase
-      .from("facebook_oauth_states")
+      .from(\"facebook_oauth_states\")
       .insert({ state, user_id: userId });
     if (insertErr) throw insertErr;
 
     // Cleanup old expired states
-    await adminSupabase.from("facebook_oauth_states").delete().lt("expires_at", new Date().toISOString());
+    await adminSupabase.from(\"facebook_oauth_states\").delete().lt(\"expires_at\", new Date().toISOString());
 
-    const redirectUri = `${Deno.env.get("SUPABASE_URL")}/functions/v1/facebook-oauth-callback`;
-    const authUrl = new URL("https://www.facebook.com/v19.0/dialog/oauth");
-    authUrl.searchParams.set("client_id", appId);
-    authUrl.searchParams.set("redirect_uri", redirectUri);
-    authUrl.searchParams.set("state", state);
-    authUrl.searchParams.set("scope", SCOPES);
-    authUrl.searchParams.set("response_type", "code");
+    const authUrl = new URL(\"https://www.facebook.com/v19.0/dialog/oauth\");
+    authUrl.searchParams.set(\"client_id\", appId);
+    authUrl.searchParams.set(\"redirect_uri\", redirectUri);
+    authUrl.searchParams.set(\"state\", state);
+    authUrl.searchParams.set(\"scope\", SCOPES);
+    authUrl.searchParams.set(\"response_type\", \"code\");
 
     return new Response(JSON.stringify({ authUrl: authUrl.toString() }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
