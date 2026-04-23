@@ -44,7 +44,7 @@ const ArticlesPage = () => {
       const data = await runBackendQuery(() =>
         supabase
           .from('articles')
-          .select('id, title, status, category, seo_keyword, meta_description, featured_image_url')
+          .select('id, title, status, category, seo_keyword, meta_description, featured_image_url, fact_check_status, fact_check_notes, research_references, seo_audit_log')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
           .range(from, to),
@@ -160,7 +160,7 @@ const ArticlesPage = () => {
       const data = await runBackendQuery(() =>
         supabase
           .from('articles')
-          .select('id, title, category, seo_keyword, meta_description, content, featured_image_url')
+          .select('id, title, category, seo_keyword, meta_description, content, featured_image_url, fact_check_status, fact_check_notes, research_references, seo_audit_log')
           .eq('id', articleId)
           .maybeSingle(),
       );
@@ -337,6 +337,19 @@ const ArticlesPage = () => {
                         <Badge className={`${statusColors[article.status] || ''} text-[10px] sm:text-xs`} variant="secondary">
                           {statusLabels[article.status] || article.status}
                         </Badge>
+                        {article.fact_check_status && (
+                          <Badge 
+                            variant="outline" 
+                            className={`text-[10px] sm:text-xs ${
+                              article.fact_check_status === 'safe' ? 'border-success/50 text-success' : 
+                              article.fact_check_status === 'warning' ? 'border-warning/50 text-warning' : 
+                              'border-destructive/50 text-destructive'
+                            }`}
+                          >
+                            {article.fact_check_status === 'safe' ? '✅ Verificado' : 
+                             article.fact_check_status === 'warning' ? '⚠️ Atenção' : '🚨 Revisar'}
+                          </Badge>
+                        )}
                         <span className="text-[10px] sm:text-xs text-muted-foreground capitalize">{article.category}</span>
                       </div>
                       <h3 className="font-semibold text-foreground text-sm sm:text-base line-clamp-2 sm:truncate leading-snug">{article.title}</h3>
@@ -430,6 +443,41 @@ const ArticlesPage = () => {
               )}
               <div className="flex gap-2 flex-wrap">
                 <Badge variant="secondary" className="bg-primary/10 text-primary">{preview?.category}</Badge>
+                {preview?.fact_check_status && (
+                  <Badge variant="outline" className={preview.fact_check_status === 'safe' ? 'text-success' : 'text-warning'}>
+                    Status: {preview.fact_check_status}
+                  </Badge>
+                )}
+              </div>
+              
+              {preview?.research_references?.length > 0 && (
+                <div className="bg-muted/30 p-3 rounded-lg border border-border/50">
+                  <h4 className="font-semibold text-xs mb-2 flex items-center gap-2">
+                    <Database className="h-3 w-3" /> Referências de Pesquisa (Score)
+                  </h4>
+                  <div className="space-y-1.5">
+                    {preview.research_references.map((ref: any, i: number) => (
+                      <div key={i} className="text-[11px] flex items-center justify-between gap-2">
+                        <a href={ref.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate">
+                          {ref.headline || ref.source}
+                        </a>
+                        <Badge variant="secondary" className="text-[10px] h-4">{(ref.relevance_score * 100).toFixed(0)}%</Badge>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {preview?.seo_audit_log?.issues_found?.length > 0 && (
+                <div className="bg-warning/10 p-3 rounded-lg border border-warning/20">
+                  <h4 className="font-semibold text-xs text-warning mb-1">Auditoria de SEO:</h4>
+                  <ul className="list-disc list-inside text-[11px] text-muted-foreground">
+                    {preview.seo_audit_log.issues_found.map((issue: string, i: number) => (
+                      <li key={i}>{issue}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
                 {preview?.seo_keyword && <Badge variant="outline" className="border-accent/30 text-accent">🔑 {preview.seo_keyword}</Badge>}
               </div>
               {preview?.meta_description && (
