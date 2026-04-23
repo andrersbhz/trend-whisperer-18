@@ -39,14 +39,18 @@ export type Database = {
           fact_check_notes: string | null
           fact_check_status: string | null
           featured_image_url: string | null
+          focus_keyword: string | null
           id: string
+          is_approved: boolean | null
           meta_description: string | null
+          meta_title: string | null
           published_at: string | null
           research_references: Json | null
           scheduled_at: string | null
           seo_audit_log: Json | null
           seo_keyword: string | null
           seo_title: string | null
+          slug: string | null
           source_urls: string[] | null
           status: string
           title: string
@@ -64,14 +68,18 @@ export type Database = {
           fact_check_notes?: string | null
           fact_check_status?: string | null
           featured_image_url?: string | null
+          focus_keyword?: string | null
           id?: string
+          is_approved?: boolean | null
           meta_description?: string | null
+          meta_title?: string | null
           published_at?: string | null
           research_references?: Json | null
           scheduled_at?: string | null
           seo_audit_log?: Json | null
           seo_keyword?: string | null
           seo_title?: string | null
+          slug?: string | null
           source_urls?: string[] | null
           status?: string
           title: string
@@ -89,14 +97,18 @@ export type Database = {
           fact_check_notes?: string | null
           fact_check_status?: string | null
           featured_image_url?: string | null
+          focus_keyword?: string | null
           id?: string
+          is_approved?: boolean | null
           meta_description?: string | null
+          meta_title?: string | null
           published_at?: string | null
           research_references?: Json | null
           scheduled_at?: string | null
           seo_audit_log?: Json | null
           seo_keyword?: string | null
           seo_title?: string | null
+          slug?: string | null
           source_urls?: string[] | null
           status?: string
           title?: string
@@ -190,10 +202,14 @@ export type Database = {
           auto_publish: boolean | null
           categories: string[] | null
           created_at: string
+          facebook_access_token: string | null
+          facebook_page_id: string | null
           gemini_api_key: string | null
           google_analytics_property_id: string | null
           groq_api_key: string | null
           id: string
+          linkedin_access_token: string | null
+          linkedin_org_id: string | null
           openai_api_key: string | null
           updated_at: string
           user_id: string
@@ -207,10 +223,14 @@ export type Database = {
           auto_publish?: boolean | null
           categories?: string[] | null
           created_at?: string
+          facebook_access_token?: string | null
+          facebook_page_id?: string | null
           gemini_api_key?: string | null
           google_analytics_property_id?: string | null
           groq_api_key?: string | null
           id?: string
+          linkedin_access_token?: string | null
+          linkedin_org_id?: string | null
           openai_api_key?: string | null
           updated_at?: string
           user_id: string
@@ -224,10 +244,14 @@ export type Database = {
           auto_publish?: boolean | null
           categories?: string[] | null
           created_at?: string
+          facebook_access_token?: string | null
+          facebook_page_id?: string | null
           gemini_api_key?: string | null
           google_analytics_property_id?: string | null
           groq_api_key?: string | null
           id?: string
+          linkedin_access_token?: string | null
+          linkedin_org_id?: string | null
           openai_api_key?: string | null
           updated_at?: string
           user_id?: string
