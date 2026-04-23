@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import {
   BarChart3, TrendingUp, TrendingDown, Eye, MousePointerClick, Users,
   Lightbulb, RefreshCw, Loader2, Globe, Clock, ArrowUpRight, Percent,
-  FileText, Smartphone, Monitor, Tablet, Heart, Send, Sparkles,
+  FileText, Smartphone, Monitor, Tablet, Heart, Send, Sparkles, Facebook
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -214,7 +214,78 @@ const AnalyticsPage = () => {
     );
   }
 
-  const socialSection = null;
+  const [fbData, setFbData] = useState<any>(null);
+  const [loadingFb, setLoadingFb] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    const fetchFb = async () => {
+      setLoadingFb(true);
+      try {
+        const settings = await runBackendQuery(() => 
+          supabase.from('user_settings').select('facebook_access_token, facebook_page_id, facebook_ad_account_id').eq('user_id', user.id).maybeSingle()
+        );
+        if (settings?.facebook_access_token) {
+          const res = await supabase.functions.invoke('fetch-facebook-data', {
+            body: { 
+              accessToken: settings.facebook_access_token,
+              pageId: settings.facebook_page_id,
+              adAccountId: settings.facebook_ad_account_id
+            }
+          });
+          if (res.data) setFbData(res.data);
+        }
+      } catch (err) {
+        console.error('FB Analytics Error:', err);
+      } finally {
+        setLoadingFb(false);
+      }
+    };
+    fetchFb();
+  }, [user]);
+
+  const socialSection = fbData ? (
+    <div className="space-y-4">
+      <h2 className="text-lg font-semibold neon-text-lilac flex items-center gap-2">
+        <Facebook className="h-5 w-5 text-[#1877F2]" /> Facebook Analytics
+      </h2>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {fbData.page && (
+          <Card className="glass-card col-span-2 sm:col-span-1">
+            <CardContent className="p-4 flex items-center gap-3">
+              <img src={fbData.page.picture?.data?.url} className="h-10 w-10 rounded-full" alt="" />
+              <div>
+                <p className="font-bold text-sm truncate max-w-[120px]">{fbData.page.name}</p>
+                <p className="text-[10px] text-muted-foreground">{fbData.page.fan_count} Seguidores</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+        {fbData.marketing && (
+          <>
+            <Card className="glass-card">
+              <CardContent className="p-4">
+                <p className="text-lg font-bold text-foreground">US$ {parseFloat(fbData.marketing.spend).toFixed(2)}</p>
+                <p className="text-[10px] text-muted-foreground uppercase">Gasto Total (Ads)</p>
+              </CardContent>
+            </Card>
+            <Card className="glass-card">
+              <CardContent className="p-4">
+                <p className="text-lg font-bold text-foreground">{(parseFloat(fbData.marketing.ctr) * 100).toFixed(2)}%</p>
+                <p className="text-[10px] text-muted-foreground uppercase">CTR Médio</p>
+              </CardContent>
+            </Card>
+            <Card className="glass-card">
+              <CardContent className="p-4">
+                <p className="text-lg font-bold text-foreground">US$ {parseFloat(fbData.marketing.cpc).toFixed(2)}</p>
+                <p className="text-[10px] text-muted-foreground uppercase">CPC Médio</p>
+              </CardContent>
+            </Card>
+          </>
+        )}
+      </div>
+    </div>
+  ) : null;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">

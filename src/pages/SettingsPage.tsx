@@ -29,6 +29,7 @@ export interface UserSettings {
   writer_prompt: string;
   facebook_access_token: string;
   facebook_page_id: string;
+  facebook_ad_account_id: string;
   linkedin_access_token: string;
   linkedin_org_id: string;
 }
@@ -47,13 +48,13 @@ const defaultSettings: UserSettings = {
   writer_prompt: '',
   facebook_access_token: '',
   facebook_page_id: '',
+  facebook_ad_account_id: '',
   linkedin_access_token: '',
   linkedin_org_id: '',
 };
 
 interface CredentialsStatus {
   has_wp_password: boolean;
-  
   has_gemini_key: boolean;
   has_openai_key: boolean;
   has_groq_key: boolean;
@@ -77,7 +78,7 @@ const SettingsPage = () => {
           runBackendQuery(() =>
             supabase
               .from('user_settings')
-              .select('wordpress_url, wordpress_username, google_analytics_property_id, categories, articles_per_day, auto_publish, writer_prompt, facebook_access_token, facebook_page_id, linkedin_access_token, linkedin_org_id')
+              .select('wordpress_url, wordpress_username, google_analytics_property_id, categories, articles_per_day, auto_publish, writer_prompt, facebook_access_token, facebook_page_id, facebook_ad_account_id, linkedin_access_token, linkedin_org_id')
               .eq('user_id', user.id)
               .maybeSingle(),
           ),
@@ -101,6 +102,7 @@ const SettingsPage = () => {
             writer_prompt: (data as any).writer_prompt || '',
             facebook_access_token: (data as any).facebook_access_token || '',
             facebook_page_id: (data as any).facebook_page_id || '',
+            facebook_ad_account_id: (data as any).facebook_ad_account_id || '',
             linkedin_access_token: (data as any).linkedin_access_token || '',
             linkedin_org_id: (data as any).linkedin_org_id || '',
           });
@@ -133,6 +135,7 @@ const SettingsPage = () => {
         writer_prompt: settings.writer_prompt,
         facebook_access_token: settings.facebook_access_token,
         facebook_page_id: settings.facebook_page_id,
+        facebook_ad_account_id: settings.facebook_ad_account_id,
         linkedin_access_token: settings.linkedin_access_token,
         linkedin_org_id: settings.linkedin_org_id,
       };
@@ -185,7 +188,6 @@ const SettingsPage = () => {
           supabase.from('user_settings').update(fields as any).eq('user_id', user.id),
         );
       }
-      // Reset local UI state for those fields
       const localReset: Partial<UserSettings> = {};
       for (const k of Object.keys(fields) as (keyof UserSettings)[]) {
         const v = fields[k];
@@ -193,7 +195,6 @@ const SettingsPage = () => {
       }
       setSettings((prev) => ({ ...prev, ...localReset }));
 
-      // Refresh credentials status from server
       const status = await runBackendQuery(() => supabase.rpc('get_credentials_status'));
       if (status) setCredStatus(status as unknown as CredentialsStatus);
 
@@ -229,6 +230,7 @@ const SettingsPage = () => {
       <JetpackSettings settings={settings} hasWpPassword={credStatus.has_wp_password} />
       
       <GoogleAnalyticsSettings settings={settings} onChange={updateSettings} />
+      <SocialSettings settings={settings} onChange={updateSettings} onDisconnect={(p) => disconnectCredential(p === 'facebook' ? { facebook_access_token: '', facebook_page_id: '', facebook_ad_account_id: '' } : { linkedin_access_token: '', linkedin_org_id: '' }, p)} />
       <AutomationSettings settings={settings} onChange={updateSettings} />
 
       <Button onClick={handleSave} disabled={saving} className="gradient-primary w-full sm:w-auto">

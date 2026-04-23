@@ -46,6 +46,15 @@ const SocialSettings = ({ settings, onChange, onDisconnect }: Props) => {
               className="h-9 text-sm"
             />
           </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">ID da Conta de Anúncios (Opcional)</Label>
+            <Input
+              placeholder="Ex: act_123456789"
+              value={settings.facebook_ad_account_id || ''}
+              onChange={(e) => onChange({ facebook_ad_account_id: e.target.value })}
+              className="h-9 text-sm"
+            />
+          </div>
           <a 
             href="https://developers.facebook.com/tools/explorer/" 
             target="_blank" 
