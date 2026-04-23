@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,27 +12,59 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { accessToken } = await req.json();
-    if (!accessToken) throw new Error("accessToken is required");
+    const body = await req.json().catch(() => ({}));
+    const accessToken = typeof body?.accessToken === "string" ? body.accessToken.trim() : "";
+
+    // Validate token format before sending to Facebook
+    if (!accessToken) {
+      return new Response(
+        JSON.stringify({ error: "Token de acesso ausente. Cole seu User Access Token da Meta." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Facebook tokens typically start with "EAA" and are at least 50 chars long
+    if (accessToken.length < 30 || /\s/.test(accessToken)) {
+      return new Response(
+        JSON.stringify({
+          error: "Formato de token inválido. Tokens da Meta começam com 'EAA' e não contêm espaços.",
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // 1. Debug token to check validity and scopes
     const debugUrl = `${GRAPH_API}/debug_token?input_token=${encodeURIComponent(accessToken)}&access_token=${encodeURIComponent(accessToken)}`;
     const debugRes = await fetch(debugUrl);
-    let debugInfo = null;
+    let debugInfo: any = null;
     if (debugRes.ok) {
       const data = await debugRes.json();
       debugInfo = data.data;
+      if (debugInfo && debugInfo.is_valid === false) {
+        return new Response(
+          JSON.stringify({
+            error: `Token inválido ou expirado: ${debugInfo.error?.message || "reconecte sua conta Facebook."}`,
+            debug: debugInfo,
+          }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     // 2. Fetch all pages the user manages
-    const fields = "id,name,access_token,category,picture{url},fan_count,instagram_business_account{id,name,username,profile_picture_url,followers_count}";
+    const fields =
+      "id,name,access_token,category,picture{url},fan_count,instagram_business_account{id,name,username,profile_picture_url,followers_count}";
     const pagesRes = await fetch(
       `${GRAPH_API}/me/accounts?fields=${fields}&limit=100&access_token=${encodeURIComponent(accessToken)}`
     );
 
     if (!pagesRes.ok) {
-      const err = await pagesRes.json();
-      throw new Error(err.error?.message || `Meta API error: ${pagesRes.status}`);
+      const err = await pagesRes.json().catch(() => ({}));
+      const message = err?.error?.message || `Meta API error: ${pagesRes.status}`;
+      return new Response(
+        JSON.stringify({ error: message, debug: debugInfo }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const pagesData = await pagesRes.json();
@@ -61,8 +92,8 @@ serve(async (req) => {
     });
   } catch (error: any) {
     console.error("fetch-meta-pages error:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 400,
+    return new Response(JSON.stringify({ error: error.message || "Erro desconhecido" }), {
+      status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
