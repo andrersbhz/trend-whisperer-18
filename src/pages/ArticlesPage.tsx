@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Send, Eye, Trash2, Loader2, FileText, RotateCcw, ImagePlus, Sparkles, Database, Facebook, Instagram, Layout } from 'lucide-react';
+import { Send, Eye, Trash2, Loader2, FileText, RotateCcw, ImagePlus, Sparkles, Database, Layout } from 'lucide-react';
 import { getErrorMessage, runBackendMutation, runBackendQuery } from '@/lib/backend';
 import {
   Dialog,
@@ -23,7 +23,7 @@ const ArticlesPage = () => {
   const [retrying, setRetrying] = useState<string | null>(null);
   const [preview, setPreview] = useState<any | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
-  const [socialPreviewOpen, setSocialPreviewOpen] = useState(false);
+  
   const [previewLoading, setPreviewLoading] = useState(false);
   const [regeneratingImages, setRegeneratingImages] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -175,37 +175,7 @@ const ArticlesPage = () => {
     }
   };
 
-  const handleSocialPreview = async (articleId: string) => {
-    setSocialPreviewOpen(true);
-    setPreviewLoading(true);
-    try {
-      const data = await runBackendQuery(() =>
-        supabase
-          .from('articles')
-          .select('id, title, excerpt, content, featured_image_url')
-          .eq('id', articleId)
-          .maybeSingle(),
-      );
-      setPreview(data);
-    } catch (error) {
-      setSocialPreviewOpen(false);
-      toast({ title: 'Erro ao carregar prévia social', description: getErrorMessage(error), variant: 'destructive' });
-    } finally {
-      setPreviewLoading(false);
-    }
-  };
 
-  const getSocialCaption = (article: any) => {
-    if (!article) return "";
-    const cleanText = (s: string | null) =>
-      (s || "").replace(/<[^>]+>/g, "").replace(/\n{3,}/g, "\n\n").trim();
-    const title = cleanText(article.title);
-    const body = cleanText(article.excerpt || article.content || "");
-    const reserved = 250;
-    const maxBody = 2200 - title.length - reserved;
-    const trimmedBody = body.length > maxBody ? body.substring(0, maxBody - 3) + "..." : body;
-    return `${title}\n\n${trimmedBody}`;
-  };
 
   const handleRegenerateImages = async () => {
     const withoutImage = articles.filter(a => !a.featured_image_url && a.status !== 'generating');
@@ -401,9 +371,6 @@ const ArticlesPage = () => {
                       <Button size="sm" variant="ghost" onClick={() => handlePreview(article.id)} className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground" title="Visualizar Artigo">
                         <Layout className="h-4 w-4" />
                       </Button>
-                      <Button size="sm" variant="ghost" onClick={() => handleSocialPreview(article.id)} className="h-8 w-8 p-0 text-muted-foreground hover:text-accent" title="Prévia Redes Sociais">
-                        <Facebook className="h-4 w-4" />
-                      </Button>
                       {article.status === 'failed' && (
                         <Button
                           size="sm"
@@ -534,106 +501,6 @@ const ArticlesPage = () => {
         </DialogContent>
       </Dialog>
 
-      <Dialog
-        open={socialPreviewOpen}
-        onOpenChange={(open) => {
-          setSocialPreviewOpen(open);
-          if (!open) setPreview(null);
-        }}
-      >
-        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto glass-card border-border p-0">
-          <DialogHeader className="p-4 border-b border-border/50">
-            <DialogTitle className="flex items-center gap-2 text-sm">
-              <Sparkles className="h-4 w-4 text-primary" />
-              Prévia das Redes Sociais
-            </DialogTitle>
-          </DialogHeader>
-          {previewLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          ) : (
-            <div className="p-4 space-y-6">
-              {/* Facebook Preview */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <Facebook className="h-4 w-4 text-blue-500" />
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Facebook</span>
-                </div>
-                <Card className="bg-[#18191a] border-none shadow-xl overflow-hidden text-[#e4e6eb] rounded-lg">
-                  <div className="p-3 flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                      <Facebook className="h-4 w-4 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold">Sua Página</p>
-                      <p className="text-[11px] text-[#b0b3b8]">Agora mesmo · 🌐</p>
-                    </div>
-                  </div>
-                  <div className="px-3 pb-3 text-sm whitespace-pre-wrap leading-relaxed">
-                    {getSocialCaption(preview)}
-                  </div>
-                  {preview?.featured_image_url && (
-                    <div className="aspect-video w-full bg-black overflow-hidden border-y border-[#3e4042]">
-                      <img src={preview.featured_image_url} alt="Preview" className="w-full h-full object-cover" />
-                    </div>
-                  )}
-                  <div className="p-2 flex border-t border-[#3e4042]">
-                    <div className="flex-1 text-center py-1 text-xs font-semibold text-[#b0b3b8]">Curtir</div>
-                    <div className="flex-1 text-center py-1 text-xs font-semibold text-[#b0b3b8]">Comentar</div>
-                    <div className="flex-1 text-center py-1 text-xs font-semibold text-[#b0b3b8]">Compartilhar</div>
-                  </div>
-                </Card>
-              </div>
-
-              {/* Instagram Preview */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <Instagram className="h-4 w-4 text-pink-500" />
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Instagram</span>
-                </div>
-                <Card className="bg-black border-none shadow-xl overflow-hidden text-white rounded-lg">
-                  <div className="p-3 flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full border border-pink-500 p-0.5">
-                      <div className="w-full h-full rounded-full bg-primary/20" />
-                    </div>
-                    <p className="text-sm font-semibold">seu_perfil</p>
-                  </div>
-                  {preview?.featured_image_url && (
-                    <div className="aspect-square w-full bg-zinc-900">
-                      <img src={preview.featured_image_url} alt="Preview" className="w-full h-full object-cover" />
-                    </div>
-                  )}
-                  <div className="p-3 space-y-2">
-                    <div className="flex gap-4">
-                      <div className="w-5 h-5 border-2 border-white rounded-md" />
-                      <div className="w-5 h-5 border-2 border-white rounded-full" />
-                      <div className="w-5 h-5 border-2 border-white transform rotate-45" />
-                    </div>
-                    <p className="text-sm leading-relaxed">
-                      <span className="font-semibold mr-2">seu_perfil</span>
-                      {getSocialCaption(preview)}
-                    </p>
-                  </div>
-                </Card>
-              </div>
-
-              <div className="pt-2">
-                <Button 
-                  className="w-full gradient-primary"
-                  onClick={() => {
-                    setSocialPreviewOpen(false);
-                    handlePublish(preview?.id);
-                  }}
-                >
-                  <Send className="h-4 w-4 mr-2" />
-                  Publicar em tudo agora
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

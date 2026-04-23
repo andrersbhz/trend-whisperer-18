@@ -8,8 +8,8 @@ import { useToast } from '@/hooks/use-toast';
 import {
   BarChart3, TrendingUp, TrendingDown, Eye, MousePointerClick, Users,
   Lightbulb, RefreshCw, Loader2, Globe, Clock, ArrowUpRight, Percent,
-  FileText, Smartphone, Monitor, Tablet, Facebook, Instagram, Heart, Share2,
-  Twitter, Linkedin, Send,
+  FileText, Smartphone, Monitor, Tablet, Heart, Share2,
+  Twitter, Linkedin, Send, Sparkles,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -38,8 +38,6 @@ interface AnalyticsData {
 interface SocialMetrics {
   publish_log: {
     wordpress: { total: number; success: number; failed: number; recent: { date: string; url: string }[] };
-    facebook: { total: number; success: number; failed: number };
-    instagram: { total: number; success: number; failed: number };
   };
   jetpack: {
     posts_with_sharing: number;
@@ -49,8 +47,6 @@ interface SocialMetrics {
   summary: {
     total_published_wp: number;
     total_shared_social: number;
-    total_facebook: number;
-    total_instagram: number;
     total_twitter: number;
     total_linkedin: number;
     total_tumblr: number;
@@ -99,8 +95,6 @@ const AnalyticsPage = () => {
   const [loadingTips, setLoadingTips] = useState(false);
   const [gaConnected, setGaConnected] = useState(false);
   const [articleStats, setArticleStats] = useState({ total: 0, published: 0, failed: 0 });
-  const [metaMetrics, setMetaMetrics] = useState<any[] | null>(null);
-  const [loadingMeta, setLoadingMeta] = useState(false);
   const [jetpackStats, setJetpackStats] = useState<JetpackStats | null>(null);
   const [loadingJetpack, setLoadingJetpack] = useState(false);
 
@@ -109,7 +103,6 @@ const AnalyticsPage = () => {
     checkGaConnection();
     fetchArticleStats();
     fetchSocialMetrics();
-    fetchMetaMetrics();
     fetchJetpackStats();
   }, [user]);
 
@@ -144,33 +137,6 @@ const AnalyticsPage = () => {
       }
     } catch {
       setSocialMetrics(null);
-    }
-  };
-
-  const fetchMetaMetrics = async () => {
-    if (!user) return;
-    setLoadingMeta(true);
-    try {
-      const data = await runBackendQuery(() =>
-        supabase.functions.invoke('fetch-meta-metrics', {
-          body: { userId: user.id },
-        }),
-      );
-      if (data?.pages) {
-        // Filter out pages that only have errors (expired token, etc.)
-        const validPages = (data.pages as any[]).filter((pg: any) => {
-          const hasFbError = pg.facebook?.error;
-          const hasFbData = pg.facebook && !pg.facebook.error && (pg.facebook.fan_count || pg.facebook.followers_count);
-          const hasIgData = pg.instagram && !pg.instagram.error && (pg.instagram.followers_count || pg.instagram.media_count);
-          return hasFbData || hasIgData;
-        });
-        setMetaMetrics(validPages.length > 0 ? validPages : null);
-      }
-    } catch (error) {
-      console.error('Meta metrics error:', error);
-      setMetaMetrics(null);
-    } finally {
-      setLoadingMeta(false);
     }
   };
 
@@ -296,8 +262,6 @@ const AnalyticsPage = () => {
         {[
           { icon: Globe, label: 'Publicados WP', value: sm?.total_published_wp || 0, color: 'text-primary' },
           { icon: Share2, label: 'Compartilhados', value: sm?.total_shared_social || 0, color: 'text-accent' },
-          { icon: Facebook, label: 'Facebook', value: sm?.total_facebook || 0, color: 'text-accent' },
-          { icon: Instagram, label: 'Instagram', value: sm?.total_instagram || 0, color: 'text-primary' },
           { icon: Twitter, label: 'Twitter/X', value: sm?.total_twitter || 0, color: 'text-muted-foreground' },
           { icon: Linkedin, label: 'LinkedIn', value: sm?.total_linkedin || 0, color: 'text-muted-foreground' },
         ].map((s) => (
@@ -338,8 +302,6 @@ const AnalyticsPage = () => {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[
             { label: 'WordPress', total: pl.wordpress.total, success: pl.wordpress.success, failed: pl.wordpress.failed, color: 'text-primary' },
-            { label: 'Facebook', total: pl.facebook.total, success: pl.facebook.success, failed: pl.facebook.failed, color: 'text-accent' },
-            { label: 'Instagram', total: pl.instagram.total, success: pl.instagram.success, failed: pl.instagram.failed, color: 'text-primary' },
           ].map((p) => (
             <Card key={p.label} className="glass-card">
               <CardContent className="p-4">
@@ -354,662 +316,256 @@ const AnalyticsPage = () => {
           ))}
         </div>
       )}
-
-      {/* === META API METRICS === */}
-      {loadingMeta && (
-        <div className="flex items-center gap-2 text-muted-foreground text-sm">
-          <Loader2 className="h-4 w-4 animate-spin" /> Carregando métricas do Meta...
-        </div>
-      )}
-      {metaMetrics && metaMetrics.length > 0 && metaMetrics.map((pg: any, idx: number) => (
-        <div key={idx} className="space-y-3">
-          <h3 className="text-md font-semibold text-foreground flex items-center gap-2">
-            <Facebook className="h-4 w-4 text-accent" /> {pg.page_name || 'Página'}
-          </h3>
-          {pg.facebook && !pg.facebook.error && (
-            <>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {[
-                  { label: 'Seguidores', value: pg.facebook.followers_count || pg.facebook.fan_count || 0 },
-                  { label: 'Curtidas', value: pg.facebook.fan_count || 0 },
-                  { label: 'Falando sobre', value: pg.facebook.talking_about_count || 0 },
-                  { label: 'Check-ins', value: pg.facebook.were_here_count || 0 },
-                ].map((s: any) => (
-                  <Card key={s.label} className="glass-card"><CardContent className="p-3">
-                    <p className="text-lg font-bold text-foreground">{(s.value || 0).toLocaleString()}</p>
-                    <p className="text-xs text-muted-foreground">{s.label}</p>
-                  </CardContent></Card>
-                ))}
-              </div>
-              {pg.facebook.insights && (
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {[
-                    { label: 'Impressões (28d)', value: pg.facebook.insights.page_impressions?.total || 0 },
-                    { label: 'Alcance Único', value: pg.facebook.insights.page_impressions_unique?.total || 0 },
-                    { label: 'Engajamento', value: pg.facebook.insights.page_post_engagements?.total || 0 },
-                    { label: 'Engajados', value: pg.facebook.insights.page_engaged_users?.total || 0 },
-                    { label: 'Views Página', value: pg.facebook.insights.page_views_total?.total || 0 },
-                    { label: 'Novos Fãs', value: pg.facebook.insights.page_fan_adds?.total || 0 },
-                    { label: 'Fãs Perdidos', value: pg.facebook.insights.page_fan_removes?.total || 0 },
-                    { label: 'Feedback Neg.', value: pg.facebook.insights.page_negative_feedback?.total || 0 },
-                  ].map((s: any) => (
-                    <Card key={s.label} className="glass-card"><CardContent className="p-3">
-                      <p className="text-lg font-bold text-foreground">{(s.value || 0).toLocaleString()}</p>
-                      <p className="text-xs text-muted-foreground">{s.label}</p>
-                    </CardContent></Card>
-                  ))}
-                </div>
-              )}
-              {pg.facebook.post_stats && (
-                <Card className="glass-card"><CardContent className="p-4">
-                  <p className="text-sm font-medium text-foreground mb-3">📊 Últimos {pg.facebook.post_stats.total_posts} Posts</p>
-                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-center">
-                    {[
-                      { label: 'Curtidas', value: pg.facebook.post_stats.total_likes },
-                      { label: 'Comentários', value: pg.facebook.post_stats.total_comments },
-                      { label: 'Reações', value: pg.facebook.post_stats.total_reactions },
-                      { label: 'Compartilh.', value: pg.facebook.post_stats.total_shares },
-                      { label: 'Eng. Médio', value: pg.facebook.post_stats.avg_engagement },
-                    ].map((s: any) => (
-                      <div key={s.label}>
-                        <p className="text-lg font-bold text-foreground">{(s.value || 0).toLocaleString()}</p>
-                        <p className="text-xs text-muted-foreground">{s.label}</p>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent></Card>
-              )}
-              {pg.facebook.insights?.page_impressions?.daily?.length > 0 && (
-                <Card className="glass-card"><CardHeader><CardTitle className="text-sm text-foreground">Impressões FB (28d)</CardTitle></CardHeader>
-                  <CardContent>
-                    <ResponsiveContainer width="100%" height={200}>
-                      <AreaChart data={pg.facebook.insights.page_impressions.daily}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(260, 20%, 18%)" />
-                        <XAxis dataKey="date" fontSize={10} stroke="hsl(260, 10%, 45%)" />
-                        <YAxis fontSize={10} stroke="hsl(260, 10%, 45%)" />
-                        <Tooltip contentStyle={customTooltipStyle} />
-                        <Area type="monotone" dataKey="value" name="Impressões" stroke="hsl(220, 80%, 55%)" fill="hsl(220, 80%, 55%, 0.15)" strokeWidth={2} />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
-              )}
-            </>
-          )}
-          {/* Error messages are hidden - only show when there's valid data */}
-          {pg.instagram && (
-            <>
-              <h3 className="text-md font-semibold text-foreground flex items-center gap-2 mt-4">
-                <Instagram className="h-4 w-4 text-primary" /> Instagram {pg.instagram.username ? `@${pg.instagram.username}` : ''}
-              </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {[
-                  { label: 'Seguidores', value: pg.instagram.followers_count || 0 },
-                  { label: 'Seguindo', value: pg.instagram.follows_count || 0 },
-                  { label: 'Publicações', value: pg.instagram.media_count || 0 },
-                  { label: 'Eng. Médio', value: pg.instagram.post_stats?.avg_engagement || 0 },
-                ].map((s: any) => (
-                  <Card key={s.label} className="glass-card"><CardContent className="p-3">
-                    <p className="text-lg font-bold text-foreground">{(s.value || 0).toLocaleString()}</p>
-                    <p className="text-xs text-muted-foreground">{s.label}</p>
-                  </CardContent></Card>
-                ))}
-              </div>
-              {pg.instagram.insights && (
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {[
-                    { label: 'Impressões (28d)', value: pg.instagram.insights.impressions?.total || 0 },
-                    { label: 'Alcance (28d)', value: pg.instagram.insights.reach?.total || 0 },
-                    { label: 'Visitas Perfil', value: pg.instagram.insights.profile_views?.total || 0 },
-                    { label: 'Cliques Site', value: pg.instagram.insights.website_clicks?.total || 0 },
-                  ].map((s: any) => (
-                    <Card key={s.label} className="glass-card"><CardContent className="p-3">
-                      <p className="text-lg font-bold text-foreground">{(s.value || 0).toLocaleString()}</p>
-                      <p className="text-xs text-muted-foreground">{s.label}</p>
-                    </CardContent></Card>
-                  ))}
-                </div>
-              )}
-              {pg.instagram.post_stats && (
-                <Card className="glass-card"><CardContent className="p-4">
-                  <p className="text-sm font-medium text-foreground mb-3">📸 Últimos {pg.instagram.post_stats.total_posts} Posts</p>
-                  <div className="grid grid-cols-3 gap-3 text-center">
-                    {[
-                      { label: 'Curtidas', value: pg.instagram.post_stats.total_likes },
-                      { label: 'Comentários', value: pg.instagram.post_stats.total_comments },
-                      { label: 'Eng. Médio', value: pg.instagram.post_stats.avg_engagement },
-                    ].map((s: any) => (
-                      <div key={s.label}>
-                        <p className="text-lg font-bold text-foreground">{(s.value || 0).toLocaleString()}</p>
-                        <p className="text-xs text-muted-foreground">{s.label}</p>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent></Card>
-              )}
-              {pg.instagram.demographics?.audience_country && (
-                <Card className="glass-card"><CardHeader><CardTitle className="text-sm text-foreground">Audiência por País</CardTitle></CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      {Object.entries(pg.instagram.demographics.audience_country as Record<string, number>)
-                        .sort(([, a], [, b]) => (b as number) - (a as number)).slice(0, 10)
-                        .map(([country, count]) => (
-                          <div key={country} className="flex items-center justify-between p-2 rounded-lg hover:bg-secondary/30">
-                            <span className="text-sm text-foreground">{country}</span>
-                            <Badge variant="secondary" className="text-xs">{(count as number).toLocaleString()}</Badge>
-                          </div>
-                        ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-              {pg.instagram.insights?.reach?.daily?.length > 0 && (
-                <Card className="glass-card"><CardHeader><CardTitle className="text-sm text-foreground">Alcance IG (28d)</CardTitle></CardHeader>
-                  <CardContent>
-                    <ResponsiveContainer width="100%" height={200}>
-                      <AreaChart data={pg.instagram.insights.reach.daily}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(260, 20%, 18%)" />
-                        <XAxis dataKey="date" fontSize={10} stroke="hsl(260, 10%, 45%)" />
-                        <YAxis fontSize={10} stroke="hsl(260, 10%, 45%)" />
-                        <Tooltip contentStyle={customTooltipStyle} />
-                        <Area type="monotone" dataKey="value" name="Alcance" stroke="hsl(320, 80%, 55%)" fill="hsl(320, 80%, 55%, 0.15)" strokeWidth={2} />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
-              )}
-            </>
-          )}
-        </div>
-      ))}
-      {!loadingMeta && (!metaMetrics || metaMetrics.length === 0) && (
-        <Card className="glass-card neon-border-pink">
-          <CardContent className="p-6 text-center space-y-4">
-            <div className="mx-auto w-14 h-14 rounded-full bg-[#1877F2]/15 flex items-center justify-center ring-2 ring-[#1877F2]/40 shadow-[0_0_20px_rgba(24,119,242,0.45)]">
-              <Facebook className="h-7 w-7 text-[#1877F2]" />
-            </div>
-            <div className="space-y-1">
-              <p className="text-sm font-medium text-foreground">Nenhuma página conectada</p>
-              <p className="text-xs text-muted-foreground">
-                Conecte com o Facebook que você está logado no navegador para puxar páginas, Instagram e métricas do Gerenciador de Negócios.
-              </p>
-            </div>
-            <Button
-              onClick={() => navigate('/settings#facebook')}
-              className="bg-[#1877F2] hover:bg-[#166FE5] text-white shadow-[0_0_18px_rgba(24,119,242,0.55)] hover:shadow-[0_0_28px_rgba(24,119,242,0.75)] transition-all"
-            >
-              <Facebook className="h-4 w-4 mr-2" />
-              Conectar com Facebook
-            </Button>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
-
-  const jetpackSection = (
-    <div className="space-y-4">
-      <h2 className="text-lg font-semibold neon-text-lilac flex items-center gap-2">
-        <BarChart3 className="h-5 w-5" /> Jetpack Stats
-      </h2>
-
-      {loadingJetpack && (
-        <div className="flex items-center gap-2 text-muted-foreground text-sm">
-          <Loader2 className="h-4 w-4 animate-spin" /> Carregando dados do Jetpack...
-        </div>
-      )}
-
-      {!loadingJetpack && !jetpackStats && (
-        <Card className="glass-card">
-          <CardContent className="p-4 text-center text-sm text-muted-foreground">
-            <BarChart3 className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            Jetpack não disponível. Instale e ative o Jetpack no WordPress para ver estatísticas do site.
-          </CardContent>
-        </Card>
-      )}
-
-      {jetpackStats?.summary && (
-        <>
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3">
-            {[
-              { icon: Eye, label: 'Views Totais', value: jetpackStats.summary.views, color: 'text-primary' },
-              { icon: Users, label: 'Visitantes', value: jetpackStats.summary.visitors, color: 'text-accent' },
-              { icon: Heart, label: 'Curtidas', value: jetpackStats.summary.likes, color: 'text-destructive' },
-              { icon: FileText, label: 'Comentários', value: jetpackStats.summary.comments, color: 'text-warning' },
-              { icon: Users, label: 'Seguidores', value: jetpackStats.summary.followers, color: 'text-primary' },
-              { icon: Eye, label: 'Views Hoje', value: jetpackStats.summary.views_today, color: 'text-primary' },
-              { icon: Eye, label: 'Views Ontem', value: jetpackStats.summary.views_yesterday, color: 'text-muted-foreground' },
-              { icon: Share2, label: 'Compartilh.', value: jetpackStats.summary.shares, color: 'text-accent' },
-              { icon: FileText, label: 'Posts', value: jetpackStats.summary.posts, color: 'text-muted-foreground' },
-              { icon: TrendingUp, label: 'Recorde', value: jetpackStats.summary.views_best_day_total, color: 'text-warning' },
-            ].map((s) => (
-              <Card key={s.label} className="glass-card">
-                <CardContent className="p-4">
-                  <s.icon className={`h-5 w-5 ${s.color} mb-2`} />
-                  <p className="text-xl font-bold text-foreground">{(s.value || 0).toLocaleString()}</p>
-                  <p className="text-xs text-muted-foreground">{s.label}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {jetpackStats.summary.views_best_day && (
-            <p className="text-xs text-muted-foreground">
-              📅 Melhor dia: <strong className="text-foreground">{jetpackStats.summary.views_best_day}</strong> com {jetpackStats.summary.views_best_day_total.toLocaleString()} views
-            </p>
-          )}
-        </>
-      )}
-
-      {jetpackStats?.dailyViews && jetpackStats.dailyViews.length > 0 && (
-        <Card className="glass-card">
-          <CardHeader>
-            <CardTitle className="text-sm text-foreground">Visitas Diárias (Jetpack - 30d)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={220}>
-              <AreaChart data={jetpackStats.dailyViews}>
-                <defs>
-                  <linearGradient id="colorJpViews" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(275, 70%, 50%)" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="hsl(275, 70%, 50%)" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(260, 20%, 18%)" />
-                <XAxis dataKey="date" fontSize={10} stroke="hsl(260, 10%, 45%)" />
-                <YAxis fontSize={10} stroke="hsl(260, 10%, 45%)" />
-                <Tooltip contentStyle={customTooltipStyle} />
-                <Area type="monotone" dataKey="views" name="Views" stroke="hsl(275, 70%, 50%)" fill="url(#colorJpViews)" strokeWidth={2} />
-              </AreaChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {jetpackStats?.topPosts && jetpackStats.topPosts.length > 0 && (
-          <Card className="glass-card">
-            <CardHeader>
-              <CardTitle className="text-sm text-foreground">📈 Top Posts (7d)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {jetpackStats.topPosts.map((post, i) => (
-                  <div key={i} className="flex items-center justify-between p-2 rounded-lg hover:bg-secondary/30 transition-colors">
-                    <div className="flex items-center gap-2 min-w-0 flex-1">
-                      <span className="text-xs font-bold text-primary w-5">{i + 1}</span>
-                      <span className="text-sm text-foreground truncate">{post.title}</span>
-                    </div>
-                    <Badge variant="secondary" className="text-xs bg-primary/10 text-primary shrink-0">{post.views}</Badge>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {jetpackStats?.referrers && jetpackStats.referrers.length > 0 && (
-          <Card className="glass-card">
-            <CardHeader>
-              <CardTitle className="text-sm text-foreground">🔗 Referências (7d)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {jetpackStats.referrers.map((ref, i) => (
-                  <div key={i} className="flex items-center justify-between p-2 rounded-lg hover:bg-secondary/30 transition-colors">
-                    <div className="flex items-center gap-2">
-                      <Globe className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm text-foreground">{ref.name}</span>
-                    </div>
-                    <Badge variant="secondary" className="bg-accent/10 text-accent">{ref.views}</Badge>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {jetpackStats?.searchTerms && jetpackStats.searchTerms.length > 0 && (
-          <Card className="glass-card">
-            <CardHeader>
-              <CardTitle className="text-sm text-foreground">🔍 Termos de Busca (7d)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {jetpackStats.searchTerms.map((t, i) => (
-                  <div key={i} className="flex items-center justify-between p-2 rounded-lg hover:bg-secondary/30 transition-colors">
-                    <span className="text-sm text-foreground">{t.term}</span>
-                    <Badge variant="secondary" className="bg-primary/10 text-primary">{t.views}</Badge>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {jetpackStats?.countries && jetpackStats.countries.length > 0 && (
-          <Card className="glass-card">
-            <CardHeader>
-              <CardTitle className="text-sm text-foreground">🌍 Países (7d)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {jetpackStats.countries.map((c, i) => (
-                  <div key={i} className="flex items-center justify-between p-2 rounded-lg hover:bg-secondary/30 transition-colors">
-                    <span className="text-sm text-foreground">{c.country}</span>
-                    <Badge variant="secondary" className="bg-accent/10 text-accent">{c.views}</Badge>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-
-      {jetpackStats?.publicizeConnections && jetpackStats.publicizeConnections.length > 0 && (
-        <Card className="glass-card">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Send className="h-4 w-4 text-primary" />
-              <p className="text-sm font-medium text-foreground">Conexões Publicize</p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {jetpackStats.publicizeConnections.map((c, i) => (
-                <Badge key={i} variant="outline" className="text-xs">
-                  {c.service}{c.external_name ? ` (${c.external_name})` : ''}
-                </Badge>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
-
-  if (!gaConnected) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold neon-text-lilac">Analytics</h1>
-          <p className="text-muted-foreground text-sm mt-1">Métricas e insights do seu blog</p>
-        </div>
-        {socialSection}
-        {jetpackSection}
-        <Card className="glass-card">
-          <CardContent className="py-16 text-center">
-            <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-foreground font-medium">Google Analytics não conectado</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Vá em Configurações e conecte seu Google Analytics para ver as métricas completas
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  const statCards = [
-    { icon: Eye, label: 'Pageviews', value: analytics?.pageviews?.toLocaleString() || '0', color: 'text-primary', change: '+12%', up: true },
-    { icon: Users, label: 'Usuários', value: analytics?.users?.toLocaleString() || '0', color: 'text-accent', change: '+8%', up: true },
-    { icon: MousePointerClick, label: 'Sessões', value: analytics?.sessions?.toLocaleString() || '0', color: 'text-primary', change: '+5%', up: true },
-    { icon: Percent, label: 'Taxa de Rejeição', value: `${analytics?.bounceRate || 0}%`, color: 'text-warning', change: '-3%', up: false },
-    { icon: Clock, label: 'Duração Média', value: analytics?.avgSessionDuration || '0:00', color: 'text-primary', change: '+15s', up: true },
-    { icon: ArrowUpRight, label: 'Págs/Sessão', value: analytics?.pagesPerSession?.toFixed(1) || '0', color: 'text-accent', change: '+0.3', up: true },
-    { icon: Users, label: 'Novos Usuários', value: analytics?.newUsers?.toLocaleString() || '0', color: 'text-primary', change: '+10%', up: true },
-    { icon: FileText, label: 'Artigos Publicados', value: String(articleStats.published), color: 'text-accent', change: `${articleStats.total} total`, up: true },
-  ];
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold neon-text-lilac">Analytics</h1>
-          <p className="text-muted-foreground text-sm mt-1">Métricas completas e insights do seu blog</p>
+          <h1 className="text-2xl sm:text-3xl font-bold neon-text-lilac">Analytics</h1>
+          <p className="text-muted-foreground text-sm mt-1">Desempenho dos seus artigos e tráfego</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={generateTips} disabled={loadingTips || !analytics} className="border-accent/30 hover:bg-accent/10 text-accent">
-            {loadingTips ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Lightbulb className="h-4 w-4 mr-2" />}
-            Dicas IA
-          </Button>
-          <Button onClick={fetchAnalytics} className="gradient-primary text-primary-foreground shadow-neon-lilac">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Atualizar
+        <div className="flex items-center gap-2">
+          {gaConnected && (
+            <Button variant="outline" size="sm" onClick={fetchAnalytics} disabled={loading} className="gap-2">
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              Sincronizar
+            </Button>
+          )}
+          <Button variant="outline" size="sm" onClick={() => navigate('/settings')} className="gap-2">
+            Configurar GA4
           </Button>
         </div>
       </div>
 
-      {/* Stat Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {statCards.map((stat) => (
-          <Card key={stat.label} className="glass-card">
+        {[
+          { label: 'Artigos Totais', value: articleStats.total, icon: FileText, color: 'text-primary' },
+          { label: 'Publicados WP', value: articleStats.published, icon: Globe, color: 'text-primary' },
+          { label: 'Falhas Public.', value: articleStats.failed, icon: TrendingDown, color: 'text-destructive' },
+          { label: 'Taxa Sucesso', value: articleStats.total > 0 ? `${((articleStats.published / articleStats.total) * 100).toFixed(0)}%` : '0%', icon: Percent, color: 'text-accent' },
+        ].map((stat) => (
+          <Card key={stat.label} className="glass-card hover-lift">
             <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <stat.icon className={`h-5 w-5 ${stat.color} opacity-80`} />
-                <span className={`text-xs flex items-center gap-0.5 ${stat.up ? 'text-primary' : 'text-destructive'}`}>
-                  {stat.up ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                  {stat.change}
-                </span>
-              </div>
-              <p className="text-xl font-bold text-foreground">{stat.value}</p>
-              <p className="text-xs text-muted-foreground">{stat.label}</p>
+              <stat.icon className={`h-4 w-4 ${stat.color} mb-2`} />
+              <p className="text-lg sm:text-2xl font-bold text-foreground tabular-nums">{stat.value}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider">{stat.label}</p>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      {/* Social Metrics */}
-      {socialSection}
-
-      {/* Jetpack Stats */}
-      {jetpackSection}
-
-      {/* Main Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {analytics?.dailyViews && analytics.dailyViews.length > 0 && (
-          <Card className="glass-card lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="text-lg text-foreground">Tráfego dos Últimos 30 Dias</CardTitle>
-              <CardDescription>Visualizações, usuários e sessões diárias</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <AreaChart data={analytics.dailyViews}>
-                  <defs>
-                    <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(145, 80%, 45%)" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="hsl(145, 80%, 45%)" stopOpacity={0} />
-                    </linearGradient>
-                    <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(320, 80%, 55%)" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="hsl(320, 80%, 55%)" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(260, 20%, 18%)" />
-                  <XAxis dataKey="date" fontSize={11} stroke="hsl(260, 10%, 45%)" />
-                  <YAxis fontSize={11} stroke="hsl(260, 10%, 45%)" />
-                  <Tooltip contentStyle={customTooltipStyle} />
-                  <Legend />
-                  <Area type="monotone" dataKey="views" name="Views" stroke="hsl(145, 80%, 45%)" fill="url(#colorViews)" strokeWidth={2} />
-                  <Area type="monotone" dataKey="users" name="Usuários" stroke="hsl(320, 80%, 55%)" fill="url(#colorUsers)" strokeWidth={2} />
-                  <Line type="monotone" dataKey="sessions" name="Sessões" stroke="hsl(275, 70%, 50%)" strokeWidth={2} dot={false} />
-                </AreaChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        )}
-
-        {analytics?.topPages && analytics.topPages.length > 0 && (
-          <Card className="glass-card">
-            <CardHeader>
-              <CardTitle className="text-lg text-foreground">Páginas Mais Visitadas</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {analytics.topPages.slice(0, 10).map((page, i) => (
-                  <div key={i} className="flex items-center justify-between p-2 rounded-lg hover:bg-secondary/30 transition-colors">
-                    <div className="flex items-center gap-2 min-w-0 flex-1">
-                      <span className="text-xs font-bold text-primary w-5">{i + 1}</span>
-                      <span className="text-sm text-foreground truncate">{page.page}</span>
-                    </div>
-                    <div className="flex items-center gap-3 shrink-0">
-                      <span className="text-xs text-muted-foreground">{page.avgTime}</span>
-                      <Badge variant="secondary" className="text-xs bg-primary/10 text-primary">{page.views}</Badge>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {analytics?.trafficSources && analytics.trafficSources.length > 0 && (
-          <Card className="glass-card">
-            <CardHeader>
-              <CardTitle className="text-lg text-foreground">Fontes de Tráfego</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={250}>
-                <PieChart>
-                  <Pie
-                    data={analytics.trafficSources}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={50}
-                    outerRadius={80}
-                    dataKey="value"
-                    nameKey="source"
-                    label={({ source, percent }) => `${source} ${(percent * 100).toFixed(0)}%`}
-                  >
-                    {analytics.trafficSources.map((_, index) => (
-                      <Cell key={index} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip contentStyle={customTooltipStyle} />
-                </PieChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        )}
-
-        {analytics?.devices && analytics.devices.length > 0 && (
-          <Card className="glass-card">
-            <CardHeader>
-              <CardTitle className="text-lg text-foreground">Dispositivos</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {analytics.devices.map((d, i) => {
-                  const Icon = deviceIcons[d.device] || Monitor;
-                  const total = analytics.devices.reduce((s, x) => s + x.value, 0);
-                  const pct = total > 0 ? ((d.value / total) * 100).toFixed(1) : '0';
-                  return (
-                    <div key={i} className="space-y-1">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Icon className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm text-foreground">{d.device}</span>
-                        </div>
-                        <span className="text-sm font-medium text-foreground">{pct}%</span>
-                      </div>
-                      <div className="h-2 rounded-full bg-secondary overflow-hidden">
-                        <div
-                          className="h-full rounded-full transition-all"
-                          style={{ width: `${pct}%`, backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {analytics?.hourlyTraffic && analytics.hourlyTraffic.length > 0 && (
-          <Card className="glass-card">
-            <CardHeader>
-              <CardTitle className="text-lg text-foreground">Tráfego por Hora</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={analytics.hourlyTraffic}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(260, 20%, 18%)" />
-                  <XAxis dataKey="hour" fontSize={10} stroke="hsl(260, 10%, 45%)" />
-                  <YAxis fontSize={10} stroke="hsl(260, 10%, 45%)" />
-                  <Tooltip contentStyle={customTooltipStyle} />
-                  <Bar dataKey="views" fill="hsl(320, 80%, 55%)" radius={[3, 3, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        )}
-
-        {analytics?.topReferrers && analytics.topReferrers.length > 0 && (
-          <Card className="glass-card">
-            <CardHeader>
-              <CardTitle className="text-lg text-foreground">Principais Referências</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {analytics.topReferrers.map((ref, i) => (
-                  <div key={i} className="flex items-center justify-between p-2 rounded-lg hover:bg-secondary/30 transition-colors">
-                    <div className="flex items-center gap-2">
-                      <Globe className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm text-foreground">{ref.referrer}</span>
-                    </div>
-                    <Badge variant="secondary" className="bg-accent/10 text-accent">{ref.visits}</Badge>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {analytics?.countries && analytics.countries.length > 0 && (
-          <Card className="glass-card">
-            <CardHeader>
-              <CardTitle className="text-lg text-foreground">Países</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {analytics.countries.map((c, i) => (
-                  <div key={i} className="flex items-center justify-between p-2 rounded-lg hover:bg-secondary/30 transition-colors">
-                    <span className="text-sm text-foreground">{c.country}</span>
-                    <Badge variant="secondary" className="bg-primary/10 text-primary">{c.users} usuários</Badge>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-
-      {/* AI Tips */}
-      {tips.length > 0 && (
-        <Card className="glass-card neon-border-lilac">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Lightbulb className="h-5 w-5 text-warning" />
-              <CardTitle className="text-lg text-foreground">Dicas da IA para Melhorar</CardTitle>
+      {!gaConnected ? (
+        <Card className="glass-card border-primary/20 bg-primary/5">
+          <CardContent className="py-12 text-center">
+            <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+              <BarChart3 className="h-6 w-6 text-primary" />
             </div>
-            <CardDescription>Sugestões personalizadas baseadas nos dados de analytics e redes sociais</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {tips.map((tip, index) => (
-                <div key={index} className="flex items-start gap-3 p-3 rounded-lg bg-secondary/30">
-                  <Badge className={priorityColors[tip.priority]} variant="secondary">
-                    {tip.priority}
-                  </Badge>
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground mb-0.5">{tip.category}</p>
-                    <p className="text-sm text-foreground">{tip.tip}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <h3 className="text-lg font-semibold text-foreground">Google Analytics não conectado</h3>
+            <p className="text-sm text-muted-foreground mt-2 max-w-md mx-auto">
+              Conecte sua propriedade do GA4 nas configurações para visualizar dados de tráfego, usuários e visualizações de página em tempo real.
+            </p>
+            <Button onClick={() => navigate('/settings')} className="mt-6 gradient-primary">
+              Ir para Configurações
+            </Button>
           </CardContent>
         </Card>
+      ) : (
+        <>
+          {/* Main GA Metrics */}
+          {analytics && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {[
+                { label: 'Pageviews', value: analytics.pageviews.toLocaleString(), icon: Eye, change: '+12%', trend: 'up' },
+                { label: 'Usuários', value: analytics.users.toLocaleString(), icon: Users, change: '+8%', trend: 'up' },
+                { label: 'Sessões', value: analytics.sessions.toLocaleString(), icon: MousePointerClick, change: '-3%', trend: 'down' },
+                { label: 'Bounce Rate', value: `${(analytics.bounceRate * 100).toFixed(1)}%`, icon: TrendingDown, change: '+2%', trend: 'down' },
+              ].map((stat) => (
+                <Card key={stat.label} className="glass-card hover-lift">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <stat.icon className="h-4 w-4 text-primary" />
+                      <Badge variant="outline" className={`text-[10px] ${stat.trend === 'up' ? 'text-success border-success/30' : 'text-destructive border-destructive/30'}`}>
+                        {stat.change}
+                      </Badge>
+                    </div>
+                    <p className="text-xl sm:text-2xl font-bold text-foreground tabular-nums">{stat.value}</p>
+                    <p className="text-xs text-muted-foreground">{stat.label}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+
+          {/* Jetpack Metrics */}
+          {jetpackStats && (
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold neon-text-lilac flex items-center gap-2">
+                <Globe className="h-5 w-5" /> Jetpack (WordPress.com)
+              </h2>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {[
+                  { label: 'Views Hoje', value: jetpackStats.summary?.views_today || 0, icon: Eye },
+                  { label: 'Visitantes', value: jetpackStats.summary?.visitors || 0, icon: Users },
+                  { label: 'Seguidores', value: jetpackStats.summary?.followers || 0, icon: Heart },
+                  { label: 'Views Totais', value: jetpackStats.summary?.views || 0, icon: BarChart3 },
+                ].map((s) => (
+                  <Card key={s.label} className="glass-card"><CardContent className="p-4">
+                    <s.icon className="h-4 w-4 text-primary mb-2" />
+                    <p className="text-lg sm:text-xl font-bold text-foreground">{(s.value || 0).toLocaleString()}</p>
+                    <p className="text-xs text-muted-foreground">{s.label}</p>
+                  </CardContent></Card>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {socialSection}
+
+          {/* Tips Section */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold neon-text-lilac flex items-center gap-2">
+                <Lightbulb className="h-5 w-5" /> Insights da IA
+              </h2>
+              <Button size="sm" onClick={generateTips} disabled={loadingTips || !analytics} variant="outline" className="gap-2">
+                {loadingTips ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                Gerar Dicas
+              </Button>
+            </div>
+
+            {tips.length > 0 ? (
+              <div className="grid gap-3">
+                {tips.map((tip, idx) => (
+                  <Card key={idx} className="glass-card border-primary/20 bg-primary/5">
+                    <CardContent className="p-4 flex gap-4">
+                      <div className="h-10 w-10 shrink-0 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Sparkles className="h-5 w-5 text-primary" />
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-medium uppercase tracking-wider text-primary">{tip.category}</span>
+                          <Badge className={priorityColors[tip.priority]}>{tip.priority}</Badge>
+                        </div>
+                        <p className="text-sm text-foreground leading-relaxed">{tip.tip}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <Card className="glass-card border-dashed">
+                <CardContent className="py-8 text-center text-muted-foreground">
+                  <p className="text-sm italic">Clique em "Gerar Dicas" para receber sugestões personalizadas da IA.</p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          {/* Charts Row */}
+          {analytics?.dailyViews && (
+            <div className="grid lg:grid-cols-2 gap-6">
+              <Card className="glass-card">
+                <CardHeader>
+                  <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4 text-primary" /> Tendência de Visualizações
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={250}>
+                    <AreaChart data={analytics.dailyViews}>
+                      <defs>
+                        <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="hsl(260, 80%, 55%)" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="hsl(260, 80%, 55%)" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(260, 20%, 18%)" vertical={false} />
+                      <XAxis dataKey="date" fontSize={10} stroke="hsl(260, 10%, 45%)" tickFormatter={(v) => v.split('-').slice(2).join('/')} />
+                      <YAxis fontSize={10} stroke="hsl(260, 10%, 45%)" />
+                      <Tooltip contentStyle={customTooltipStyle} cursor={{ stroke: 'hsl(260, 80%, 55%)', strokeWidth: 1 }} />
+                      <Area type="monotone" dataKey="views" name="Visualizações" stroke="hsl(260, 80%, 55%)" fillOpacity={1} fill="url(#colorViews)" strokeWidth={3} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              <Card className="glass-card">
+                <CardHeader>
+                  <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    <Smartphone className="h-4 w-4 text-accent" /> Dispositivos
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={250}>
+                    <PieChart>
+                      <Pie data={analytics.devices} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value" nameKey="device">
+                        {analytics.devices.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip contentStyle={customTooltipStyle} />
+                      <Legend verticalAlign="bottom" height={36} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Tables Row */}
+          <div className="grid lg:grid-cols-2 gap-6">
+            <Card className="glass-card">
+              <CardHeader>
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <ArrowUpRight className="h-4 w-4 text-primary" /> Páginas Mais Vistas
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-white/5 text-muted-foreground text-[11px] uppercase tracking-wider">
+                        <th className="px-4 py-3 text-left font-medium">Página</th>
+                        <th className="px-4 py-3 text-right font-medium">Views</th>
+                        <th className="px-4 py-3 text-right font-medium">Tempo Médio</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {analytics?.topPages.map((page, i) => (
+                        <tr key={i} className="hover:bg-white/[0.02] transition-colors">
+                          <td className="px-4 py-3 font-medium max-w-[200px] truncate">{page.page}</td>
+                          <td className="px-4 py-3 text-right tabular-nums">{page.views.toLocaleString()}</td>
+                          <td className="px-4 py-3 text-right text-muted-foreground">{page.avgTime}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="glass-card">
+              <CardHeader>
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-accent" /> Tráfego por Hora
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={250}>
+                  <BarChart data={analytics?.hourlyTraffic}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(260, 20%, 18%)" vertical={false} />
+                    <XAxis dataKey="hour" fontSize={10} stroke="hsl(260, 10%, 45%)" />
+                    <YAxis fontSize={10} stroke="hsl(260, 10%, 45%)" />
+                    <Tooltip contentStyle={customTooltipStyle} />
+                    <Bar dataKey="views" name="Visualizações" fill="hsl(145, 80%, 45%)" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </div>
+        </>
       )}
     </div>
   );

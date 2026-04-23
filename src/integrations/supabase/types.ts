@@ -36,12 +36,10 @@ export type Database = {
           content: string | null
           created_at: string
           excerpt: string | null
-          facebook_post_id: string | null
           fact_check_notes: string | null
           fact_check_status: string | null
           featured_image_url: string | null
           id: string
-          instagram_post_id: string | null
           meta_description: string | null
           published_at: string | null
           research_references: Json | null
@@ -63,12 +61,10 @@ export type Database = {
           content?: string | null
           created_at?: string
           excerpt?: string | null
-          facebook_post_id?: string | null
           fact_check_notes?: string | null
           fact_check_status?: string | null
           featured_image_url?: string | null
           id?: string
-          instagram_post_id?: string | null
           meta_description?: string | null
           published_at?: string | null
           research_references?: Json | null
@@ -90,12 +86,10 @@ export type Database = {
           content?: string | null
           created_at?: string
           excerpt?: string | null
-          facebook_post_id?: string | null
           fact_check_notes?: string | null
           fact_check_status?: string | null
           featured_image_url?: string | null
           id?: string
-          instagram_post_id?: string | null
           meta_description?: string | null
           published_at?: string | null
           research_references?: Json | null
@@ -110,60 +104,6 @@ export type Database = {
           updated_at?: string
           user_id?: string
           wordpress_post_id?: string | null
-        }
-        Relationships: []
-      }
-      facebook_accounts: {
-        Row: {
-          access_token: string
-          created_at: string
-          id: string
-          instagram_account_id: string | null
-          is_active: boolean
-          page_id: string
-          page_name: string | null
-          user_id: string
-        }
-        Insert: {
-          access_token: string
-          created_at?: string
-          id?: string
-          instagram_account_id?: string | null
-          is_active?: boolean
-          page_id: string
-          page_name?: string | null
-          user_id: string
-        }
-        Update: {
-          access_token?: string
-          created_at?: string
-          id?: string
-          instagram_account_id?: string | null
-          is_active?: boolean
-          page_id?: string
-          page_name?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
-      facebook_oauth_states: {
-        Row: {
-          created_at: string
-          expires_at: string
-          state: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          expires_at?: string
-          state: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          expires_at?: string
-          state?: string
-          user_id?: string
         }
         Relationships: []
       }
@@ -250,13 +190,10 @@ export type Database = {
           auto_publish: boolean | null
           categories: string[] | null
           created_at: string
-          facebook_access_token: string | null
-          facebook_page_id: string | null
           gemini_api_key: string | null
           google_analytics_property_id: string | null
           groq_api_key: string | null
           id: string
-          instagram_account_id: string | null
           openai_api_key: string | null
           updated_at: string
           user_id: string
@@ -270,13 +207,10 @@ export type Database = {
           auto_publish?: boolean | null
           categories?: string[] | null
           created_at?: string
-          facebook_access_token?: string | null
-          facebook_page_id?: string | null
           gemini_api_key?: string | null
           google_analytics_property_id?: string | null
           groq_api_key?: string | null
           id?: string
-          instagram_account_id?: string | null
           openai_api_key?: string | null
           updated_at?: string
           user_id: string
@@ -290,13 +224,10 @@ export type Database = {
           auto_publish?: boolean | null
           categories?: string[] | null
           created_at?: string
-          facebook_access_token?: string | null
-          facebook_page_id?: string | null
           gemini_api_key?: string | null
           google_analytics_property_id?: string | null
           groq_api_key?: string | null
           id?: string
-          instagram_account_id?: string | null
           openai_api_key?: string | null
           updated_at?: string
           user_id?: string

@@ -11,16 +11,13 @@ import GeminiSettings from '@/components/settings/GeminiSettings';
 import OpenAISettings from '@/components/settings/OpenAISettings';
 import GroqSettings from '@/components/settings/GroqSettings';
 import JetpackSettings from '@/components/settings/JetpackSettings';
-import FacebookSettings from '@/components/settings/FacebookSettings';
+
 import { getErrorMessage, runBackendMutation, runBackendQuery } from '@/lib/backend';
 
 export interface UserSettings {
   wordpress_url: string;
   wordpress_username: string;
   wordpress_app_password: string;
-  facebook_page_id: string;
-  facebook_access_token: string;
-  instagram_account_id: string;
   google_analytics_property_id: string;
   gemini_api_key: string;
   openai_api_key: string;
@@ -35,9 +32,6 @@ const defaultSettings: UserSettings = {
   wordpress_url: '',
   wordpress_username: '',
   wordpress_app_password: '',
-  facebook_page_id: '',
-  facebook_access_token: '',
-  instagram_account_id: '',
   google_analytics_property_id: '',
   gemini_api_key: '',
   openai_api_key: '',
@@ -50,7 +44,7 @@ const defaultSettings: UserSettings = {
 
 interface CredentialsStatus {
   has_wp_password: boolean;
-  has_fb_token: boolean;
+  
   has_gemini_key: boolean;
   has_openai_key: boolean;
   has_groq_key: boolean;
@@ -63,7 +57,7 @@ const SettingsPage = () => {
   const [saving, setSaving] = useState(false);
   const [hasExistingSettings, setHasExistingSettings] = useState(false);
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
-  const [credStatus, setCredStatus] = useState<CredentialsStatus>({ has_wp_password: false, has_fb_token: false, has_gemini_key: false, has_openai_key: false, has_groq_key: false });
+  const [credStatus, setCredStatus] = useState<CredentialsStatus>({ has_wp_password: false, has_gemini_key: false, has_openai_key: false, has_groq_key: false });
 
   useEffect(() => {
     if (!user) return;
@@ -74,7 +68,7 @@ const SettingsPage = () => {
           runBackendQuery(() =>
             supabase
               .from('user_settings')
-              .select('wordpress_url, wordpress_username, google_analytics_property_id, facebook_page_id, instagram_account_id, categories, articles_per_day, auto_publish, writer_prompt')
+              .select('wordpress_url, wordpress_username, google_analytics_property_id, categories, articles_per_day, auto_publish, writer_prompt')
               .eq('user_id', user.id)
               .maybeSingle(),
           ),
@@ -88,9 +82,6 @@ const SettingsPage = () => {
             wordpress_url: data.wordpress_url || '',
             wordpress_username: data.wordpress_username || '',
             wordpress_app_password: '',
-            facebook_page_id: data.facebook_page_id || '',
-            facebook_access_token: '',
-            instagram_account_id: data.instagram_account_id || '',
             google_analytics_property_id: data.google_analytics_property_id || '',
             gemini_api_key: '',
             openai_api_key: '',
@@ -122,8 +113,6 @@ const SettingsPage = () => {
       const payload: Record<string, unknown> = {
         wordpress_url: settings.wordpress_url,
         wordpress_username: settings.wordpress_username,
-        facebook_page_id: settings.facebook_page_id,
-        instagram_account_id: settings.instagram_account_id,
         google_analytics_property_id: settings.google_analytics_property_id,
         categories: settings.categories,
         articles_per_day: settings.articles_per_day,
@@ -133,9 +122,6 @@ const SettingsPage = () => {
 
       if (settings.wordpress_app_password) {
         payload.wordpress_app_password = settings.wordpress_app_password;
-      }
-      if (settings.facebook_access_token) {
-        payload.facebook_access_token = settings.facebook_access_token;
       }
       if (settings.gemini_api_key) {
         payload.gemini_api_key = settings.gemini_api_key;
@@ -159,7 +145,7 @@ const SettingsPage = () => {
       const status = await runBackendQuery(() => supabase.rpc('get_credentials_status'));
       if (status) setCredStatus(status as unknown as CredentialsStatus);
 
-      setSettings(prev => ({ ...prev, wordpress_app_password: '', facebook_access_token: '', gemini_api_key: '', openai_api_key: '', groq_api_key: '' }));
+      setSettings(prev => ({ ...prev, wordpress_app_password: '', gemini_api_key: '', openai_api_key: '', groq_api_key: '' }));
     } catch (error) {
       toast({ title: 'Erro', description: getErrorMessage(error), variant: 'destructive' });
     } finally {
@@ -224,7 +210,7 @@ const SettingsPage = () => {
       <GroqSettings settings={settings} onChange={updateSettings} hasGroqKey={credStatus.has_groq_key} onDisconnect={() => disconnectCredential({ groq_api_key: '' }, 'Groq')} />
       <WordPressSettings settings={settings} onChange={updateSettings} hasWpPassword={credStatus.has_wp_password} onDisconnect={() => disconnectCredential({ wordpress_url: '', wordpress_username: '', wordpress_app_password: '' }, 'WordPress')} />
       <JetpackSettings settings={settings} hasWpPassword={credStatus.has_wp_password} />
-      <FacebookSettings settings={settings} onChange={updateSettings} />
+      
       <GoogleAnalyticsSettings settings={settings} onChange={updateSettings} />
       <AutomationSettings settings={settings} onChange={updateSettings} />
 

@@ -89,8 +89,6 @@ serve(async (req) => {
       topPages,
       trafficSources: [
         { source: "Google Orgânico", value: Math.floor(Math.random() * 40) + 30 },
-        { source: "Facebook", value: Math.floor(Math.random() * 20) + 10 },
-        { source: "Instagram", value: Math.floor(Math.random() * 15) + 5 },
         { source: "Direto", value: Math.floor(Math.random() * 15) + 5 },
         { source: "Google Ads", value: Math.floor(Math.random() * 10) + 3 },
         { source: "Outros", value: Math.floor(Math.random() * 8) + 2 },
@@ -110,8 +108,6 @@ serve(async (req) => {
       ],
       topReferrers: [
         { referrer: "google.com.br", visits: Math.floor(Math.random() * 200) + 50 },
-        { referrer: "facebook.com", visits: Math.floor(Math.random() * 100) + 30 },
-        { referrer: "instagram.com", visits: Math.floor(Math.random() * 80) + 20 },
         { referrer: "t.co (Twitter)", visits: Math.floor(Math.random() * 40) + 10 },
         { referrer: "linkedin.com", visits: Math.floor(Math.random() * 20) + 5 },
       ],

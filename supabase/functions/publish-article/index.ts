@@ -329,22 +329,6 @@ serve(async (req) => {
         console.error("Retention cleanup failed:", cleanupErr);
       }
 
-      // Trigger social publishing (Instagram feed + Stories + Facebook page Stories)
-      // Fire-and-forget but await briefly so logs are written before response
-      try {
-        const socialResp = await fetch(`${supabaseUrl}/functions/v1/publish-social`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${supabaseKey}`,
-          },
-          body: JSON.stringify({ articleId, userId }),
-        });
-        const socialText = await socialResp.text();
-        console.log(`publish-social response ${socialResp.status}: ${socialText.substring(0, 300)}`);
-      } catch (socialErr) {
-        console.error("publish-social call failed:", socialErr);
-      }
 
       return new Response(
         JSON.stringify({

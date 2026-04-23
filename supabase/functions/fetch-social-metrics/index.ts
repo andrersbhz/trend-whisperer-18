@@ -32,22 +32,15 @@ serve(async (req) => {
       .eq("user_id", userId);
 
     const wpLogs = (logs || []).filter(l => l.platform === "wordpress");
-    const fbLogs = (logs || []).filter(l => l.platform === "facebook");
-    const igLogs = (logs || []).filter(l => l.platform === "instagram");
-
     const wpSuccess = wpLogs.filter(l => l.status === "success");
-    const fbSuccess = fbLogs.filter(l => l.status === "success");
-    const igSuccess = igLogs.filter(l => l.status === "success");
 
     // 3. Try to fetch Jetpack Publicize sharing data from WordPress
-    let jetpackShares: any[] = [];
     let wpPostsWithShares = 0;
     let totalJetpackShares = 0;
     let sharesByNetwork: Record<string, number> = {};
 
     if (settings?.wordpress_url && settings?.wordpress_username && settings?.wordpress_app_password) {
       try {
-        // Decrypt password
         const { data: decrypted } = await supabase.rpc("decrypt_credential", {
           enc_key: "",
           val: settings.wordpress_app_password,
@@ -57,7 +50,6 @@ serve(async (req) => {
         const wpUrl = settings.wordpress_url.replace(/\/+$/, "");
         const auth = btoa(`${settings.wordpress_username}:${password}`);
 
-        // Fetch recent published posts with sharing info
         const postsResp = await fetch(
           `${wpUrl}/wp-json/wp/v2/posts?per_page=100&status=publish&_fields=id,title,date,jetpack_publicize_connections,jetpack_sharing_enabled,meta`,
           {
@@ -67,9 +59,7 @@ serve(async (req) => {
 
         if (postsResp.ok) {
           const posts = await postsResp.json();
-          console.log(`Fetched ${posts.length} WordPress posts`);
-
-          // Try Jetpack stats endpoint for sharing counts
+          
           try {
             const statsResp = await fetch(
               `${wpUrl}/wp-json/wpcom/v2/stats/summary`,
@@ -77,17 +67,14 @@ serve(async (req) => {
             );
             if (statsResp.ok) {
               const stats = await statsResp.json();
-              console.log("Jetpack stats available:", JSON.stringify(stats).substring(0, 300));
-              
               if (stats.shares) {
                 totalJetpackShares = stats.shares;
               }
             }
           } catch (e) {
-            console.log("Jetpack stats not available (plugin may not be active)");
+            console.log("Jetpack stats not available");
           }
 
-          // Try to get sharing stats per post
           for (const post of posts.slice(0, 20)) {
             try {
               const shareResp = await fetch(
@@ -106,11 +93,10 @@ serve(async (req) => {
                 }
               }
             } catch {
-              // Individual post share fetch failed, continue
+              // Ignore
             }
           }
 
-          // Alternative: try wp/v2/publicize-connections
           if (Object.keys(sharesByNetwork).length === 0) {
             try {
               const connectionsResp = await fetch(
@@ -119,8 +105,6 @@ serve(async (req) => {
               );
               if (connectionsResp.ok) {
                 const connections = await connectionsResp.json();
-                console.log("Jetpack Publicize connections:", JSON.stringify(connections).substring(0, 500));
-                
                 if (Array.isArray(connections)) {
                   for (const conn of connections) {
                     sharesByNetwork[conn.service || conn.label || "unknown"] = 0;
@@ -128,23 +112,19 @@ serve(async (req) => {
                 }
               }
             } catch {
-              console.log("No Jetpack Publicize connections endpoint");
+              // Ignore
             }
           }
 
-          // Count posts that have sharing metadata
           wpPostsWithShares = wpPostsWithShares || posts.filter((p: any) => 
             p.jetpack_sharing_enabled !== false
           ).length;
-        } else {
-          console.error(`WordPress API returned ${postsResp.status}`);
         }
       } catch (err) {
         console.error("Error fetching WordPress/Jetpack data:", err);
       }
     }
 
-    // 4. Build response with real data
     const result = {
       publish_log: {
         wordpress: {
@@ -156,16 +136,6 @@ serve(async (req) => {
             url: l.published_url,
           })),
         },
-        facebook: {
-          total: fbLogs.length,
-          success: fbSuccess.length,
-          failed: fbLogs.filter(l => l.status === "failed").length,
-        },
-        instagram: {
-          total: igLogs.length,
-          success: igSuccess.length,
-          failed: igLogs.filter(l => l.status === "failed").length,
-        },
       },
       jetpack: {
         posts_with_sharing: wpPostsWithShares,
@@ -174,9 +144,7 @@ serve(async (req) => {
       },
       summary: {
         total_published_wp: wpSuccess.length,
-        total_shared_social: fbSuccess.length + igSuccess.length + totalJetpackShares,
-        total_facebook: fbSuccess.length + (sharesByNetwork["facebook"] || 0),
-        total_instagram: igSuccess.length + (sharesByNetwork["instagram"] || 0),
+        total_shared_social: totalJetpackShares,
         total_twitter: sharesByNetwork["twitter"] || sharesByNetwork["x"] || 0,
         total_linkedin: sharesByNetwork["linkedin"] || 0,
         total_tumblr: sharesByNetwork["tumblr"] || 0,
