@@ -203,8 +203,19 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
   };
 
   const handleDiscoverPages = async () => {
-    if (!userAccessToken) {
+    const token = userAccessToken.trim();
+    if (!token) {
       toast({ title: 'Erro', description: 'Insira seu User Access Token da Meta', variant: 'destructive' });
+      return;
+    }
+    // Real Facebook User Access Tokens start with "EAA" and are 100+ characters long.
+    // Anything else (App ID, App Secret, client token MD5 hash) will be rejected by the Graph API.
+    if (!token.startsWith('EAA') || token.length < 100) {
+      toast({
+        title: 'Token inválido',
+        description: 'Esse não parece ser um User Access Token. Tokens válidos começam com "EAA" e têm 100+ caracteres. Gere um em developers.facebook.com → Graph API Explorer, ou use o botão "Conectar" acima (login OAuth).',
+        variant: 'destructive',
+      });
       return;
     }
     setDiscoverLoading(true);
