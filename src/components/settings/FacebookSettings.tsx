@@ -275,38 +275,30 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
     >
       <div className="space-y-4">
         {/* Connection Action */}
-        <div className="p-4 rounded-xl border border-primary/20 bg-gradient-to-br from-primary/10 via-background to-accent/5 shadow-sm">
-          <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
-            <div className="bg-primary/10 p-3 rounded-full shrink-0">
-              <Facebook className="h-6 w-6 text-primary" />
-            </div>
+        <div className="p-3 rounded-lg border border-primary/40 bg-gradient-to-br from-primary/10 to-accent/10">
+          <div className="flex items-start gap-3">
             <div className="flex-1 min-w-0">
-              <h4 className="text-sm font-semibold text-foreground">Conectar com Facebook</h4>
-              <p className="text-xs text-muted-foreground mt-1 max-w-[320px]">
-                Conecte suas páginas do Facebook e perfis comerciais do Instagram para automatizar suas postagens.
+              <p className="text-sm font-medium text-foreground">
+                {accounts.length > 0 ? "Atualizar conexão com Facebook" : "Login com Facebook (recomendado)"}
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Conecta automaticamente todas as páginas do seu Business Manager. Tokens válidos por 60 dias.
               </p>
             </div>
-            <Button
-              size="lg"
+            <Button 
               onClick={handleOAuthConnect}
               disabled={oauthLoading}
-              className="gradient-primary shrink-0 w-full sm:w-auto"
+              className="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 bg-primary text-primary-foreground hover:bg-primary/90 h-9 rounded-md px-3 gradient-primary shrink-0"
             >
               {oauthLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
-              ) : accounts.length > 0 ? (
-                <><RefreshCw className="h-4 w-4 mr-2" />Atualizar Conexão</>
               ) : (
-                <><LogIn className="h-4 w-4 mr-2" />Conectar Agora</>
+                <>
+                  <LogIn className="h-4 w-4 mr-1.5" />
+                  {accounts.length > 0 ? "Atualizar" : "Conectar"}
+                </>
               )}
             </Button>
-          </div>
-          
-          <div className="mt-4 pt-3 border-t border-border/40">
-            <p className="text-[10px] text-muted-foreground flex items-center gap-1.5 justify-center sm:justify-start">
-              <CheckCircle2 className="h-3 w-3 text-success" />
-              Sua conexão utiliza o protocolo seguro OAuth 2.0 padrão da Meta.
-            </p>
           </div>
         </div>
 
