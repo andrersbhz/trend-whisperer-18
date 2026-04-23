@@ -5,7 +5,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Send, Eye, Trash2, Loader2, FileText, RotateCcw, ImagePlus, Sparkles, Database, Layout } from 'lucide-react';
+import { Send, Eye, Trash2, Loader2, FileText, RotateCcw, ImagePlus, Sparkles, Database, Layout, CheckCircle2 } from 'lucide-react';
+import PostEditor from '@/components/articles/PostEditor';
 import { getErrorMessage, runBackendMutation, runBackendQuery } from '@/lib/backend';
 import {
   Dialog,
@@ -45,7 +46,7 @@ const ArticlesPage = () => {
       const data = await runBackendQuery(() =>
         supabase
           .from('articles')
-          .select('id, title, status, category, seo_keyword, meta_description, featured_image_url, fact_check_status, fact_check_notes, research_references, seo_audit_log')
+          .select('id, title, status, category, seo_keyword, meta_description, featured_image_url, fact_check_status, fact_check_notes, research_references, seo_audit_log, is_approved, meta_title, slug, focus_keyword, content')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
           .range(from, to),
@@ -161,7 +162,7 @@ const ArticlesPage = () => {
       const data = await runBackendQuery(() =>
         supabase
           .from('articles')
-          .select('id, title, category, seo_keyword, meta_description, content, featured_image_url, fact_check_status, fact_check_notes, research_references, seo_audit_log')
+          .select('id, title, category, seo_keyword, meta_description, content, featured_image_url, fact_check_status, fact_check_notes, research_references, seo_audit_log, is_approved, meta_title, slug, focus_keyword')
           .eq('id', articleId)
           .maybeSingle(),
       );
@@ -172,6 +173,43 @@ const ArticlesPage = () => {
       toast({ title: 'Erro ao carregar prévia', description: getErrorMessage(error), variant: 'destructive' });
     } finally {
       setPreviewLoading(false);
+    }
+  };
+
+  const handleUpdateArticle = async (updatedArticle: any) => {
+    if (!user) return;
+    try {
+      await runBackendMutation(() =>
+        supabase.from('articles').update({
+          title: updatedArticle.title,
+          content: updatedArticle.content,
+          meta_title: updatedArticle.meta_title,
+          meta_description: updatedArticle.meta_description,
+          slug: updatedArticle.slug,
+          focus_keyword: updatedArticle.focus_keyword,
+          featured_image_url: updatedArticle.featured_image_url
+        }).eq('id', updatedArticle.id)
+      );
+      setPreview(updatedArticle);
+      setArticles(prev => prev.map(a => a.id === updatedArticle.id ? { ...a, ...updatedArticle } : a));
+      toast({ title: 'Rascunho atualizado' });
+    } catch (error) {
+      toast({ title: 'Erro ao salvar', description: getErrorMessage(error), variant: 'destructive' });
+    }
+  };
+
+  const handleApprove = async (articleId: string) => {
+    if (!user) return;
+    try {
+      const isApproved = !preview?.is_approved;
+      await runBackendMutation(() =>
+        supabase.from('articles').update({ is_approved: isApproved }).eq('id', articleId)
+      );
+      setPreview(prev => ({ ...prev, is_approved: isApproved }));
+      setArticles(prev => prev.map(a => a.id === articleId ? { ...a, is_approved: isApproved } : a));
+      toast({ title: isApproved ? 'Aprovado!' : 'Aprovação removida' });
+    } catch (error) {
+      toast({ title: 'Erro', description: getErrorMessage(error), variant: 'destructive' });
     }
   };
 
@@ -340,6 +378,11 @@ const ArticlesPage = () => {
                         <Badge className={`${statusColors[article.status] || ''} text-[10px] sm:text-xs`} variant="secondary">
                           {statusLabels[article.status] || article.status}
                         </Badge>
+                        {article.is_approved && (
+                          <Badge className="bg-success/20 text-success border-success/30 text-[10px] sm:text-xs">
+                            <CheckCircle2 className="h-3 w-3 mr-1" /> Aprovado
+                          </Badge>
+                        )}
                         {article.fact_check_status && (
                           <Badge 
                             variant="outline" 
@@ -431,76 +474,24 @@ const ArticlesPage = () => {
           if (!open) setPreview(null);
         }}
       >
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto glass-card border-border">
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto glass-card border-border">
           <DialogHeader>
-            <DialogTitle className="text-foreground">{previewLoading ? 'Carregando prévia...' : preview?.title}</DialogTitle>
+            <DialogTitle className="text-foreground">Editor & Prévia do Artigo</DialogTitle>
           </DialogHeader>
+          
           {previewLoading ? (
-            <div className="flex items-center justify-center py-12">
+            <div className="flex items-center justify-center py-20">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
-          ) : (
-            <div className="space-y-3 text-sm">
-              {preview?.featured_image_url && (
-                <img src={preview.featured_image_url} alt={preview.title} className="w-full rounded-lg" />
-              )}
-              <div className="flex gap-2 flex-wrap">
-                <Badge variant="secondary" className="bg-primary/10 text-primary">{preview?.category}</Badge>
-                {preview?.fact_check_status && (
-                  <Badge variant="outline" className={preview.fact_check_status === 'safe' ? 'text-success' : 'text-warning'}>
-                    Status: {preview.fact_check_status}
-                  </Badge>
-                )}
-              </div>
-              
-              {preview?.research_references?.length > 0 && (
-                <div className="bg-muted/30 p-3 rounded-lg border border-border/50">
-                  <h4 className="font-semibold text-xs mb-2 flex items-center gap-2">
-                    <Database className="h-3 w-3" /> Referências de Pesquisa (Score)
-                  </h4>
-                  <div className="space-y-1.5">
-                    {preview.research_references.map((ref: any, i: number) => (
-                      <div key={i} className="text-[11px] flex items-center justify-between gap-2">
-                        <a href={ref.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate">
-                          {ref.headline || ref.source}
-                        </a>
-                        <Badge variant="secondary" className="text-[10px] h-4">{(ref.relevance_score * 100).toFixed(0)}%</Badge>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {preview?.seo_audit_log?.issues_found?.length > 0 && (
-                <div className="bg-warning/10 p-3 rounded-lg border border-warning/20">
-                  <h4 className="font-semibold text-xs text-warning mb-1">Auditoria de SEO:</h4>
-                  <ul className="list-disc list-inside text-[11px] text-muted-foreground">
-                    {preview.seo_audit_log.issues_found.map((issue: string, i: number) => (
-                      <li key={i}>{issue}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              
-              <div className="flex gap-2 flex-wrap">
-                {preview?.seo_keyword && <Badge variant="outline" className="border-accent/30 text-accent">🔑 {preview.seo_keyword}</Badge>}
-              </div>
-
-              {preview?.meta_description && (
-                <div className="p-3 rounded-lg bg-secondary/30">
-                  <p className="text-xs font-medium text-muted-foreground mb-1">Meta Description</p>
-                  <p className="text-sm text-foreground">{preview?.meta_description}</p>
-                </div>
-              )}
-              <div
-                className="prose prose-sm prose-invert max-w-none text-foreground mt-4"
-                dangerouslySetInnerHTML={{ __html: preview?.content || '' }}
-              />
-            </div>
-          )}
+          ) : preview ? (
+            <PostEditor 
+              article={preview} 
+              onSave={handleUpdateArticle} 
+              onApprove={handleApprove}
+            />
+          ) : null}
         </DialogContent>
       </Dialog>
-
     </div>
   );
 };
