@@ -478,8 +478,11 @@ const ArticlesPage = () => {
                   </ul>
                 </div>
               )}
+              
+              <div className="flex gap-2 flex-wrap">
                 {preview?.seo_keyword && <Badge variant="outline" className="border-accent/30 text-accent">🔑 {preview.seo_keyword}</Badge>}
               </div>
+
               {preview?.meta_description && (
                 <div className="p-3 rounded-lg bg-secondary/30">
                   <p className="text-xs font-medium text-muted-foreground mb-1">Meta Description</p>
@@ -487,7 +490,7 @@ const ArticlesPage = () => {
                 </div>
               )}
               <div
-                className="prose prose-sm prose-invert max-w-none text-foreground"
+                className="prose prose-sm prose-invert max-w-none text-foreground mt-4"
                 dangerouslySetInnerHTML={{ __html: preview?.content || '' }}
               />
             </div>
