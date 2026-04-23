@@ -170,19 +170,15 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
     setOauthLoading(true);
     
     try {
-      // Get the authorization URL first
       const authUrl = await requestFacebookAuthUrl(returnUrl);
       
-      // Open popup with the actual URL directly (much more reliable for COOP/security policies)
+      // Try to open as popup first
       const popup = window.open(authUrl, 'facebook-oauth', getPopupFeatures());
       
-      if (!popup) {
-        setOauthLoading(false);
-        toast({
-          title: 'Popup bloqueado',
-          description: 'Permita popups para este site e tente novamente.',
-          variant: 'destructive',
-        });
+      if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+        // If popup is blocked, fallback to direct redirect
+        console.warn('Popup blocked or failed, redirecting main window...');
+        window.location.href = authUrl;
         return;
       }
       
@@ -191,13 +187,12 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
       watchPopupClosed(popup);
     } catch (e: any) {
       setOauthLoading(false);
-      toast({ title: 'Erro ao iniciar conexão', description: e.message, variant: 'destructive' });
+      toast({ title: 'Erro ao conectar', description: e.message, variant: 'destructive' });
     }
   };
 
   const handleOAuthConnect = async () => {
     if (oauthLoading) return;
-    setOauthLoading(true);
     await startOauthPopup();
   };
 
