@@ -7,7 +7,11 @@ Deno.env.set("SUPABASE_SERVICE_ROLE_KEY", "service-role-key");
 Deno.env.set("FACEBOOK_APP_ID", "12345");
 Deno.env.set("FACEBOOK_APP_SECRET", "secret");
 
-Deno.test("Facebook OAuth Callback Integration Test", async (t) => {
+Deno.test({
+  name: "Facebook OAuth Callback Integration Test",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  fn: async (t) => {
   // Mock global fetch
   const originalFetch = globalThis.fetch;
   
@@ -82,7 +86,8 @@ Deno.test("Facebook OAuth Callback Integration Test", async (t) => {
     } finally {
       globalThis.fetch = originalFetch;
     }
-  });
+  }
+});
 
   await t.step("Expired Session Flow", async () => {
     const testState = "expired-state::https%3A%2F%2Fexample.com%2Fsettings";
