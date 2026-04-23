@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Save, Loader2 } from 'lucide-react';
 import WordPressSettings from '@/components/settings/WordPressSettings';
+import SocialSettings from '@/components/settings/SocialSettings';
 import GoogleAnalyticsSettings from '@/components/settings/GoogleAnalyticsSettings';
 import AutomationSettings from '@/components/settings/AutomationSettings';
 import GeminiSettings from '@/components/settings/GeminiSettings';
@@ -26,6 +27,10 @@ export interface UserSettings {
   articles_per_day: number;
   auto_publish: boolean;
   writer_prompt: string;
+  facebook_access_token: string;
+  facebook_page_id: string;
+  linkedin_access_token: string;
+  linkedin_org_id: string;
 }
 
 const defaultSettings: UserSettings = {
@@ -40,6 +45,10 @@ const defaultSettings: UserSettings = {
   articles_per_day: 3,
   auto_publish: false,
   writer_prompt: '',
+  facebook_access_token: '',
+  facebook_page_id: '',
+  linkedin_access_token: '',
+  linkedin_org_id: '',
 };
 
 interface CredentialsStatus {
@@ -68,7 +77,7 @@ const SettingsPage = () => {
           runBackendQuery(() =>
             supabase
               .from('user_settings')
-              .select('wordpress_url, wordpress_username, google_analytics_property_id, categories, articles_per_day, auto_publish, writer_prompt')
+              .select('wordpress_url, wordpress_username, google_analytics_property_id, categories, articles_per_day, auto_publish, writer_prompt, facebook_access_token, facebook_page_id, linkedin_access_token, linkedin_org_id')
               .eq('user_id', user.id)
               .maybeSingle(),
           ),
@@ -118,6 +127,10 @@ const SettingsPage = () => {
         articles_per_day: settings.articles_per_day,
         auto_publish: settings.auto_publish,
         writer_prompt: settings.writer_prompt,
+        facebook_access_token: settings.facebook_access_token,
+        facebook_page_id: settings.facebook_page_id,
+        linkedin_access_token: settings.linkedin_access_token,
+        linkedin_org_id: settings.linkedin_org_id,
       };
 
       if (settings.wordpress_app_password) {
