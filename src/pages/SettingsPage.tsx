@@ -5,20 +5,22 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Save, Loader2 } from 'lucide-react';
 import WordPressSettings from '@/components/settings/WordPressSettings';
-import SocialSettings from '@/components/settings/SocialSettings';
 import GoogleAnalyticsSettings from '@/components/settings/GoogleAnalyticsSettings';
 import AutomationSettings from '@/components/settings/AutomationSettings';
 import GeminiSettings from '@/components/settings/GeminiSettings';
 import OpenAISettings from '@/components/settings/OpenAISettings';
 import GroqSettings from '@/components/settings/GroqSettings';
 import JetpackSettings from '@/components/settings/JetpackSettings';
-
+import FacebookSettings from '@/components/settings/FacebookSettings';
 import { getErrorMessage, runBackendMutation, runBackendQuery } from '@/lib/backend';
 
 export interface UserSettings {
   wordpress_url: string;
   wordpress_username: string;
   wordpress_app_password: string;
+  facebook_page_id: string;
+  facebook_access_token: string;
+  instagram_account_id: string;
   google_analytics_property_id: string;
   gemini_api_key: string;
   openai_api_key: string;
@@ -27,17 +29,15 @@ export interface UserSettings {
   articles_per_day: number;
   auto_publish: boolean;
   writer_prompt: string;
-  facebook_access_token: string;
-  facebook_page_id: string;
-  facebook_ad_account_id: string;
-  linkedin_access_token: string;
-  linkedin_org_id: string;
 }
 
 const defaultSettings: UserSettings = {
   wordpress_url: '',
   wordpress_username: '',
   wordpress_app_password: '',
+  facebook_page_id: '',
+  facebook_access_token: '',
+  instagram_account_id: '',
   google_analytics_property_id: '',
   gemini_api_key: '',
   openai_api_key: '',
@@ -46,15 +46,11 @@ const defaultSettings: UserSettings = {
   articles_per_day: 3,
   auto_publish: false,
   writer_prompt: '',
-  facebook_access_token: '',
-  facebook_page_id: '',
-  facebook_ad_account_id: '',
-  linkedin_access_token: '',
-  linkedin_org_id: '',
 };
 
 interface CredentialsStatus {
   has_wp_password: boolean;
+  has_fb_token: boolean;
   has_gemini_key: boolean;
   has_openai_key: boolean;
   has_groq_key: boolean;
@@ -67,7 +63,7 @@ const SettingsPage = () => {
   const [saving, setSaving] = useState(false);
   const [hasExistingSettings, setHasExistingSettings] = useState(false);
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
-  const [credStatus, setCredStatus] = useState<CredentialsStatus>({ has_wp_password: false, has_gemini_key: false, has_openai_key: false, has_groq_key: false });
+  const [credStatus, setCredStatus] = useState<CredentialsStatus>({ has_wp_password: false, has_fb_token: false, has_gemini_key: false, has_openai_key: false, has_groq_key: false });
 
   useEffect(() => {
     if (!user) return;
@@ -78,7 +74,7 @@ const SettingsPage = () => {
           runBackendQuery(() =>
             supabase
               .from('user_settings')
-              .select('wordpress_url, wordpress_username, google_analytics_property_id, categories, articles_per_day, auto_publish, writer_prompt, facebook_access_token, facebook_page_id, facebook_ad_account_id, linkedin_access_token, linkedin_org_id')
+              .select('wordpress_url, wordpress_username, google_analytics_property_id, facebook_page_id, instagram_account_id, categories, articles_per_day, auto_publish, writer_prompt')
               .eq('user_id', user.id)
               .maybeSingle(),
           ),
@@ -92,6 +88,9 @@ const SettingsPage = () => {
             wordpress_url: data.wordpress_url || '',
             wordpress_username: data.wordpress_username || '',
             wordpress_app_password: '',
+            facebook_page_id: data.facebook_page_id || '',
+            facebook_access_token: '',
+            instagram_account_id: data.instagram_account_id || '',
             google_analytics_property_id: data.google_analytics_property_id || '',
             gemini_api_key: '',
             openai_api_key: '',
@@ -100,11 +99,6 @@ const SettingsPage = () => {
             articles_per_day: data.articles_per_day || 3,
             auto_publish: data.auto_publish || false,
             writer_prompt: (data as any).writer_prompt || '',
-            facebook_access_token: (data as any).facebook_access_token || '',
-            facebook_page_id: (data as any).facebook_page_id || '',
-            facebook_ad_account_id: (data as any).facebook_ad_account_id || '',
-            linkedin_access_token: (data as any).linkedin_access_token || '',
-            linkedin_org_id: (data as any).linkedin_org_id || '',
           });
         }
 
@@ -128,20 +122,20 @@ const SettingsPage = () => {
       const payload: Record<string, unknown> = {
         wordpress_url: settings.wordpress_url,
         wordpress_username: settings.wordpress_username,
+        facebook_page_id: settings.facebook_page_id,
+        instagram_account_id: settings.instagram_account_id,
         google_analytics_property_id: settings.google_analytics_property_id,
         categories: settings.categories,
         articles_per_day: settings.articles_per_day,
         auto_publish: settings.auto_publish,
         writer_prompt: settings.writer_prompt,
-        facebook_access_token: settings.facebook_access_token,
-        facebook_page_id: settings.facebook_page_id,
-        facebook_ad_account_id: settings.facebook_ad_account_id,
-        linkedin_access_token: settings.linkedin_access_token,
-        linkedin_org_id: settings.linkedin_org_id,
       };
 
       if (settings.wordpress_app_password) {
         payload.wordpress_app_password = settings.wordpress_app_password;
+      }
+      if (settings.facebook_access_token) {
+        payload.facebook_access_token = settings.facebook_access_token;
       }
       if (settings.gemini_api_key) {
         payload.gemini_api_key = settings.gemini_api_key;
@@ -165,7 +159,7 @@ const SettingsPage = () => {
       const status = await runBackendQuery(() => supabase.rpc('get_credentials_status'));
       if (status) setCredStatus(status as unknown as CredentialsStatus);
 
-      setSettings(prev => ({ ...prev, wordpress_app_password: '', gemini_api_key: '', openai_api_key: '', groq_api_key: '' }));
+      setSettings(prev => ({ ...prev, wordpress_app_password: '', facebook_access_token: '', gemini_api_key: '', openai_api_key: '', groq_api_key: '' }));
     } catch (error) {
       toast({ title: 'Erro', description: getErrorMessage(error), variant: 'destructive' });
     } finally {
@@ -188,6 +182,7 @@ const SettingsPage = () => {
           supabase.from('user_settings').update(fields as any).eq('user_id', user.id),
         );
       }
+      // Reset local UI state for those fields
       const localReset: Partial<UserSettings> = {};
       for (const k of Object.keys(fields) as (keyof UserSettings)[]) {
         const v = fields[k];
@@ -195,6 +190,7 @@ const SettingsPage = () => {
       }
       setSettings((prev) => ({ ...prev, ...localReset }));
 
+      // Refresh credentials status from server
       const status = await runBackendQuery(() => supabase.rpc('get_credentials_status'));
       if (status) setCredStatus(status as unknown as CredentialsStatus);
 
@@ -228,9 +224,8 @@ const SettingsPage = () => {
       <GroqSettings settings={settings} onChange={updateSettings} hasGroqKey={credStatus.has_groq_key} onDisconnect={() => disconnectCredential({ groq_api_key: '' }, 'Groq')} />
       <WordPressSettings settings={settings} onChange={updateSettings} hasWpPassword={credStatus.has_wp_password} onDisconnect={() => disconnectCredential({ wordpress_url: '', wordpress_username: '', wordpress_app_password: '' }, 'WordPress')} />
       <JetpackSettings settings={settings} hasWpPassword={credStatus.has_wp_password} />
-      
+      <FacebookSettings settings={settings} onChange={updateSettings} />
       <GoogleAnalyticsSettings settings={settings} onChange={updateSettings} />
-      <SocialSettings settings={settings} onChange={updateSettings} onDisconnect={(p) => disconnectCredential(p === 'facebook' ? { facebook_access_token: '', facebook_page_id: '', facebook_ad_account_id: '' } : { linkedin_access_token: '', linkedin_org_id: '' }, p)} />
       <AutomationSettings settings={settings} onChange={updateSettings} />
 
       <Button onClick={handleSave} disabled={saving} className="gradient-primary w-full sm:w-auto">

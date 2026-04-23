@@ -82,7 +82,7 @@ const JetpackSettings = forwardRef<HTMLDivElement, Props>(({ settings, hasWpPass
       ref={ref}
       icon={<Zap className="h-5 w-5 text-primary" />}
       title="Jetpack (WordPress)"
-      description="Conecte ao Jetpack para visualizar estatísticas detalhadas do seu WordPress"
+      description="Conecte ao Jetpack para puxar métricas de compartilhamento e estatísticas do WordPress"
       connected={connected}
       connectedInfo={connected && jetpackInfo ? `Jetpack ativo — ${jetpackInfo.version || 'conectado'}` : undefined}
       onDisconnect={() => {

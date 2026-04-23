@@ -42,29 +42,28 @@ const EVERGREEN_TOPICS: Record<string, string[]> = {
 // ── AI provider abstraction for trends ──────────────────────────────────
 
 function buildTrendsPrompt(category: string, today: string, existingSet: Set<string>) {
-const systemPrompt = `Você é um analista de tendências jornalísticas do Brasil. Sua função é identificar os assuntos REAIS mais buscados e comentados no Brasil HOJE.
+  const systemPrompt = `Você é um analista de tendências jornalísticas do Brasil. Sua função é identificar os assuntos REAIS mais buscados e comentados no Brasil HOJE.
 
-FONTES OBRIGATÓRIAS para consultar e cruzar informações:
+FONTES OBRIGATÓRIAS para consultar:
 - Google Trends Brasil (trends.google.com.br)
 - ${TOP_PORTALS.join("\n- ")}
-- InfoMoney (infomoney.com.br)
 
-REGRAS CRÍTICAS DE INTEGRIDADE E QUALIDADE:
-1. CHECAGEM DE FATOS: Verifique rigorosamente se a notícia é real. NUNCA retorne boatos, mentiras ou fake news. Se houver dúvida sobre a veracidade, descarte o assunto.
-2. TENDÊNCIAS REAIS: Retorne APENAS assuntos REAIS que estão sendo amplamente noticiados HOJE ${today}.
-3. DIVERSIDADE: Cada tópico deve ser ESPECÍFICO e sobre um FATO/EVENTO DIFERENTE. Proibido repetir o mesmo assunto.
-4. FONTES CONFIÁVEIS: Priorize notícias que aparecem em múltiplos grandes portais (G1, UOL, R7, etc).
-5. FORMATO: Cada tópico deve incluir contexto suficiente para ser pesquisável.
+REGRAS RIGOROSAS:
+1. Retorne APENAS assuntos REAIS que estão sendo noticiados HOJE ${today}
+2. Cada tópico deve ser ESPECÍFICO (nome de pessoa, evento, lei, time, local, etc.) — NUNCA genérico
+3. Cada tópico deve ser sobre um FATO/EVENTO DIFERENTE — proibido repetir o mesmo assunto com palavras diferentes
+4. NÃO retorne tópicos sobre os mesmos personagens, eventos ou situações — cada um deve cobrir uma NOTÍCIA COMPLETAMENTE DISTINTA
+5. Priorize notícias que estão em MAIS de um portal (cross-referência)
+6. Inclua contexto suficiente no nome do tópico para ser pesquisável
+7. NÃO retorne nenhum tópico que seja similar a estes já existentes:
+${[...existingSet].slice(-30).join("\n")}
 
 Responda APENAS em JSON válido, array de objetos:
-[{"topic": "assunto específico, real e verificado", "search_volume": "alto/médio/baixo"}]
+[{"topic": "assunto específico e atual", "search_volume": "alto/médio/baixo"}]
 
-Retorne exatamente 5 tópicos, todos sobre EVENTOS/FATOS DIFERENTES e VERIFICADOS.`;
+Retorne exatamente 5 tópicos, todos sobre EVENTOS/FATOS DIFERENTES.`;
 
-const userPrompt = `Categoria: "${category}". Quais são os 5 assuntos MAIS FALADOS e VERIFICADOS no Brasil HOJE (${today}) nesta categoria? 
-Analise Google Trends e grandes portais (G1, R7, iG, InfoMoney, UOL, etc). 
-IMPORTANTE: Verifique se não é fake news ou boato. Retorne apenas fatos confirmados. 
-Cada tópico DEVE ser sobre um evento/fato COMPLETAMENTE DIFERENTE dos outros.`;
+  const userPrompt = `Categoria: "${category}". Quais são os 5 assuntos mais falados no Brasil HOJE (${today}) nesta categoria? Cada tópico DEVE ser sobre um evento/fato COMPLETAMENTE DIFERENTE dos outros. Busque nos portais: G1, UOL, Folha, Estadão, R7, Terra, Metrópoles, CNN Brasil.`;
 
   return { systemPrompt, userPrompt };
 }

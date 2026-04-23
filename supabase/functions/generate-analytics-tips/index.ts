@@ -91,7 +91,7 @@ Exemplo: [{"category":"SEO","tip":"Otimize os meta descriptions...","priority":"
     const fallbackTips = [
       { category: "SEO", tip: "Otimize meta descriptions e títulos das páginas mais visitadas para aumentar o CTR nos resultados de busca.", priority: "alta" },
       { category: "Conteúdo", tip: `Sua taxa de rejeição está em ${analytics.bounceRate}%. Melhore a introdução dos artigos e adicione links internos para reter leitores.`, priority: "alta" },
-      
+      { category: "Redes Sociais", tip: "Compartilhe os artigos mais visitados no Facebook e Instagram nos horários de pico (12h e 19h).", priority: "média" },
       { category: "Experiência do Usuário", tip: "Verifique a velocidade de carregamento mobile — páginas lentas aumentam a rejeição.", priority: "alta" },
       { category: "Tráfego", tip: "Diversifique fontes de tráfego investindo em SEO de cauda longa e parcerias com outros blogs do nicho.", priority: "média" },
     ];
@@ -166,7 +166,7 @@ Exemplo: [{"category":"SEO","tip":"Otimize os meta descriptions...","priority":"
       tips: [
         { category: "SEO", tip: "Otimize títulos e meta descriptions das páginas mais visitadas.", priority: "alta" },
         { category: "Conteúdo", tip: "Reduza a taxa de rejeição melhorando a introdução dos artigos.", priority: "alta" },
-        
+        { category: "Redes Sociais", tip: "Publique nos horários de pico (12h e 19h).", priority: "média" },
       ],
       warning: error.message || "Erro ao gerar dicas",
     }), {

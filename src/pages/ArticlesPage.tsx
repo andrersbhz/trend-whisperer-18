@@ -5,8 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Send, Eye, Trash2, Loader2, FileText, RotateCcw, ImagePlus, Sparkles, Database, Layout, CheckCircle2 } from 'lucide-react';
-import PostEditor from '@/components/articles/PostEditor';
+import { Send, Eye, Trash2, Loader2, FileText, RotateCcw, ImagePlus, Sparkles, Database } from 'lucide-react';
 import { getErrorMessage, runBackendMutation, runBackendQuery } from '@/lib/backend';
 import {
   Dialog,
@@ -24,7 +23,6 @@ const ArticlesPage = () => {
   const [retrying, setRetrying] = useState<string | null>(null);
   const [preview, setPreview] = useState<any | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
-  
   const [previewLoading, setPreviewLoading] = useState(false);
   const [regeneratingImages, setRegeneratingImages] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -46,7 +44,7 @@ const ArticlesPage = () => {
       const data = await runBackendQuery(() =>
         supabase
           .from('articles')
-          .select('id, title, status, category, seo_keyword, meta_description, featured_image_url, fact_check_status, fact_check_notes, research_references, seo_audit_log, is_approved, meta_title, slug, focus_keyword, content')
+          .select('id, title, status, category, seo_keyword, meta_description, featured_image_url')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
           .range(from, to),
@@ -162,7 +160,7 @@ const ArticlesPage = () => {
       const data = await runBackendQuery(() =>
         supabase
           .from('articles')
-          .select('id, title, category, seo_keyword, meta_description, content, featured_image_url, fact_check_status, fact_check_notes, research_references, seo_audit_log, is_approved, meta_title, slug, focus_keyword')
+          .select('id, title, category, seo_keyword, meta_description, content, featured_image_url')
           .eq('id', articleId)
           .maybeSingle(),
       );
@@ -175,45 +173,6 @@ const ArticlesPage = () => {
       setPreviewLoading(false);
     }
   };
-
-  const handleUpdateArticle = async (updatedArticle: any) => {
-    if (!user) return;
-    try {
-      await runBackendMutation(() =>
-        supabase.from('articles').update({
-          title: updatedArticle.title,
-          content: updatedArticle.content,
-          meta_title: updatedArticle.meta_title,
-          meta_description: updatedArticle.meta_description,
-          slug: updatedArticle.slug,
-          focus_keyword: updatedArticle.focus_keyword,
-          featured_image_url: updatedArticle.featured_image_url
-        }).eq('id', updatedArticle.id)
-      );
-      setPreview(updatedArticle);
-      setArticles(prev => prev.map(a => a.id === updatedArticle.id ? { ...a, ...updatedArticle } : a));
-      toast({ title: 'Rascunho atualizado' });
-    } catch (error) {
-      toast({ title: 'Erro ao salvar', description: getErrorMessage(error), variant: 'destructive' });
-    }
-  };
-
-  const handleApprove = async (articleId: string) => {
-    if (!user) return;
-    try {
-      const isApproved = !preview?.is_approved;
-      await runBackendMutation(() =>
-        supabase.from('articles').update({ is_approved: isApproved }).eq('id', articleId)
-      );
-      setPreview(prev => ({ ...prev, is_approved: isApproved }));
-      setArticles(prev => prev.map(a => a.id === articleId ? { ...a, is_approved: isApproved } : a));
-      toast({ title: isApproved ? 'Aprovado!' : 'Aprovação removida' });
-    } catch (error) {
-      toast({ title: 'Erro', description: getErrorMessage(error), variant: 'destructive' });
-    }
-  };
-
-
 
   const handleRegenerateImages = async () => {
     const withoutImage = articles.filter(a => !a.featured_image_url && a.status !== 'generating');
@@ -378,24 +337,6 @@ const ArticlesPage = () => {
                         <Badge className={`${statusColors[article.status] || ''} text-[10px] sm:text-xs`} variant="secondary">
                           {statusLabels[article.status] || article.status}
                         </Badge>
-                        {article.is_approved && (
-                          <Badge className="bg-success/20 text-success border-success/30 text-[10px] sm:text-xs">
-                            <CheckCircle2 className="h-3 w-3 mr-1" /> Aprovado
-                          </Badge>
-                        )}
-                        {article.fact_check_status && (
-                          <Badge 
-                            variant="outline" 
-                            className={`text-[10px] sm:text-xs ${
-                              article.fact_check_status === 'safe' ? 'border-success/50 text-success' : 
-                              article.fact_check_status === 'warning' ? 'border-warning/50 text-warning' : 
-                              'border-destructive/50 text-destructive'
-                            }`}
-                          >
-                            {article.fact_check_status === 'safe' ? '✅ Verificado' : 
-                             article.fact_check_status === 'warning' ? '⚠️ Atenção' : '🚨 Revisar'}
-                          </Badge>
-                        )}
                         <span className="text-[10px] sm:text-xs text-muted-foreground capitalize">{article.category}</span>
                       </div>
                       <h3 className="font-semibold text-foreground text-sm sm:text-base line-clamp-2 sm:truncate leading-snug">{article.title}</h3>
@@ -411,8 +352,8 @@ const ArticlesPage = () => {
 
                     {/* Actions */}
                     <div className="flex gap-1 shrink-0 self-end sm:self-auto">
-                      <Button size="sm" variant="ghost" onClick={() => handlePreview(article.id)} className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground" title="Visualizar Artigo">
-                        <Layout className="h-4 w-4" />
+                      <Button size="sm" variant="ghost" onClick={() => handlePreview(article.id)} className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground" title="Visualizar">
+                        <Eye className="h-4 w-4" />
                       </Button>
                       {article.status === 'failed' && (
                         <Button
@@ -474,22 +415,35 @@ const ArticlesPage = () => {
           if (!open) setPreview(null);
         }}
       >
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto glass-card border-border">
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto glass-card border-border">
           <DialogHeader>
-            <DialogTitle className="text-foreground">Editor & Prévia do Artigo</DialogTitle>
+            <DialogTitle className="text-foreground">{previewLoading ? 'Carregando prévia...' : preview?.title}</DialogTitle>
           </DialogHeader>
-          
           {previewLoading ? (
-            <div className="flex items-center justify-center py-20">
+            <div className="flex items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
-          ) : preview ? (
-            <PostEditor 
-              article={preview} 
-              onSave={handleUpdateArticle} 
-              onApprove={handleApprove}
-            />
-          ) : null}
+          ) : (
+            <div className="space-y-3 text-sm">
+              {preview?.featured_image_url && (
+                <img src={preview.featured_image_url} alt={preview.title} className="w-full rounded-lg" />
+              )}
+              <div className="flex gap-2 flex-wrap">
+                <Badge variant="secondary" className="bg-primary/10 text-primary">{preview?.category}</Badge>
+                {preview?.seo_keyword && <Badge variant="outline" className="border-accent/30 text-accent">🔑 {preview.seo_keyword}</Badge>}
+              </div>
+              {preview?.meta_description && (
+                <div className="p-3 rounded-lg bg-secondary/30">
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Meta Description</p>
+                  <p className="text-sm text-foreground">{preview?.meta_description}</p>
+                </div>
+              )}
+              <div
+                className="prose prose-sm prose-invert max-w-none text-foreground"
+                dangerouslySetInnerHTML={{ __html: preview?.content || '' }}
+              />
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

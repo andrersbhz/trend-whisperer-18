@@ -1,1 +1,0 @@
-ALTER TABLE public.user_settings ADD COLUMN IF NOT EXISTS facebook_ad_account_id TEXT;
