@@ -8,8 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import {
   BarChart3, TrendingUp, TrendingDown, Eye, MousePointerClick, Users,
   Lightbulb, RefreshCw, Loader2, Globe, Clock, ArrowUpRight, Percent,
-  FileText, Smartphone, Monitor, Tablet, Heart, Share2,
-  Twitter, Linkedin, Send, Sparkles,
+  FileText, Smartphone, Monitor, Tablet, Heart, Send, Sparkles,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -35,23 +34,7 @@ interface AnalyticsData {
   hourlyTraffic: { hour: string; views: number }[];
 }
 
-interface SocialMetrics {
-  publish_log: {
-    wordpress: { total: number; success: number; failed: number; recent: { date: string; url: string }[] };
-  };
-  jetpack: {
-    posts_with_sharing: number;
-    total_shares: number;
-    shares_by_network: Record<string, number>;
-  };
-  summary: {
-    total_published_wp: number;
-    total_shared_social: number;
-    total_twitter: number;
-    total_linkedin: number;
-    total_tumblr: number;
-  };
-}
+// SocialMetrics removed
 
 interface JetpackStats {
   available: boolean;
@@ -89,7 +72,7 @@ const AnalyticsPage = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
-  const [socialMetrics, setSocialMetrics] = useState<SocialMetrics | null>(null);
+  const [socialMetrics, setSocialMetrics] = useState<any | null>(null);
   const [tips, setTips] = useState<AiTip[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingTips, setLoadingTips] = useState(false);
@@ -102,7 +85,7 @@ const AnalyticsPage = () => {
     if (!user) return;
     checkGaConnection();
     fetchArticleStats();
-    fetchSocialMetrics();
+    // fetchSocialMetrics removed
     fetchJetpackStats();
   }, [user]);
 
@@ -122,23 +105,7 @@ const AnalyticsPage = () => {
     }
   };
 
-  const fetchSocialMetrics = async () => {
-    if (!user) return;
-
-    try {
-      const data = await runBackendQuery(() =>
-        supabase.functions.invoke('fetch-social-metrics', {
-          body: { userId: user.id },
-        }),
-      );
-
-      if (data?.metrics) {
-        setSocialMetrics(data.metrics);
-      }
-    } catch {
-      setSocialMetrics(null);
-    }
-  };
+  // fetchSocialMetrics removed
 
   const fetchJetpackStats = async () => {
     if (!user) return;
@@ -247,77 +214,7 @@ const AnalyticsPage = () => {
     );
   }
 
-  const sm = socialMetrics?.summary;
-  const jp = socialMetrics?.jetpack;
-  const pl = socialMetrics?.publish_log;
-
-  const socialSection = (
-    <div className="space-y-4">
-      <h2 className="text-lg font-semibold neon-text-pink flex items-center gap-2">
-        <Share2 className="h-5 w-5" /> Redes Sociais
-      </h2>
-
-      {/* Main counters */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
-        {[
-          { icon: Globe, label: 'Publicados WP', value: sm?.total_published_wp || 0, color: 'text-primary' },
-          { icon: Share2, label: 'Compartilhados', value: sm?.total_shared_social || 0, color: 'text-accent' },
-          { icon: Twitter, label: 'Twitter/X', value: sm?.total_twitter || 0, color: 'text-muted-foreground' },
-          { icon: Linkedin, label: 'LinkedIn', value: sm?.total_linkedin || 0, color: 'text-muted-foreground' },
-        ].map((s) => (
-          <Card key={s.label} className="glass-card neon-border-pink">
-            <CardContent className="p-4">
-              <s.icon className={`h-5 w-5 ${s.color} mb-2`} />
-              <p className="text-xl font-bold text-foreground">{s.value.toLocaleString()}</p>
-              <p className="text-xs text-muted-foreground">{s.label}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Jetpack Publicize details */}
-      {jp && jp.total_shares > 0 && (
-        <Card className="glass-card">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Send className="h-4 w-4 text-primary" />
-              <p className="text-sm font-medium text-foreground">Jetpack Publicize</p>
-              <Badge variant="secondary" className="ml-auto">{jp.total_shares} compartilhamentos</Badge>
-            </div>
-            {Object.keys(jp.shares_by_network).length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {Object.entries(jp.shares_by_network).map(([network, count]) => (
-                  <Badge key={network} variant="outline" className="text-xs">
-                    {network}: {count}
-                  </Badge>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Publish log details */}
-      {pl && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {[
-            { label: 'WordPress', total: pl.wordpress.total, success: pl.wordpress.success, failed: pl.wordpress.failed, color: 'text-primary' },
-          ].map((p) => (
-            <Card key={p.label} className="glass-card">
-              <CardContent className="p-4">
-                <p className={`text-sm font-medium ${p.color} mb-2`}>{p.label}</p>
-                <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                  <span>Total: <strong className="text-foreground">{p.total}</strong></span>
-                  <Badge variant="secondary" className="bg-primary/10 text-primary text-xs">{p.success} ✓</Badge>
-                  {p.failed > 0 && <Badge variant="destructive" className="text-xs">{p.failed} ✗</Badge>}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
-    </div>
-  );
+  const socialSection = null;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
