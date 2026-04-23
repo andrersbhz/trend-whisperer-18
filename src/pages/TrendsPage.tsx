@@ -4,8 +4,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { RefreshCw, TrendingUp, Loader2 } from 'lucide-react';
+import { RefreshCw, TrendingUp, Loader2, Sparkles } from 'lucide-react';
 import { getErrorMessage, runBackendQuery } from '@/lib/backend';
 
 const TrendsPage = () => {
@@ -14,6 +15,8 @@ const TrendsPage = () => {
   const [topics, setTopics] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetching, setFetching] = useState(false);
+  const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
+  const [generating, setGenerating] = useState(false);
 
   const fetchTopics = async () => {
     if (!user) return;
@@ -59,6 +62,58 @@ const TrendsPage = () => {
       setFetching(false);
     }
   };
+  
+  const handleGenerate = async (topicsToUse?: any[]) => {
+    if (!user) return;
+    setGenerating(true);
+    
+    try {
+      // Step 1: Atualizar tendências antes de gerar (conforme solicitado)
+      setFetching(true);
+      await supabase.functions.invoke('fetch-trends', {
+        body: { userId: user.id },
+      });
+      setFetching(false);
+
+      // Step 2: Gerar artigos
+      const body: any = { userId: user.id };
+      if (topicsToUse && topicsToUse.length > 0) {
+        body.topics = topicsToUse.map(t => ({
+          topic: t.topic,
+          category: t.category,
+          search_volume: t.search_volume
+        }));
+      }
+
+      const { data, error } = await supabase.functions.invoke('generate-articles', {
+        body
+      });
+
+      if (error) throw error;
+
+      toast({ 
+        title: data?.success ? 'Sucesso' : 'Atenção', 
+        description: data?.message || 'Artigos sendo gerados.',
+        variant: data?.success ? 'default' : 'destructive'
+      });
+      
+      setSelectedTopics([]);
+      fetchTopics();
+    } catch (error) {
+      toast({ title: 'Erro ao gerar', description: getErrorMessage(error), variant: 'destructive' });
+    } finally {
+      setGenerating(false);
+      setFetching(false);
+    }
+  };
+
+  const toggleTopic = (topicId: string) => {
+    setSelectedTopics(prev => 
+      prev.includes(topicId) 
+        ? prev.filter(id => id !== topicId) 
+        : [...prev, topicId]
+    );
+  };
 
   if (loading) {
     return (
@@ -75,10 +130,27 @@ const TrendsPage = () => {
           <h1 className="text-2xl font-bold text-foreground">Tendências</h1>
           <p className="text-muted-foreground text-sm mt-1">Assuntos em alta no Brasil</p>
         </div>
-        <Button onClick={handleFetchTrends} disabled={fetching} className="gradient-primary">
-          {fetching ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
-          Atualizar Tendências
-        </Button>
+        <div className="flex gap-2">
+          {selectedTopics.length > 0 && (
+            <Button 
+              onClick={() => handleGenerate(topics.filter(t => selectedTopics.includes(t.id)))} 
+              disabled={generating || fetching}
+              variant="outline"
+              className="border-primary text-primary hover:bg-primary/10"
+            >
+              {generating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+              Gerar ({selectedTopics.length})
+            </Button>
+          )}
+          <Button onClick={handleFetchTrends} disabled={fetching || generating} variant="outline" size="sm">
+            {fetching ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+            {fetching ? "Atualizando..." : "Atualizar"}
+          </Button>
+          <Button onClick={() => handleGenerate()} disabled={generating || fetching} className="gradient-primary">
+            {generating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+            Atualizar e Gerar Tudo
+          </Button>
+        </div>
       </div>
 
       {topics.length === 0 ? (
@@ -93,9 +165,15 @@ const TrendsPage = () => {
         <div className="grid gap-3">
           {topics.map((topic) => (
             <Card key={topic.id} className="shadow-card">
-              <CardContent className="p-4 flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-foreground">{topic.topic}</p>
+              <CardContent className="p-4 flex items-center gap-4">
+                <Checkbox 
+                  checked={selectedTopics.includes(topic.id)}
+                  onCheckedChange={() => toggleTopic(topic.id)}
+                  disabled={topic.used}
+                />
+                <div className="flex-1 flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-foreground">{topic.topic}</p>
                   <div className="flex items-center gap-2 mt-1">
                     <Badge variant="secondary">{topic.category}</Badge>
                     {topic.search_volume && (
@@ -107,8 +185,8 @@ const TrendsPage = () => {
                   <Badge variant="outline" className="text-muted-foreground">Usado</Badge>
                 ) : (
                   <Badge className="bg-success/20 text-success">Disponível</Badge>
-                )}
-              </CardContent>
+                  </div>
+                </div>
             </Card>
           ))}
         </div>
