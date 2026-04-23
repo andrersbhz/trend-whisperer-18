@@ -35,7 +35,17 @@ export interface UserSettings {
 }
 
 const defaultSettings: UserSettings = {
-// ... keep existing code
+  wordpress_url: '',
+  wordpress_username: '',
+  wordpress_app_password: '',
+  google_analytics_property_id: '',
+  gemini_api_key: '',
+  openai_api_key: '',
+  groq_api_key: '',
+  categories: ['esportes', 'politica', 'policia', 'saude', 'celebridades', 'financas'],
+  articles_per_day: 3,
+  auto_publish: false,
+  writer_prompt: '',
   facebook_access_token: '',
   facebook_page_id: '',
   facebook_ad_account_id: '',
@@ -45,7 +55,6 @@ const defaultSettings: UserSettings = {
 
 interface CredentialsStatus {
   has_wp_password: boolean;
-  
   has_gemini_key: boolean;
   has_openai_key: boolean;
   has_groq_key: boolean;
@@ -179,7 +188,6 @@ const SettingsPage = () => {
           supabase.from('user_settings').update(fields as any).eq('user_id', user.id),
         );
       }
-      // Reset local UI state for those fields
       const localReset: Partial<UserSettings> = {};
       for (const k of Object.keys(fields) as (keyof UserSettings)[]) {
         const v = fields[k];
@@ -187,7 +195,6 @@ const SettingsPage = () => {
       }
       setSettings((prev) => ({ ...prev, ...localReset }));
 
-      // Refresh credentials status from server
       const status = await runBackendQuery(() => supabase.rpc('get_credentials_status'));
       if (status) setCredStatus(status as unknown as CredentialsStatus);
 
