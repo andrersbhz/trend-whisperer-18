@@ -266,96 +266,135 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
       connected={connected}
       connectedInfo={connected ? `${accounts.length} conta(s) conectada(s)` : undefined}
       onDisconnect={async () => {
+        if (!confirm('Tem certeza que deseja desconectar todas as contas do Facebook?')) return;
         for (const acc of accounts) {
           await supabase.from('facebook_accounts').delete().eq('id', acc.id);
         }
         fetchAccounts();
       }}
     >
-      <div className="space-y-3">
-        <div className="rounded-lg border border-accent/40 bg-accent/10 p-3 text-xs text-muted-foreground">
-          O login do Facebook abre em uma janela popup. Conclua o login lá e a janela fechará automaticamente ao terminar.
-        </div>
-
-
-        {/* Primary OAuth action — always visible at top */}
-        <div className="p-3 rounded-lg border border-primary/40 bg-gradient-to-br from-primary/10 to-accent/10">
-          <div className="flex items-start gap-3">
+      <div className="space-y-4">
+        {/* Connection Action */}
+        <div className="p-4 rounded-xl border border-primary/20 bg-gradient-to-br from-primary/10 via-background to-accent/5 shadow-sm">
+          <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
+            <div className="bg-primary/10 p-3 rounded-full shrink-0">
+              <Facebook className="h-6 w-6 text-primary" />
+            </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground">Login com Facebook (recomendado)</p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Conecta automaticamente todas as páginas do seu Business Manager. Tokens válidos por 60 dias.
+              <h4 className="text-sm font-semibold text-foreground">Conectar com Facebook</h4>
+              <p className="text-xs text-muted-foreground mt-1 max-w-[320px]">
+                Conecte suas páginas do Facebook e perfis comerciais do Instagram para automatizar suas postagens.
               </p>
             </div>
             <Button
-              size="sm"
+              size="lg"
               onClick={handleOAuthConnect}
               disabled={oauthLoading}
-              className="gradient-primary shrink-0"
+              className="gradient-primary shrink-0 w-full sm:w-auto"
             >
               {oauthLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : accounts.length > 0 ? (
-                <><RefreshCw className="h-4 w-4 mr-1.5" />Reconectar</>
+                <><RefreshCw className="h-4 w-4 mr-2" />Atualizar Conexão</>
               ) : (
-                <><LogIn className="h-4 w-4 mr-1.5" />Conectar</>
+                <><LogIn className="h-4 w-4 mr-2" />Conectar Agora</>
               )}
             </Button>
+          </div>
+          
+          <div className="mt-4 pt-3 border-t border-border/40">
+            <p className="text-[10px] text-muted-foreground flex items-center gap-1.5 justify-center sm:justify-start">
+              <CheckCircle2 className="h-3 w-3 text-success" />
+              Sua conexão utiliza o protocolo seguro OAuth 2.0 padrão da Meta.
+            </p>
           </div>
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-4">
-            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          <div className="flex justify-center py-6">
+            <Loader2 className="h-6 w-6 animate-spin text-primary/60" />
           </div>
         ) : (
           <>
             {/* Connected accounts */}
-            {accounts.map((acc) => (
-              <div key={acc.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${acc.is_active ? 'bg-success' : 'bg-destructive'}`} />
-                    <p className="text-sm font-medium text-foreground truncate">
-                      {acc.page_name || `Page ${acc.page_id}`}
-                    </p>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">ID: {acc.page_id}</p>
-                  {acc.instagram_account_id && (
-                    <div className="flex items-center gap-1 mt-0.5">
-                      <Instagram className="h-3 w-3 text-muted-foreground" />
-                      <p className="text-xs text-muted-foreground">{acc.instagram_account_id}</p>
+            {accounts.length > 0 && (
+              <div className="space-y-2">
+                <h5 className="text-xs font-medium text-muted-foreground px-1 uppercase tracking-wider">Contas Ativas</h5>
+                {accounts.map((acc) => (
+                  <div key={acc.id} className="group flex items-center justify-between p-3.5 rounded-xl bg-muted/40 border border-border/50 hover:border-primary/30 transition-all">
+                    <div className="min-w-0 flex-1 flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-primary/5 flex items-center justify-center border border-primary/10">
+                        <Facebook className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium text-foreground truncate">
+                            {acc.page_name || `Página ${acc.page_id}`}
+                          </p>
+                          {acc.is_active && (
+                            <Badge variant="outline" className="h-4 px-1.5 text-[10px] bg-success/10 text-success border-success/20">Ativo</Badge>
+                          )}
+                        </div>
+                        <p className="text-[10px] text-muted-foreground font-mono">ID: {acc.page_id}</p>
+                        {acc.instagram_account_id && (
+                          <div className="flex items-center gap-1 mt-0.5">
+                            <Instagram className="h-3 w-3 text-primary/60" />
+                            <p className="text-[10px] text-muted-foreground truncate">Conectado ao Instagram</p>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  )}
-                </div>
-                <Button size="sm" variant="ghost" className="text-destructive shrink-0" onClick={() => handleDelete(acc.id)}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      className="opacity-0 group-hover:opacity-100 text-destructive hover:bg-destructive/10 shrink-0 transition-opacity" 
+                      onClick={() => {
+                        if (confirm(`Remover conexão com ${acc.page_name || acc.page_id}?`)) {
+                          handleDelete(acc.id);
+                        }
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
 
-            {/* Discover pages from Meta */}
-            {showDiscover ? (
-              <div className="space-y-3 p-3 rounded-lg border border-primary/30 bg-primary/5">
+            {/* Advanced Options Toggle */}
+            <div className="flex justify-center pt-2">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-[11px] text-muted-foreground h-7"
+                onClick={() => setShowDiscover(!showDiscover)}
+              >
+                {showDiscover ? "Ocultar opções avançadas" : "Opções de conexão manual (Avançado)"}
+              </Button>
+            </div>
+
+            {/* Discover pages from Meta (Now hidden in advanced) */}
+            {showDiscover && (
+              <div className="space-y-4 p-4 rounded-xl border border-border bg-muted/30 animate-in fade-in slide-in-from-top-2 duration-300">
                 <div className="flex items-center gap-2 mb-1">
                   <Search className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-medium text-foreground">Descobrir Páginas da Meta</span>
+                  <span className="text-sm font-semibold text-foreground">Conexão via User Access Token</span>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Cole seu <strong>User Access Token</strong> do Meta para listar todas as páginas que você administra.
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Caso o login automático não encontre sua página, você pode usar um <strong>User Access Token</strong> do Meta for Developers.
                 </p>
                 <div className="space-y-1.5">
-                  <Label className="text-xs">User Access Token</Label>
+                  <Label className="text-[11px] font-medium uppercase tracking-tight text-muted-foreground">User Access Token</Label>
                   <PasswordInput
                     placeholder="EAAxxxxxxx..."
                     value={userAccessToken}
                     onChange={(e) => setUserAccessToken(e.target.value)}
-                    className="h-9 text-sm"
+                    className="h-10 text-sm bg-background border-border/60"
                   />
                 </div>
                 <div className="flex gap-2">
                   <Button size="sm" onClick={handleDiscoverPages} disabled={discoverLoading} className="gradient-primary">
-                    {discoverLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4 mr-1" />}
+                    {discoverLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Search className="h-4 w-4 mr-2" />}
                     Buscar Páginas
                   </Button>
                   <Button size="sm" variant="outline" onClick={() => { setShowDiscover(false); setMetaPages([]); setUserAccessToken(''); }}>
@@ -365,66 +404,63 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
 
                 {/* Meta pages list */}
                 {metaPages.length > 0 && (
-                  <div className="space-y-2 mt-2">
-                    <p className="text-xs font-medium text-foreground">{metaPages.length} página(s) encontrada(s):</p>
-                    {metaPages.map((page) => {
-                      const alreadyConnected = connectedPageIds.has(page.page_id);
-                      return (
-                        <div key={page.page_id} className="flex items-center gap-3 p-3 rounded-lg bg-background border border-border">
-                          {page.picture_url ? (
-                            <img src={page.picture_url} alt={page.page_name} className="w-10 h-10 rounded-lg object-cover" />
-                          ) : (
-                            <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
-                              <Facebook className="h-5 w-5 text-muted-foreground" />
-                            </div>
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-foreground truncate">{page.page_name}</p>
-                            <div className="flex items-center gap-2 mt-0.5">
-                              {page.category && (
-                                <Badge variant="secondary" className="text-[10px] h-4">{page.category}</Badge>
-                              )}
-                              <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                <Users className="h-3 w-3" /> {page.fan_count.toLocaleString()}
-                              </span>
-                            </div>
-                            {page.instagram && (
-                              <div className="flex items-center gap-1.5 mt-1">
-                                <Instagram className="h-3 w-3 text-muted-foreground" />
-                                <span className="text-xs text-muted-foreground">@{page.instagram.username}</span>
-                                <span className="text-xs text-muted-foreground">• {page.instagram.followers_count.toLocaleString()} seguidores</span>
+                  <div className="space-y-2.5 mt-4 pt-4 border-t border-border/60">
+                    <p className="text-xs font-semibold text-foreground uppercase tracking-wider">{metaPages.length} página(s) disponível(is):</p>
+                    <div className="grid gap-2">
+                      {metaPages.map((page) => {
+                        const alreadyConnected = connectedPageIds.has(page.page_id);
+                        return (
+                          <div key={page.page_id} className="flex items-center gap-3 p-3 rounded-lg bg-background border border-border/80 shadow-sm">
+                            {page.picture_url ? (
+                              <img src={page.picture_url} alt={page.page_name} className="w-10 h-10 rounded-lg object-cover border border-border/50" />
+                            ) : (
+                              <div className="w-10 h-10 rounded-lg bg-primary/5 flex items-center justify-center border border-primary/10">
+                                <Facebook className="h-5 w-5 text-primary" />
                               </div>
                             )}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-foreground truncate">{page.page_name}</p>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                {page.category && (
+                                  <Badge variant="secondary" className="text-[9px] h-3.5 px-1 bg-muted/60 text-muted-foreground font-normal border-none">{page.category}</Badge>
+                                )}
+                                <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                  <Users className="h-2.5 w-2.5" /> {page.fan_count.toLocaleString()}
+                                </span>
+                              </div>
+                            </div>
+                            {alreadyConnected ? (
+                              <Badge variant="outline" className="shrink-0 text-success border-success/30 bg-success/5 h-6 px-2">
+                                <CheckCircle2 className="h-3 w-3 mr-1" /> Conectada
+                              </Badge>
+                            ) : (
+                              <Button
+                                size="sm"
+                                onClick={() => handleConnectPage(page)}
+                                disabled={connectingPageId === page.page_id}
+                                className="shrink-0 gradient-primary h-8"
+                              >
+                                {connectingPageId === page.page_id ? (
+                                  <Loader2 className="h-3 w-3 animate-spin mr-1.5" />
+                                ) : (
+                                  <Plus className="h-3 w-3 mr-1.5" />
+                                )}
+                                Conectar
+                              </Button>
+                            )}
                           </div>
-                          {alreadyConnected ? (
-                            <Badge variant="outline" className="shrink-0 text-success border-success/30">
-                              <CheckCircle2 className="h-3 w-3 mr-1" /> Conectada
-                            </Badge>
-                          ) : (
-                            <Button
-                              size="sm"
-                              onClick={() => handleConnectPage(page)}
-                              disabled={connectingPageId === page.page_id}
-                              className="shrink-0 gradient-primary"
-                            >
-                              {connectingPageId === page.page_id ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <Plus className="h-4 w-4 mr-1" />
-                              )}
-                              Conectar
-                            </Button>
-                          )}
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
               </div>
-            ) : showAdd ? (
-              <div className="space-y-3 p-3 rounded-lg border border-primary/30 bg-primary/5">
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Nome da Página (opcional)</Label>
+            )}
+          </>
+        )}
+      </div>
+    </ConnectionCard>
+  );
                   <Input placeholder="Minha Página" value={newAccount.page_name} onChange={(e) => setNewAccount((p) => ({ ...p, page_name: e.target.value }))} className="h-9 text-sm" />
                 </div>
                 <div className="space-y-1.5">
