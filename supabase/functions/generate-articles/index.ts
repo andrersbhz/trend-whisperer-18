@@ -58,7 +58,21 @@ async function withRetry<T>(fn: () => Promise<T>, maxRetries = 2, baseDelayMs = 
 
 // ── AI provider abstraction ──────────────────────────────────────────────
 
-interface AIResponse { title: string; content: string; excerpt: string; seo_keyword: string; seo_title: string; meta_description: string; slug: string; image_alt: string; image_caption: string; }
+interface AIResponse { 
+  title: string; 
+  content: string; 
+  excerpt: string; 
+  seo_keyword: string; 
+  seo_title: string; 
+  meta_description: string; 
+  slug: string; 
+  image_alt: string; 
+  image_caption: string; 
+  fact_check_status?: string;
+  fact_check_notes?: string;
+  research_references?: any[];
+  seo_audit_log?: any;
+}
 
 const ARTICLE_TOOL_PARAMS = {
   title: "Título H1 do artigo, máximo 60 caracteres",
@@ -77,11 +91,28 @@ async function callGeminiDirect(apiKey: string, systemPrompt: string, userPrompt
 
   const functionDeclaration = {
     name: "create_article",
-    description: "Cria um artigo completo para publicação no WordPress com todos os campos SEO.",
+    description: "Cria um artigo completo verificado e auditado por SEO.",
     parameters: {
       type: "OBJECT",
-      properties: Object.fromEntries(Object.entries(ARTICLE_TOOL_PARAMS).map(([k, v]) => [k, { type: "STRING", description: v }])),
-      required: Object.keys(ARTICLE_TOOL_PARAMS),
+      properties: {
+        ...Object.fromEntries(Object.entries(ARTICLE_TOOL_PARAMS).map(([k, v]) => [k, { type: "STRING", description: v }])),
+        fact_check_status: { type: "STRING", enum: ["safe", "warning", "review"], description: "Status da verificação de fatos" },
+        fact_check_notes: { type: "STRING", description: "Notas sobre a verificação realizada" },
+        research_references: { 
+          type: "ARRAY", 
+          items: { 
+            type: "OBJECT", 
+            properties: { 
+              source: { type: "STRING" }, 
+              headline: { type: "STRING" }, 
+              url: { type: "STRING" },
+              relevance_score: { type: "NUMBER" }
+            } 
+          } 
+        },
+        seo_audit_log: { type: "OBJECT", properties: { issues_found: { type: "ARRAY", items: { type: "STRING" } }, corrections_made: { type: "BOOLEAN" } } }
+      },
+      required: [...Object.keys(ARTICLE_TOOL_PARAMS), "fact_check_status", "research_references"],
     },
   };
 
@@ -329,30 +360,26 @@ async function generateImageDallE(apiKey: string, title: string, category: strin
 const BASE_SYSTEM_PROMPT = `Você é um jornalista digital brasileiro sênior, especialista em SEO avançado, checagem de fatos (fact-checking) e redação para WordPress.
 
 REGRAS CRÍTICAS DE INTEGRIDADE:
-- CHECAGEM DE FATOS: Antes de escrever, valide mentalmente a veracidade do assunto. NUNCA escreva sobre boatos, fake news ou notícias não confirmadas. 
-- FONTES: Baseie-se apenas em informações de grandes portais confiáveis (G1, R7, UOL, InfoMoney, iG, etc).
-- VERACIDADE: Se o tópico parecer ser uma "fake news", retorne um erro ou recuse a criação.
+- CHECAGEM DE FATOS: Valide rigorosamente a veracidade do tópico. Identifique se há evidências em fontes confiáveis (G1, R7, UOL, InfoMoney, etc).
+- STATUS DE VERIFICAÇÃO: Classifique a notícia como:
+  * "safe": Fato confirmado por múltiplas fontes confiáveis.
+  * "warning": Notícia em desenvolvimento ou com poucos detalhes.
+  * "review": Possível boato, fake news ou sensacionalismo sem base.
 
 REGRAS OBRIGATÓRIAS PARA CADA ARTIGO:
 
-1. TÍTULO (H1): Máximo 60 caracteres, DEVE conter a palavra-chave principal, atrativo e clicável.
+1. TÍTULO (H1): Máximo 60 caracteres, keyword principal, atrativo e clicável.
+2. CONTEÚDO EM HTML: 1800-2400 caracteres. Lead jornalístico com keyword. Use <h2>/<h3>, <strong>, <ul>/<li>. 
+3. SEO AVANÇADO: Use LSI keywords, otimize para featured snippets, inclua perguntas frequentes (FAQ) como subtítulos.
+4. ESTILO: Informativo e autoritativo. Evite linguagem robótica de IA.
+5. REVISÃO DE SEO: Valide keyword (3-5 palavras), meta_description (120-155 chars), título e H2s.`;
 
-2. CONTEÚDO EM HTML: MÍNIMO 1800 e MÁXIMO 2400 caracteres no HTML total. Lead jornalístico com keyword nas primeiras 100 palavras. Use <h2>/<h3> com <strong>. NUNCA use <h1>. Parágrafos curtos (<p>). <strong> para keywords. <ul>/<li> para escaneabilidade. Keyword no primeiro parágrafo, em 1+ H2, densidade 1-2%. Conclusão com CTA.
-
-3. SEO AVANÇADO:
-   - Use LSI keywords (Latent Semantic Indexing) naturalmente no texto
-   - Otimize para Featured Snippets: inclua parágrafos de definição curtos (40-60 palavras)
-   - Inclua perguntas (People Also Ask) como subtítulos H2/H3
-   - Use schema-friendly structure para FAQ e HowTo snippets
-   - Internal linking friendly: mencione termos relacionados que podem linkar para outros artigos
-   - Use keyword de cauda longa (long-tail) como foco principal
-   - E-E-A-T: demonstre expertise, experiência, autoridade e confiabilidade
-
-4. ESTILO: Mescle notícia trending com valor evergreen. Tom informativo e autoritativo. Inclua dados relevantes. Evite linguagem de IA.
-
-5. SEO (Yoast + Jetpack): seo_keyword: cauda longa 3-5 palavras. seo_title: até 60 chars, keyword no início. meta_description: 120-155 chars, keyword na primeira metade, CTA sutil. excerpt: 2 frases (máx 160 chars). slug: keyword em formato URL.
-
-6. IMAGEM: image_alt descritivo com keyword. image_caption legenda informativa.`;
+const SEO_AUDIT_PROMPT = `Analise o artigo gerado e valide:
+1. Keyword está no título e no primeiro parágrafo?
+2. Meta description tem entre 120-155 caracteres e contém a keyword?
+3. O título tem menos de 60 caracteres?
+4. Existem subtítulos H2/H3 com a keyword?
+CORRIJA automaticamente os campos que estiverem fora do padrão.`;
 
 function buildSystemPrompt(writerPrompt?: string | null): string {
   if (writerPrompt && writerPrompt.trim().length > 10) {
@@ -618,10 +645,14 @@ serve(async (req) => {
           seo_title: parsed.seo_title || parsed.title,
           meta_description: parsed.meta_description || "",
           featured_image_url: featuredImageUrl,
-          status: settings?.auto_publish ? "ready" : "draft",
+          status: (parsed.fact_check_status === 'review' || !settings?.auto_publish) ? "draft" : "ready",
           scheduled_at: scheduledAt.toISOString(),
           trending_topic: topic.topic,
           ai_provider: usedProvider,
+          fact_check_status: parsed.fact_check_status || 'pending',
+          fact_check_notes: parsed.fact_check_notes || '',
+          research_references: parsed.research_references || [],
+          seo_audit_log: parsed.seo_audit_log || {},
         }).select().single();
 
         if (insertError) {

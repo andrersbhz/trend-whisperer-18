@@ -37,14 +37,19 @@ export type Database = {
           created_at: string
           excerpt: string | null
           facebook_post_id: string | null
+          fact_check_notes: string | null
+          fact_check_status: string | null
           featured_image_url: string | null
           id: string
           instagram_post_id: string | null
           meta_description: string | null
           published_at: string | null
+          research_references: Json | null
           scheduled_at: string | null
+          seo_audit_log: Json | null
           seo_keyword: string | null
           seo_title: string | null
+          source_urls: string[] | null
           status: string
           title: string
           trending_topic: string | null
@@ -59,14 +64,19 @@ export type Database = {
           created_at?: string
           excerpt?: string | null
           facebook_post_id?: string | null
+          fact_check_notes?: string | null
+          fact_check_status?: string | null
           featured_image_url?: string | null
           id?: string
           instagram_post_id?: string | null
           meta_description?: string | null
           published_at?: string | null
+          research_references?: Json | null
           scheduled_at?: string | null
+          seo_audit_log?: Json | null
           seo_keyword?: string | null
           seo_title?: string | null
+          source_urls?: string[] | null
           status?: string
           title: string
           trending_topic?: string | null
@@ -81,14 +91,19 @@ export type Database = {
           created_at?: string
           excerpt?: string | null
           facebook_post_id?: string | null
+          fact_check_notes?: string | null
+          fact_check_status?: string | null
           featured_image_url?: string | null
           id?: string
           instagram_post_id?: string | null
           meta_description?: string | null
           published_at?: string | null
+          research_references?: Json | null
           scheduled_at?: string | null
+          seo_audit_log?: Json | null
           seo_keyword?: string | null
           seo_title?: string | null
+          source_urls?: string[] | null
           status?: string
           title?: string
           trending_topic?: string | null
