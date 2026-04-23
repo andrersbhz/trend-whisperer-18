@@ -174,19 +174,22 @@ const TrendsPage = () => {
                 <div className="flex-1 flex items-center justify-between">
                   <div>
                     <p className="font-medium text-foreground">{topic.topic}</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Badge variant="secondary">{topic.category}</Badge>
-                    {topic.search_volume && (
-                      <span className="text-xs text-muted-foreground">{topic.search_volume} buscas</span>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Badge variant="secondary">{topic.category}</Badge>
+                      {topic.search_volume && (
+                        <span className="text-xs text-muted-foreground">{topic.search_volume} buscas</span>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    {topic.used ? (
+                      <Badge variant="outline" className="text-muted-foreground">Usado</Badge>
+                    ) : (
+                      <Badge className="bg-success/20 text-success">Disponível</Badge>
                     )}
                   </div>
                 </div>
-                {topic.used ? (
-                  <Badge variant="outline" className="text-muted-foreground">Usado</Badge>
-                ) : (
-                  <Badge className="bg-success/20 text-success">Disponível</Badge>
-                  </div>
-                </div>
+              </CardContent>
             </Card>
           ))}
         </div>
