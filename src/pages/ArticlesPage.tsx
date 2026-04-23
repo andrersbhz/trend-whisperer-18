@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Send, Eye, Trash2, Loader2, FileText, RotateCcw, ImagePlus, Sparkles, Database } from 'lucide-react';
+import { Send, Eye, Trash2, Loader2, FileText, RotateCcw, ImagePlus, Sparkles, Database, Layers } from 'lucide-react';
 import { getErrorMessage, runBackendMutation, runBackendQuery } from '@/lib/backend';
 import {
   Dialog,
@@ -13,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const ArticlesPage = () => {
   const { user } = useAuth();
@@ -30,6 +31,8 @@ const ArticlesPage = () => {
   const [hasMore, setHasMore] = useState(false);
   const [totalCount, setTotalCount] = useState<number>(0);
   const [cleaningUp, setCleaningUp] = useState(false);
+  const [userCategories, setUserCategories] = useState<string[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(false);
 
   const PAGE_SIZE = 20;
 
@@ -80,7 +83,42 @@ const ArticlesPage = () => {
     setLoadingMore(false);
     setHasMore(false);
     fetchArticles();
+    fetchCategories();
   }, [user]);
+
+  const fetchCategories = async () => {
+    if (!user) return;
+    setLoadingCategories(true);
+    try {
+      const { data } = await supabase.from('user_settings').select('categories').eq('user_id', user.id).single();
+      setUserCategories(data?.categories || ['esportes', 'politica', 'policia', 'saude', 'celebridades', 'financas']);
+    } catch (e) {
+      console.error('Error fetching categories', e);
+    } finally {
+      setLoadingCategories(false);
+    }
+  };
+
+  const handleGenerateByCategory = async (category: string) => {
+    if (!user) return;
+    setGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-articles', {
+        body: { userId: user.id, forceCategory: category },
+      });
+      if (error) throw error;
+      toast({
+        title: data?.success ? 'Artigo sendo gerado!' : 'Atenção',
+        description: `Iniciada geração para a categoria: ${category}. ${data?.message || ''}`,
+        variant: data?.success ? 'default' : 'destructive',
+      });
+      fetchArticles();
+    } catch (error) {
+      toast({ title: 'Erro ao gerar', description: getErrorMessage(error), variant: 'destructive' });
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   const handleGenerate = async () => {
     if (!user) return;
@@ -294,7 +332,15 @@ const ArticlesPage = () => {
         </div>
       </div>
 
-      {articles.length === 0 ? (
+      <Tabs defaultValue="prontos" className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="prontos">Posts Prontos</TabsTrigger>
+          <TabsTrigger value="todos">Todos os Artigos</TabsTrigger>
+          <TabsTrigger value="categorias">Gerar por Categoria</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="todos">
+          {articles.length === 0 ? (
         <Card className="glass-card">
           <CardContent className="py-16 text-center">
             <div className="mx-auto w-16 h-16 rounded-full gradient-primary/20 flex items-center justify-center mb-4 bg-primary/10">
@@ -406,7 +452,53 @@ const ArticlesPage = () => {
             {loadingMore ? 'Carregando...' : 'Carregar mais'}
           </Button>
         </div>
-      )}
+        )}
+        </TabsContent>
+
+        <TabsContent value="prontos">
+          {articles.filter(a => a.status === 'ready').length === 0 ? (
+            <Card className="glass-card">
+              <CardContent className="py-16 text-center">
+                <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-foreground font-medium">Nenhum artigo pronto para publicar</p>
+                <p className="text-sm text-muted-foreground mt-1">Gere novos artigos ou aprove os rascunhos</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-4">
+              {articles.filter(a => a.status === 'ready').map((article, idx) => (
+                <ArticleCard key={article.id} article={article} idx={idx} />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="categorias">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {userCategories.map((category) => (
+              <Card key={category} className="glass-card hover-lift">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <Layers className="h-5 w-5 text-primary" />
+                      <h3 className="font-bold capitalize">{category}</h3>
+                    </div>
+                    <Badge variant="outline">{articles.filter(a => a.category === category).length} posts</Badge>
+                  </div>
+                  <Button 
+                    className="w-full gradient-primary" 
+                    onClick={() => handleGenerateByCategory(category)}
+                    disabled={generating}
+                  >
+                    {generating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+                    Gerar para {category}
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+      </Tabs>
 
       <Dialog
         open={previewOpen}
