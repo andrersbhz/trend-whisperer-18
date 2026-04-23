@@ -19,9 +19,13 @@ const corsHeaders = {
 //    "Pages API" and "Instagram Graph API".
 // 2) In App Roles, add your Facebook user as Admin/Developer/Tester.
 // 3) Add the desired scopes back to ADVANCED_SCOPES below.
-const BASIC_SCOPES = ["email", "public_profile", "pages_show_list"];
+const BASIC_SCOPES = [
+  "email",
+  "public_profile",
+  "pages_show_list",
+  "pages_read_engagement"
+];
 const ADVANCED_SCOPES: string[] = [
-  "pages_read_engagement",
   "pages_manage_posts",
   "pages_manage_metadata",
   "pages_read_user_content",
