@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Send, Eye, Trash2, Loader2, FileText, RotateCcw, ImagePlus, Sparkles, Database } from 'lucide-react';
+import { Send, Eye, Trash2, Loader2, FileText, RotateCcw, ImagePlus, Sparkles, Database, Layers } from 'lucide-react';
 import { getErrorMessage, runBackendMutation, runBackendQuery } from '@/lib/backend';
 import {
   Dialog,
@@ -13,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const ArticlesPage = () => {
   const { user } = useAuth();
@@ -30,6 +31,8 @@ const ArticlesPage = () => {
   const [hasMore, setHasMore] = useState(false);
   const [totalCount, setTotalCount] = useState<number>(0);
   const [cleaningUp, setCleaningUp] = useState(false);
+  const [userCategories, setUserCategories] = useState<string[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(false);
 
   const PAGE_SIZE = 20;
 
@@ -80,7 +83,42 @@ const ArticlesPage = () => {
     setLoadingMore(false);
     setHasMore(false);
     fetchArticles();
+    fetchCategories();
   }, [user]);
+
+  const fetchCategories = async () => {
+    if (!user) return;
+    setLoadingCategories(true);
+    try {
+      const { data } = await supabase.from('user_settings').select('categories').eq('user_id', user.id).single();
+      setUserCategories(data?.categories || ['esportes', 'politica', 'policia', 'saude', 'celebridades', 'financas']);
+    } catch (e) {
+      console.error('Error fetching categories', e);
+    } finally {
+      setLoadingCategories(false);
+    }
+  };
+
+  const handleGenerateByCategory = async (category: string) => {
+    if (!user) return;
+    setGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-articles', {
+        body: { userId: user.id, forceCategory: category },
+      });
+      if (error) throw error;
+      toast({
+        title: data?.success ? 'Artigo sendo gerado!' : 'Atenção',
+        description: `Iniciada geração para a categoria: ${category}. ${data?.message || ''}`,
+        variant: data?.success ? 'default' : 'destructive',
+      });
+      fetchArticles();
+    } catch (error) {
+      toast({ title: 'Erro ao gerar', description: getErrorMessage(error), variant: 'destructive' });
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   const handleGenerate = async () => {
     if (!user) return;
@@ -247,6 +285,83 @@ const ArticlesPage = () => {
     );
   }
 
+  const ArticleCard = ({ article, idx }: { article: any, idx: number }) => (
+    <Card
+      key={article.id}
+      className={`glass-card hover-lift overflow-hidden animate-float-up ${article.status === 'failed' ? 'border-destructive/30' : ''}`}
+      style={{ animationDelay: `${Math.min(idx, 10) * 30}ms` }}
+    >
+      <CardContent className="p-0">
+        <div className="flex items-stretch">
+          <div className="relative w-20 sm:w-28 shrink-0 bg-secondary/40 overflow-hidden">
+            {article.featured_image_url ? (
+              <img
+                src={article.featured_image_url}
+                alt={article.title}
+                className="absolute inset-0 w-full h-full object-cover"
+                loading="lazy"
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/10 to-accent/10">
+                <FileText className="h-6 w-6 text-muted-foreground/60" />
+              </div>
+            )}
+          </div>
+
+          <div className="flex-1 min-w-0 p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                <Badge className={`${statusColors[article.status] || ''} text-[10px] sm:text-xs`} variant="secondary">
+                  {statusLabels[article.status] || article.status}
+                </Badge>
+                <span className="text-[10px] sm:text-xs text-muted-foreground capitalize">{article.category}</span>
+              </div>
+              <h3 className="font-semibold text-foreground text-sm sm:text-base line-clamp-2 sm:truncate leading-snug">{article.title}</h3>
+              {article.seo_keyword && (
+                <p className="text-[11px] sm:text-xs text-muted-foreground mt-1 truncate">
+                  🔑 <span className="text-primary">{article.seo_keyword}</span>
+                </p>
+              )}
+            </div>
+
+            <div className="flex gap-1 shrink-0 self-end sm:self-auto">
+              <Button size="sm" variant="ghost" onClick={() => handlePreview(article.id)} className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground" title="Visualizar">
+                <Eye className="h-4 w-4" />
+              </Button>
+              {article.status === 'failed' && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 w-8 p-0 text-warning hover:text-warning hover:bg-warning/10"
+                  onClick={() => handleRetry(article.id)}
+                  disabled={retrying === article.id}
+                  title="Tentar novamente"
+                >
+                  {retrying === article.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
+                </Button>
+              )}
+              {(article.status === 'ready' || article.status === 'draft') && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 w-8 p-0 text-primary hover:text-primary hover:bg-primary/10"
+                  onClick={() => handlePublish(article.id)}
+                  disabled={publishing === article.id}
+                  title="Publicar"
+                >
+                  {publishing === article.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                </Button>
+              )}
+              <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => handleDelete(article.id)} title="Excluir">
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -294,119 +409,93 @@ const ArticlesPage = () => {
         </div>
       </div>
 
-      {articles.length === 0 ? (
-        <Card className="glass-card">
-          <CardContent className="py-16 text-center">
-            <div className="mx-auto w-16 h-16 rounded-full gradient-primary/20 flex items-center justify-center mb-4 bg-primary/10">
-              <FileText className="h-8 w-8 text-primary" />
-            </div>
-            <p className="text-foreground font-medium">Nenhum artigo encontrado</p>
-            <p className="text-sm text-muted-foreground mt-1">Clique em "Gerar Artigos" acima para começar</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-3 sm:gap-4">
-          {articles.map((article, idx) => (
-            <Card
-              key={article.id}
-              className={`glass-card hover-lift overflow-hidden animate-float-up ${article.status === 'failed' ? 'border-destructive/30' : ''}`}
-              style={{ animationDelay: `${Math.min(idx, 10) * 30}ms` }}
-            >
-              <CardContent className="p-0">
-                <div className="flex items-stretch">
-                  {/* Thumbnail */}
-                  <div className="relative w-20 sm:w-28 shrink-0 bg-secondary/40 overflow-hidden">
-                    {article.featured_image_url ? (
-                      <img
-                        src={article.featured_image_url}
-                        alt={article.title}
-                        className="absolute inset-0 w-full h-full object-cover"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/10 to-accent/10">
-                        <FileText className="h-6 w-6 text-muted-foreground/60" />
-                      </div>
-                    )}
-                  </div>
+      <Tabs defaultValue="prontos" className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="prontos">Posts Prontos</TabsTrigger>
+          <TabsTrigger value="todos">Todos os Artigos</TabsTrigger>
+          <TabsTrigger value="categorias">Gerar por Categoria</TabsTrigger>
+        </TabsList>
 
-                  {/* Content */}
-                  <div className="flex-1 min-w-0 p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-3">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                        <Badge className={`${statusColors[article.status] || ''} text-[10px] sm:text-xs`} variant="secondary">
-                          {statusLabels[article.status] || article.status}
-                        </Badge>
-                        <span className="text-[10px] sm:text-xs text-muted-foreground capitalize">{article.category}</span>
-                      </div>
-                      <h3 className="font-semibold text-foreground text-sm sm:text-base line-clamp-2 sm:truncate leading-snug">{article.title}</h3>
-                      {article.seo_keyword && (
-                        <p className="text-[11px] sm:text-xs text-muted-foreground mt-1 truncate">
-                          🔑 <span className="text-primary">{article.seo_keyword}</span>
-                        </p>
-                      )}
-                      {article.meta_description && (
-                        <p className="hidden sm:block text-xs text-muted-foreground mt-1 line-clamp-1">{article.meta_description}</p>
-                      )}
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex gap-1 shrink-0 self-end sm:self-auto">
-                      <Button size="sm" variant="ghost" onClick={() => handlePreview(article.id)} className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground" title="Visualizar">
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      {article.status === 'failed' && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-8 w-8 p-0 text-warning hover:text-warning hover:bg-warning/10"
-                          onClick={() => handleRetry(article.id)}
-                          disabled={retrying === article.id}
-                          title="Tentar novamente"
-                        >
-                          {retrying === article.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
-                        </Button>
-                      )}
-                      {(article.status === 'ready' || article.status === 'draft') && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-8 w-8 p-0 text-primary hover:text-primary hover:bg-primary/10"
-                          onClick={() => handlePublish(article.id)}
-                          disabled={publishing === article.id}
-                          title="Publicar"
-                        >
-                          {publishing === article.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                        </Button>
-                      )}
-                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => handleDelete(article.id)} title="Excluir">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
+        <TabsContent value="todos">
+          {articles.length === 0 ? (
+            <Card className="glass-card">
+              <CardContent className="py-16 text-center">
+                <div className="mx-auto w-16 h-16 rounded-full gradient-primary/20 flex items-center justify-center mb-4 bg-primary/10">
+                  <FileText className="h-8 w-8 text-primary" />
                 </div>
+                <p className="text-foreground font-medium">Nenhum artigo encontrado</p>
+                <p className="text-sm text-muted-foreground mt-1">Clique em "Gerar Artigos" acima para começar</p>
               </CardContent>
             </Card>
-          ))}
-        </div>
-      )}
+          ) : (
+            <div className="grid gap-3 sm:gap-4">
+              {articles.map((article, idx) => (
+                <ArticleCard key={article.id} article={article} idx={idx} />
+              ))}
+              {articles.length > 0 && hasMore && (
+                <div className="flex justify-center mt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setLoadingMore(true);
+                      fetchArticles({ append: true });
+                    }}
+                    disabled={loadingMore}
+                    className="gap-2"
+                  >
+                    {loadingMore ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                    {loadingMore ? 'Carregando...' : 'Carregar mais'}
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+        </TabsContent>
 
-      {articles.length > 0 && hasMore && (
-        <div className="flex justify-center">
-          <Button
-            variant="outline"
-            onClick={() => {
-              setLoadingMore(true);
-              fetchArticles({ append: true });
-            }}
-            disabled={loadingMore}
-            className="gap-2"
-          >
-            {loadingMore ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            {loadingMore ? 'Carregando...' : 'Carregar mais'}
-          </Button>
-        </div>
-      )}
+        <TabsContent value="prontos">
+          {articles.filter(a => a.status === 'ready').length === 0 ? (
+            <Card className="glass-card">
+              <CardContent className="py-16 text-center">
+                <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-foreground font-medium">Nenhum artigo pronto para publicar</p>
+                <p className="text-sm text-muted-foreground mt-1">Gere novos artigos ou aprove os rascunhos</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-4">
+              {articles.filter(a => a.status === 'ready').map((article, idx) => (
+                <ArticleCard key={article.id} article={article} idx={idx} />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="categorias">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {userCategories.map((category) => (
+              <Card key={category} className="glass-card hover-lift">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <Layers className="h-5 w-5 text-primary" />
+                      <h3 className="font-bold capitalize">{category}</h3>
+                    </div>
+                    <Badge variant="outline">{articles.filter(a => a.category === category).length} posts</Badge>
+                  </div>
+                  <Button 
+                    className="w-full gradient-primary" 
+                    onClick={() => handleGenerateByCategory(category)}
+                    disabled={generating}
+                  >
+                    {generating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+                    Gerar para {category}
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+      </Tabs>
 
       <Dialog
         open={previewOpen}

@@ -371,7 +371,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { userId } = await req.json();
+    const { userId, topics: manualTopics, forceCategory } = await req.json();
     if (!userId) throw new Error("userId is required");
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -413,8 +413,18 @@ serve(async (req) => {
 
     console.log(`[Pipeline] Available AI providers: ${providers.map(p => p.name).join(" → ")}`);
 
-    const { data: topics } = await supabase.from("trending_topics").select("*").eq("user_id", userId).eq("used", false);
-    const userCategories: string[] = settings?.categories || ["esportes", "politica", "policia", "saude", "celebridades", "financas"];
+    let topics = [];
+    if (manualTopics && Array.isArray(manualTopics) && manualTopics.length > 0) {
+      topics = manualTopics.map(t => typeof t === "string" ? { topic: t, category: forceCategory || "geral" } : t);
+      console.log(`[Pipeline] Using ${topics.length} manual topics`);
+    } else {
+      const { data: dbTopics } = await supabase.from("trending_topics").select("*").eq("user_id", userId).eq("used", false);
+      topics = dbTopics || [];
+    }
+
+    const userCategories: string[] = forceCategory 
+      ? [forceCategory] 
+      : (settings?.categories || ["esportes", "politica", "policia", "saude", "celebridades", "financas"]);
 
     // Conta artigos criados nas últimas 24h por categoria para priorizar as mais defasadas
     const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
