@@ -70,42 +70,43 @@ const SettingsPage = () => {
 
     const fetchSettings = async () => {
       try {
-        const [data, status] = await Promise.all([
-          runBackendQuery(() =>
-            supabase
-              .from('user_settings')
-              .select('wordpress_url, wordpress_username, google_analytics_property_id, facebook_page_id, instagram_account_id, categories, articles_per_day, auto_publish, writer_prompt')
-              .eq('user_id', user.id)
-              .maybeSingle(),
-          ),
-          runBackendQuery(() => supabase.rpc('get_credentials_status')),
-        ]);
+        const { data: userData, error: userError } = await supabase
+          .from('user_settings')
+          .select('wordpress_url, wordpress_username, google_analytics_property_id, facebook_page_id, instagram_account_id, categories, articles_per_day, auto_publish, writer_prompt')
+          .eq('user_id', user.id)
+          .maybeSingle();
 
-        setHasExistingSettings(!!data);
+        if (userError) throw userError;
 
-        if (data) {
+        const { data: statusData, error: statusError } = await supabase.rpc('get_credentials_status');
+        // Ignore status error for now if RPC doesn't exist yet
+
+        setHasExistingSettings(!!userData);
+
+        if (userData) {
           setSettings({
-            wordpress_url: data.wordpress_url || '',
-            wordpress_username: data.wordpress_username || '',
+            wordpress_url: userData.wordpress_url || '',
+            wordpress_username: userData.wordpress_username || '',
             wordpress_app_password: '',
-            facebook_page_id: data.facebook_page_id || '',
+            facebook_page_id: userData.facebook_page_id || '',
             facebook_access_token: '',
-            instagram_account_id: data.instagram_account_id || '',
-            google_analytics_property_id: data.google_analytics_property_id || '',
+            instagram_account_id: userData.instagram_account_id || '',
+            google_analytics_property_id: userData.google_analytics_property_id || '',
             gemini_api_key: '',
             openai_api_key: '',
             groq_api_key: '',
-            categories: data.categories || defaultSettings.categories,
-            articles_per_day: data.articles_per_day || 3,
-            auto_publish: data.auto_publish || false,
-            writer_prompt: (data as any).writer_prompt || '',
+            categories: userData.categories || defaultSettings.categories,
+            articles_per_day: userData.articles_per_day || 3,
+            auto_publish: userData.auto_publish || false,
+            writer_prompt: userData.writer_prompt || '',
           });
         }
 
-        if (status) {
-          setCredStatus(status as unknown as CredentialsStatus);
+        if (statusData) {
+          setCredStatus(statusData as unknown as CredentialsStatus);
         }
       } catch (error) {
+        console.error("Fetch settings error:", error);
         toast({ title: 'Erro ao carregar configurações', description: getErrorMessage(error), variant: 'destructive' });
       } finally {
         setLoading(false);
