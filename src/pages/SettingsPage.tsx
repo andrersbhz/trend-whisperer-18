@@ -99,6 +99,10 @@ const SettingsPage = () => {
             articles_per_day: data.articles_per_day || 3,
             auto_publish: data.auto_publish || false,
             writer_prompt: (data as any).writer_prompt || '',
+            facebook_access_token: (data as any).facebook_access_token || '',
+            facebook_page_id: (data as any).facebook_page_id || '',
+            linkedin_access_token: (data as any).linkedin_access_token || '',
+            linkedin_org_id: (data as any).linkedin_org_id || '',
           });
         }
 

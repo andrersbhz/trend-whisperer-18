@@ -474,76 +474,24 @@ const ArticlesPage = () => {
           if (!open) setPreview(null);
         }}
       >
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto glass-card border-border">
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto glass-card border-border">
           <DialogHeader>
-            <DialogTitle className="text-foreground">{previewLoading ? 'Carregando prévia...' : preview?.title}</DialogTitle>
+            <DialogTitle className="text-foreground">Editor & Prévia do Artigo</DialogTitle>
           </DialogHeader>
+          
           {previewLoading ? (
-            <div className="flex items-center justify-center py-12">
+            <div className="flex items-center justify-center py-20">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
-          ) : (
-            <div className="space-y-3 text-sm">
-              {preview?.featured_image_url && (
-                <img src={preview.featured_image_url} alt={preview.title} className="w-full rounded-lg" />
-              )}
-              <div className="flex gap-2 flex-wrap">
-                <Badge variant="secondary" className="bg-primary/10 text-primary">{preview?.category}</Badge>
-                {preview?.fact_check_status && (
-                  <Badge variant="outline" className={preview.fact_check_status === 'safe' ? 'text-success' : 'text-warning'}>
-                    Status: {preview.fact_check_status}
-                  </Badge>
-                )}
-              </div>
-              
-              {preview?.research_references?.length > 0 && (
-                <div className="bg-muted/30 p-3 rounded-lg border border-border/50">
-                  <h4 className="font-semibold text-xs mb-2 flex items-center gap-2">
-                    <Database className="h-3 w-3" /> Referências de Pesquisa (Score)
-                  </h4>
-                  <div className="space-y-1.5">
-                    {preview.research_references.map((ref: any, i: number) => (
-                      <div key={i} className="text-[11px] flex items-center justify-between gap-2">
-                        <a href={ref.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate">
-                          {ref.headline || ref.source}
-                        </a>
-                        <Badge variant="secondary" className="text-[10px] h-4">{(ref.relevance_score * 100).toFixed(0)}%</Badge>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {preview?.seo_audit_log?.issues_found?.length > 0 && (
-                <div className="bg-warning/10 p-3 rounded-lg border border-warning/20">
-                  <h4 className="font-semibold text-xs text-warning mb-1">Auditoria de SEO:</h4>
-                  <ul className="list-disc list-inside text-[11px] text-muted-foreground">
-                    {preview.seo_audit_log.issues_found.map((issue: string, i: number) => (
-                      <li key={i}>{issue}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              
-              <div className="flex gap-2 flex-wrap">
-                {preview?.seo_keyword && <Badge variant="outline" className="border-accent/30 text-accent">🔑 {preview.seo_keyword}</Badge>}
-              </div>
-
-              {preview?.meta_description && (
-                <div className="p-3 rounded-lg bg-secondary/30">
-                  <p className="text-xs font-medium text-muted-foreground mb-1">Meta Description</p>
-                  <p className="text-sm text-foreground">{preview?.meta_description}</p>
-                </div>
-              )}
-              <div
-                className="prose prose-sm prose-invert max-w-none text-foreground mt-4"
-                dangerouslySetInnerHTML={{ __html: preview?.content || '' }}
-              />
-            </div>
-          )}
+          ) : preview ? (
+            <PostEditor 
+              article={preview} 
+              onSave={handleUpdateArticle} 
+              onApprove={handleApprove}
+            />
+          ) : null}
         </DialogContent>
       </Dialog>
-
     </div>
   );
 };
