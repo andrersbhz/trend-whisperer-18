@@ -362,10 +362,15 @@ function buildSystemPrompt(writerPrompt?: string | null): string {
 }
 
 function buildUserPrompt(topic: string, category: string): string {
-  return `Escreva um artigo jornalístico completo sobre: "${topic}" (categoria: ${category}).
+  return `Crie um artigo jornalístico INÉDITO e ORIGINAL sobre o tópico: "${topic}" (categoria: ${category}).
 Data de hoje: ${new Date().toLocaleDateString("pt-BR")}.
 
-IMPORTANTE: Conteúdo HTML entre 1800-2400 chars. Keyword no título, primeiro parágrafo, 1+ H2, meta description. Todos os campos SEO preenchidos. Subtítulos em negrito. Gere metadados para imagem de destaque. Use técnicas avançadas de SEO: LSI keywords, otimize para featured snippets, inclua perguntas frequentes como subtítulos, keyword de cauda longa.`;
+REGRAS DE CRIAÇÃO:
+1. PESQUISA: Utilize o tópico como base para pesquisar as informações e manchetes mais relevantes do momento.
+2. ORIGINALIDADE: NUNCA copie textos de outros portais. O artigo deve ser escrito do zero, com voz própria e análise única.
+3. ESTRUTURA: Conteúdo HTML entre 1800-2400 chars. Keyword no título, primeiro parágrafo, 1+ H2, meta description. 
+4. SEO: Todos os campos SEO preenchidos. Subtítulos em negrito. Gere metadados para imagem de destaque. Use técnicas avançadas de SEO: LSI keywords, otimize para featured snippets, inclua perguntas frequentes como subtítulos, keyword de cauda longa.
+5. QUALIDADE: Texto fluido, informativo e profissional, focado no leitor brasileiro.`;
 }
 
 const MAX_GENERATION_BATCH = 2;
