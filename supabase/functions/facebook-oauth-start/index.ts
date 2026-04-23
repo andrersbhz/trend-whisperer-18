@@ -30,7 +30,7 @@ const ADVANCED_SCOPES: string[] = [
   "read_insights",
   "business_management",
 ];
-const SCOPES = [...BASIC_SCOPES, ...ADVANCED_SCOPES].join(",");
+const SCOPES = BASIC_SCOPES.join(",");
 
 const DEFAULT_RETURN_URL = "https://forex.a3solucoesdigitais.com/settings";
 const ALLOWED_RETURN_HOSTS = new Set([
