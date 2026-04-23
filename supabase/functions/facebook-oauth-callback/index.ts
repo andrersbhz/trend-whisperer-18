@@ -62,7 +62,7 @@ function htmlResponse(title: string, message: string, success: boolean, redirect
   });
 }
 
-serve(async (req) => {
+export const handler = async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
@@ -208,4 +208,8 @@ serve(async (req) => {
     console.error("facebook-oauth-callback error:", err);
     return htmlResponse("Erro inesperado", err.message || "Tente novamente.", false);
   }
-});
+};
+
+if (import.meta.main) {
+  serve(handler);
+}
