@@ -162,7 +162,7 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
 
     try {
       const authUrl = await requestFacebookAuthUrl(returnUrl);
-      popup.location.replace(authUrl);
+      popup.location.href = authUrl;
       popup.focus();
       watchPopupClosed(popup);
     } catch (e: any) {
