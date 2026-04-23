@@ -432,9 +432,24 @@ const ArticlesPage = () => {
               {articles.map((article, idx) => (
                 <ArticleCard key={article.id} article={article} idx={idx} />
               ))}
+              {articles.length > 0 && hasMore && (
+                <div className="flex justify-center mt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setLoadingMore(true);
+                      fetchArticles({ append: true });
+                    }}
+                    disabled={loadingMore}
+                    className="gap-2"
+                  >
+                    {loadingMore ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                    {loadingMore ? 'Carregando...' : 'Carregar mais'}
+                  </Button>
+                </div>
+              )}
             </div>
           )}
-        </TabsContent>
         </TabsContent>
 
         <TabsContent value="prontos">
