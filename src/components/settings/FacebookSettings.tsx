@@ -461,44 +461,6 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
       </div>
     </ConnectionCard>
   );
-                  <Input placeholder="Minha Página" value={newAccount.page_name} onChange={(e) => setNewAccount((p) => ({ ...p, page_name: e.target.value }))} className="h-9 text-sm" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Page ID *</Label>
-                  <Input placeholder="123456789" value={newAccount.page_id} onChange={(e) => setNewAccount((p) => ({ ...p, page_id: e.target.value }))} className="h-9 text-sm" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Access Token *</Label>
-                  <PasswordInput placeholder="EAAxxxxxxx..." value={newAccount.access_token} onChange={(e) => setNewAccount((p) => ({ ...p, access_token: e.target.value }))} className="h-9 text-sm" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Instagram Business Account ID</Label>
-                  <Input placeholder="17841400000000" value={newAccount.instagram_account_id} onChange={(e) => setNewAccount((p) => ({ ...p, instagram_account_id: e.target.value }))} className="h-9 text-sm" />
-                </div>
-                <div className="flex gap-2">
-                  <Button size="sm" onClick={handleAdd} disabled={saving} className="gradient-primary">
-                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Salvar'}
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => setShowAdd(false)}>Cancelar</Button>
-                </div>
-              </div>
-            ) : (
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="flex-1" onClick={() => setShowDiscover(true)}>
-                  <Search className="h-4 w-4 mr-2" />
-                  Descobrir Páginas
-                </Button>
-                <Button variant="outline" size="sm" className="flex-1" onClick={() => setShowAdd(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Adicionar Manual
-                </Button>
-              </div>
-            )}
-          </>
-        )}
-      </div>
-    </ConnectionCard>
-  );
 };
 
 export default FacebookSettings;
