@@ -457,13 +457,14 @@ serve(async (req) => {
     }
 
     // Score combinado: prioriza categorias com tópicos QUENTES (alta busca),
-    // mas penaliza levemente categorias já saturadas nas últimas 24h para garantir variedade.
-    // peakScore = melhor volume disponível na categoria - (artigos recentes * 0.5)
+    // mas penaliza significativamente categorias já saturadas nas últimas 24h para garantir equilíbrio.
+    // O multiplicador 10 para 'peak' (volume) mantém a preferência por trends, 
+    // mas o multiplicador 4 para 'recent' garante que após 2-3 posts a prioridade mude.
     const categoryPriority = (cat: string): number => {
       const top = topicsByCategory[cat][0];
       const peak = top ? volumeScore(top.search_volume) : 0;
       const recent = countsByCategory[cat] || 0;
-      return peak * 10 - recent * 0.5;
+      return peak * 10 - recent * 4.0;
     };
 
     // Round-robin ponderado: a cada rodada reordena por prioridade atual,
