@@ -122,7 +122,7 @@ const PostEditor = ({ article, onSave, onApprove, isSaving }: PostEditorProps) =
             <div className="space-y-2">
               <div className="flex justify-between items-end">
                 <Label>SEO Title ({formData.meta_title.length}/60)</Label>
-                <Badge variant={scores.title === 100 ? 'success' : 'warning'} className="text-[10px]">
+                <Badge variant={scores.title === 100 ? 'default' : 'secondary'} className="text-[10px]">
                   {scores.title === 100 ? 'Ideal' : 'Ajustar'}
                 </Badge>
               </div>
@@ -137,7 +137,7 @@ const PostEditor = ({ article, onSave, onApprove, isSaving }: PostEditorProps) =
             <div className="space-y-2">
               <div className="flex justify-between items-end">
                 <Label>Meta Description ({formData.meta_description.length}/160)</Label>
-                <Badge variant={scores.description === 100 ? 'success' : 'warning'} className="text-[10px]">
+                <Badge variant={scores.description === 100 ? 'default' : 'secondary'} className="text-[10px]">
                   {scores.description === 100 ? 'Ideal' : 'Ajustar'}
                 </Badge>
               </div>
