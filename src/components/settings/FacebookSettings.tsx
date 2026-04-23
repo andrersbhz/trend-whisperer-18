@@ -221,7 +221,7 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
     setDiscoverLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('fetch-meta-pages', {
-        body: { accessToken: userAccessToken },
+        body: { accessToken: token },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
