@@ -9,7 +9,7 @@ import {
   BarChart3, TrendingUp, TrendingDown, Eye, MousePointerClick, Users,
   Lightbulb, RefreshCw, Loader2, Globe, Clock, ArrowUpRight, Percent,
   FileText, Smartphone, Monitor, Tablet, Heart, Share2,
-  Twitter, Linkedin, Send,
+  Twitter, Linkedin, Send, Sparkles,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
