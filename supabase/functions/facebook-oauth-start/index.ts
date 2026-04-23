@@ -37,6 +37,7 @@ const ALLOWED_RETURN_HOSTS = new Set([
   "forex.a3solucoesdigitais.com",
   "trend-whisperer-18.lovable.app",
   "id-preview--9ad27b4d-8990-47e9-8d43-311f0f7d2680.lovable.app",
+  "localhost",
 ]);
 
 function getSafeReturnUrl(rawValue: unknown) {
