@@ -269,12 +269,14 @@ export type Database = {
           google_analytics_property_id: string | null
           groq_api_key: string | null
           id: string
+          instagram_account_id: string | null
           linkedin_access_token: string | null
           linkedin_org_id: string | null
           openai_api_key: string | null
           updated_at: string
           user_id: string
           wordpress_app_password: string | null
+          wordpress_application_password: string | null
           wordpress_url: string | null
           wordpress_username: string | null
           writer_prompt: string | null
@@ -291,12 +293,14 @@ export type Database = {
           google_analytics_property_id?: string | null
           groq_api_key?: string | null
           id?: string
+          instagram_account_id?: string | null
           linkedin_access_token?: string | null
           linkedin_org_id?: string | null
           openai_api_key?: string | null
           updated_at?: string
           user_id: string
           wordpress_app_password?: string | null
+          wordpress_application_password?: string | null
           wordpress_url?: string | null
           wordpress_username?: string | null
           writer_prompt?: string | null
@@ -313,12 +317,14 @@ export type Database = {
           google_analytics_property_id?: string | null
           groq_api_key?: string | null
           id?: string
+          instagram_account_id?: string | null
           linkedin_access_token?: string | null
           linkedin_org_id?: string | null
           openai_api_key?: string | null
           updated_at?: string
           user_id?: string
           wordpress_app_password?: string | null
+          wordpress_application_password?: string | null
           wordpress_url?: string | null
           wordpress_username?: string | null
           writer_prompt?: string | null
