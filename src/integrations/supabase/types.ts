@@ -203,6 +203,7 @@ export type Database = {
           categories: string[] | null
           created_at: string
           facebook_access_token: string | null
+          facebook_ad_account_id: string | null
           facebook_page_id: string | null
           gemini_api_key: string | null
           google_analytics_property_id: string | null
@@ -224,6 +225,7 @@ export type Database = {
           categories?: string[] | null
           created_at?: string
           facebook_access_token?: string | null
+          facebook_ad_account_id?: string | null
           facebook_page_id?: string | null
           gemini_api_key?: string | null
           google_analytics_property_id?: string | null
@@ -245,6 +247,7 @@ export type Database = {
           categories?: string[] | null
           created_at?: string
           facebook_access_token?: string | null
+          facebook_ad_account_id?: string | null
           facebook_page_id?: string | null
           gemini_api_key?: string | null
           google_analytics_property_id?: string | null
