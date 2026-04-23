@@ -464,7 +464,11 @@ serve(async (req) => {
       const top = topicsByCategory[cat][0];
       const peak = top ? volumeScore(top.search_volume) : 0;
       const recent = countsByCategory[cat] || 0;
-      return peak * 10 - recent * 4.0;
+      
+      // Prioridade: (Peso do Volume x 20) - (Peso da Saturação x 4)
+      // O multiplicador 20 garante que tópicos de 'alto' volume (3) sempre superem 
+      // tópicos de 'médio' (2) ou 'baixo' (1) mesmo se a categoria tiver 1-2 posts recentes.
+      return peak * 20 - recent * 4.0;
     };
 
     // Round-robin ponderado: a cada rodada reordena por prioridade atual,
