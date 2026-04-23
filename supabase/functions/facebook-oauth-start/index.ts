@@ -21,14 +21,14 @@ const corsHeaders = {
 // 3) Add the desired scopes back to ADVANCED_SCOPES below.
 const BASIC_SCOPES = ["email", "public_profile", "pages_show_list"];
 const ADVANCED_SCOPES: string[] = [
-  // "pages_read_engagement",
-  // "pages_manage_posts",
-  // "pages_manage_metadata",
-  // "pages_read_user_content",
-  // "instagram_basic",
-  // "instagram_content_publish",
-  // "read_insights",
-  // "business_management",
+  "pages_read_engagement",
+  "pages_manage_posts",
+  "pages_manage_metadata",
+  "pages_read_user_content",
+  "instagram_basic",
+  "instagram_content_publish",
+  "read_insights",
+  "business_management",
 ];
 const SCOPES = [...BASIC_SCOPES, ...ADVANCED_SCOPES].join(",");
 
@@ -37,6 +37,7 @@ const ALLOWED_RETURN_HOSTS = new Set([
   "forex.a3solucoesdigitais.com",
   "trend-whisperer-18.lovable.app",
   "id-preview--9ad27b4d-8990-47e9-8d43-311f0f7d2680.lovable.app",
+  "localhost",
 ]);
 
 function getSafeReturnUrl(rawValue: unknown) {
