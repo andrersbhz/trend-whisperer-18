@@ -179,23 +179,68 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
   };
 
   const handleDiscoverPages = async () => {
-    if (!userAccessToken) {
+    const trimmedToken = userAccessToken.trim();
+    
+    if (!trimmedToken) {
       toast({ title: 'Erro', description: 'Insira seu User Access Token da Meta', variant: 'destructive' });
       return;
     }
+
+    if (!trimmedToken.startsWith('EAA')) {
+      toast({ 
+        title: 'Formato Inválido', 
+        description: 'O token deve começar com "EAA". Verifique se você copiou o token completo do Graph API Explorer.', 
+        variant: 'destructive' 
+      });
+      return;
+    }
+
+    if (trimmedToken.length < 50) {
+      toast({ 
+        title: 'Token muito curto', 
+        description: 'O token parece estar incompleto. Certifique-se de copiar o valor alfanumérico inteiro.', 
+        variant: 'destructive' 
+      });
+      return;
+    }
+
     setDiscoverLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('fetch-meta-pages', {
-        body: { accessToken: userAccessToken },
+        body: { accessToken: trimmedToken },
       });
+      
       if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      
+      if (data?.error) {
+        // Handle specific Meta error codes if returned in the response structure
+        const errorMsg = typeof data.error === 'string' ? data.error : JSON.stringify(data.error);
+        
+        if (errorMsg.toLowerCase().includes('parse access token') || errorMsg.includes('Invalid OAuth access token')) {
+          throw new Error('Token inválido ou mal formatado. Gere um novo token no Graph API Explorer.');
+        }
+        
+        if (errorMsg.includes('expired')) {
+          throw new Error('O token expirou. Por favor, gere um novo token.');
+        }
+
+        throw new Error(errorMsg);
+      }
+
       setMetaPages(data?.pages || []);
+      
       if ((data?.pages || []).length === 0) {
-        toast({ title: 'Nenhuma página encontrada', description: 'Esse token não tem páginas associadas.' });
+        toast({ title: 'Nenhuma página encontrada', description: 'Esse token não tem páginas associadas ou permissões suficientes (pages_show_list).' });
+      } else {
+        toast({ title: 'Sucesso', description: `${data.pages.length} página(s) carregada(s).` });
       }
     } catch (e: any) {
-      toast({ title: 'Erro ao buscar páginas', description: e.message, variant: 'destructive' });
+      console.error('Error fetching meta pages:', e);
+      toast({ 
+        title: 'Erro na conexão', 
+        description: e.message || 'Não foi possível validar o token. Verifique sua conexão e tente novamente.', 
+        variant: 'destructive' 
+      });
       setMetaPages([]);
     } finally {
       setDiscoverLoading(false);
