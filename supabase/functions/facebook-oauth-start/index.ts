@@ -105,7 +105,7 @@ serve(async (req) => {
     await adminSupabase.from("facebook_oauth_states").delete().lt("expires_at", new Date().toISOString());
 
     const redirectUri = `${Deno.env.get("SUPABASE_URL")}/functions/v1/facebook-oauth-callback`;
-    const authUrl = new URL("https://www.facebook.com/v19.0/dialog/oauth");
+    const authUrl = new URL("https://www.facebook.com/v21.0/dialog/oauth");
     authUrl.searchParams.set("client_id", appId);
     authUrl.searchParams.set("redirect_uri", redirectUri);
     authUrl.searchParams.set("state", state);

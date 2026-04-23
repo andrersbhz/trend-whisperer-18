@@ -167,38 +167,32 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
   };
 
   const startOauthPopup = async () => {
-    // Open popup synchronously (required to avoid popup blockers)
-    const popup = window.open('about:blank', 'facebook-oauth', getPopupFeatures());
-    if (!popup) {
-      setOauthLoading(false);
-      toast({
-        title: 'Popup bloqueado',
-        description: 'Permita popups para este site e tente novamente.',
-        variant: 'destructive',
-      });
-      return;
-    }
-    popupRef.current = popup;
-
-    try {
-      popup.document.write(`<!doctype html><html><head><title>Conectando ao Facebook…</title><meta charset="utf-8"/></head><body style="font-family:-apple-system,sans-serif;background:#0b0b14;color:#e5e5e5;display:flex;align-items:center;justify-content:center;height:100vh;margin:0"><div style="text-align:center"><div style="font-size:2rem">⏳</div><p>Preparando conexão segura…</p></div></body></html>`);
-    } catch {}
-
+    setOauthLoading(true);
+    
     try {
       const authUrl = await requestFacebookAuthUrl(returnUrl);
-      popup.location.replace(authUrl);
+      
+      // Try to open as popup first
+      const popup = window.open(authUrl, 'facebook-oauth', getPopupFeatures());
+      
+      if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+        // If popup is blocked, fallback to direct redirect
+        console.warn('Popup blocked or failed, redirecting main window...');
+        window.location.href = authUrl;
+        return;
+      }
+      
+      popupRef.current = popup;
       popup.focus();
       watchPopupClosed(popup);
     } catch (e: any) {
-      try { popup.close(); } catch {}
       setOauthLoading(false);
-      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+      toast({ title: 'Erro ao conectar', description: e.message, variant: 'destructive' });
     }
   };
 
   const handleOAuthConnect = async () => {
     if (oauthLoading) return;
-    setOauthLoading(true);
     await startOauthPopup();
   };
 

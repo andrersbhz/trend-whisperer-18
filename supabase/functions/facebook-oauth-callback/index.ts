@@ -6,7 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, content-type",
 };
 
-const GRAPH_API = "https://graph.facebook.com/v19.0";
+const GRAPH_API = "https://graph.facebook.com/v21.0";
 const DEFAULT_RETURN_URL = "https://forex.a3solucoesdigitais.com/settings";
 
 function getReturnUrlFromState(state: string | null) {
