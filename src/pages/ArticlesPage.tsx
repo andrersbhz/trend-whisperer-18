@@ -285,6 +285,83 @@ const ArticlesPage = () => {
     );
   }
 
+  const ArticleCard = ({ article, idx }: { article: any, idx: number }) => (
+    <Card
+      key={article.id}
+      className={`glass-card hover-lift overflow-hidden animate-float-up ${article.status === 'failed' ? 'border-destructive/30' : ''}`}
+      style={{ animationDelay: `${Math.min(idx, 10) * 30}ms` }}
+    >
+      <CardContent className="p-0">
+        <div className="flex items-stretch">
+          <div className="relative w-20 sm:w-28 shrink-0 bg-secondary/40 overflow-hidden">
+            {article.featured_image_url ? (
+              <img
+                src={article.featured_image_url}
+                alt={article.title}
+                className="absolute inset-0 w-full h-full object-cover"
+                loading="lazy"
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/10 to-accent/10">
+                <FileText className="h-6 w-6 text-muted-foreground/60" />
+              </div>
+            )}
+          </div>
+
+          <div className="flex-1 min-w-0 p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                <Badge className={`${statusColors[article.status] || ''} text-[10px] sm:text-xs`} variant="secondary">
+                  {statusLabels[article.status] || article.status}
+                </Badge>
+                <span className="text-[10px] sm:text-xs text-muted-foreground capitalize">{article.category}</span>
+              </div>
+              <h3 className="font-semibold text-foreground text-sm sm:text-base line-clamp-2 sm:truncate leading-snug">{article.title}</h3>
+              {article.seo_keyword && (
+                <p className="text-[11px] sm:text-xs text-muted-foreground mt-1 truncate">
+                  🔑 <span className="text-primary">{article.seo_keyword}</span>
+                </p>
+              )}
+            </div>
+
+            <div className="flex gap-1 shrink-0 self-end sm:self-auto">
+              <Button size="sm" variant="ghost" onClick={() => handlePreview(article.id)} className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground" title="Visualizar">
+                <Eye className="h-4 w-4" />
+              </Button>
+              {article.status === 'failed' && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 w-8 p-0 text-warning hover:text-warning hover:bg-warning/10"
+                  onClick={() => handleRetry(article.id)}
+                  disabled={retrying === article.id}
+                  title="Tentar novamente"
+                >
+                  {retrying === article.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
+                </Button>
+              )}
+              {(article.status === 'ready' || article.status === 'draft') && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 w-8 p-0 text-primary hover:text-primary hover:bg-primary/10"
+                  onClick={() => handlePublish(article.id)}
+                  disabled={publishing === article.id}
+                  title="Publicar"
+                >
+                  {publishing === article.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                </Button>
+              )}
+              <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => handleDelete(article.id)} title="Excluir">
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -341,23 +418,23 @@ const ArticlesPage = () => {
 
         <TabsContent value="todos">
           {articles.length === 0 ? (
-        <Card className="glass-card">
-          <CardContent className="py-16 text-center">
-            <div className="mx-auto w-16 h-16 rounded-full gradient-primary/20 flex items-center justify-center mb-4 bg-primary/10">
-              <FileText className="h-8 w-8 text-primary" />
+            <Card className="glass-card">
+              <CardContent className="py-16 text-center">
+                <div className="mx-auto w-16 h-16 rounded-full gradient-primary/20 flex items-center justify-center mb-4 bg-primary/10">
+                  <FileText className="h-8 w-8 text-primary" />
+                </div>
+                <p className="text-foreground font-medium">Nenhum artigo encontrado</p>
+                <p className="text-sm text-muted-foreground mt-1">Clique em "Gerar Artigos" acima para começar</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-3 sm:gap-4">
+              {articles.map((article, idx) => (
+                <ArticleCard key={article.id} article={article} idx={idx} />
+              ))}
             </div>
-            <p className="text-foreground font-medium">Nenhum artigo encontrado</p>
-            <p className="text-sm text-muted-foreground mt-1">Clique em "Gerar Artigos" acima para começar</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-3 sm:gap-4">
-          {articles.map((article, idx) => (
-            <Card
-              key={article.id}
-              className={`glass-card hover-lift overflow-hidden animate-float-up ${article.status === 'failed' ? 'border-destructive/30' : ''}`}
-              style={{ animationDelay: `${Math.min(idx, 10) * 30}ms` }}
-            >
+          )}
+        </TabsContent>
               <CardContent className="p-0">
                 <div className="flex items-stretch">
                   {/* Thumbnail */}
