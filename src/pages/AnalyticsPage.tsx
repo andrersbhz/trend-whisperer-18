@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import {
   BarChart3, TrendingUp, TrendingDown, Eye, MousePointerClick, Users,
   Lightbulb, RefreshCw, Loader2, Globe, Clock, ArrowUpRight, Percent,
-  FileText, Smartphone, Monitor, Tablet, Heart, Send, Sparkles,
+  FileText, Smartphone, Monitor, Tablet, Heart, Send, Sparkles, Facebook
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
