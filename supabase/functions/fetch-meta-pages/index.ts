@@ -16,7 +16,16 @@ serve(async (req) => {
     const { accessToken } = await req.json();
     if (!accessToken) throw new Error("accessToken is required");
 
-    // Fetch all pages the user manages (use query param for better compatibility)
+    // 1. Debug token to check validity and scopes
+    const debugUrl = `${GRAPH_API}/debug_token?input_token=${encodeURIComponent(accessToken)}&access_token=${encodeURIComponent(accessToken)}`;
+    const debugRes = await fetch(debugUrl);
+    let debugInfo = null;
+    if (debugRes.ok) {
+      const data = await debugRes.json();
+      debugInfo = data.data;
+    }
+
+    // 2. Fetch all pages the user manages
     const fields = "id,name,access_token,category,picture{url},fan_count,instagram_business_account{id,name,username,profile_picture_url,followers_count}";
     const pagesRes = await fetch(
       `${GRAPH_API}/me/accounts?fields=${fields}&limit=100&access_token=${encodeURIComponent(accessToken)}`
@@ -47,7 +56,7 @@ serve(async (req) => {
         : null,
     }));
 
-    return new Response(JSON.stringify({ pages }), {
+    return new Response(JSON.stringify({ pages, debug: debugInfo }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error: any) {
