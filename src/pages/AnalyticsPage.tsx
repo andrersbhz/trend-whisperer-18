@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import {
   BarChart3, TrendingUp, TrendingDown, Eye, MousePointerClick, Users,
   Lightbulb, RefreshCw, Loader2, Globe, Clock, ArrowUpRight, Percent,
-  FileText, Smartphone, Monitor, Tablet, Facebook, Instagram, Heart, Share2,
+  FileText, Smartphone, Monitor, Tablet, Heart, Share2,
   Twitter, Linkedin, Send,
 } from 'lucide-react';
 import {
@@ -38,8 +38,6 @@ interface AnalyticsData {
 interface SocialMetrics {
   publish_log: {
     wordpress: { total: number; success: number; failed: number; recent: { date: string; url: string }[] };
-    facebook: { total: number; success: number; failed: number };
-    instagram: { total: number; success: number; failed: number };
   };
   jetpack: {
     posts_with_sharing: number;
@@ -49,8 +47,6 @@ interface SocialMetrics {
   summary: {
     total_published_wp: number;
     total_shared_social: number;
-    total_facebook: number;
-    total_instagram: number;
     total_twitter: number;
     total_linkedin: number;
     total_tumblr: number;
@@ -99,8 +95,6 @@ const AnalyticsPage = () => {
   const [loadingTips, setLoadingTips] = useState(false);
   const [gaConnected, setGaConnected] = useState(false);
   const [articleStats, setArticleStats] = useState({ total: 0, published: 0, failed: 0 });
-  const [metaMetrics, setMetaMetrics] = useState<any[] | null>(null);
-  const [loadingMeta, setLoadingMeta] = useState(false);
   const [jetpackStats, setJetpackStats] = useState<JetpackStats | null>(null);
   const [loadingJetpack, setLoadingJetpack] = useState(false);
 
@@ -109,7 +103,7 @@ const AnalyticsPage = () => {
     checkGaConnection();
     fetchArticleStats();
     fetchSocialMetrics();
-    fetchMetaMetrics();
+    
     fetchJetpackStats();
   }, [user]);
 
@@ -147,32 +141,6 @@ const AnalyticsPage = () => {
     }
   };
 
-  const fetchMetaMetrics = async () => {
-    if (!user) return;
-    setLoadingMeta(true);
-    try {
-      const data = await runBackendQuery(() =>
-        supabase.functions.invoke('fetch-meta-metrics', {
-          body: { userId: user.id },
-        }),
-      );
-      if (data?.pages) {
-        // Filter out pages that only have errors (expired token, etc.)
-        const validPages = (data.pages as any[]).filter((pg: any) => {
-          const hasFbError = pg.facebook?.error;
-          const hasFbData = pg.facebook && !pg.facebook.error && (pg.facebook.fan_count || pg.facebook.followers_count);
-          const hasIgData = pg.instagram && !pg.instagram.error && (pg.instagram.followers_count || pg.instagram.media_count);
-          return hasFbData || hasIgData;
-        });
-        setMetaMetrics(validPages.length > 0 ? validPages : null);
-      }
-    } catch (error) {
-      console.error('Meta metrics error:', error);
-      setMetaMetrics(null);
-    } finally {
-      setLoadingMeta(false);
-    }
-  };
 
   const fetchJetpackStats = async () => {
     if (!user) return;
@@ -296,8 +264,6 @@ const AnalyticsPage = () => {
         {[
           { icon: Globe, label: 'Publicados WP', value: sm?.total_published_wp || 0, color: 'text-primary' },
           { icon: Share2, label: 'Compartilhados', value: sm?.total_shared_social || 0, color: 'text-accent' },
-          { icon: Facebook, label: 'Facebook', value: sm?.total_facebook || 0, color: 'text-accent' },
-          { icon: Instagram, label: 'Instagram', value: sm?.total_instagram || 0, color: 'text-primary' },
           { icon: Twitter, label: 'Twitter/X', value: sm?.total_twitter || 0, color: 'text-muted-foreground' },
           { icon: Linkedin, label: 'LinkedIn', value: sm?.total_linkedin || 0, color: 'text-muted-foreground' },
         ].map((s) => (
@@ -338,8 +304,6 @@ const AnalyticsPage = () => {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[
             { label: 'WordPress', total: pl.wordpress.total, success: pl.wordpress.success, failed: pl.wordpress.failed, color: 'text-primary' },
-            { label: 'Facebook', total: pl.facebook.total, success: pl.facebook.success, failed: pl.facebook.failed, color: 'text-accent' },
-            { label: 'Instagram', total: pl.instagram.total, success: pl.instagram.success, failed: pl.instagram.failed, color: 'text-primary' },
           ].map((p) => (
             <Card key={p.label} className="glass-card">
               <CardContent className="p-4">
