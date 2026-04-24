@@ -140,10 +140,12 @@ const Dashboard = () => {
       await runBackendMutation(() =>
         supabase
           .from('user_settings')
-          .update({ writer_prompt: writerPrompt } as any)
-          .eq('user_id', user.id),
+          .upsert(
+            { user_id: user.id, writer_prompt: writerPrompt } as any,
+            { onConflict: 'user_id' },
+          ),
       );
-      toast({ title: 'Prompt salvo!', description: 'O perfil do escritor foi atualizado.' });
+      toast({ title: 'Prompt salvo!', description: 'O perfil do escritor foi atualizado e será usado em todas as gerações.' });
     } catch (error) {
       toast({ title: 'Erro', description: getErrorMessage(error), variant: 'destructive' });
     } finally {
