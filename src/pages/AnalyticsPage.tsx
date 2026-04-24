@@ -937,25 +937,61 @@ const AnalyticsPage = () => {
               <CardTitle className="text-lg text-foreground">Fontes de Tráfego</CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={250}>
-                <PieChart>
-                  <Pie
-                    data={analytics.trafficSources}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={50}
-                    outerRadius={80}
-                    dataKey="value"
-                    nameKey="source"
-                    label={({ source, percent }) => `${source} ${(percent * 100).toFixed(0)}%`}
-                  >
-                    {analytics.trafficSources.map((_, index) => (
-                      <Cell key={index} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip contentStyle={customTooltipStyle} />
-                </PieChart>
-              </ResponsiveContainer>
+              <div className="relative">
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <defs>
+                      {analytics.trafficSources.map((_, index) => (
+                        <filter key={`shadow-${index}`} id={`shadow-${index}`} height="200%">
+                          <feDropShadow dx="0" dy="3" stdDeviation="3" floodOpacity="0.5" />
+                        </filter>
+                      ))}
+                    </defs>
+                    <Pie
+                      data={analytics.trafficSources}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={100}
+                      paddingAngle={5}
+                      dataKey="value"
+                      nameKey="source"
+                      stroke="none"
+                    >
+                      {analytics.trafficSources.map((_, index) => (
+                        <Cell 
+                          key={index} 
+                          fill={CHART_COLORS[index % CHART_COLORS.length]} 
+                          style={{ 
+                            filter: `url(#shadow-${index})`,
+                            cursor: 'pointer',
+                            transition: 'all 0.3s ease'
+                          }}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      contentStyle={{...customTooltipStyle, border: 'none', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3)'}}
+                    />
+                    <Legend 
+                      verticalAlign="bottom" 
+                      height={36}
+                      formatter={(value, entry: any) => (
+                        <span className="text-xs font-medium text-muted-foreground">{value}</span>
+                      )}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                {/* Central overlay for semi-3D donut effect */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[110px] h-[110px] rounded-full bg-background/20 backdrop-blur-sm border border-white/5 pointer-events-none flex items-center justify-center shadow-inner">
+                  <div className="text-center">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Total</p>
+                    <p className="text-lg font-bold text-foreground">
+                      {analytics.trafficSources.reduce((acc, curr) => acc + curr.value, 0).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         )}
