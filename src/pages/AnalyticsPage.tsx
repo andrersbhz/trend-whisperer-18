@@ -103,6 +103,7 @@ const AnalyticsPage = () => {
   const [loadingMeta, setLoadingMeta] = useState(false);
   const [jetpackStats, setJetpackStats] = useState<JetpackStats | null>(null);
   const [loadingJetpack, setLoadingJetpack] = useState(false);
+  const [chartType, setChartType] = useState<'area' | 'bar'>('area');
 
   const [dateRange, setDateRange] = useState({ from: '', to: '' });
 
@@ -841,32 +842,66 @@ const AnalyticsPage = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {analytics?.dailyViews && analytics.dailyViews.length > 0 && (
           <Card className="glass-card lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="text-lg text-foreground">Tráfego dos Últimos 30 Dias</CardTitle>
-              <CardDescription>Visualizações, usuários e sessões diárias</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-lg text-foreground">Tráfego dos Últimos {dateRange.from ? 'Dias Selecionados' : '30 Dias'}</CardTitle>
+                <CardDescription>Visualizações, usuários e sessões diárias</CardDescription>
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  variant={chartType === 'area' ? 'secondary' : 'ghost'} 
+                  size="sm" 
+                  onClick={() => setChartType('area')}
+                  className="h-8 w-8 p-0"
+                  title="Gráfico de Área"
+                >
+                  <TrendingUp className="h-4 w-4" />
+                </Button>
+                <Button 
+                  variant={chartType === 'bar' ? 'secondary' : 'ghost'} 
+                  size="sm" 
+                  onClick={() => setChartType('bar')}
+                  className="h-8 w-8 p-0"
+                  title="Gráfico de Barras"
+                >
+                  <BarChart3 className="h-4 w-4" />
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
-                <AreaChart data={analytics.dailyViews}>
-                  <defs>
-                    <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(145, 80%, 45%)" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="hsl(145, 80%, 45%)" stopOpacity={0} />
-                    </linearGradient>
-                    <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(320, 80%, 55%)" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="hsl(320, 80%, 55%)" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(260, 20%, 18%)" />
-                  <XAxis dataKey="date" fontSize={11} stroke="hsl(260, 10%, 45%)" />
-                  <YAxis fontSize={11} stroke="hsl(260, 10%, 45%)" />
-                  <Tooltip contentStyle={customTooltipStyle} />
-                  <Legend />
-                  <Area type="monotone" dataKey="views" name="Views" stroke="hsl(145, 80%, 45%)" fill="url(#colorViews)" strokeWidth={2} />
-                  <Area type="monotone" dataKey="users" name="Usuários" stroke="hsl(320, 80%, 55%)" fill="url(#colorUsers)" strokeWidth={2} />
-                  <Line type="monotone" dataKey="sessions" name="Sessões" stroke="hsl(275, 70%, 50%)" strokeWidth={2} dot={false} />
-                </AreaChart>
+                {chartType === 'bar' ? (
+                  <BarChart data={analytics.dailyViews}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(260, 20%, 18%)" />
+                    <XAxis dataKey="date" fontSize={11} stroke="hsl(260, 10%, 45%)" />
+                    <YAxis fontSize={11} stroke="hsl(260, 10%, 45%)" />
+                    <Tooltip contentStyle={customTooltipStyle} />
+                    <Legend />
+                    <Bar dataKey="views" name="Views" fill="hsl(145, 80%, 45%)" radius={[3, 3, 0, 0]} />
+                    <Bar dataKey="users" name="Usuários" fill="hsl(320, 80%, 55%)" radius={[3, 3, 0, 0]} />
+                  </BarChart>
+                ) : (
+                  <AreaChart data={analytics.dailyViews}>
+                    <defs>
+                      <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(145, 80%, 45%)" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="hsl(145, 80%, 45%)" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(320, 80%, 55%)" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="hsl(320, 80%, 55%)" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(260, 20%, 18%)" />
+                    <XAxis dataKey="date" fontSize={11} stroke="hsl(260, 10%, 45%)" />
+                    <YAxis fontSize={11} stroke="hsl(260, 10%, 45%)" />
+                    <Tooltip contentStyle={customTooltipStyle} />
+                    <Legend />
+                    <Area type="monotone" dataKey="views" name="Views" stroke="hsl(145, 80%, 45%)" fill="url(#colorViews)" strokeWidth={2} />
+                    <Area type="monotone" dataKey="users" name="Usuários" stroke="hsl(320, 80%, 55%)" fill="url(#colorUsers)" strokeWidth={2} />
+                    <Line type="monotone" dataKey="sessions" name="Sessões" stroke="hsl(275, 70%, 50%)" strokeWidth={2} dot={false} />
+                  </AreaChart>
+                )}
               </ResponsiveContainer>
             </CardContent>
           </Card>
