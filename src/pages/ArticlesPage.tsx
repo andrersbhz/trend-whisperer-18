@@ -103,6 +103,11 @@ const ArticlesPage = () => {
     if (!user) return;
     setGenerating(true);
     try {
+      // First update trends before generating, as requested
+      await supabase.functions.invoke('fetch-trends', {
+        body: { userId: user.id },
+      });
+
       const { data, error } = await supabase.functions.invoke('generate-articles', {
         body: { userId: user.id, forceCategory: category },
       });
