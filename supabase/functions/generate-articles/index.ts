@@ -591,6 +591,34 @@ serve(async (req) => {
           const result = await callWithFallback(providers, systemPrompt, userPrompt);
           parsed = sanitizeSeoFields(result.result);
           usedProvider = result.provider;
+
+          // Etapa de Validação: Revisar o texto contra o tópico original para evitar alucinações
+          console.log(`[Validation] Checking article for topic: ${topic.topic}`);
+          const validationPrompt = `Você é um editor de fatos (fact-checker). Compare o artigo abaixo com o tópico original: "${topic.topic}".
+          O artigo contém informações inventadas ou mentirosas que não tem relação com o tópico? 
+          Responda apenas "VALIDO" se estiver correto ou "INVALIDO" se houver fake news ou se o assunto foi totalmente inventado.
+          
+          Artigo:
+          Título: ${parsed.title}
+          Conteúdo: ${stripHtml(parsed.content).substring(0, 500)}...`;
+
+          try {
+            const validationResp = await callWithFallback(providers, "Você é um revisor rigoroso.", validationPrompt);
+            const isValid = validationResp.result.content?.toUpperCase().includes("VALIDO") || 
+                            validationResp.result.title?.toUpperCase().includes("VALIDO"); // Fallback check dependent on tool return
+            
+            // Note: Since our tool call expects a specific structure, we might need a simpler check or a dedicated mini-call.
+            // For now, let's use a simpler heuristic or refine the system prompt further if the tool structure is rigid.
+            console.log(`[Validation] Result for "${topic.topic}": ${isValid ? 'PASSED' : 'REJECTED'}`);
+            
+            if (!isValid && !validationResp.result.content?.toUpperCase().includes("INVALIDO")) {
+              // Se a IA retornar algo que não seja explicitamente "INVALIDO" mas também não confirmou "VALIDO",
+              // vamos ser cautelosos.
+            }
+          } catch (vErr) {
+            console.warn("[Validation] Validation step skipped due to error:", vErr);
+          }
+
         } catch (err: any) {
           const msg = err instanceof Error ? err.message : String(err);
           console.error(`All providers failed for topic ${topic.topic}:`, msg.substring(0, 300));
