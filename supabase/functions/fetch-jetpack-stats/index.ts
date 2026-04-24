@@ -94,9 +94,19 @@ serve(async (req) => {
       }
     } catch (e) { console.log("Top posts not available:", e); }
 
-    // 3. Jetpack daily views (last 30 days)
+    // 3. Jetpack daily views (last 30 days or custom range)
     try {
-      const res = await fetch(`${wpUrl}/wp-json/wpcom/v2/stats/visits?unit=day&quantity=30`, { headers });
+      let quantity = 30;
+      if (dateRange?.from && dateRange?.to) {
+        const start = new Date(dateRange.from);
+        const end = new Date(dateRange.to);
+        const diffTime = Math.abs(end.getTime() - start.getTime());
+        quantity = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+        // Limit to 90 days to avoid API timeouts
+        quantity = Math.min(quantity, 90);
+      }
+
+      const res = await fetch(`${wpUrl}/wp-json/wpcom/v2/stats/visits?unit=day&quantity=${quantity}${dateRange?.to ? `&date=${dateRange.to}` : ""}`, { headers });
       if (res.ok) {
         const data = await res.json();
         result.available = true;
@@ -105,9 +115,11 @@ serve(async (req) => {
             date: d[0],
             views: d[1] || 0,
           }));
-        } else if (data.fields && data.data) {
-          // Alternative format
-          result.dailyViews = data.data;
+          
+          // If we have a range, filter explicitly to be sure
+          if (dateRange?.from) {
+            result.dailyViews = result.dailyViews.filter((d: any) => d.date >= dateRange.from);
+          }
         }
       }
     } catch (e) { console.log("Daily views not available:", e); }
