@@ -410,10 +410,10 @@ const ArticlesPage = () => {
       </div>
 
       <Tabs defaultValue="prontos" className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="prontos">Posts Prontos</TabsTrigger>
-          <TabsTrigger value="todos">Todos os Artigos</TabsTrigger>
-          <TabsTrigger value="categorias">Gerar por Categoria</TabsTrigger>
+        <TabsList className="mb-6 grid w-full max-w-md grid-cols-3 bg-secondary/50 p-1">
+          <TabsTrigger value="prontos" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">Posts Prontos</TabsTrigger>
+          <TabsTrigger value="todos" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">Todos</TabsTrigger>
+          <TabsTrigger value="categorias" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">Categorias</TabsTrigger>
         </TabsList>
 
         <TabsContent value="todos">

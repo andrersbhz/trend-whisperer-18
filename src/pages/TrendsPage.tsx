@@ -142,11 +142,11 @@ const TrendsPage = () => {
               Gerar ({selectedTopics.length})
             </Button>
           )}
-          <Button onClick={handleFetchTrends} disabled={fetching || generating} variant="outline" size="sm">
+          <Button onClick={handleFetchTrends} disabled={fetching || generating} variant="outline" size="sm" className="shadow-sm">
             {fetching ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
             {fetching ? "Atualizando..." : "Atualizar"}
           </Button>
-          <Button onClick={() => handleGenerate()} disabled={generating || fetching} className="gradient-primary">
+          <Button onClick={() => handleGenerate()} disabled={generating || fetching} className="gradient-primary shadow-neon-lilac hover:scale-[1.02] transition-transform">
             {generating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
             Atualizar e Gerar Tudo
           </Button>
