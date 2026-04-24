@@ -103,6 +103,7 @@ const AnalyticsPage = () => {
   const [loadingMeta, setLoadingMeta] = useState(false);
   const [jetpackStats, setJetpackStats] = useState<JetpackStats | null>(null);
   const [loadingJetpack, setLoadingJetpack] = useState(false);
+  const [chartType, setChartType] = useState<'area' | 'bar'>('area');
 
   const [dateRange, setDateRange] = useState({ from: '', to: '' });
 
