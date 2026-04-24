@@ -17,7 +17,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { userId } = await req.json();
+    const { userId, dateRange } = await req.json();
     if (!userId) throw new Error("userId is required");
 
     const supabase = createClient(

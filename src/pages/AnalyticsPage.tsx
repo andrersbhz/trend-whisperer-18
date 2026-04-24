@@ -104,6 +104,8 @@ const AnalyticsPage = () => {
   const [jetpackStats, setJetpackStats] = useState<JetpackStats | null>(null);
   const [loadingJetpack, setLoadingJetpack] = useState(false);
 
+  const [dateRange, setDateRange] = useState({ from: '', to: '' });
+
   useEffect(() => {
     if (!user) return;
     checkGaConnection();
@@ -111,7 +113,7 @@ const AnalyticsPage = () => {
     fetchSocialMetrics();
     fetchMetaMetrics();
     fetchJetpackStats();
-  }, [user]);
+  }, [user, dateRange]);
 
   const fetchArticleStats = async () => {
     if (!user) return;
@@ -135,7 +137,7 @@ const AnalyticsPage = () => {
     try {
       const data = await runBackendQuery(() =>
         supabase.functions.invoke('fetch-social-metrics', {
-          body: { userId: user.id },
+          body: { userId: user.id, dateRange },
         }),
       );
 
@@ -153,7 +155,7 @@ const AnalyticsPage = () => {
     try {
       const data = await runBackendQuery(() =>
         supabase.functions.invoke('fetch-meta-metrics', {
-          body: { userId: user.id },
+          body: { userId: user.id, dateRange },
         }),
       );
       if (data?.pages) {
@@ -179,7 +181,7 @@ const AnalyticsPage = () => {
     setLoadingJetpack(true);
     try {
       const data = await runBackendQuery(() =>
-        supabase.functions.invoke('fetch-jetpack-stats', { body: { userId: user.id } }),
+        supabase.functions.invoke('fetch-jetpack-stats', { body: { userId: user.id, dateRange } }),
       );
       if (data?.jetpack?.available) {
         setJetpackStats(data.jetpack);
@@ -224,7 +226,7 @@ const AnalyticsPage = () => {
     try {
       const data = await runBackendQuery(() =>
         supabase.functions.invoke('fetch-analytics', {
-          body: { userId: user?.id },
+          body: { userId: user?.id, dateRange },
         }),
       );
 
@@ -761,20 +763,52 @@ const AnalyticsPage = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-bold neon-text-lilac">Analytics</h1>
           <p className="text-muted-foreground text-sm mt-1">Métricas completas e insights do seu blog</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={generateTips} disabled={loadingTips || !analytics} className="border-accent/30 hover:bg-accent/10 text-accent">
-            {loadingTips ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Lightbulb className="h-4 w-4 mr-2" />}
-            Dicas IA
-          </Button>
-          <Button onClick={fetchAnalytics} className="gradient-primary text-primary-foreground shadow-neon-lilac">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Atualizar
-          </Button>
+        
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2 bg-secondary/30 p-1 rounded-lg border border-white/5">
+            <div className="flex items-center gap-2 px-2">
+              <Clock className="h-4 w-4 text-muted-foreground" />
+              <input 
+                type="date" 
+                value={dateRange.from}
+                onChange={(e) => setDateRange(prev => ({ ...prev, from: e.target.value }))}
+                className="bg-transparent text-xs text-foreground outline-none border-none [color-scheme:dark]"
+              />
+              <span className="text-muted-foreground text-xs">até</span>
+              <input 
+                type="date" 
+                value={dateRange.to}
+                onChange={(e) => setDateRange(prev => ({ ...prev, to: e.target.value }))}
+                className="bg-transparent text-xs text-foreground outline-none border-none [color-scheme:dark]"
+              />
+              {(dateRange.from || dateRange.to) && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setDateRange({ from: '', to: '' })}
+                  className="h-6 w-6 p-0 hover:bg-white/10"
+                >
+                  <RefreshCw className="h-3 w-3" />
+                </Button>
+              )}
+            </div>
+          </div>
+
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={generateTips} disabled={loadingTips || !analytics} className="border-accent/30 hover:bg-accent/10 text-accent h-9">
+              {loadingTips ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Lightbulb className="h-4 w-4 mr-2" />}
+              Dicas IA
+            </Button>
+            <Button onClick={fetchAnalytics} className="gradient-primary text-primary-foreground shadow-neon-lilac h-9">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Atualizar
+            </Button>
+          </div>
         </div>
       </div>
 
