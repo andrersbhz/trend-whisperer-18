@@ -849,18 +849,20 @@ const AnalyticsPage = () => {
               </div>
               <div className="flex gap-2">
                 <Button 
-                  variant="ghost" 
+                  variant={chartType === 'area' ? 'secondary' : 'ghost'} 
                   size="sm" 
-                  onClick={() => (window as any)._chartType = 'area'}
+                  onClick={() => setChartType('area')}
                   className="h-8 w-8 p-0"
+                  title="Gráfico de Área"
                 >
                   <TrendingUp className="h-4 w-4" />
                 </Button>
                 <Button 
-                  variant="ghost" 
+                  variant={chartType === 'bar' ? 'secondary' : 'ghost'} 
                   size="sm" 
-                  onClick={() => (window as any)._chartType = 'bar'}
+                  onClick={() => setChartType('bar')}
                   className="h-8 w-8 p-0"
+                  title="Gráfico de Barras"
                 >
                   <BarChart3 className="h-4 w-4" />
                 </Button>
@@ -868,7 +870,7 @@ const AnalyticsPage = () => {
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
-                {(window as any)._chartType === 'bar' ? (
+                {chartType === 'bar' ? (
                   <BarChart data={analytics.dailyViews}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(260, 20%, 18%)" />
                     <XAxis dataKey="date" fontSize={11} stroke="hsl(260, 10%, 45%)" />
