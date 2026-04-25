@@ -375,11 +375,19 @@ ${BASE_SYSTEM_PROMPT}`;
   return BASE_SYSTEM_PROMPT;
 }
 
-function buildUserPrompt(topic: string, category: string): string {
-  return `Escreva um artigo jornalístico completo sobre: "${topic}" (categoria: ${category}).
-Data de hoje: ${new Date().toLocaleDateString("pt-BR")}.
+function buildUserPrompt(topic: string, category: string, context?: string): string {
+  return `TÓPICO PRINCIPAL: "${topic}"
+CONTEXTO REAL (NOTÍCIA DO DIA): "${context || "Fatos reais associados ao termo de pesquisa em alta"}"
+CATEGORIA: ${category}
+DATA: ${new Date().toLocaleDateString("pt-BR")}
 
-IMPORTANTE: Conteúdo HTML entre 1800-2400 chars. Keyword no título, primeiro parágrafo, 1+ H2, meta description. Todos os campos SEO preenchidos. Subtítulos em negrito. Gere metadados para imagem de destaque. Use técnicas avançadas de SEO: LSI keywords, otimize para featured snippets, inclua perguntas frequentes como subtítulos, keyword de cauda longa.`;
+INSTRUÇÃO: Escreva um artigo jornalístico de ALTA VERACIDADE. Use o contexto real fornecido para evitar alucinações. Se o contexto for sobre um evento específico, descreva-o com precisão.
+
+REGRAS TÉCNICAS:
+- Conteúdo HTML entre 1800-2400 chars.
+- Keyword no título, lead (primeiro parágrafo), ao menos um H2 e meta description.
+- Use técnicas avançadas de SEO: LSI keywords, otimize para featured snippets.
+- Gere todos os metadados SEO e de imagem solicitados.`;
 }
 
 const MAX_GENERATION_BATCH = 2;
