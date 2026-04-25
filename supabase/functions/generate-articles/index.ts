@@ -445,8 +445,15 @@ serve(async (req) => {
       topics = manualTopics.map(t => typeof t === "string" ? { topic: t, category: forceCategory || "geral" } : t);
       console.log(`[Pipeline] Using ${topics.length} manual topics`);
     } else {
-      const { data: dbTopics } = await supabase.from("trending_topics").select("*").eq("user_id", userId).eq("used", false);
+      const userCategories: string[] = settings?.categories || ["esportes", "politica", "policia", "saude", "celebridades", "financas"];
+      const { data: dbTopics } = await supabase
+        .from("trending_topics")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("used", false)
+        .in("category", userCategories); // Apenas categorias marcadas pelo usuário
       topics = dbTopics || [];
+      console.log(`[Pipeline] Auto-generating from ${topics.length} topics in marked categories: ${userCategories.join(", ")}`);
     }
 
     const userCategories: string[] = forceCategory 
