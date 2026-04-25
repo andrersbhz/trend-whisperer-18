@@ -149,9 +149,9 @@ const SettingsPage = () => {
       }
 
       await runBackendMutation(() =>
-        hasExistingSettings
-          ? supabase.from('user_settings').update(payload as any).eq('user_id', user.id)
-          : supabase.from('user_settings').insert({ user_id: user.id, ...payload } as any),
+        supabase
+          .from('user_settings')
+          .upsert({ user_id: user.id, ...payload } as any, { onConflict: 'user_id' }),
       );
 
       setHasExistingSettings(true);
