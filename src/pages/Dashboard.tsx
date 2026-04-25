@@ -31,6 +31,8 @@ const Dashboard = () => {
   const [writerPrompt, setWriterPrompt] = useState(DEFAULT_WRITER_PROMPT);
   const [savingPrompt, setSavingPrompt] = useState(false);
   const [promptLoaded, setPromptLoaded] = useState(false);
+  const [trendingList, setTrendingList] = useState<any[]>([]);
+  const [loadingTrends, setLoadingTrends] = useState(true);
 
   const fetchStats = async () => {
     if (!user) return;
