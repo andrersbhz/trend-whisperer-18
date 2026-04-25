@@ -180,6 +180,9 @@ const SettingsPage = () => {
       if (settings.openai_api_key) {
         payload.openai_api_key = settings.openai_api_key;
       }
+      if (settings.azure_openai_api_key) {
+        payload.azure_openai_api_key = settings.azure_openai_api_key;
+      }
       if (settings.groq_api_key) {
         payload.groq_api_key = settings.groq_api_key;
       }
