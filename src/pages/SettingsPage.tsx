@@ -25,6 +25,9 @@ export interface UserSettings {
   google_analytics_property_id: string;
   gemini_api_key: string;
   openai_api_key: string;
+  azure_openai_api_key: string;
+  azure_openai_endpoint: string;
+  azure_openai_deployment_name: string;
   groq_api_key: string;
   categories: string[];
   articles_per_day: number;
