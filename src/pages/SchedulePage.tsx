@@ -371,9 +371,80 @@ const SchedulePage = () => {
                     />
                     <div className="min-w-0 flex-1 flex items-center justify-between gap-3">
                       <div className="min-w-0 flex-1">
-...
+                        <p className="font-medium text-foreground truncate">{article.title}</p>
+                        <div className="flex items-center gap-2 mt-1 flex-wrap">
+                          <Badge variant="secondary">{article.category}</Badge>
+                          {editingId === article.id ? (
+                            <div className="flex items-center gap-1.5">
+                              <Input
+                                type="datetime-local"
+                                value={editValue}
+                                onChange={(e) => setEditValue(e.target.value)}
+                                className="h-7 text-xs w-auto"
+                              />
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 px-2 text-primary"
+                                onClick={() => handleSave(article.id)}
+                                disabled={saving}
+                              >
+                                {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 px-2 text-muted-foreground"
+                                onClick={() => setEditingId(null)}
+                              >
+                                ✕
+                              </Button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => handleEdit(article)}
+                              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+                              title="Clique para editar data/hora"
+                            >
+                              <Clock className="h-3 w-3" />
+                              {article.scheduled_at &&
+                                format(new Date(article.scheduled_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                            </button>
+                          )}
+                        </div>
                       </div>
-                    </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className={`h-8 px-2 ${article.is_approved ? 'text-success hover:text-success/80' : 'text-muted-foreground hover:text-foreground'}`}
+                          onClick={() => handleToggleApproval(article.id, !!article.is_approved)}
+                          title={article.is_approved ? 'Clique para não postar' : 'Clique para postar'}
+                        >
+                          {article.is_approved ? <CheckCircle className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
+                          <span className="ml-1 text-[10px] hidden sm:inline">{article.is_approved ? 'Postar' : 'Não Postar'}</span>
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 px-2 text-destructive hover:text-destructive/80"
+                          onClick={() => handleDelete(article.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                        <Badge
+                          className={
+                            article.status === 'published'
+                              ? 'bg-success/20 text-success'
+                              : article.is_approved === false
+                                ? 'bg-muted text-muted-foreground'
+                                : 'bg-primary/20 text-primary'
+                          }
+                          variant="secondary"
+                        >
+                          {article.status === 'published' ? 'Publicado' : article.is_approved === false ? 'Pausado' : 'Agendado'}
+                        </Badge>
+                      </div>
                   </div>
                 </CardContent>
               </Card>
