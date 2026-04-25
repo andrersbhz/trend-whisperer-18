@@ -245,23 +245,23 @@ const TrendsPage = () => {
             )}
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 justify-end">
           {selectedTopics.length > 0 && (
             <Button 
               onClick={() => handleGenerate(topics.filter(t => selectedTopics.includes(t.id)))} 
               disabled={generating || fetching}
               variant="default"
-              className="gradient-primary shadow-neon-lilac"
+              className="gradient-primary shadow-neon-lilac order-1 sm:order-none w-full sm:w-auto"
             >
               {generating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
               Gerar Artigos com Selecionados ({selectedTopics.length})
             </Button>
           )}
-          <Button onClick={handleFetchTrends} disabled={fetching || generating} variant="outline" size="sm" className="shadow-sm">
+          <Button onClick={handleFetchTrends} disabled={fetching || generating} variant="outline" size="sm" className="shadow-sm order-3 sm:order-none flex-1 sm:flex-none">
             {fetching ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
             {fetching ? "Atualizando..." : "Atualizar"}
           </Button>
-          <Button onClick={() => handleGenerate()} disabled={generating || fetching} className="gradient-primary shadow-neon-lilac hover:scale-[1.02] transition-transform">
+          <Button onClick={() => handleGenerate()} disabled={generating || fetching} className="gradient-primary shadow-neon-lilac hover:scale-[1.02] transition-transform order-2 sm:order-none flex-1 sm:flex-none">
             {generating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
             Atualizar e Gerar Tudo
           </Button>
