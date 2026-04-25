@@ -2,7 +2,7 @@ import { PasswordInput } from '@/components/ui/password-input';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Microsoft, Loader2, CheckCircle2, XCircle, Wifi } from 'lucide-react';
+import { Database, Loader2, CheckCircle2, XCircle, Wifi } from 'lucide-react';
 import { forwardRef, useState } from 'react';
 import ConnectionCard from '@/components/ConnectionCard';
 import { supabase } from '@/integrations/supabase/client';
