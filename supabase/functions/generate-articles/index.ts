@@ -290,23 +290,39 @@ async function generateImageGemini(apiKey: string, title: string, category: stri
   const models = ["gemini-1.5-flash", "gemini-2.0-flash-exp"];
   for (const model of models) {
     try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+      console.log(`[Image] Attempting generation with Gemini model: ${model}`);
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
       const resp = await fetch(url, {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           contents: [{ parts: [{ text: IMAGE_PROMPT_TEMPLATE(title, category) }] }],
-          generationConfig: { responseModalities: ["IMAGE", "TEXT"] },
+          generationConfig: { 
+            responseModalities: ["IMAGE"],
+            // Limitamos a 1 candidato para economizar e ser mais rápido
+            candidateCount: 1
+          },
         }),
       });
-      if (!resp.ok) { console.warn(`Image model ${model} failed ${resp.status}`); continue; }
+      
+      if (!resp.ok) { 
+        const errText = await resp.text();
+        console.warn(`[Image] Gemini model ${model} failed with status ${resp.status}: ${errText.substring(0, 200)}`); 
+        continue; 
+      }
+      
       const data = await resp.json();
       const imgPart = data.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData?.mimeType?.startsWith("image/"));
+      
       if (imgPart?.inlineData) {
-        console.log(`Image generated with model: ${model}`);
+        console.log(`[Image] Success! Image generated with model: ${model}`);
         return `data:${imgPart.inlineData.mimeType};base64,${imgPart.inlineData.data}`;
+      } else {
+        console.warn(`[Image] Gemini model ${model} returned no image data. Full response: ${JSON.stringify(data).substring(0, 200)}`);
       }
-    } catch (err) { console.warn(`Image model ${model} error:`, err); }
+    } catch (err) { 
+      console.error(`[Image] Gemini model ${model} unexpected error:`, err); 
+    }
   }
   return null;
 }
