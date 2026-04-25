@@ -263,12 +263,8 @@ interface ProviderConfig {
 }
 
 async function callWithFallback(providers: ProviderConfig[], systemPrompt: string, userPrompt: string): Promise<{ result: AIResponse; provider: string }> {
-  // Reordena para garantir que Gemini (se presente) seja o primeiro
-  const sortedProviders = [...providers].sort((a, b) => {
-    if (a.name.toLowerCase().includes("gemini")) return -1;
-    if (b.name.toLowerCase().includes("gemini")) return 1;
-    return 0;
-  });
+  // A ordem já é definida na montagem do array 'providers' no handler principal.
+  const sortedProviders = providers;
 
   const errors: string[] = [];
   for (const provider of sortedProviders) {
