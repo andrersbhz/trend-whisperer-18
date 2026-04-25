@@ -244,10 +244,27 @@ const TrendsPage = () => {
                     {topic.context && (
                       <p className="text-xs text-muted-foreground mt-0.5 italic line-clamp-1">{topic.context}</p>
                     )}
-                    <div className="flex items-center gap-2 mt-1">
+                    <div className="flex flex-wrap items-center gap-2 mt-1">
                       <Badge variant="secondary">{topic.category}</Badge>
                       {topic.search_volume && (
                         <span className="text-xs text-muted-foreground">{topic.search_volume} buscas</span>
+                      )}
+                      {topic.source_name && (
+                        <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                          • Fonte: {topic.source_url ? (
+                            <a 
+                              href={topic.source_url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-primary hover:underline flex items-center gap-0.5"
+                            >
+                              {topic.source_name}
+                              <TrendingUp className="h-2 w-2" />
+                            </a>
+                          ) : (
+                            topic.source_name
+                          )}
+                        </span>
                       )}
                     </div>
                   </div>
