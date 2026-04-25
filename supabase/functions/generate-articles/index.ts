@@ -73,7 +73,8 @@ const ARTICLE_TOOL_PARAMS = {
 };
 
 async function callGeminiDirect(apiKey: string, systemPrompt: string, userPrompt: string): Promise<AIResponse> {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+  // Use v1 instead of v1beta for better stability
+  const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
   const functionDeclaration = {
     name: "create_article",
