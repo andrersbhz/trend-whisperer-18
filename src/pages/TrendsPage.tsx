@@ -199,8 +199,8 @@ const TrendsPage = () => {
   };
 
   const selectAllFiltered = () => {
-    const availableTopicIds = topics.filter(t => !t.used).map(t => t.id);
-    if (selectedTopics.length === availableTopicIds.length) {
+    const availableTopicIds = filteredAndSortedTopics.filter(t => !t.used).map(t => t.id);
+    if (selectedTopics.length === availableTopicIds.length && availableTopicIds.length > 0) {
       setSelectedTopics([]);
     } else {
       setSelectedTopics(availableTopicIds);
