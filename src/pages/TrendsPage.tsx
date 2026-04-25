@@ -337,9 +337,15 @@ const TrendsPage = () => {
                       {topic.search_volume && (
                         <span className="text-xs text-muted-foreground">{topic.search_volume} buscas</span>
                       )}
+                      {topic.update_count > 1 && (
+                        <Badge variant="outline" className="text-[10px] h-5 bg-blue-50 text-blue-600 border-blue-200">
+                          {topic.update_count}x hoje
+                        </Badge>
+                      )}
                       {topic.fetched_at && (
-                        <span className="text-[10px] text-muted-foreground">
-                          • {new Date(topic.fetched_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                        <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                          <Calendar className="h-2.5 w-2.5" />
+                          {new Date(topic.fetched_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       )}
                       {topic.source_name && (
