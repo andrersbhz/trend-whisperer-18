@@ -614,7 +614,6 @@ const ArticlesPage = () => {
           )}
         </DialogContent>
       </Dialog>
-      </Dialog>
     </div>
   );
 };
