@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
@@ -6,8 +6,23 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { RefreshCw, TrendingUp, Loader2, Sparkles } from 'lucide-react';
+import { 
+  RefreshCw, 
+  TrendingUp, 
+  Loader2, 
+  Sparkles, 
+  Filter, 
+  ArrowUpDown,
+  Calendar
+} from 'lucide-react';
 import { getErrorMessage, runBackendQuery } from '@/lib/backend';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const TrendsPage = () => {
   const { user } = useAuth();
@@ -19,6 +34,32 @@ const TrendsPage = () => {
   const [generating, setGenerating] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [refreshInterval, setRefreshInterval] = useState(30); // minutos
+  const [sourceFilter, setSourceFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<"recent" | "oldest">("recent");
+
+  const sources = useMemo(() => {
+    const uniqueSources = new Set<string>();
+    topics.forEach(t => {
+      if (t.source_name) uniqueSources.add(t.source_name);
+    });
+    return Array.from(uniqueSources).sort();
+  }, [topics]);
+
+  const filteredAndSortedTopics = useMemo(() => {
+    let result = [...topics];
+
+    if (sourceFilter !== "all") {
+      result = result.filter(t => t.source_name === sourceFilter);
+    }
+
+    result.sort((a, b) => {
+      const dateA = new Date(a.fetched_at || 0).getTime();
+      const dateB = new Date(b.fetched_at || 0).getTime();
+      return sortBy === "recent" ? dateB - dateA : dateA - dateB;
+    });
+
+    return result;
+  }, [topics, sourceFilter, sortBy]);
 
   const fetchTopics = async () => {
     if (!user) return;
@@ -158,8 +199,8 @@ const TrendsPage = () => {
   };
 
   const selectAllFiltered = () => {
-    const availableTopicIds = topics.filter(t => !t.used).map(t => t.id);
-    if (selectedTopics.length === availableTopicIds.length) {
+    const availableTopicIds = filteredAndSortedTopics.filter(t => !t.used).map(t => t.id);
+    if (selectedTopics.length === availableTopicIds.length && availableTopicIds.length > 0) {
       setSelectedTopics([]);
     } else {
       setSelectedTopics(availableTopicIds);
@@ -212,27 +253,59 @@ const TrendsPage = () => {
         </div>
       </div>
 
-      {topics.length === 0 ? (
+      <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between bg-card p-4 rounded-lg border shadow-sm">
+        <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <Select value={sourceFilter} onValueChange={setSourceFilter}>
+              <SelectTrigger className="w-[180px] h-9">
+                <SelectValue placeholder="Filtrar por fonte" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as fontes</SelectItem>
+                {sources.map(source => (
+                  <SelectItem key={source} value={source}>{source}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+            <Select value={sortBy} onValueChange={(v: any) => setSortBy(v)}>
+              <SelectTrigger className="w-[180px] h-9">
+                <SelectValue placeholder="Ordenar" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="recent">Mais recentes</SelectItem>
+                <SelectItem value="oldest">Mais antigos</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 px-1">
+          <Checkbox 
+            id="select-all"
+            checked={selectedTopics.length > 0 && selectedTopics.length === filteredAndSortedTopics.filter(t => !t.used).length}
+            onCheckedChange={selectAllFiltered}
+          />
+          <label htmlFor="select-all" className="text-sm font-medium cursor-pointer select-none">
+            Selecionar {sourceFilter !== "all" ? "desta fonte" : "todos disponíveis"}
+          </label>
+        </div>
+      </div>
+
+      {filteredAndSortedTopics.length === 0 ? (
         <Card className="shadow-card">
           <CardContent className="py-16 text-center">
             <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">Nenhuma tendência carregada.</p>
-            <p className="text-sm text-muted-foreground mt-1">Clique em "Atualizar Tendências" para buscar</p>
+            <p className="text-muted-foreground">Nenhuma tendência encontrada com estes filtros.</p>
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-3">
-          <div className="flex items-center gap-2 mb-2 px-1">
-            <Checkbox 
-              id="select-all"
-              checked={selectedTopics.length > 0 && selectedTopics.length === topics.filter(t => !t.used).length}
-              onCheckedChange={selectAllFiltered}
-            />
-            <label htmlFor="select-all" className="text-sm font-medium cursor-pointer select-none">
-              Selecionar todos disponíveis
-            </label>
-          </div>
-          {topics.map((topic) => (
+          {filteredAndSortedTopics.map((topic) => (
             <Card key={topic.id} className="shadow-card">
               <CardContent className="p-4 flex items-center gap-4">
                 <Checkbox 
@@ -264,9 +337,15 @@ const TrendsPage = () => {
                       {topic.search_volume && (
                         <span className="text-xs text-muted-foreground">{topic.search_volume} buscas</span>
                       )}
+                      {topic.update_count > 1 && (
+                        <Badge variant="outline" className="text-[10px] h-5 bg-blue-50 text-blue-600 border-blue-200">
+                          {topic.update_count}x hoje
+                        </Badge>
+                      )}
                       {topic.fetched_at && (
-                        <span className="text-[10px] text-muted-foreground">
-                          • {new Date(topic.fetched_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                        <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                          <Calendar className="h-2.5 w-2.5" />
+                          {new Date(topic.fetched_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       )}
                       {topic.source_name && (
