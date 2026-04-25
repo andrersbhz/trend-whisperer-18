@@ -9,18 +9,28 @@ const corsHeaders = {
 // ── RSS Fetching ─────────────────────────────────────────────────────────
 
 async function fetchGoogleTrendsRSS(): Promise<string | null> {
-  const url = "https://trends.google.com.br/trending/rss?geo=BR";
+  // Use the most reliable URL for Brazil trends
+  const url = "https://trends.google.com/trends/trendingsearches/daily/rss?geo=BR";
   try {
     console.log(`[RSS] Fetching Google Trends from ${url}`);
     const resp = await fetch(url, {
       headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        "Accept": "application/rss+xml, application/xml, text/xml, */*"
       }
     });
-    if (!resp.ok) return null;
-    return await resp.text();
+    if (!resp.ok) {
+      console.error(`[RSS] Fetch failed with status ${resp.status}: ${resp.statusText}`);
+      return null;
+    }
+    const text = await resp.text();
+    if (!text || text.length < 100) {
+      console.error(`[RSS] Received empty or too short response: ${text?.substring(0, 100)}`);
+      return null;
+    }
+    return text;
   } catch (err) {
-    console.error(`[RSS] Error:`, err);
+    console.error(`[RSS] Error fetching feed:`, err);
     return null;
   }
 }
