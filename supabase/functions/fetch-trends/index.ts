@@ -115,6 +115,11 @@ serve(async (req) => {
 
     await supabase.from("trending_topics").delete().eq("user_id", userId).eq("used", false);
     
+    // Atualizar timestamp da última busca nas configurações do usuário
+    await supabase.from("user_settings").update({ 
+      last_trends_fetch: new Date().toISOString() 
+    }).eq("user_id", userId);
+    
     if (topics.length > 0) {
       await supabase.from("trending_topics").insert(
         topics.map((t: any) => ({
