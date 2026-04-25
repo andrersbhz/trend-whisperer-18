@@ -296,6 +296,9 @@ export type Database = {
         Row: {
           articles_per_day: number | null
           auto_publish: boolean | null
+          azure_openai_api_key: string | null
+          azure_openai_deployment_name: string | null
+          azure_openai_endpoint: string | null
           categories: string[] | null
           created_at: string
           facebook_access_token: string | null
@@ -322,6 +325,9 @@ export type Database = {
         Insert: {
           articles_per_day?: number | null
           auto_publish?: boolean | null
+          azure_openai_api_key?: string | null
+          azure_openai_deployment_name?: string | null
+          azure_openai_endpoint?: string | null
           categories?: string[] | null
           created_at?: string
           facebook_access_token?: string | null
@@ -348,6 +354,9 @@ export type Database = {
         Update: {
           articles_per_day?: number | null
           auto_publish?: boolean | null
+          azure_openai_api_key?: string | null
+          azure_openai_deployment_name?: string | null
+          azure_openai_endpoint?: string | null
           categories?: string[] | null
           created_at?: string
           facebook_access_token?: string | null
