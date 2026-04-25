@@ -23,6 +23,7 @@ const Dashboard = () => {
   const [stats, setStats] = useState({ total: 0, published: 0, pending: 0, trending: 0, failed: 0 });
   const [recentArticles, setRecentArticles] = useState<any[]>([]);
   const [recentErrors, setRecentErrors] = useState<any[]>([]);
+  const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [categoryStats, setCategoryStats] = useState<Array<{ category: string; total: number; published: number; pending: number; failed: number }>>([]);
   const [generating, setGenerating] = useState(false);
   const [writerPrompt, setWriterPrompt] = useState(DEFAULT_WRITER_PROMPT);
@@ -33,7 +34,7 @@ const Dashboard = () => {
     if (!user) return;
 
     try {
-      const [articles, trendingTopics, recent, settings, errors] = await Promise.all([
+      const [articles, trendingTopics, recent, settings, errors, logs] = await Promise.all([
         runBackendQuery(() => supabase.from('articles').select('id, status, category').eq('user_id', user.id)),
         runBackendQuery(() => supabase.from('trending_topics').select('id').eq('user_id', user.id).eq('used', false)),
         runBackendQuery(() =>
@@ -59,6 +60,14 @@ const Dashboard = () => {
             .eq('status', 'failed')
             .order('created_at', { ascending: false })
             .limit(5),
+        ),
+        runBackendQuery(() =>
+          supabase
+            .from('audit_logs')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(10),
         ),
       ]);
 
@@ -92,6 +101,7 @@ const Dashboard = () => {
 
       setRecentArticles(recent || []);
       setRecentErrors(errors || []);
+      setAuditLogs(logs || []);
       if (settings?.writer_prompt) {
         setWriterPrompt(settings.writer_prompt);
       }
@@ -135,6 +145,28 @@ const Dashboard = () => {
 
   const handleSavePrompt = async () => {
     if (!user) return;
+    
+    // Validation
+    if (!writerPrompt || writerPrompt.trim().length < 50) {
+      toast({ 
+        title: 'Prompt inválido', 
+        description: 'O prompt do escritor deve ter pelo menos 50 caracteres para garantir uma boa persona.', 
+        variant: 'destructive' 
+      });
+      return;
+    }
+
+    const mandatoryKeywords = ['SEO', 'jornalista'];
+    const missingKeywords = mandatoryKeywords.filter(k => !writerPrompt.toLowerCase().includes(k.toLowerCase()));
+    if (missingKeywords.length > 0) {
+      toast({ 
+        title: 'Prompt incompleto', 
+        description: `O prompt deve conter orientações sobre: ${missingKeywords.join(', ')}.`, 
+        variant: 'destructive' 
+      });
+      return;
+    }
+
     setSavingPrompt(true);
     try {
       const { data: existing } = await supabase
@@ -157,7 +189,16 @@ const Dashboard = () => {
             .insert({ user_id: user.id, writer_prompt: writerPrompt } as any),
         );
       }
+
+      // Log action
+      await supabase.from('audit_logs').insert({
+        user_id: user.id,
+        action: 'update_writer_prompt',
+        details: { prompt_length: writerPrompt.length }
+      });
+
       toast({ title: 'Prompt salvo!', description: 'O perfil do escritor foi atualizado e será usado em todas as gerações.' });
+      fetchStats();
     } catch (error) {
       if (getErrorMessage(error).includes('duplicate key')) {
         await runBackendMutation(() =>
@@ -167,6 +208,7 @@ const Dashboard = () => {
             .eq('user_id', user.id),
         );
         toast({ title: 'Prompt salvo!', description: 'O perfil do escritor foi atualizado.' });
+        fetchStats();
       } else {
         toast({ title: 'Erro', description: getErrorMessage(error), variant: 'destructive' });
       }
@@ -364,28 +406,70 @@ const Dashboard = () => {
         </CardContent>
       </Card>
 
-      {stats.failed > 0 && (
-        <Card className="glass-card border-destructive/30">
+      {/* Logs de Auditoria e Erros */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Audit Logs */}
+        <Card className="glass-card">
           <CardHeader className="pb-2">
-            <div className="flex items-center gap-2">
-              <div className="h-3 w-3 rounded-full bg-destructive animate-pulse-dot" />
-              <CardTitle className="text-sm text-destructive">{stats.failed} artigo(s) falharam na publicação</CardTitle>
-            </div>
+            <CardTitle className="text-lg text-foreground flex items-center gap-2">
+              <Clock className="h-5 w-5 text-primary" />
+              Logs de Auditoria
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">Histórico recente de alterações no sistema</p>
           </CardHeader>
-          <CardContent className="space-y-2">
-            {recentErrors.length > 0 ? (
-              recentErrors.map((err) => (
-                <div key={err.id} className="p-[25px] rounded bg-destructive/5 border border-destructive/10">
-                  <p className="text-xs text-destructive font-medium truncate">{err.error_message || 'Erro desconhecido'}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{new Date(err.created_at).toLocaleString('pt-BR')}</p>
+          <CardContent className="space-y-3">
+            {auditLogs.length === 0 ? (
+              <p className="text-xs text-muted-foreground py-4 text-center">Nenhuma atividade registrada ainda.</p>
+            ) : (
+              auditLogs.map((log) => (
+                <div key={log.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/20 border border-border/40">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">
+                      {log.action === 'update_writer_prompt' ? 'Perfil do Escritor Atualizado' : 
+                       log.action === 'update_settings' ? 'Configurações Gerais Alteradas' :
+                       log.action === 'delete_article' ? 'Artigo Excluído' :
+                       log.action === 'approve_article' ? 'Artigo Aprovado' :
+                       log.action === 'unapprove_article' ? 'Artigo Reprovado' : log.action}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      {new Date(log.created_at).toLocaleString('pt-BR')}
+                    </p>
+                  </div>
+                  <Badge variant="outline" className="text-[10px] capitalize">
+                    Sucesso
+                  </Badge>
                 </div>
               ))
-            ) : (
-              <p className="text-xs text-muted-foreground">Vá em Artigos para tentar novamente.</p>
             )}
           </CardContent>
         </Card>
-      )}
+
+        {/* Erros Recentes */}
+        <Card className="glass-card border-destructive/20">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg text-foreground flex items-center gap-2">
+              <div className="h-3 w-3 rounded-full bg-destructive" />
+              Falhas de Publicação
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">Erros ao tentar postar no WordPress</p>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {recentErrors.length === 0 ? (
+              <p className="text-xs text-muted-foreground py-4 text-center">Nenhum erro recente.</p>
+            ) : (
+              recentErrors.map((err) => (
+                <div key={err.id} className="p-3 rounded-lg bg-destructive/5 border border-destructive/10">
+                  <p className="text-xs text-destructive font-medium line-clamp-2">{err.error_message || 'Erro desconhecido'}</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">{new Date(err.created_at).toLocaleString('pt-BR')}</p>
+                </div>
+              ))
+            )}
+            {stats.failed > 0 && (
+              <p className="text-[10px] text-center text-muted-foreground mt-2">Vá em Artigos para tentar novamente.</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
       <Card className="glass-card">
         <CardHeader>

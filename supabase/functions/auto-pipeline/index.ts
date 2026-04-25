@@ -44,6 +44,7 @@ serve(async (req) => {
           .select("id")
           .eq("user_id", userId)
           .eq("status", "ready")
+          .eq("is_approved", true)
           .not("scheduled_at", "is", null)
           .lte("scheduled_at", now.toISOString())
           .order("scheduled_at", { ascending: true })
