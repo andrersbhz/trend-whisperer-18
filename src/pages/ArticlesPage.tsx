@@ -542,9 +542,14 @@ const ArticlesPage = () => {
                   className="gradient-primary shadow-neon-lilac"
                 >
                   {publishing === preview.id ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
-                  Confirmar e Publicar
+                  Confirmar e Publicar Agora
                 </Button>
-                <p className="text-[10px] text-muted-foreground">Envia para WordPress e Redes Sociais</p>
+                <div className="flex items-center gap-1.5 mt-1">
+                  <Badge variant="outline" className="text-[10px] bg-success/10 text-success border-success/30 font-bold px-1.5 py-0 h-4">
+                    WP: ✅ | FB: ✅ | IG: ✅
+                  </Badge>
+                  <p className="text-[10px] text-muted-foreground italic">Envia para todas as redes conectadas</p>
+                </div>
               </div>
             )}
           </div>
