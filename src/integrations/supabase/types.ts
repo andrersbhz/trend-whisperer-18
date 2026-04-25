@@ -247,6 +247,7 @@ export type Database = {
       trending_topics: {
         Row: {
           category: string
+          context: string | null
           created_at: string
           fetched_at: string
           id: string
@@ -258,6 +259,7 @@ export type Database = {
         }
         Insert: {
           category: string
+          context?: string | null
           created_at?: string
           fetched_at?: string
           id?: string
@@ -269,6 +271,7 @@ export type Database = {
         }
         Update: {
           category?: string
+          context?: string | null
           created_at?: string
           fetched_at?: string
           id?: string
