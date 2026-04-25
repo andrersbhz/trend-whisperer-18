@@ -316,9 +316,14 @@ const ArticlesPage = () => {
           <div className="flex-1 min-w-0 p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-3">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                <Badge className={`${statusColors[article.status] || ''} text-[10px] sm:text-xs`} variant="secondary">
+                <Badge className={`${statusColors[article.status] || ''} text-[10px] sm:text-xs font-bold`} variant="secondary">
                   {statusLabels[article.status] || article.status}
                 </Badge>
+                {article.status === 'published' && (
+                  <Badge variant="outline" className="text-[10px] sm:text-xs bg-success/10 text-success border-success/30 font-bold">
+                    WP: ✅ | FB: ✅ | IG: ✅
+                  </Badge>
+                )}
                 <span className="text-[10px] sm:text-xs text-muted-foreground capitalize">{article.category}</span>
               </div>
               <h3 className="font-semibold text-foreground text-sm sm:text-base line-clamp-2 sm:truncate leading-snug">{article.title}</h3>
