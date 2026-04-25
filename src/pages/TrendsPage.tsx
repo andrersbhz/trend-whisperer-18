@@ -82,7 +82,8 @@ const TrendsPage = () => {
         body.topics = topicsToUse.map(t => ({
           topic: t.topic,
           category: t.category,
-          search_volume: t.search_volume
+          search_volume: t.search_volume,
+          context: t.context
         }));
         
         // Se houver tópicos selecionados, vamos garantir que a função use APENAS essas categorias
