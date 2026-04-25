@@ -232,13 +232,13 @@ const TrendsPage = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Tendências</h1>
-          <div className="flex items-center gap-2 mt-1">
+          <div className="flex flex-wrap items-center gap-2 mt-1">
             <p className="text-muted-foreground text-sm">Assuntos em alta no Brasil</p>
             {lastUpdate && (
-              <span className="text-[10px] bg-secondary/50 px-2 py-0.5 rounded-full text-muted-foreground flex items-center gap-1">
+              <span className="text-[10px] bg-secondary/50 px-2 py-0.5 rounded-full text-muted-foreground flex items-center gap-1 whitespace-nowrap">
                 <RefreshCw className={`h-2.5 w-2.5 ${fetching ? 'animate-spin' : ''}`} />
                 Última atualização: {lastUpdate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
               </span>
