@@ -131,7 +131,7 @@ const TrendsPage = () => {
     }, 60000); // verifica a cada minuto
 
     return () => clearInterval(timer);
-  }, [user]);
+  }, [user, timeFilter]);
 
   const handleFetchTrends = async () => {
     setFetching(true);
