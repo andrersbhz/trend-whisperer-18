@@ -256,6 +256,7 @@ export type Database = {
           source_name: string | null
           source_url: string | null
           topic: string
+          update_count: number | null
           used: boolean | null
           user_id: string
         }
@@ -270,6 +271,7 @@ export type Database = {
           source_name?: string | null
           source_url?: string | null
           topic: string
+          update_count?: number | null
           used?: boolean | null
           user_id: string
         }
@@ -284,6 +286,7 @@ export type Database = {
           source_name?: string | null
           source_url?: string | null
           topic?: string
+          update_count?: number | null
           used?: boolean | null
           user_id?: string
         }

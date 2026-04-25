@@ -113,20 +113,29 @@ serve(async (req) => {
     const cleaned = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
     const topics = JSON.parse(cleaned);
 
-    // Limpar tópicos antigos e NÃO usados antes de inserir novos para garantir que a lista seja sempre atual
-    await supabase.from("trending_topics").delete().eq("user_id", userId).eq("used", false);
-    
-    // Chamar função RPC para limpeza profunda (temas com mais de 24h)
-    await supabase.rpc('clean_old_trending_topics');
+    // 1. Buscar tópicos existentes do usuário que não foram usados
+    const { data: existingTopics } = await supabase
+      .from("trending_topics")
+      .select("topic, update_count, id")
+      .eq("user_id", userId)
+      .eq("used", false);
 
-    // Atualizar timestamp da última busca nas configurações do usuário
-    await supabase.from("user_settings").update({ 
-      last_trends_fetch: new Date().toISOString() 
-    }).eq("user_id", userId);
-    
-    if (topics.length > 0) {
-      await supabase.from("trending_topics").insert(
-        topics.map((t: any) => ({
+    const existingMap = new Map(existingTopics?.map(t => [t.topic, t]) || []);
+
+    // 2. Preparar operações (update ou insert)
+    const toUpdate = [];
+    const toInsert = [];
+
+    for (const t of topics) {
+      if (existingMap.has(t.topic)) {
+        const existing = existingMap.get(t.topic);
+        toUpdate.push({
+          id: existing.id,
+          update_count: (existing.update_count || 1) + 1,
+          fetched_at: new Date().toISOString()
+        });
+      } else {
+        toInsert.push({
           user_id: userId,
           topic: t.topic,
           category: t.category,
@@ -134,9 +143,31 @@ serve(async (req) => {
           context: t.context,
           source_name: t.source_name,
           source_url: t.source_url,
-        }))
-      );
+          update_count: 1
+        });
+      }
     }
+
+    // 3. Executar atualizações
+    for (const item of toUpdate) {
+      await supabase.from("trending_topics").update({ 
+        update_count: item.update_count,
+        fetched_at: item.fetched_at
+      }).eq("id", item.id);
+    }
+
+    // 4. Inserir novos
+    if (toInsert.length > 0) {
+      await supabase.from("trending_topics").insert(toInsert);
+    }
+
+    // 5. Limpar tópicos antigos (mais de 24h)
+    await supabase.rpc('clean_old_trending_topics');
+
+    // 6. Atualizar timestamp da última busca nas configurações do usuário
+    await supabase.from("user_settings").update({ 
+      last_trends_fetch: new Date().toISOString() 
+    }).eq("user_id", userId);
 
     return new Response(JSON.stringify({ success: true, count: topics.length }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (error: any) {
