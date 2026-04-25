@@ -242,7 +242,20 @@ const TrendsPage = () => {
                 />
                 <div className="flex-1 flex items-center justify-between">
                   <div>
-                    <p className="font-medium text-foreground">{topic.topic}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-foreground">{topic.topic}</p>
+                      {topic.source_url && (
+                        <a 
+                          href={topic.source_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-muted-foreground hover:text-primary transition-colors"
+                          title="Ver fonte original"
+                        >
+                          <TrendingUp className="h-3 w-3" />
+                        </a>
+                      )}
+                    </div>
                     {topic.context && (
                       <p className="text-xs text-muted-foreground mt-0.5 italic line-clamp-1">{topic.context}</p>
                     )}
@@ -251,6 +264,11 @@ const TrendsPage = () => {
                       {topic.search_volume && (
                         <span className="text-xs text-muted-foreground">{topic.search_volume} buscas</span>
                       )}
+                      {topic.fetched_at && (
+                        <span className="text-[10px] text-muted-foreground">
+                          • {new Date(topic.fetched_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      )}
                       {topic.source_name && (
                         <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                           • Fonte: {topic.source_url ? (
@@ -258,10 +276,9 @@ const TrendsPage = () => {
                               href={topic.source_url} 
                               target="_blank" 
                               rel="noopener noreferrer"
-                              className="text-primary hover:underline flex items-center gap-0.5"
+                              className="text-primary hover:underline font-medium"
                             >
                               {topic.source_name}
-                              <TrendingUp className="h-2 w-2" />
                             </a>
                           ) : (
                             topic.source_name
