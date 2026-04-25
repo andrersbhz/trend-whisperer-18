@@ -357,7 +357,20 @@ REGRAS OBRIGATÓRIAS PARA CADA ARTIGO:
 
 function buildSystemPrompt(writerPrompt?: string | null): string {
   if (writerPrompt && writerPrompt.trim().length > 10) {
-    return `${BASE_SYSTEM_PROMPT}\n\nPERFIL DO ESCRITOR (instruções adicionais do usuário):\n${writerPrompt.trim()}`;
+    // O perfil do escritor vem PRIMEIRO e tem prioridade máxima sobre estilo/tom/persona.
+    // As regras técnicas de SEO/HTML/veracidade vêm depois e NÃO podem ser violadas,
+    // mas TUDO que for relacionado a estilo, voz, persona, público-alvo e abordagem
+    // deve seguir FIELMENTE o perfil definido pelo usuário.
+    return `### PERFIL DO ESCRITOR (DEFINIDO PELO USUÁRIO — SIGA FIELMENTE) ###
+${writerPrompt.trim()}
+
+### FIM DO PERFIL DO ESCRITOR ###
+
+Aplique o perfil acima como sua persona, tom de voz, estilo de escrita e abordagem editorial em TODO o artigo. Esse perfil é a sua identidade obrigatória.
+
+A seguir estão as regras técnicas que complementam (mas NUNCA substituem) o perfil acima:
+
+${BASE_SYSTEM_PROMPT}`;
   }
   return BASE_SYSTEM_PROMPT;
 }
