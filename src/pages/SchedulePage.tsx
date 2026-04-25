@@ -164,6 +164,8 @@ const SchedulePage = () => {
     } catch (error) {
       toast({ title: 'Erro', description: getErrorMessage(error), variant: 'destructive' });
     }
+  };
+
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
       setSelectedIds(articles.map(a => a.id));
