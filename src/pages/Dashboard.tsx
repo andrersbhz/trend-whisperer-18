@@ -334,7 +334,8 @@ const Dashboard = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <TrendingUp className="h-5 w-5 text-primary" />
-                <CardTitle className="text-lg">Google Trends</CardTitle>
+                <CardTitle className="text-lg">Google Trends Brasil</CardTitle>
+                <span className="text-xl">🇧🇷</span>
               </div>
               <Button variant="ghost" size="sm" asChild className="text-xs h-7">
                 <a href="/trends">Ver tudo</a>
