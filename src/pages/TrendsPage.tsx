@@ -253,27 +253,59 @@ const TrendsPage = () => {
         </div>
       </div>
 
-      {topics.length === 0 ? (
+      <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between bg-card p-4 rounded-lg border shadow-sm">
+        <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <Select value={sourceFilter} onValueChange={setSourceFilter}>
+              <SelectTrigger className="w-[180px] h-9">
+                <SelectValue placeholder="Filtrar por fonte" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as fontes</SelectItem>
+                {sources.map(source => (
+                  <SelectItem key={source} value={source}>{source}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+            <Select value={sortBy} onValueChange={(v: any) => setSortBy(v)}>
+              <SelectTrigger className="w-[180px] h-9">
+                <SelectValue placeholder="Ordenar" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="recent">Mais recentes</SelectItem>
+                <SelectItem value="oldest">Mais antigos</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 px-1">
+          <Checkbox 
+            id="select-all"
+            checked={selectedTopics.length > 0 && selectedTopics.length === filteredAndSortedTopics.filter(t => !t.used).length}
+            onCheckedChange={selectAllFiltered}
+          />
+          <label htmlFor="select-all" className="text-sm font-medium cursor-pointer select-none">
+            Selecionar {sourceFilter !== "all" ? "desta fonte" : "todos disponíveis"}
+          </label>
+        </div>
+      </div>
+
+      {filteredAndSortedTopics.length === 0 ? (
         <Card className="shadow-card">
           <CardContent className="py-16 text-center">
             <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">Nenhuma tendência carregada.</p>
-            <p className="text-sm text-muted-foreground mt-1">Clique em "Atualizar Tendências" para buscar</p>
+            <p className="text-muted-foreground">Nenhuma tendência encontrada com estes filtros.</p>
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-3">
-          <div className="flex items-center gap-2 mb-2 px-1">
-            <Checkbox 
-              id="select-all"
-              checked={selectedTopics.length > 0 && selectedTopics.length === topics.filter(t => !t.used).length}
-              onCheckedChange={selectAllFiltered}
-            />
-            <label htmlFor="select-all" className="text-sm font-medium cursor-pointer select-none">
-              Selecionar todos disponíveis
-            </label>
-          </div>
-          {topics.map((topic) => (
+          {filteredAndSortedTopics.map((topic) => (
             <Card key={topic.id} className="shadow-card">
               <CardContent className="p-4 flex items-center gap-4">
                 <Checkbox 
