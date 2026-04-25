@@ -330,8 +330,14 @@ const ArticlesPage = () => {
             </div>
 
             <div className="flex gap-1 shrink-0 self-end sm:self-auto">
-              <Button size="sm" variant="ghost" onClick={() => handlePreview(article.id)} className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground" title="Visualizar">
-                <Eye className="h-4 w-4" />
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={() => handlePreview(article.id)} 
+                className="h-8 gap-2 text-xs font-medium border-primary/30 text-primary hover:bg-primary/10"
+              >
+                <Eye className="h-3.5 w-3.5" />
+                Revisar
               </Button>
               {article.status === 'failed' && (
                 <Button
