@@ -81,6 +81,70 @@ async function callAI(providers: any[], systemPrompt: string, userPrompt: string
   throw new Error("AI failed");
 }
 
+// ── JSON Extraction / Repair ─────────────────────────────────────────────
+
+function extractTopicsFromAIResponse(raw: string): any[] {
+  if (!raw || !raw.trim()) {
+    console.warn("[extract] Empty AI response");
+    return [];
+  }
+
+  let text = raw.replace(/```json\n?/gi, "").replace(/```\n?/g, "").trim();
+  // Remove control chars
+  text = text.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "");
+
+  // Try direct parse
+  const tryParse = (s: string): any[] | null => {
+    try {
+      const parsed = JSON.parse(s);
+      if (Array.isArray(parsed)) return parsed;
+      if (parsed && Array.isArray(parsed.topics)) return parsed.topics;
+      return null;
+    } catch { return null; }
+  };
+
+  let result = tryParse(text);
+  if (result) return result;
+
+  // Find first array boundary
+  const start = text.indexOf("[");
+  if (start === -1) {
+    console.warn("[extract] No '[' found in response");
+    return [];
+  }
+  let slice = text.substring(start);
+
+  // Try parse as-is
+  result = tryParse(slice);
+  if (result) return result;
+
+  // Repair: balance brackets/braces
+  let braces = 0, brackets = 0;
+  for (const ch of slice) {
+    if (ch === "{") braces++;
+    else if (ch === "}") braces--;
+    else if (ch === "[") brackets++;
+    else if (ch === "]") brackets--;
+  }
+  // Drop trailing incomplete object after last complete one
+  let repaired = slice.replace(/,\s*$/g, "");
+  while (braces > 0) { repaired += "}"; braces--; }
+  while (brackets > 0) { repaired += "]"; brackets--; }
+
+  result = tryParse(repaired);
+  if (result) return result;
+
+  // Last resort: extract complete objects via regex
+  const objects: any[] = [];
+  const objRegex = /\{[^{}]*\}/g;
+  const matches = slice.match(objRegex) || [];
+  for (const m of matches) {
+    try { objects.push(JSON.parse(m)); } catch {}
+  }
+  console.warn(`[extract] Recovered ${objects.length} objects via regex fallback`);
+  return objects;
+}
+
 // ── Handler ───────────────────────────────────────────────────────────────
 
 serve(async (req) => {
@@ -109,9 +173,11 @@ serve(async (req) => {
 
     const { systemPrompt, userPrompt } = buildRSSCategorizationPrompt(rss, categories);
     const { content } = await callAI(providers, systemPrompt, userPrompt);
-    
-    const cleaned = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-    const topics = JSON.parse(cleaned);
+
+    const topics = extractTopicsFromAIResponse(content);
+    if (!topics.length) {
+      throw new Error("Nenhum tópico foi extraído do feed. Tente novamente em alguns minutos.");
+    }
 
     // 1. Buscar tópicos existentes do usuário que não foram usados
     const { data: existingTopics } = await supabase
