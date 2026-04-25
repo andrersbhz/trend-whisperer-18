@@ -93,25 +93,40 @@ async function callAI(providers: any[], systemPrompt: string, userPrompt: string
 // ── RSS Direct Parser (fallback when AI fails) ──────────────────────────
 
 function parseRSSDirectly(rss: string, categories: string[]): any[] {
+  console.log(`[parseRSSDirectly] Starting manual parse of ${rss.length} chars`);
   const items = rss.match(/<item[\s\S]*?<\/item>/gi) || [];
+  console.log(`[parseRSSDirectly] Found ${items.length} items`);
+  
   const decode = (s: string) =>
     s.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
       .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
       .replace(/&quot;/g, '"').replace(/&#39;/g, "'").trim();
-  const pick = (block: string, tag: string): string => {
+      
+  const pick = (block: string, tagName: string): string => {
+    // Escape dots and allow optional namespace
+    const tag = tagName.replace(":", "\\:");
     const m = block.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i"));
-    return m ? decode(m[1]) : "";
+    if (m) return decode(m[1]);
+    
+    // Try without namespace if provided one failed
+    if (tagName.includes(":")) {
+      const simpleTag = tagName.split(":")[1];
+      const m2 = block.match(new RegExp(`<${simpleTag}[^>]*>([\\s\\S]*?)<\\/${simpleTag}>`, "i"));
+      if (m2) return decode(m2[1]);
+    }
+    return "";
   };
 
   const guessCategory = (text: string): string => {
     const t = text.toLowerCase();
     const keywords: Record<string, string[]> = {
-      esportes: ["futebol", "jogo", "time", "campeonato", "gol", "atleta", "olimp", "copa", "seleção", "técnico", "brasileirão"],
-      politica: ["presidente", "ministro", "senado", "câmara", "lula", "governo", "stf", "congresso", "deputado"],
-      policia: ["polícia", "preso", "crime", "operação", "assalto", "homicídio", "investigação", "tráfico"],
-      saude: ["saúde", "vacina", "hospital", "anvisa", "doença", "covid", "médico", "tratamento"],
-      celebridades: ["ator", "atriz", "cantor", "novela", "famoso", "bbb", "show", "reality"],
-      financas: ["dólar", "bolsa", "ibovespa", "juros", "banco central", "selic", "imposto", "economia"],
+      esportes: ["futebol", "jogo", "time", "campeonato", "gol", "atleta", "olimp", "copa", "seleção", "técnico", "brasileirão", "vôlei", "basquete", "tênis", "luta"],
+      politica: ["presidente", "ministro", "senado", "câmara", "lula", "governo", "stf", "congresso", "deputado", "eleição", "voto"],
+      policia: ["polícia", "preso", "crime", "operação", "assalto", "homicídio", "investigação", "tráfico", "justiça"],
+      saude: ["saúde", "vacina", "hospital", "anvisa", "doença", "covid", "médico", "tratamento", "vírus"],
+      celebridades: ["ator", "atriz", "cantor", "novela", "famoso", "bbb", "show", "reality", "influencer", "cinema"],
+      financas: ["dólar", "bolsa", "ibovespa", "juros", "banco central", "selic", "imposto", "economia", "dinheiro", "bitcoin"],
+      tecnologia: ["celular", "iphone", "google", "apple", "microsoft", "ia", "inteligência artificial", "lançamento", "app"],
     };
     for (const cat of categories) {
       const kws = keywords[cat] || [cat];
@@ -122,21 +137,24 @@ function parseRSSDirectly(rss: string, categories: string[]): any[] {
 
   const topics: any[] = [];
   for (const item of items.slice(0, 40)) {
-    const topic = pick(item, "title");
-    if (!topic) continue;
+    const title = pick(item, "title");
+    if (!title) continue;
+    
     const traffic = pick(item, "ht:approx_traffic");
     const newsTitle = pick(item, "ht:news_item_title");
     const newsSource = pick(item, "ht:news_item_source");
     const newsUrl = pick(item, "ht:news_item_url");
+    
     topics.push({
-      topic,
+      topic: title,
       search_volume: traffic || "médio",
-      category: guessCategory(`${topic} ${newsTitle}`),
+      category: guessCategory(`${title} ${newsTitle}`),
       context: newsTitle || null,
       source_name: newsSource || null,
       source_url: newsUrl || null,
     });
   }
+  console.log(`[parseRSSDirectly] Extracted ${topics.length} topics`);
   return topics;
 }
 
