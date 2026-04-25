@@ -334,12 +334,12 @@ const ArticlesPage = () => {
               )}
             </div>
 
-            <div className="flex gap-1 shrink-0 self-end sm:self-auto">
+            <div className="flex gap-1.5 shrink-0 self-end sm:self-auto items-center">
               <Button 
                 size="sm" 
                 variant="outline" 
                 onClick={() => handlePreview(article.id)} 
-                className="h-8 gap-2 text-xs font-medium border-primary/30 text-primary hover:bg-primary/10"
+                className="h-8 gap-2 text-xs font-semibold border-primary/30 text-primary hover:bg-primary/10 shadow-sm"
               >
                 <Eye className="h-3.5 w-3.5" />
                 Revisar
@@ -348,7 +348,7 @@ const ArticlesPage = () => {
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="h-8 w-8 p-0 text-warning hover:text-warning hover:bg-warning/10"
+                  className="h-8 w-8 p-0 text-warning hover:text-warning hover:bg-warning/10 transition-colors"
                   onClick={() => handleRetry(article.id)}
                   disabled={retrying === article.id}
                   title="Tentar novamente"
@@ -360,15 +360,21 @@ const ArticlesPage = () => {
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="h-8 w-8 p-0 text-primary hover:text-primary hover:bg-primary/10"
+                  className="h-8 w-8 p-0 text-primary hover:text-primary hover:bg-primary/10 transition-colors"
                   onClick={() => handlePublish(article.id)}
                   disabled={publishing === article.id}
-                  title="Publicar"
+                  title="Publicar agora"
                 >
                   {publishing === article.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                 </Button>
               )}
-              <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => handleDelete(article.id)} title="Excluir">
+              <Button 
+                size="sm" 
+                variant="ghost" 
+                className="h-8 w-8 p-0 text-destructive/70 hover:text-destructive hover:bg-destructive/10 transition-colors" 
+                onClick={() => handleDelete(article.id)} 
+                title="Excluir"
+              >
                 <Trash2 className="h-4 w-4" />
               </Button>
             </div>
