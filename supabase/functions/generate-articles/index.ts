@@ -320,36 +320,22 @@ async function generateImageGemini(apiKey: string, title: string, category: stri
   for (const model of models) {
     try {
       console.log(`[Image] Attempting generation with Gemini model: ${model}`);
-      // Try v1beta first
+      // Gemini Image Generation
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
       const body = {
         contents: [{ parts: [{ text: IMAGE_PROMPT_TEMPLATE(title, category) }] }],
-        generationConfig: { 
-          response_modalities: ["IMAGE"],
-          candidate_count: 1
-        },
       };
 
-      let resp = await fetch(url, {
+      const resp = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
 
-      if (resp.status === 404) {
-        // Try v1 if v1beta is not available
-        const v1Url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`;
-        resp = await fetch(v1Url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
-      }
-      
-      if (!resp.ok) { 
+      if (!resp.ok) {
         const errText = await resp.text();
-        console.warn(`[Image] Gemini model ${model} failed with status ${resp.status}: ${errText.substring(0, 200)}`); 
-        continue; 
+        console.warn(`[Image] Gemini model ${model} failed (${resp.status}): ${errText.substring(0, 200)}`);
+        continue;
       }
       
       const data = await resp.json();
@@ -359,7 +345,8 @@ async function generateImageGemini(apiKey: string, title: string, category: stri
         console.log(`[Image] Success! Image generated with model: ${model}`);
         return `data:${imgPart.inlineData.mimeType};base64,${imgPart.inlineData.data}`;
       } else {
-        console.warn(`[Image] Gemini model ${model} returned no image data. Full response: ${JSON.stringify(data).substring(0, 200)}`);
+        // Log simplified response to avoid too much noise but see if there's a reason for no image
+        console.warn(`[Image] Gemini model ${model} returned no image data.`);
       }
     } catch (err) { 
       console.error(`[Image] Gemini model ${model} unexpected error:`, err); 
