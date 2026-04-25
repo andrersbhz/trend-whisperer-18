@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
@@ -6,8 +6,23 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { RefreshCw, TrendingUp, Loader2, Sparkles } from 'lucide-react';
+import { 
+  RefreshCw, 
+  TrendingUp, 
+  Loader2, 
+  Sparkles, 
+  Filter, 
+  ArrowUpDown,
+  Calendar
+} from 'lucide-react';
 import { getErrorMessage, runBackendQuery } from '@/lib/backend';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const TrendsPage = () => {
   const { user } = useAuth();
