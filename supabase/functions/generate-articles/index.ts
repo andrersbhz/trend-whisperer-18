@@ -181,12 +181,12 @@ async function callGroqDirect(apiKey: string, systemPrompt: string, userPrompt: 
   return JSON.parse(content);
 }
 
-async function callLovableGateway(apiKey: string, systemPrompt: string, userPrompt: string): Promise<AIResponse> {
-  const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+async function callAzureOpenAIDirect(apiKey: string, endpoint: string, deployment: string, systemPrompt: string, userPrompt: string): Promise<AIResponse> {
+  const url = `${endpoint.replace(/\/$/, "")}/openai/deployments/${deployment}/chat/completions?api-version=2024-02-01`;
+  const resp = await fetch(url, {
     method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    headers: { "api-key": apiKey, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "google/gemini-1.5-flash",
       messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }],
       tools: [{
         type: "function",
@@ -207,7 +207,7 @@ async function callLovableGateway(apiKey: string, systemPrompt: string, userProm
 
   if (!resp.ok) {
     const errText = await resp.text();
-    throw new Error(`Gateway error ${resp.status}: ${errText}`);
+    throw new Error(`Azure OpenAI (Copilot) error ${resp.status}: ${errText}`);
   }
 
   const aiData = await resp.json();
@@ -217,6 +217,9 @@ async function callLovableGateway(apiKey: string, systemPrompt: string, userProm
   content = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
   return JSON.parse(content);
 }
+
+async function callLovableGateway(apiKey: string, systemPrompt: string, userPrompt: string): Promise<AIResponse> {
+... keep existing code
 
 // ── Multi-provider fallback for text ─────────────────────────────────────
 
