@@ -521,17 +521,20 @@ const ArticlesPage = () => {
               <DialogTitle className="text-lg font-bold">Revisão do Artigo</DialogTitle>
             </DialogHeader>
             {(preview?.status === 'ready' || preview?.status === 'draft') && (
-              <Button 
-                onClick={() => {
-                  handlePublish(preview.id);
-                  setPreviewOpen(false);
-                }}
-                disabled={publishing === preview.id}
-                className="gradient-primary shadow-neon-lilac"
-              >
-                {publishing === preview.id ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
-                Confirmar e Publicar
-              </Button>
+              <div className="flex flex-col items-end gap-1">
+                <Button 
+                  onClick={() => {
+                    handlePublish(preview.id);
+                    setPreviewOpen(false);
+                  }}
+                  disabled={publishing === preview.id}
+                  className="gradient-primary shadow-neon-lilac"
+                >
+                  {publishing === preview.id ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
+                  Confirmar e Publicar
+                </Button>
+                <p className="text-[10px] text-muted-foreground">Envia para WordPress e Redes Sociais</p>
+              </div>
             )}
           </div>
           
