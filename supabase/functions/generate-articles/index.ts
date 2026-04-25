@@ -294,16 +294,16 @@ async function generateImageGemini(apiKey: string, title: string, category: stri
   for (const model of models) {
     try {
       console.log(`[Image] Attempting generation with Gemini model: ${model}`);
-      // Using v1 for general availability
-      const url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`;
+      // Use v1beta for Imagen 3 via modalities
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
       const resp = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           contents: [{ parts: [{ text: IMAGE_PROMPT_TEMPLATE(title, category) }] }],
           generationConfig: { 
-            responseModalities: ["IMAGE"],
-            candidateCount: 1
+            response_modalities: ["IMAGE"],
+            candidate_count: 1
           },
         }),
       });
