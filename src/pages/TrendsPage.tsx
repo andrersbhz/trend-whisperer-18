@@ -201,6 +201,9 @@ const TrendsPage = () => {
                 <div className="flex-1 flex items-center justify-between">
                   <div>
                     <p className="font-medium text-foreground">{topic.topic}</p>
+                    {topic.context && (
+                      <p className="text-xs text-muted-foreground mt-0.5 italic line-clamp-1">{topic.context}</p>
+                    )}
                     <div className="flex items-center gap-2 mt-1">
                       <Badge variant="secondary">{topic.category}</Badge>
                       {topic.search_volume && (
