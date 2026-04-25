@@ -34,6 +34,32 @@ const TrendsPage = () => {
   const [generating, setGenerating] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [refreshInterval, setRefreshInterval] = useState(30); // minutos
+  const [sourceFilter, setSourceFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<"recent" | "oldest">("recent");
+
+  const sources = useMemo(() => {
+    const uniqueSources = new Set<string>();
+    topics.forEach(t => {
+      if (t.source_name) uniqueSources.add(t.source_name);
+    });
+    return Array.from(uniqueSources).sort();
+  }, [topics]);
+
+  const filteredAndSortedTopics = useMemo(() => {
+    let result = [...topics];
+
+    if (sourceFilter !== "all") {
+      result = result.filter(t => t.source_name === sourceFilter);
+    }
+
+    result.sort((a, b) => {
+      const dateA = new Date(a.fetched_at || 0).getTime();
+      const dateB = new Date(b.fetched_at || 0).getTime();
+      return sortBy === "recent" ? dateB - dateA : dateA - dateB;
+    });
+
+    return result;
+  }, [topics, sourceFilter, sortBy]);
 
   const fetchTopics = async () => {
     if (!user) return;
