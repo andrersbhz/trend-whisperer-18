@@ -438,10 +438,22 @@ serve(async (req) => {
     }
 
 
+    let azureApiKey: string | null = null;
+    if (settings?.azure_openai_api_key) {
+      const { data: decrypted } = await supabase.rpc("decrypt_credential", { enc_key: "", val: settings.azure_openai_api_key });
+      if (decrypted && typeof decrypted === "string" && decrypted.length > 5) azureApiKey = decrypted;
+    }
+
     const providers: ProviderConfig[] = [];
-    // Ordem (preferência do usuário): Gemini PRIMEIRO → OpenAI → Groq. Lovable AI DESABILITADO para geração de artigos.
+    // Ordem (preferência do usuário): Gemini PRIMEIRO → OpenAI → Azure (Copilot) → Groq.
     if (geminiApiKey) providers.push({ name: "Gemini", call: (s, u) => callGeminiDirect(geminiApiKey!, s, u) });
     if (openaiApiKey) providers.push({ name: "OpenAI", call: (s, u) => callOpenAIDirect(openaiApiKey!, s, u) });
+    if (azureApiKey && settings?.azure_openai_endpoint && settings?.azure_openai_deployment_name) {
+      providers.push({ 
+        name: "Azure Copilot", 
+        call: (s, u) => callAzureOpenAIDirect(azureApiKey!, settings.azure_openai_endpoint, settings.azure_openai_deployment_name, s, u) 
+      });
+    }
     if (groqApiKey) providers.push({ name: "Groq", call: (s, u) => callGroqDirect(groqApiKey!, s, u) });
 
     if (providers.length === 0) {
