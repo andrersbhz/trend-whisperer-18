@@ -13,6 +13,8 @@ import {
 import AIProvidersPanel from '@/components/dashboard/AIProvidersPanel';
 import { useToast } from '@/hooks/use-toast';
 import { getErrorMessage, runBackendQuery, runBackendMutation } from '@/lib/backend';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import AnalyticsPage from '@/pages/AnalyticsPage';
 
 const DEFAULT_WRITER_PROMPT = `Você é um jornalista digital brasileiro experiente. Escreva artigos informativos, com linguagem clara e acessível, otimizados para SEO. Use dados e fatos reais. Tom autoritativo mas acessível. Foque em entregar valor ao leitor com informações práticas e atualizadas.`;
@@ -407,7 +409,7 @@ const Dashboard = () => {
       </Card>
 
       {/* Logs de Auditoria e Erros */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div id="audit-logs-section" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Audit Logs */}
         <Card className="glass-card">
           <CardHeader className="pb-2">
@@ -422,22 +424,23 @@ const Dashboard = () => {
               <p className="text-xs text-muted-foreground py-4 text-center">Nenhuma atividade registrada ainda.</p>
             ) : (
               auditLogs.map((log) => (
-                <div key={log.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/20 border border-border/40">
-                  <div>
-                    <p className="text-sm font-medium text-foreground">
-                      {log.action === 'update_writer_prompt' ? 'Perfil do Escritor Atualizado' : 
-                       log.action === 'update_settings' ? 'Configurações Gerais Alteradas' :
-                       log.action === 'delete_article' ? 'Artigo Excluído' :
-                       log.action === 'approve_article' ? 'Artigo Aprovado' :
-                       log.action === 'unapprove_article' ? 'Artigo Reprovado' : log.action}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">
-                      {new Date(log.created_at).toLocaleString('pt-BR')}
-                    </p>
+                <div key={log.id} className="p-3 rounded-md bg-background/40 border border-border/50 text-xs flex flex-col gap-1">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-primary">
+                      {log.action === 'update_writer_prompt' ? '📝 Prompt do Escritor' : 
+                       log.action === 'update_settings' ? '⚙️ Configurações' : 
+                       log.action === 'generate_articles' ? '🚀 Geração Iniciada' : 
+                       log.action === 'approve_article' ? '✅ Artigo Aprovado' :
+                       log.action === 'delete_article' ? '🗑️ Artigo Excluído' :
+                       log.action === 'pause_article' ? '⏸️ Artigo Pausado' : log.action}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground italic">
+                      {format(new Date(log.created_at), "dd/MM 'às' HH:mm", { locale: ptBR })}
+                    </span>
                   </div>
-                  <Badge variant="outline" className="text-[10px] capitalize">
-                    Sucesso
-                  </Badge>
+                  <p className="text-muted-foreground">
+                    {log.details?.reason || log.details?.prompt_length ? `Tamanho: ${log.details.prompt_length} caracteres` : 'Alteração realizada com sucesso'}
+                  </p>
                 </div>
               ))
             )}

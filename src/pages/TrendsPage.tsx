@@ -122,6 +122,15 @@ const TrendsPage = () => {
     );
   };
 
+  const selectAllFiltered = () => {
+    const availableTopicIds = topics.filter(t => !t.used).map(t => t.id);
+    if (selectedTopics.length === availableTopicIds.length) {
+      setSelectedTopics([]);
+    } else {
+      setSelectedTopics(availableTopicIds);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -170,6 +179,16 @@ const TrendsPage = () => {
         </Card>
       ) : (
         <div className="grid gap-3">
+          <div className="flex items-center gap-2 mb-2 px-1">
+            <Checkbox 
+              id="select-all"
+              checked={selectedTopics.length > 0 && selectedTopics.length === topics.filter(t => !t.used).length}
+              onCheckedChange={selectAllFiltered}
+            />
+            <label htmlFor="select-all" className="text-sm font-medium cursor-pointer select-none">
+              Selecionar todos disponíveis
+            </label>
+          </div>
           {topics.map((topic) => (
             <Card key={topic.id} className="shadow-card">
               <CardContent className="p-4 flex items-center gap-4">
