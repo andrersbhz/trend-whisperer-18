@@ -33,9 +33,14 @@ serve(async (req) => {
       .single();
 
     if (!settings?.wordpress_url || !settings?.wordpress_username || !settings?.wordpress_app_password) {
-      return new Response(JSON.stringify({ error: "WordPress não configurado" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          jetpack: { available: false }, 
+          warning: "WordPress não configurado. Vá para Configurações para conectar." 
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const password = await decryptField(supabase, settings.wordpress_app_password, encKey);
