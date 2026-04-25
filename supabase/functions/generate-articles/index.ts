@@ -73,8 +73,8 @@ const ARTICLE_TOOL_PARAMS = {
 };
 
 async function callGeminiDirect(apiKey: string, systemPrompt: string, userPrompt: string): Promise<AIResponse> {
-  // Use v1 instead of v1beta for better stability
-  const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+  // Use v1beta for advanced features like system_instruction and tool_config
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
   const functionDeclaration = {
     name: "create_article",
@@ -86,15 +86,17 @@ async function callGeminiDirect(apiKey: string, systemPrompt: string, userPrompt
     },
   };
 
+  const body = {
+    system_instruction: { parts: [{ text: systemPrompt }] },
+    contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+    tools: [{ function_declarations: [functionDeclaration] }],
+    tool_config: { function_calling_config: { mode: "ANY", allowed_function_names: ["create_article"] } },
+  };
+
   const resp = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      system_instruction: { parts: [{ text: systemPrompt }] },
-      contents: [{ role: "user", parts: [{ text: userPrompt }] }],
-      tools: [{ function_declarations: [functionDeclaration] }],
-      tool_config: { function_calling_config: { mode: "ANY", allowed_function_names: ["create_article"] } },
-    }),
+    body: JSON.stringify(body),
   });
 
   if (!resp.ok) {
