@@ -79,8 +79,11 @@ const SchedulePage = () => {
       await runBackendMutation(() =>
         supabase
           .from('user_settings')
-          .update({ articles_per_day: articlesPerDay, auto_publish: autoPublish } as any)
-          .eq('user_id', user.id),
+          .upsert({ 
+            user_id: user.id, 
+            articles_per_day: articlesPerDay, 
+            auto_publish: autoPublish 
+          } as any, { onConflict: 'user_id' }),
       );
       toast({ title: 'Automação salva!', description: `${articlesPerDay} artigos/dia. Publicação automática: ${autoPublish ? 'Ativada' : 'Desativada'}.` });
     } catch (error) {
