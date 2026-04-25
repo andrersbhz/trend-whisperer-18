@@ -181,6 +181,43 @@ async function callGroqDirect(apiKey: string, systemPrompt: string, userPrompt: 
   return JSON.parse(content);
 }
 
+async function callAzureOpenAIDirect(apiKey: string, endpoint: string, deployment: string, systemPrompt: string, userPrompt: string): Promise<AIResponse> {
+  const url = `${endpoint.replace(/\/$/, "")}/openai/deployments/${deployment}/chat/completions?api-version=2024-02-01`;
+  const resp = await fetch(url, {
+    method: "POST",
+    headers: { "api-key": apiKey, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }],
+      tools: [{
+        type: "function",
+        function: {
+          name: "create_article",
+          description: "Cria um artigo completo para publicação no WordPress.",
+          parameters: {
+            type: "object",
+            properties: Object.fromEntries(Object.entries(ARTICLE_TOOL_PARAMS).map(([k, v]) => [k, { type: "string", description: v }])),
+            required: Object.keys(ARTICLE_TOOL_PARAMS),
+            additionalProperties: false,
+          },
+        },
+      }],
+      tool_choice: { type: "function", function: { name: "create_article" } },
+    }),
+  });
+
+  if (!resp.ok) {
+    const errText = await resp.text();
+    throw new Error(`Azure OpenAI (Copilot) error ${resp.status}: ${errText}`);
+  }
+
+  const aiData = await resp.json();
+  const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+  if (toolCall?.function?.arguments) return JSON.parse(toolCall.function.arguments);
+  let content = aiData.choices?.[0]?.message?.content || "";
+  content = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+  return JSON.parse(content);
+}
+
 async function callLovableGateway(apiKey: string, systemPrompt: string, userPrompt: string): Promise<AIResponse> {
   const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
@@ -435,10 +472,22 @@ serve(async (req) => {
     }
 
 
+    let azureApiKey: string | null = null;
+    if (settings?.azure_openai_api_key) {
+      const { data: decrypted } = await supabase.rpc("decrypt_credential", { enc_key: "", val: settings.azure_openai_api_key });
+      if (decrypted && typeof decrypted === "string" && decrypted.length > 5) azureApiKey = decrypted;
+    }
+
     const providers: ProviderConfig[] = [];
-    // Ordem (preferência do usuário): Gemini PRIMEIRO → OpenAI → Groq. Lovable AI DESABILITADO para geração de artigos.
+    // Ordem (preferência do usuário): Gemini PRIMEIRO → OpenAI → Azure (Copilot) → Groq.
     if (geminiApiKey) providers.push({ name: "Gemini", call: (s, u) => callGeminiDirect(geminiApiKey!, s, u) });
     if (openaiApiKey) providers.push({ name: "OpenAI", call: (s, u) => callOpenAIDirect(openaiApiKey!, s, u) });
+    if (azureApiKey && settings?.azure_openai_endpoint && settings?.azure_openai_deployment_name) {
+      providers.push({ 
+        name: "Azure Copilot", 
+        call: (s, u) => callAzureOpenAIDirect(azureApiKey!, settings.azure_openai_endpoint, settings.azure_openai_deployment_name, s, u) 
+      });
+    }
     if (groqApiKey) providers.push({ name: "Groq", call: (s, u) => callGroqDirect(groqApiKey!, s, u) });
 
     if (providers.length === 0) {

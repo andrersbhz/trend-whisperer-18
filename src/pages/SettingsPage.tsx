@@ -9,6 +9,7 @@ import GoogleAnalyticsSettings from '@/components/settings/GoogleAnalyticsSettin
 import AutomationSettings from '@/components/settings/AutomationSettings';
 import GeminiSettings from '@/components/settings/GeminiSettings';
 import OpenAISettings from '@/components/settings/OpenAISettings';
+import AzureCopilotSettings from '@/components/settings/AzureCopilotSettings';
 import GroqSettings from '@/components/settings/GroqSettings';
 import JetpackSettings from '@/components/settings/JetpackSettings';
 import FacebookSettings from '@/components/settings/FacebookSettings';
@@ -24,6 +25,9 @@ export interface UserSettings {
   google_analytics_property_id: string;
   gemini_api_key: string;
   openai_api_key: string;
+  azure_openai_api_key: string;
+  azure_openai_endpoint: string;
+  azure_openai_deployment_name: string;
   groq_api_key: string;
   categories: string[];
   articles_per_day: number;
@@ -41,6 +45,9 @@ const defaultSettings: UserSettings = {
   google_analytics_property_id: '',
   gemini_api_key: '',
   openai_api_key: '',
+  azure_openai_api_key: '',
+  azure_openai_endpoint: '',
+  azure_openai_deployment_name: '',
   groq_api_key: '',
   categories: ['esportes', 'politica', 'policia', 'saude', 'celebridades', 'financas'],
   articles_per_day: 3,
@@ -53,6 +60,7 @@ interface CredentialsStatus {
   has_fb_token: boolean;
   has_gemini_key: boolean;
   has_openai_key: boolean;
+  has_azure_key: boolean;
   has_groq_key: boolean;
 }
 
@@ -63,7 +71,7 @@ const SettingsPage = () => {
   const [saving, setSaving] = useState(false);
   const [hasExistingSettings, setHasExistingSettings] = useState(false);
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
-  const [credStatus, setCredStatus] = useState<CredentialsStatus>({ has_wp_password: false, has_fb_token: false, has_gemini_key: false, has_openai_key: false, has_groq_key: false });
+  const [credStatus, setCredStatus] = useState<CredentialsStatus>({ has_wp_password: false, has_fb_token: false, has_gemini_key: false, has_openai_key: false, has_azure_key: false, has_groq_key: false });
 
   useEffect(() => {
     if (!user) return;
@@ -72,7 +80,7 @@ const SettingsPage = () => {
       try {
         const { data: userData, error: userError } = await supabase
           .from('user_settings')
-          .select('wordpress_url, wordpress_username, google_analytics_property_id, facebook_page_id, instagram_account_id, categories, articles_per_day, auto_publish, writer_prompt')
+          .select('wordpress_url, wordpress_username, google_analytics_property_id, facebook_page_id, instagram_account_id, categories, articles_per_day, auto_publish, writer_prompt, azure_openai_endpoint, azure_openai_deployment_name')
           .eq('user_id', user.id)
           .maybeSingle();
 
@@ -94,6 +102,9 @@ const SettingsPage = () => {
             google_analytics_property_id: userData.google_analytics_property_id || '',
             gemini_api_key: '',
             openai_api_key: '',
+            azure_openai_api_key: '',
+            azure_openai_endpoint: userData.azure_openai_endpoint || '',
+            azure_openai_deployment_name: userData.azure_openai_deployment_name || '',
             groq_api_key: '',
             categories: userData.categories || defaultSettings.categories,
             articles_per_day: userData.articles_per_day || 3,
@@ -149,6 +160,8 @@ const SettingsPage = () => {
         facebook_page_id: settings.facebook_page_id,
         instagram_account_id: settings.instagram_account_id,
         google_analytics_property_id: settings.google_analytics_property_id,
+        azure_openai_endpoint: settings.azure_openai_endpoint,
+        azure_openai_deployment_name: settings.azure_openai_deployment_name,
         categories: settings.categories,
         articles_per_day: settings.articles_per_day,
         auto_publish: settings.auto_publish,
@@ -166,6 +179,9 @@ const SettingsPage = () => {
       }
       if (settings.openai_api_key) {
         payload.openai_api_key = settings.openai_api_key;
+      }
+      if (settings.azure_openai_api_key) {
+        payload.azure_openai_api_key = settings.azure_openai_api_key;
       }
       if (settings.groq_api_key) {
         payload.groq_api_key = settings.groq_api_key;
@@ -200,7 +216,7 @@ const SettingsPage = () => {
       const status = await runBackendQuery(() => supabase.rpc('get_credentials_status'));
       if (status) setCredStatus(status as unknown as CredentialsStatus);
 
-      setSettings(prev => ({ ...prev, wordpress_app_password: '', facebook_access_token: '', gemini_api_key: '', openai_api_key: '', groq_api_key: '' }));
+      setSettings(prev => ({ ...prev, wordpress_app_password: '', facebook_access_token: '', gemini_api_key: '', openai_api_key: '', azure_openai_api_key: '', groq_api_key: '' }));
     } catch (error) {
       if (getErrorMessage(error).includes('duplicate key')) {
         // Retry with update if insert failed due to race condition
@@ -276,11 +292,12 @@ const SettingsPage = () => {
       </div>
 
       <div className="p-3 rounded-lg bg-accent/20 border border-accent/40 text-xs text-muted-foreground">
-        <strong className="text-foreground">🔄 Sistema Multi-IA:</strong> O sistema tenta gerar artigos na seguinte ordem: <strong>Gemini → OpenAI → Groq → Lovable AI</strong>. Para imagens: <strong>DALL-E 3 → Lovable AI → Gemini</strong>. Se um provedor estiver sem saldo, o próximo é usado automaticamente.
+        <strong className="text-foreground">🔄 Sistema Multi-IA:</strong> O sistema tenta gerar artigos na seguinte ordem: <strong>Gemini → OpenAI → Azure Copilot → Groq → Lovable AI</strong>. Para imagens: <strong>DALL-E 3 → Lovable AI → Gemini</strong>. Se um provedor estiver sem saldo, o próximo é usado automaticamente.
       </div>
 
       <GeminiSettings settings={settings} onChange={updateSettings} hasGeminiKey={credStatus.has_gemini_key} onDisconnect={() => disconnectCredential({ gemini_api_key: '' }, 'Gemini')} />
       <OpenAISettings settings={settings} onChange={updateSettings} hasOpenaiKey={credStatus.has_openai_key} onDisconnect={() => disconnectCredential({ openai_api_key: '' }, 'OpenAI')} />
+      <AzureCopilotSettings settings={settings} onChange={updateSettings} hasAzureKey={credStatus.has_azure_key} onDisconnect={() => disconnectCredential({ azure_openai_api_key: '', azure_openai_endpoint: '', azure_openai_deployment_name: '' }, 'Azure Copilot')} />
       <GroqSettings settings={settings} onChange={updateSettings} hasGroqKey={credStatus.has_groq_key} onDisconnect={() => disconnectCredential({ groq_api_key: '' }, 'Groq')} />
       <WordPressSettings settings={settings} onChange={updateSettings} hasWpPassword={credStatus.has_wp_password} onDisconnect={() => disconnectCredential({ wordpress_url: '', wordpress_username: '', wordpress_app_password: '' }, 'WordPress')} />
       <JetpackSettings settings={settings} hasWpPassword={credStatus.has_wp_password} />
