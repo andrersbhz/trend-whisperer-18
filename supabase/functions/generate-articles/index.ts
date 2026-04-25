@@ -605,31 +605,25 @@ serve(async (req) => {
           parsed = sanitizeSeoFields(result.result);
           usedProvider = result.provider;
 
-          // Etapa de Validação: Revisar o texto contra o tópico original para evitar alucinações
-          console.log(`[Validation] Checking article for topic: ${topic.topic}`);
-          const validationPrompt = `Você é um editor de fatos (fact-checker). Compare o artigo abaixo com o tópico original: "${topic.topic}".
-          O artigo contém informações inventadas ou mentirosas que não tem relação com o tópico? 
-          Responda apenas "VALIDO" se estiver correto ou "INVALIDO" se houver fake news ou se o assunto foi totalmente inventado.
-          
-          Artigo:
-          Título: ${parsed.title}
-          Conteúdo: ${stripHtml(parsed.content).substring(0, 500)}...`;
-
+          // Etapa de Validação: Revisar o texto contra o tópico original (fact-check leve baseado em heurística)
+          // Verifica se o título/conteúdo realmente menciona o tópico (evita artigos completamente fora do tema)
           try {
-            const validationResp = await callWithFallback(providers, "Você é um revisor rigoroso.", validationPrompt);
-            const isValid = validationResp.result.content?.toUpperCase().includes("VALIDO") || 
-                            validationResp.result.title?.toUpperCase().includes("VALIDO"); // Fallback check dependent on tool return
-            
-            // Note: Since our tool call expects a specific structure, we might need a simpler check or a dedicated mini-call.
-            // For now, let's use a simpler heuristic or refine the system prompt further if the tool structure is rigid.
-            console.log(`[Validation] Result for "${topic.topic}": ${isValid ? 'PASSED' : 'REJECTED'}`);
-            
-            if (!isValid && !validationResp.result.content?.toUpperCase().includes("INVALIDO")) {
-              // Se a IA retornar algo que não seja explicitamente "INVALIDO" mas também não confirmou "VALIDO",
-              // vamos ser cautelosos.
+            const topicWords = topic.topic
+              .toLowerCase()
+              .replace(/[^a-záéíóúâêôãõç0-9\s]/gi, " ")
+              .split(/\s+/)
+              .filter((w: string) => w.length > 3);
+            const haystack = `${parsed.title} ${stripHtml(parsed.content)}`.toLowerCase();
+            const matched = topicWords.filter((w: string) => haystack.includes(w)).length;
+            const ratio = topicWords.length > 0 ? matched / topicWords.length : 1;
+            console.log(`[Validation] Topic "${topic.topic}" word-match ratio: ${(ratio * 100).toFixed(0)}% (${matched}/${topicWords.length})`);
+            if (topicWords.length >= 2 && ratio < 0.3) {
+              console.warn(`[Validation] Article rejected — does not reference topic enough.`);
+              failureReasons.push({ status: 422, message: `Artigo descartado por baixa aderência ao tópico "${topic.topic}".` });
+              continue;
             }
           } catch (vErr) {
-            console.warn("[Validation] Validation step skipped due to error:", vErr);
+            console.warn("[Validation] Skipped:", vErr);
           }
 
         } catch (err: any) {
