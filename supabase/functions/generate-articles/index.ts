@@ -288,11 +288,12 @@ const IMAGE_PROMPT_TEMPLATE = (title: string, category: string) =>
   `Create a professional, photorealistic news article featured image about: "${title}" (category: ${category}). Requirements: Editorial/journalistic style, visually represents the article topic, NO text overlay, NO watermarks, NO logos, high quality, 16:9 aspect ratio, vibrant colors, professional lighting, suitable as a WordPress featured image.`;
 
 async function generateImageGemini(apiKey: string, title: string, category: string): Promise<string | null> {
-  const models = ["gemini-1.5-flash", "gemini-2.0-flash-exp"];
+  const models = ["gemini-1.5-flash", "gemini-1.5-pro"];
   for (const model of models) {
     try {
       console.log(`[Image] Attempting generation with Gemini model: ${model}`);
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      // Using v1 for general availability
+      const url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`;
       const resp = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -300,7 +301,6 @@ async function generateImageGemini(apiKey: string, title: string, category: stri
           contents: [{ parts: [{ text: IMAGE_PROMPT_TEMPLATE(title, category) }] }],
           generationConfig: { 
             responseModalities: ["IMAGE"],
-            // Limitamos a 1 candidato para economizar e ser mais rápido
             candidateCount: 1
           },
         }),
