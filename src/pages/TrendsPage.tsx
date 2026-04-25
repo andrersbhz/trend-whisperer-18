@@ -17,11 +17,36 @@ const TrendsPage = () => {
   const [fetching, setFetching] = useState(false);
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
   const [generating, setGenerating] = useState(false);
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const [refreshInterval, setRefreshInterval] = useState(30); // minutos
 
   const fetchTopics = async () => {
     if (!user) return;
 
     try {
+      // Buscar configurações para saber o intervalo e última atualização
+      const { data: settings } = await supabase
+        .from('user_settings')
+        .select('last_trends_fetch, trends_refresh_interval')
+        .eq('user_id', user.id)
+        .single();
+
+      if (settings) {
+        if (settings.last_trends_fetch) setLastUpdate(new Date(settings.last_trends_fetch));
+        if (settings.trends_refresh_interval) setRefreshInterval(settings.trends_refresh_interval);
+
+        // Lógica de atualização automática se o tempo expirou
+        const now = new Date();
+        const last = settings.last_trends_fetch ? new Date(settings.last_trends_fetch) : new Date(0);
+        const diffMinutes = (now.getTime() - last.getTime()) / (1000 * 60);
+
+        if (diffMinutes >= (settings.trends_refresh_interval || 30)) {
+          console.log("Intervalo de atualização atingido, buscando novas tendências...");
+          handleFetchTrends();
+          return; // handleFetchTrends chamará fetchTopics ao terminar
+        }
+      }
+
       const data = await runBackendQuery(() =>
         supabase
           .from('trending_topics')
@@ -43,6 +68,13 @@ const TrendsPage = () => {
 
   useEffect(() => {
     fetchTopics();
+
+    // Setup de um timer para verificar periodicamente enquanto a página está aberta
+    const timer = setInterval(() => {
+      fetchTopics();
+    }, 60000); // verifica a cada minuto
+
+    return () => clearInterval(timer);
   }, [user]);
 
   const handleFetchTrends = async () => {
@@ -145,7 +177,15 @@ const TrendsPage = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Tendências</h1>
-          <p className="text-muted-foreground text-sm mt-1">Assuntos em alta no Brasil</p>
+          <div className="flex items-center gap-2 mt-1">
+            <p className="text-muted-foreground text-sm">Assuntos em alta no Brasil</p>
+            {lastUpdate && (
+              <span className="text-[10px] bg-secondary/50 px-2 py-0.5 rounded-full text-muted-foreground flex items-center gap-1">
+                <RefreshCw className={`h-2.5 w-2.5 ${fetching ? 'animate-spin' : ''}`} />
+                Última atualização: {lastUpdate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            )}
+          </div>
         </div>
         <div className="flex gap-2">
           {selectedTopics.length > 0 && (
