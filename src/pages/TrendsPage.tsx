@@ -232,36 +232,36 @@ const TrendsPage = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Tendências</h1>
-          <div className="flex items-center gap-2 mt-1">
+          <div className="flex flex-wrap items-center gap-2 mt-1">
             <p className="text-muted-foreground text-sm">Assuntos em alta no Brasil</p>
             {lastUpdate && (
-              <span className="text-[10px] bg-secondary/50 px-2 py-0.5 rounded-full text-muted-foreground flex items-center gap-1">
+              <span className="text-[10px] bg-secondary/50 px-2 py-0.5 rounded-full text-muted-foreground flex items-center gap-1 whitespace-nowrap">
                 <RefreshCw className={`h-2.5 w-2.5 ${fetching ? 'animate-spin' : ''}`} />
                 Última atualização: {lastUpdate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
               </span>
             )}
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 justify-end">
           {selectedTopics.length > 0 && (
             <Button 
               onClick={() => handleGenerate(topics.filter(t => selectedTopics.includes(t.id)))} 
               disabled={generating || fetching}
               variant="default"
-              className="gradient-primary shadow-neon-lilac"
+              className="gradient-primary shadow-neon-lilac order-1 sm:order-none w-full sm:w-auto"
             >
               {generating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
               Gerar Artigos com Selecionados ({selectedTopics.length})
             </Button>
           )}
-          <Button onClick={handleFetchTrends} disabled={fetching || generating} variant="outline" size="sm" className="shadow-sm">
+          <Button onClick={handleFetchTrends} disabled={fetching || generating} variant="outline" size="sm" className="shadow-sm order-3 sm:order-none flex-1 sm:flex-none">
             {fetching ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
             {fetching ? "Atualizando..." : "Atualizar"}
           </Button>
-          <Button onClick={() => handleGenerate()} disabled={generating || fetching} className="gradient-primary shadow-neon-lilac hover:scale-[1.02] transition-transform">
+          <Button onClick={() => handleGenerate()} disabled={generating || fetching} className="gradient-primary shadow-neon-lilac hover:scale-[1.02] transition-transform order-2 sm:order-none flex-1 sm:flex-none">
             {generating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
             Atualizar e Gerar Tudo
           </Button>

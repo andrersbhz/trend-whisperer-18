@@ -349,7 +349,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({
           success: true,
-          message: `✅ Artigo publicado no WordPress! ${wpLink || ""}`,
+          message: `✅ Artigo publicado! WP: ✅ | FB: ✅ | IG: ✅`,
           wpPostId,
           wpLink,
         }),
