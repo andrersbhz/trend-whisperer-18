@@ -36,7 +36,7 @@ const TrendsPage = () => {
   const [refreshInterval, setRefreshInterval] = useState(30); // minutos
   const [sourceFilter, setSourceFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<"recent" | "oldest">("recent");
-  const [timeFilter, setTimeFilter] = useState<string>("24h");
+  const [timeFilter, setTimeFilter] = useState<string>("all");
 
   const sources = useMemo(() => {
     const uniqueSources = new Set<string>();
@@ -335,7 +335,7 @@ const TrendsPage = () => {
         </Card>
       ) : (
         <div className="grid gap-3">
-          {filteredAndSortedTopics.map((topic) => (
+          {filteredAndSortedTopics.slice(0, 50).map((topic) => (
             <Card key={topic.id} className="shadow-card">
               <CardContent className="p-4 flex items-center gap-4">
                 <Checkbox 
