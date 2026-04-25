@@ -24,6 +24,29 @@ const TrendsPage = () => {
     if (!user) return;
 
     try {
+      // Buscar configurações para saber o intervalo e última atualização
+      const { data: settings } = await supabase
+        .from('user_settings')
+        .select('last_trends_fetch, trends_refresh_interval')
+        .eq('user_id', user.id)
+        .single();
+
+      if (settings) {
+        if (settings.last_trends_fetch) setLastUpdate(new Date(settings.last_trends_fetch));
+        if (settings.trends_refresh_interval) setRefreshInterval(settings.trends_refresh_interval);
+
+        // Lógica de atualização automática se o tempo expirou
+        const now = new Date();
+        const last = settings.last_trends_fetch ? new Date(settings.last_trends_fetch) : new Date(0);
+        const diffMinutes = (now.getTime() - last.getTime()) / (1000 * 60);
+
+        if (diffMinutes >= (settings.trends_refresh_interval || 30)) {
+          console.log("Intervalo de atualização atingido, buscando novas tendências...");
+          handleFetchTrends();
+          return; // handleFetchTrends chamará fetchTopics ao terminar
+        }
+      }
+
       const data = await runBackendQuery(() =>
         supabase
           .from('trending_topics')
@@ -45,6 +68,13 @@ const TrendsPage = () => {
 
   useEffect(() => {
     fetchTopics();
+
+    // Setup de um timer para verificar periodicamente enquanto a página está aberta
+    const timer = setInterval(() => {
+      fetchTopics();
+    }, 60000); // verifica a cada minuto
+
+    return () => clearInterval(timer);
   }, [user]);
 
   const handleFetchTrends = async () => {
