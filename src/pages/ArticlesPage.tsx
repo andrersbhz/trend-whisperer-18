@@ -509,36 +509,111 @@ const ArticlesPage = () => {
           if (!open) setPreview(null);
         }}
       >
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto glass-card border-border">
-          <DialogHeader>
-            <DialogTitle className="text-foreground">{previewLoading ? 'Carregando prévia...' : preview?.title}</DialogTitle>
-          </DialogHeader>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto glass-card border-border p-0">
+          <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b p-4 flex items-center justify-between">
+            <DialogHeader className="p-0">
+              <DialogTitle className="text-lg font-bold">Revisão do Artigo</DialogTitle>
+            </DialogHeader>
+            {(preview?.status === 'ready' || preview?.status === 'draft') && (
+              <Button 
+                onClick={() => {
+                  handlePublish(preview.id);
+                  setPreviewOpen(false);
+                }}
+                disabled={publishing === preview.id}
+                className="gradient-primary shadow-neon-lilac"
+              >
+                {publishing === preview.id ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
+                Confirmar e Publicar
+              </Button>
+            )}
+          </div>
+          
           {previewLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="h-10 w-10 animate-spin text-primary" />
             </div>
           ) : (
-            <div className="space-y-3 text-sm">
-              {preview?.featured_image_url && (
-                <img src={preview.featured_image_url} alt={preview.title} className="w-full rounded-lg" />
-              )}
-              <div className="flex gap-2 flex-wrap">
-                <Badge variant="secondary" className="bg-primary/10 text-primary">{preview?.category}</Badge>
-                {preview?.seo_keyword && <Badge variant="outline" className="border-accent/30 text-accent">🔑 {preview.seo_keyword}</Badge>}
-              </div>
-              {preview?.meta_description && (
-                <div className="p-3 rounded-lg bg-secondary/30">
-                  <p className="text-xs font-medium text-muted-foreground mb-1">Meta Description</p>
-                  <p className="text-sm text-foreground">{preview?.meta_description}</p>
+            <div className="p-6 space-y-6">
+              {/* Top Section: Title & Image */}
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1 block">Título do Post</label>
+                    <h2 className="text-xl font-bold leading-tight">{preview?.title}</h2>
+                  </div>
+                  
+                  <div>
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1 block">Slug (URL)</label>
+                    <code className="text-xs bg-secondary/50 px-2 py-1 rounded block truncate border border-border/50">
+                      /{preview?.slug || preview?.seo_keyword?.toLowerCase().replace(/[^a-z0-9]+/g, '-')}
+                    </code>
+                  </div>
+
+                  <div className="flex gap-2 flex-wrap">
+                    <Badge variant="secondary" className="bg-primary/10 text-primary capitalize">{preview?.category}</Badge>
+                    {preview?.status && (
+                      <Badge className={`${statusColors[preview.status]} border-none`}>
+                        {statusLabels[preview.status]}
+                      </Badge>
+                    )}
+                  </div>
                 </div>
-              )}
-              <div
-                className="prose prose-sm prose-invert max-w-none text-foreground"
-                dangerouslySetInnerHTML={{ __html: preview?.content || '' }}
-              />
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1 block">Imagem Destacada</label>
+                  {preview?.featured_image_url ? (
+                    <div className="relative aspect-video rounded-lg overflow-hidden border shadow-sm">
+                      <img src={preview.featured_image_url} alt={preview.title} className="w-full h-full object-cover" />
+                    </div>
+                  ) : (
+                    <div className="aspect-video rounded-lg bg-secondary/30 flex items-center justify-center border border-dashed">
+                      <ImagePlus className="h-8 w-8 text-muted-foreground/40" />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* SEO Details */}
+              <div className="grid md:grid-cols-2 gap-4">
+                <Card className="bg-secondary/20 border-border/50">
+                  <CardContent className="p-4">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2 block">Otimização SEO</label>
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-[11px] font-medium text-muted-foreground">Palavra-Chave Foco</p>
+                        <p className="text-sm font-semibold text-primary">🔑 {preview?.seo_keyword || 'Não definida'}</p>
+                      </div>
+                      <div>
+                        <p className="text-[11px] font-medium text-muted-foreground">SEO Title</p>
+                        <p className="text-sm line-clamp-1">{preview?.seo_title || preview?.title}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-secondary/20 border-border/50">
+                  <CardContent className="p-4">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2 block">Meta Descrição</label>
+                    <p className="text-xs text-foreground leading-relaxed italic">
+                      {preview?.meta_description || 'Nenhuma descrição gerada.'}
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Content Preview */}
+              <div className="space-y-3 border-t pt-6">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2 block">Conteúdo do Artigo</label>
+                <div
+                  className="prose prose-sm prose-invert max-w-none text-foreground bg-card/30 p-4 rounded-lg border border-border/50"
+                  dangerouslySetInnerHTML={{ __html: preview?.content || '' }}
+                />
+              </div>
             </div>
           )}
         </DialogContent>
+      </Dialog>
       </Dialog>
     </div>
   );
