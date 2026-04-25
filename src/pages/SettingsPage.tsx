@@ -160,6 +160,8 @@ const SettingsPage = () => {
         facebook_page_id: settings.facebook_page_id,
         instagram_account_id: settings.instagram_account_id,
         google_analytics_property_id: settings.google_analytics_property_id,
+        azure_openai_endpoint: settings.azure_openai_endpoint,
+        azure_openai_deployment_name: settings.azure_openai_deployment_name,
         categories: settings.categories,
         articles_per_day: settings.articles_per_day,
         auto_publish: settings.auto_publish,
