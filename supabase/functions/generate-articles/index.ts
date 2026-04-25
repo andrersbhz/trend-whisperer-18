@@ -475,15 +475,22 @@ serve(async (req) => {
     }
 
     const providers: ProviderConfig[] = [];
-    // Ordem (preferência do usuário): Gemini PRIMEIRO → OpenAI → Azure (Copilot) → Groq.
+    // Ordem de redundância definida pelo usuário:
+    // 1. Gemini (Principal)
     if (geminiApiKey) providers.push({ name: "Gemini", call: (s, u) => callGeminiDirect(geminiApiKey!, s, u) });
+    
+    // 2. OpenAI / ChatGPT (Secundário)
     if (openaiApiKey) providers.push({ name: "OpenAI", call: (s, u) => callOpenAIDirect(openaiApiKey!, s, u) });
+    
+    // 3. Azure Copilot (Terceiro)
     if (azureApiKey && settings?.azure_openai_endpoint && settings?.azure_openai_deployment_name) {
       providers.push({ 
         name: "Azure Copilot", 
         call: (s, u) => callAzureOpenAIDirect(azureApiKey!, settings.azure_openai_endpoint, settings.azure_openai_deployment_name, s, u) 
       });
     }
+    
+    // 4. Groq (Demais)
     if (groqApiKey) providers.push({ name: "Groq", call: (s, u) => callGroqDirect(groqApiKey!, s, u) });
 
     if (providers.length === 0) {
