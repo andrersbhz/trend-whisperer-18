@@ -235,11 +235,11 @@ const TrendsPage = () => {
             <Button 
               onClick={() => handleGenerate(topics.filter(t => selectedTopics.includes(t.id)))} 
               disabled={generating || fetching}
-              variant="outline"
-              className="border-primary text-primary hover:bg-primary/10"
+              variant="default"
+              className="gradient-primary shadow-neon-lilac"
             >
               {generating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
-              Gerar ({selectedTopics.length})
+              Gerar Artigos com Selecionados ({selectedTopics.length})
             </Button>
           )}
           <Button onClick={handleFetchTrends} disabled={fetching || generating} variant="outline" size="sm" className="shadow-sm">
