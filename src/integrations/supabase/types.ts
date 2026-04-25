@@ -297,9 +297,11 @@ export type Database = {
           groq_api_key: string | null
           id: string
           instagram_account_id: string | null
+          last_trends_fetch: string | null
           linkedin_access_token: string | null
           linkedin_org_id: string | null
           openai_api_key: string | null
+          trends_refresh_interval: number | null
           updated_at: string
           user_id: string
           wordpress_app_password: string | null
@@ -321,9 +323,11 @@ export type Database = {
           groq_api_key?: string | null
           id?: string
           instagram_account_id?: string | null
+          last_trends_fetch?: string | null
           linkedin_access_token?: string | null
           linkedin_org_id?: string | null
           openai_api_key?: string | null
+          trends_refresh_interval?: number | null
           updated_at?: string
           user_id: string
           wordpress_app_password?: string | null
@@ -345,9 +349,11 @@ export type Database = {
           groq_api_key?: string | null
           id?: string
           instagram_account_id?: string | null
+          last_trends_fetch?: string | null
           linkedin_access_token?: string | null
           linkedin_org_id?: string | null
           openai_api_key?: string | null
+          trends_refresh_interval?: number | null
           updated_at?: string
           user_id?: string
           wordpress_app_password?: string | null
