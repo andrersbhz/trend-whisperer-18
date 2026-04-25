@@ -219,7 +219,41 @@ async function callAzureOpenAIDirect(apiKey: string, endpoint: string, deploymen
 }
 
 async function callLovableGateway(apiKey: string, systemPrompt: string, userPrompt: string): Promise<AIResponse> {
-... keep existing code
+  const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "google/gemini-1.5-flash",
+      messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }],
+      tools: [{
+        type: "function",
+        function: {
+          name: "create_article",
+          description: "Cria um artigo completo para publicação no WordPress.",
+          parameters: {
+            type: "object",
+            properties: Object.fromEntries(Object.entries(ARTICLE_TOOL_PARAMS).map(([k, v]) => [k, { type: "string", description: v }])),
+            required: Object.keys(ARTICLE_TOOL_PARAMS),
+            additionalProperties: false,
+          },
+        },
+      }],
+      tool_choice: { type: "function", function: { name: "create_article" } },
+    }),
+  });
+
+  if (!resp.ok) {
+    const errText = await resp.text();
+    throw new Error(`Gateway error ${resp.status}: ${errText}`);
+  }
+
+  const aiData = await resp.json();
+  const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+  if (toolCall?.function?.arguments) return JSON.parse(toolCall.function.arguments);
+  let content = aiData.choices?.[0]?.message?.content || "";
+  content = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+  return JSON.parse(content);
+}
 
 // ── Multi-provider fallback for text ─────────────────────────────────────
 
