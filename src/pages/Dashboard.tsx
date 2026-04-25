@@ -137,17 +137,41 @@ const Dashboard = () => {
     if (!user) return;
     setSavingPrompt(true);
     try {
-      await runBackendMutation(() =>
-        supabase
-          .from('user_settings')
-          .upsert(
-            { user_id: user.id, writer_prompt: writerPrompt } as any,
-            { onConflict: 'user_id' },
-          ),
-      );
+    try {
+      const { data: existing } = await supabase
+        .from('user_settings')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (existing) {
+        await runBackendMutation(() =>
+          supabase
+            .from('user_settings')
+            .update({ writer_prompt: writerPrompt } as any)
+            .eq('user_id', user.id),
+        );
+      } else {
+        await runBackendMutation(() =>
+          supabase
+            .from('user_settings')
+            .insert({ user_id: user.id, writer_prompt: writerPrompt } as any),
+        );
+      }
       toast({ title: 'Prompt salvo!', description: 'O perfil do escritor foi atualizado e será usado em todas as gerações.' });
     } catch (error) {
-      toast({ title: 'Erro', description: getErrorMessage(error), variant: 'destructive' });
+      if (getErrorMessage(error).includes('duplicate key')) {
+        // Retry with update if insert failed due to race condition
+        await runBackendMutation(() =>
+          supabase
+            .from('user_settings')
+            .update({ writer_prompt: writerPrompt } as any)
+            .eq('user_id', user.id),
+        );
+        toast({ title: 'Prompt salvo!', description: 'O perfil do escritor foi atualizado.' });
+      } else {
+        toast({ title: 'Erro', description: getErrorMessage(error), variant: 'destructive' });
+      }
     } finally {
       setSavingPrompt(false);
     }
