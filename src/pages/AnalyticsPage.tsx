@@ -563,10 +563,58 @@ const AnalyticsPage = () => {
       )}
 
       {!loadingJetpack && !jetpackStats && (
-        <Card className="glass-card">
-          <CardContent className="p-4 text-center text-sm text-muted-foreground">
-            <BarChart3 className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            Jetpack não disponível. Instale e ative o Jetpack no WordPress para ver estatísticas do site.
+        <Card className="glass-card neon-border-lilac overflow-hidden">
+          <CardContent className="p-0">
+            <div className="flex flex-col md:flex-row items-center">
+              <div className="w-full md:w-1/3 bg-lilac/5 p-6 flex flex-col items-center justify-center text-center border-b md:border-b-0 md:border-r border-lilac/20">
+                <div className="w-16 h-16 rounded-full bg-lilac/10 flex items-center justify-center mb-4 ring-2 ring-lilac/30 shadow-[0_0_15px_rgba(168,85,247,0.2)]">
+                  <BarChart3 className="h-8 w-8 text-lilac" />
+                </div>
+                <h3 className="text-lg font-semibold text-foreground mb-1">Jetpack Inativo</h3>
+                <p className="text-xs text-muted-foreground max-w-[200px]">
+                  Estatísticas em tempo real diretamente do seu WordPress
+                </p>
+              </div>
+              
+              <div className="w-full md:w-2/3 p-6 space-y-4">
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-foreground">Como ativar as estatísticas:</p>
+                  <ul className="space-y-2">
+                    <li className="flex items-start gap-2 text-xs text-muted-foreground">
+                      <div className="mt-1 bg-lilac/20 text-lilac rounded-full p-0.5"><Clock className="h-3 w-3" /></div>
+                      <span>Verifique se o plugin <strong>Jetpack</strong> está instalado e ativo no seu WordPress.</span>
+                    </li>
+                    <li className="flex items-start gap-2 text-xs text-muted-foreground">
+                      <div className="mt-1 bg-lilac/20 text-lilac rounded-full p-0.5"><Globe className="h-3 w-3" /></div>
+                      <span>Certifique-se de que o site está conectado a uma conta <strong>WordPress.com</strong>.</span>
+                    </li>
+                    <li className="flex items-start gap-2 text-xs text-muted-foreground">
+                      <div className="mt-1 bg-lilac/20 text-lilac rounded-full p-0.5"><RefreshCw className="h-3 w-3" /></div>
+                      <span>Confirme se a <strong>URL, usuário e senha de aplicativo</strong> estão corretos nas configurações.</span>
+                    </li>
+                  </ul>
+                </div>
+                
+                <div className="flex flex-wrap gap-3 pt-2">
+                  <Button 
+                    onClick={() => navigate('/settings')} 
+                    size="sm"
+                    className="bg-lilac hover:bg-lilac/80 text-white"
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Configurar WordPress
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => window.open('https://jetpack.com/support/getting-started-with-jetpack/', '_blank')}
+                  >
+                    <Globe className="h-4 w-4 mr-2" />
+                    Tutorial Jetpack
+                  </Button>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
       )}
