@@ -36,7 +36,7 @@ const TrendsPage = () => {
   const [refreshInterval, setRefreshInterval] = useState(30); // minutos
   const [sourceFilter, setSourceFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<"recent" | "oldest">("recent");
-  const [timeFilter, setTimeFilter] = useState<string>("24h");
+  const [timeFilter, setTimeFilter] = useState<string>("all");
 
   const sources = useMemo(() => {
     const uniqueSources = new Set<string>();
