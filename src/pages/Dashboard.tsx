@@ -308,7 +308,54 @@ const Dashboard = () => {
         <AnalyticsPage />
       </div>
 
-      <AIProvidersPanel />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <AIProvidersPanel />
+        </div>
+        
+        {/* Google Trends Preview */}
+        <Card className="glass-card neon-border-lilac h-full">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-primary" />
+                <CardTitle className="text-lg">Google Trends</CardTitle>
+              </div>
+              <Button variant="ghost" size="sm" asChild className="text-xs h-7">
+                <a href="/trends">Ver tudo</a>
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">Assuntos quentes agora no Brasil</p>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              </div>
+            ) : trendingList.length === 0 ? (
+              <p className="text-xs text-muted-foreground py-8 text-center italic">
+                Nenhuma tendência disponível.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {trendingList.slice(0, 6).map((t: any) => (
+                  <div key={t.id} className="group p-2.5 rounded-md bg-secondary/20 hover:bg-secondary/40 transition-colors border border-transparent hover:border-primary/20">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-medium truncate">{t.topic}</span>
+                      <Badge variant="outline" className="text-[10px] h-4 bg-primary/5 text-primary border-primary/10 px-1">
+                        {t.category}
+                      </Badge>
+                    </div>
+                    {t.search_volume && (
+                      <p className="text-[10px] text-muted-foreground mt-0.5">{t.search_volume} buscas</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Métricas por Categoria */}
       <Card className="glass-card neon-border-pink">
