@@ -242,7 +242,20 @@ const TrendsPage = () => {
                 />
                 <div className="flex-1 flex items-center justify-between">
                   <div>
-                    <p className="font-medium text-foreground">{topic.topic}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-foreground">{topic.topic}</p>
+                      {topic.source_url && (
+                        <a 
+                          href={topic.source_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-muted-foreground hover:text-primary transition-colors"
+                          title="Ver fonte original"
+                        >
+                          <TrendingUp className="h-3 w-3" />
+                        </a>
+                      )}
+                    </div>
                     {topic.context && (
                       <p className="text-xs text-muted-foreground mt-0.5 italic line-clamp-1">{topic.context}</p>
                     )}
