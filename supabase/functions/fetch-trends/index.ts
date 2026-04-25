@@ -81,6 +81,56 @@ async function callAI(providers: any[], systemPrompt: string, userPrompt: string
   throw new Error("AI failed");
 }
 
+// ── RSS Direct Parser (fallback when AI fails) ──────────────────────────
+
+function parseRSSDirectly(rss: string, categories: string[]): any[] {
+  const items = rss.match(/<item[\s\S]*?<\/item>/gi) || [];
+  const decode = (s: string) =>
+    s.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
+      .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"').replace(/&#39;/g, "'").trim();
+  const pick = (block: string, tag: string): string => {
+    const m = block.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i"));
+    return m ? decode(m[1]) : "";
+  };
+
+  const guessCategory = (text: string): string => {
+    const t = text.toLowerCase();
+    const keywords: Record<string, string[]> = {
+      esportes: ["futebol", "jogo", "time", "campeonato", "gol", "atleta", "olimp", "copa", "seleção", "técnico", "brasileirão"],
+      politica: ["presidente", "ministro", "senado", "câmara", "lula", "governo", "stf", "congresso", "deputado"],
+      policia: ["polícia", "preso", "crime", "operação", "assalto", "homicídio", "investigação", "tráfico"],
+      saude: ["saúde", "vacina", "hospital", "anvisa", "doença", "covid", "médico", "tratamento"],
+      celebridades: ["ator", "atriz", "cantor", "novela", "famoso", "bbb", "show", "reality"],
+      financas: ["dólar", "bolsa", "ibovespa", "juros", "banco central", "selic", "imposto", "economia"],
+    };
+    for (const cat of categories) {
+      const kws = keywords[cat] || [cat];
+      if (kws.some((kw) => t.includes(kw))) return cat;
+    }
+    return categories[0] || "geral";
+  };
+
+  const topics: any[] = [];
+  for (const item of items.slice(0, 40)) {
+    const topic = pick(item, "title");
+    if (!topic) continue;
+    const traffic = pick(item, "ht:approx_traffic");
+    const newsTitle = pick(item, "ht:news_item_title");
+    const newsSource = pick(item, "ht:news_item_source");
+    const newsUrl = pick(item, "ht:news_item_url");
+    topics.push({
+      topic,
+      search_volume: traffic || "médio",
+      category: guessCategory(`${topic} ${newsTitle}`),
+      context: newsTitle || null,
+      source_name: newsSource || null,
+      source_url: newsUrl || null,
+    });
+  }
+  return topics;
+}
+
 // ── JSON Extraction / Repair ─────────────────────────────────────────────
 
 function extractTopicsFromAIResponse(raw: string): any[] {
@@ -171,10 +221,21 @@ serve(async (req) => {
     const rss = await fetchGoogleTrendsRSS();
     if (!rss) throw new Error("RSS not available");
 
-    const { systemPrompt, userPrompt } = buildRSSCategorizationPrompt(rss, categories);
-    const { content } = await callAI(providers, systemPrompt, userPrompt);
+    let topics: any[] = [];
+    try {
+      const { systemPrompt, userPrompt } = buildRSSCategorizationPrompt(rss, categories);
+      const { content } = await callAI(providers, systemPrompt, userPrompt);
+      topics = extractTopicsFromAIResponse(content);
+    } catch (aiErr) {
+      console.warn("[fetch-trends] AI parsing failed, using RSS fallback:", aiErr);
+    }
 
-    const topics = extractTopicsFromAIResponse(content);
+    // Fallback: parse RSS XML directly when AI fails or returns nothing
+    if (!topics.length) {
+      console.log("[fetch-trends] Falling back to direct RSS parsing");
+      topics = parseRSSDirectly(rss, categories);
+    }
+
     if (!topics.length) {
       throw new Error("Nenhum tópico foi extraído do feed. Tente novamente em alguns minutos.");
     }
