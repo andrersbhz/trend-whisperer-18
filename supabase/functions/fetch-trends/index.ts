@@ -247,7 +247,15 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { userId } = await req.json();
+    const body = await req.text();
+    let userId;
+    try {
+      const json = JSON.parse(body);
+      userId = json.userId;
+    } catch (e) {
+      console.error("[fetch-trends] Failed to parse request body:", body);
+      throw new Error("Invalid request body");
+    }
     const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     
     const { data: settings } = await supabase.from("user_settings").select("*").eq("user_id", userId).single();
