@@ -206,11 +206,13 @@ serve(async (req) => {
       let imageUrl: string | null = null;
       const providerErrors: string[] = [];
 
-      // Cadeia: Gemini (chave usuário) → OpenAI DALL-E (chave usuário)
+      // Cadeia: Gemini (prioridade) → OpenAI DALL-E (backup)
       if (geminiApiKey) {
         try { imageUrl = await generateImageGemini(geminiApiKey, article.title, article.category); }
         catch (error) { providerErrors.push(`Gemini: ${getErrorMessage(error)}`); }
       }
+      
+      // Se Gemini falhou ou não estava disponível, tenta OpenAI
       if (!imageUrl && openaiApiKey) {
         try { imageUrl = await generateImageDallE(openaiApiKey, article.title, article.category); }
         catch (error) { providerErrors.push(`OpenAI: ${getErrorMessage(error)}`); }
