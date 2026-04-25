@@ -113,8 +113,12 @@ serve(async (req) => {
     const cleaned = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
     const topics = JSON.parse(cleaned);
 
+    // Limpar tópicos antigos e NÃO usados antes de inserir novos para garantir que a lista seja sempre atual
     await supabase.from("trending_topics").delete().eq("user_id", userId).eq("used", false);
     
+    // Chamar função RPC para limpeza profunda (temas com mais de 24h)
+    await supabase.rpc('clean_old_trending_topics');
+
     // Atualizar timestamp da última busca nas configurações do usuário
     await supabase.from("user_settings").update({ 
       last_trends_fetch: new Date().toISOString() 

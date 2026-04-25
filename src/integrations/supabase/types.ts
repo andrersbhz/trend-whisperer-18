@@ -375,6 +375,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      clean_old_trending_topics: { Args: never; Returns: undefined }
       decrypt_credential: {
         Args: { enc_key: string; val: string }
         Returns: string
