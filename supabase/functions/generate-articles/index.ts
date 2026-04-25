@@ -73,7 +73,7 @@ const ARTICLE_TOOL_PARAMS = {
 };
 
 async function callGeminiDirect(apiKey: string, systemPrompt: string, userPrompt: string): Promise<AIResponse> {
-  const model = "gemini-1.5-flash";
+  const model = "gemini-2.0-flash"; // Usando Gemini 2.0 Flash (Nano Banana)
   let lastError: any = null;
 
   try {
@@ -316,7 +316,9 @@ const IMAGE_PROMPT_TEMPLATE = (title: string, category: string) =>
   `Create a professional, photorealistic news article featured image about: "${title}" (category: ${category}). Requirements: Editorial/journalistic style, visually represents the article topic, NO text overlay, NO watermarks, NO logos, high quality, 16:9 aspect ratio, vibrant colors, professional lighting, suitable as a WordPress featured image.`;
 
 async function generateImageGemini(apiKey: string, title: string, category: string): Promise<string | null> {
-  const models = ["gemini-1.5-flash", "gemini-1.5-pro"];
+  // Preferencial: gemini-2.0-flash (padrão) -> gemini-2.0-flash-exp -> gemini-1.5-flash
+  // Nota: Gemini 2.0+ suporta Image Generation nativamente via API "Imagen" integrada ou via resposta multimodal dependendo do modelo.
+  const models = ["gemini-2.0-flash", "gemini-1.5-flash"];
   for (const model of models) {
     try {
       console.log(`[Image] Attempting generation with Gemini model: ${model}`);
