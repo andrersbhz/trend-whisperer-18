@@ -175,8 +175,10 @@ const TrendsPage = () => {
       if (error) throw error;
 
       toast({ 
-        title: data?.success ? 'Sucesso' : 'Atenção', 
-        description: data?.message || 'Artigos sendo gerados.',
+        title: data?.success ? 'Artigos em geração!' : 'Atenção', 
+        description: data?.success 
+          ? 'Os artigos estão sendo criados. Vá para a página de Artigos para revisar e publicar.' 
+          : (data?.message || 'Erro ao iniciar geração.'),
         variant: data?.success ? 'default' : 'destructive'
       });
       
