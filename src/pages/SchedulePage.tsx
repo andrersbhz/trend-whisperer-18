@@ -445,6 +445,7 @@ const SchedulePage = () => {
                           {article.status === 'published' ? 'Publicado' : article.is_approved === false ? 'Pausado' : 'Agendado'}
                         </Badge>
                       </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
