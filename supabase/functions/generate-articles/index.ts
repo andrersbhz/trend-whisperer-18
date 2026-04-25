@@ -73,82 +73,67 @@ const ARTICLE_TOOL_PARAMS = {
 };
 
 async function callGeminiDirect(apiKey: string, systemPrompt: string, userPrompt: string): Promise<AIResponse> {
-  // Try v1beta as the primary, fallback to v1 if 404
-  const models = ["gemini-1.5-flash"];
+  const model = "gemini-1.5-flash";
   let lastError: any = null;
 
-  for (const model of models) {
-    try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-      const body = {
-        system_instruction: { parts: [{ text: systemPrompt }] },
-        contents: [{ role: "user", parts: [{ text: userPrompt }] }],
-        tools: [{ function_declarations: [{
-          name: "create_article",
-          description: "Cria um artigo completo para publicação no WordPress com todos os campos SEO.",
-          parameters: {
-            type: "OBJECT",
-            properties: Object.fromEntries(Object.entries(ARTICLE_TOOL_PARAMS).map(([k, v]) => [k, { type: "STRING", description: v }])),
-            required: Object.keys(ARTICLE_TOOL_PARAMS),
-          },
-        }] }],
-        tool_config: { function_calling_config: { mode: "ANY", allowed_function_names: ["create_article"] } },
-      };
+  try {
+    // Try v1beta with tools
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+    const body = {
+      system_instruction: { parts: [{ text: systemPrompt }] },
+      contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+      tools: [{ function_declarations: [{
+        name: "create_article",
+        description: "Cria um artigo completo para publicação no WordPress com todos os campos SEO.",
+        parameters: {
+          type: "OBJECT",
+          properties: Object.fromEntries(Object.entries(ARTICLE_TOOL_PARAMS).map(([k, v]) => [k, { type: "STRING", description: v }])),
+          required: Object.keys(ARTICLE_TOOL_PARAMS),
+        },
+      }] }],
+      tool_config: { function_calling_config: { mode: "ANY", allowed_function_names: ["create_article"] } },
+    };
 
-      const resp = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
+    const resp = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
 
-      if (resp.status === 404) {
-        // Try v1 if v1beta fails with 404
-        const v1Url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`;
-        const v1Body = {
-          contents: [{ 
-            role: "user", 
-            parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] 
-          }],
-          generationConfig: {
-            response_mime_type: "application/json",
-            response_schema: {
-              type: "OBJECT",
-              properties: Object.fromEntries(Object.entries(ARTICLE_TOOL_PARAMS).map(([k, v]) => [k, { type: "STRING" }])),
-              required: Object.keys(ARTICLE_TOOL_PARAMS),
-            }
-          }
-        };
-        const v1Resp = await fetch(v1Url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(v1Body),
-        });
-
-        if (!v1Resp.ok) {
-          const v1Err = await v1Resp.text();
-          throw new Error(`Gemini API v1 error ${v1Resp.status}: ${v1Err}`);
-        }
-        const v1Data = await v1Resp.json();
-        const text = v1Data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (!text) throw new Error("Gemini v1 returned no text");
-        return JSON.parse(text) as AIResponse;
-      }
-
-      if (!resp.ok) {
-        const errText = await resp.text();
-        throw new Error(`Gemini API v1beta error ${resp.status}: ${errText}`);
-      }
-
+    if (resp.ok) {
       const data = await resp.json();
       const fnCall = data.candidates?.[0]?.content?.parts?.find((p: any) => p.functionCall);
-      if (!fnCall?.functionCall?.args) throw new Error("Gemini did not return function call");
-      return fnCall.functionCall.args as AIResponse;
-    } catch (err) {
-      lastError = err;
-      console.warn(`[AI] Gemini ${model} failed:`, err);
+      if (fnCall?.functionCall?.args) return fnCall.functionCall.args as AIResponse;
+    } else {
+      const errText = await resp.text();
+      console.warn(`[AI] Gemini v1beta failed (${resp.status}): ${errText.substring(0, 200)}`);
     }
+
+    // Fallback: Try v1 (JSON mode)
+    const v1Url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`;
+    const v1Body = {
+      contents: [{ 
+        role: "user", 
+        parts: [{ text: `${systemPrompt}\n\nUSER REQUEST: ${userPrompt}\n\nIMPORTANT: Return ONLY valid JSON matching the article schema.` }] 
+      }]
+    };
+    const v1Resp = await fetch(v1Url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(v1Body),
+    });
+
+    if (v1Resp.ok) {
+      const v1Data = await v1Resp.json();
+      let text = v1Data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      text = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+      return JSON.parse(text) as AIResponse;
+    }
+    const v1Err = await v1Resp.text();
+    throw new Error(`Gemini API failed (v1beta & v1). v1 error: ${v1Err}`);
+  } catch (err) {
+    throw err;
   }
-  throw lastError;
 }
 
 async function callOpenAIDirect(apiKey: string, systemPrompt: string, userPrompt: string): Promise<AIResponse> {
