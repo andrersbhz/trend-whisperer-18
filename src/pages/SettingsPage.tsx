@@ -60,6 +60,7 @@ interface CredentialsStatus {
   has_fb_token: boolean;
   has_gemini_key: boolean;
   has_openai_key: boolean;
+  has_azure_key: boolean;
   has_groq_key: boolean;
 }
 
