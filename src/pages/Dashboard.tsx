@@ -137,7 +137,6 @@ const Dashboard = () => {
     if (!user) return;
     setSavingPrompt(true);
     try {
-    try {
       const { data: existing } = await supabase
         .from('user_settings')
         .select('id')
@@ -161,7 +160,6 @@ const Dashboard = () => {
       toast({ title: 'Prompt salvo!', description: 'O perfil do escritor foi atualizado e será usado em todas as gerações.' });
     } catch (error) {
       if (getErrorMessage(error).includes('duplicate key')) {
-        // Retry with update if insert failed due to race condition
         await runBackendMutation(() =>
           supabase
             .from('user_settings')
