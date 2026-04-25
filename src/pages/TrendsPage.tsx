@@ -40,10 +40,12 @@ const TrendsPage = () => {
         const last = settings.last_trends_fetch ? new Date(settings.last_trends_fetch) : new Date(0);
         const diffMinutes = (now.getTime() - last.getTime()) / (1000 * 60);
 
-        if (diffMinutes >= (settings.trends_refresh_interval || 30)) {
-          console.log("Intervalo de atualização atingido, buscando novas tendências...");
+        // Se passaram mais de X minutos, atualiza automaticamente
+        const interval = settings.trends_refresh_interval || 30;
+        if (diffMinutes >= interval) {
+          console.log(`Intervalo de ${interval}min atingido, atualizando tendências...`);
           handleFetchTrends();
-          return; // handleFetchTrends chamará fetchTopics ao terminar
+          return;
         }
       }
 
