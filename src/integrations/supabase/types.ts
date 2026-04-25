@@ -253,6 +253,8 @@ export type Database = {
           id: string
           related_queries: string[] | null
           search_volume: string | null
+          source_name: string | null
+          source_url: string | null
           topic: string
           used: boolean | null
           user_id: string
@@ -265,6 +267,8 @@ export type Database = {
           id?: string
           related_queries?: string[] | null
           search_volume?: string | null
+          source_name?: string | null
+          source_url?: string | null
           topic: string
           used?: boolean | null
           user_id: string
@@ -277,6 +281,8 @@ export type Database = {
           id?: string
           related_queries?: string[] | null
           search_volume?: string | null
+          source_name?: string | null
+          source_url?: string | null
           topic?: string
           used?: boolean | null
           user_id?: string
