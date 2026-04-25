@@ -73,38 +73,67 @@ const ARTICLE_TOOL_PARAMS = {
 };
 
 async function callGeminiDirect(apiKey: string, systemPrompt: string, userPrompt: string): Promise<AIResponse> {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+  const model = "gemini-1.5-flash";
+  let lastError: any = null;
 
-  const functionDeclaration = {
-    name: "create_article",
-    description: "Cria um artigo completo para publicação no WordPress com todos os campos SEO.",
-    parameters: {
-      type: "OBJECT",
-      properties: Object.fromEntries(Object.entries(ARTICLE_TOOL_PARAMS).map(([k, v]) => [k, { type: "STRING", description: v }])),
-      required: Object.keys(ARTICLE_TOOL_PARAMS),
-    },
-  };
-
-  const resp = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
+  try {
+    // Try v1beta with tools
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+    const body = {
       system_instruction: { parts: [{ text: systemPrompt }] },
       contents: [{ role: "user", parts: [{ text: userPrompt }] }],
-      tools: [{ function_declarations: [functionDeclaration] }],
+      tools: [{ function_declarations: [{
+        name: "create_article",
+        description: "Cria um artigo completo para publicação no WordPress com todos os campos SEO.",
+        parameters: {
+          type: "OBJECT",
+          properties: Object.fromEntries(Object.entries(ARTICLE_TOOL_PARAMS).map(([k, v]) => [k, { type: "STRING", description: v }])),
+          required: Object.keys(ARTICLE_TOOL_PARAMS),
+        },
+      }] }],
       tool_config: { function_calling_config: { mode: "ANY", allowed_function_names: ["create_article"] } },
-    }),
-  });
+    };
 
-  if (!resp.ok) {
-    const errText = await resp.text();
-    throw new Error(`Gemini API error ${resp.status}: ${errText}`);
+    const resp = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+
+    if (resp.ok) {
+      const data = await resp.json();
+      const fnCall = data.candidates?.[0]?.content?.parts?.find((p: any) => p.functionCall);
+      if (fnCall?.functionCall?.args) return fnCall.functionCall.args as AIResponse;
+    } else {
+      const errText = await resp.text();
+      console.warn(`[AI] Gemini v1beta failed (${resp.status}): ${errText.substring(0, 200)}`);
+    }
+
+    // Fallback: Try v1 (JSON mode)
+    const v1Url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`;
+    const v1Body = {
+      contents: [{ 
+        role: "user", 
+        parts: [{ text: `${systemPrompt}\n\nUSER REQUEST: ${userPrompt}\n\nIMPORTANT: Return ONLY valid JSON matching the article schema.` }] 
+      }]
+    };
+    const v1Resp = await fetch(v1Url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(v1Body),
+    });
+
+    if (v1Resp.ok) {
+      const v1Data = await v1Resp.json();
+      let text = v1Data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      text = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+      return JSON.parse(text) as AIResponse;
+    }
+    const v1Err = await v1Resp.text();
+    throw new Error(`Gemini API failed (v1beta & v1). v1 error: ${v1Err}`);
+  } catch (err) {
+    throw err;
   }
-
-  const data = await resp.json();
-  const fnCall = data.candidates?.[0]?.content?.parts?.find((p: any) => p.functionCall);
-  if (!fnCall?.functionCall?.args) throw new Error("Gemini did not return function call");
-  return fnCall.functionCall.args as AIResponse;
 }
 
 async function callOpenAIDirect(apiKey: string, systemPrompt: string, userPrompt: string): Promise<AIResponse> {
@@ -287,26 +316,41 @@ const IMAGE_PROMPT_TEMPLATE = (title: string, category: string) =>
   `Create a professional, photorealistic news article featured image about: "${title}" (category: ${category}). Requirements: Editorial/journalistic style, visually represents the article topic, NO text overlay, NO watermarks, NO logos, high quality, 16:9 aspect ratio, vibrant colors, professional lighting, suitable as a WordPress featured image.`;
 
 async function generateImageGemini(apiKey: string, title: string, category: string): Promise<string | null> {
-  const models = ["gemini-1.5-flash", "gemini-2.0-flash-exp"];
+  const models = ["gemini-1.5-flash", "gemini-1.5-pro"];
   for (const model of models) {
     try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+      console.log(`[Image] Attempting generation with Gemini model: ${model}`);
+      // Gemini Image Generation
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      const body = {
+        contents: [{ parts: [{ text: IMAGE_PROMPT_TEMPLATE(title, category) }] }],
+      };
+
       const resp = await fetch(url, {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: IMAGE_PROMPT_TEMPLATE(title, category) }] }],
-          generationConfig: { responseModalities: ["IMAGE", "TEXT"] },
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
       });
-      if (!resp.ok) { console.warn(`Image model ${model} failed ${resp.status}`); continue; }
+
+      if (!resp.ok) {
+        const errText = await resp.text();
+        console.warn(`[Image] Gemini model ${model} failed (${resp.status}): ${errText.substring(0, 200)}`);
+        continue;
+      }
+      
       const data = await resp.json();
       const imgPart = data.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData?.mimeType?.startsWith("image/"));
+      
       if (imgPart?.inlineData) {
-        console.log(`Image generated with model: ${model}`);
+        console.log(`[Image] Success! Image generated with model: ${model}`);
         return `data:${imgPart.inlineData.mimeType};base64,${imgPart.inlineData.data}`;
+      } else {
+        // Log simplified response to avoid too much noise but see if there's a reason for no image
+        console.warn(`[Image] Gemini model ${model} returned no image data.`);
       }
-    } catch (err) { console.warn(`Image model ${model} error:`, err); }
+    } catch (err) { 
+      console.error(`[Image] Gemini model ${model} unexpected error:`, err); 
+    }
   }
   return null;
 }
@@ -452,19 +496,30 @@ serve(async (req) => {
     let geminiApiKey: string | null = null;
     if (settings?.gemini_api_key) {
       const { data: decrypted } = await supabase.rpc("decrypt_credential", { enc_key: "", val: settings.gemini_api_key });
-      if (decrypted && typeof decrypted === "string" && decrypted.length > 5) geminiApiKey = decrypted;
+      if (decrypted && typeof decrypted === "string" && decrypted.length > 5) {
+        geminiApiKey = decrypted;
+        console.log(`[Pipeline] Gemini API Key loaded (length: ${geminiApiKey.length})`);
+      } else {
+        console.warn(`[Pipeline] Failed to decrypt Gemini API Key or key is invalid.`);
+      }
     }
 
     let openaiApiKey: string | null = null;
     if (settings?.openai_api_key) {
       const { data: decrypted } = await supabase.rpc("decrypt_credential", { enc_key: "", val: settings.openai_api_key });
-      if (decrypted && typeof decrypted === "string" && decrypted.length > 5) openaiApiKey = decrypted;
+      if (decrypted && typeof decrypted === "string" && decrypted.length > 5) {
+        openaiApiKey = decrypted;
+        console.log(`[Pipeline] OpenAI API Key loaded (length: ${openaiApiKey.length})`);
+      }
     }
 
     let groqApiKey: string | null = null;
     if (settings?.groq_api_key) {
       const { data: decrypted } = await supabase.rpc("decrypt_credential", { enc_key: "", val: settings.groq_api_key });
-      if (decrypted && typeof decrypted === "string" && decrypted.length > 5) groqApiKey = decrypted;
+      if (decrypted && typeof decrypted === "string" && decrypted.length > 5) {
+        groqApiKey = decrypted;
+        console.log(`[Pipeline] Groq API Key loaded (length: ${groqApiKey.length})`);
+      }
     }
 
 
@@ -477,7 +532,10 @@ serve(async (req) => {
     const providers: ProviderConfig[] = [];
     // Ordem de redundância definida pelo usuário:
     // 1. Gemini (Principal)
-    if (geminiApiKey) providers.push({ name: "Gemini", call: (s, u) => callGeminiDirect(geminiApiKey!, s, u) });
+    if (geminiApiKey) {
+      console.log(`[Pipeline] Adding Gemini provider with key ${geminiApiKey.substring(0, 8)}...`);
+      providers.push({ name: "Gemini", call: (s, u) => callGeminiDirect(geminiApiKey!, s, u) });
+    }
     
     // 2. OpenAI / ChatGPT (Secundário)
     if (openaiApiKey) providers.push({ name: "OpenAI", call: (s, u) => callOpenAIDirect(openaiApiKey!, s, u) });
@@ -641,7 +699,7 @@ serve(async (req) => {
     const currentPendingCount = pendingQueue.length + (readyCount || 0);
     const remainingToTarget = Math.max(0, articlesPerDay - currentPendingCount);
     // Se forceCategory estiver presente, geramos todos os tópicos disponíveis dessa categoria (ou o limite máximo do batch)
-    const articlesToGenerate = forceCategory 
+    const articlesToGenerate = (forceCategory || (manualTopics && manualTopics.length > 0))
       ? Math.min(MAX_GENERATION_BATCH, topicsToUse.length)
       : Math.min(MAX_GENERATION_BATCH, remainingToTarget, topicsToUse.length);
 
