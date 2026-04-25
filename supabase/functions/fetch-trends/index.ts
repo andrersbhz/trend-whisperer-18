@@ -14,13 +14,22 @@ async function fetchGoogleTrendsRSS(): Promise<string | null> {
     console.log(`[RSS] Fetching Google Trends from ${url}`);
     const resp = await fetch(url, {
       headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        "Accept": "application/rss+xml, application/xml, text/xml, */*"
       }
     });
-    if (!resp.ok) return null;
-    return await resp.text();
+    if (!resp.ok) {
+      console.error(`[RSS] Fetch failed with status ${resp.status}`);
+      return null;
+    }
+    const text = await resp.text();
+    if (!text || text.length < 500) {
+      console.error(`[RSS] Response too short: ${text?.length || 0} chars`);
+      return null;
+    }
+    return text;
   } catch (err) {
-    console.error(`[RSS] Error:`, err);
+    console.error(`[RSS] Error fetching feed:`, err);
     return null;
   }
 }
@@ -84,25 +93,40 @@ async function callAI(providers: any[], systemPrompt: string, userPrompt: string
 // ── RSS Direct Parser (fallback when AI fails) ──────────────────────────
 
 function parseRSSDirectly(rss: string, categories: string[]): any[] {
+  console.log(`[parseRSSDirectly] Starting manual parse of ${rss.length} chars`);
   const items = rss.match(/<item[\s\S]*?<\/item>/gi) || [];
+  console.log(`[parseRSSDirectly] Found ${items.length} items`);
+  
   const decode = (s: string) =>
     s.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
       .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
       .replace(/&quot;/g, '"').replace(/&#39;/g, "'").trim();
-  const pick = (block: string, tag: string): string => {
+      
+  const pick = (block: string, tagName: string): string => {
+    // Escape dots and allow optional namespace
+    const tag = tagName.replace(":", "\\:");
     const m = block.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i"));
-    return m ? decode(m[1]) : "";
+    if (m) return decode(m[1]);
+    
+    // Try without namespace if provided one failed
+    if (tagName.includes(":")) {
+      const simpleTag = tagName.split(":")[1];
+      const m2 = block.match(new RegExp(`<${simpleTag}[^>]*>([\\s\\S]*?)<\\/${simpleTag}>`, "i"));
+      if (m2) return decode(m2[1]);
+    }
+    return "";
   };
 
   const guessCategory = (text: string): string => {
     const t = text.toLowerCase();
     const keywords: Record<string, string[]> = {
-      esportes: ["futebol", "jogo", "time", "campeonato", "gol", "atleta", "olimp", "copa", "seleção", "técnico", "brasileirão"],
-      politica: ["presidente", "ministro", "senado", "câmara", "lula", "governo", "stf", "congresso", "deputado"],
-      policia: ["polícia", "preso", "crime", "operação", "assalto", "homicídio", "investigação", "tráfico"],
-      saude: ["saúde", "vacina", "hospital", "anvisa", "doença", "covid", "médico", "tratamento"],
-      celebridades: ["ator", "atriz", "cantor", "novela", "famoso", "bbb", "show", "reality"],
-      financas: ["dólar", "bolsa", "ibovespa", "juros", "banco central", "selic", "imposto", "economia"],
+      esportes: ["futebol", "jogo", "time", "campeonato", "gol", "atleta", "olimp", "copa", "seleção", "técnico", "brasileirão", "vôlei", "basquete", "tênis", "luta"],
+      politica: ["presidente", "ministro", "senado", "câmara", "lula", "governo", "stf", "congresso", "deputado", "eleição", "voto"],
+      policia: ["polícia", "preso", "crime", "operação", "assalto", "homicídio", "investigação", "tráfico", "justiça"],
+      saude: ["saúde", "vacina", "hospital", "anvisa", "doença", "covid", "médico", "tratamento", "vírus"],
+      celebridades: ["ator", "atriz", "cantor", "novela", "famoso", "bbb", "show", "reality", "influencer", "cinema"],
+      financas: ["dólar", "bolsa", "ibovespa", "juros", "banco central", "selic", "imposto", "economia", "dinheiro", "bitcoin"],
+      tecnologia: ["celular", "iphone", "google", "apple", "microsoft", "ia", "inteligência artificial", "lançamento", "app"],
     };
     for (const cat of categories) {
       const kws = keywords[cat] || [cat];
@@ -113,21 +137,24 @@ function parseRSSDirectly(rss: string, categories: string[]): any[] {
 
   const topics: any[] = [];
   for (const item of items.slice(0, 40)) {
-    const topic = pick(item, "title");
-    if (!topic) continue;
+    const title = pick(item, "title");
+    if (!title) continue;
+    
     const traffic = pick(item, "ht:approx_traffic");
     const newsTitle = pick(item, "ht:news_item_title");
     const newsSource = pick(item, "ht:news_item_source");
     const newsUrl = pick(item, "ht:news_item_url");
+    
     topics.push({
-      topic,
+      topic: title,
       search_volume: traffic || "médio",
-      category: guessCategory(`${topic} ${newsTitle}`),
+      category: guessCategory(`${title} ${newsTitle}`),
       context: newsTitle || null,
       source_name: newsSource || null,
       source_url: newsUrl || null,
     });
   }
+  console.log(`[parseRSSDirectly] Extracted ${topics.length} topics`);
   return topics;
 }
 
@@ -139,6 +166,8 @@ function extractTopicsFromAIResponse(raw: string): any[] {
     return [];
   }
 
+  console.log(`[extract] Raw response starts with: ${raw.substring(0, 100)}`);
+  
   let text = raw.replace(/```json\n?/gi, "").replace(/```\n?/g, "").trim();
   // Remove control chars
   text = text.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "");
@@ -149,6 +178,7 @@ function extractTopicsFromAIResponse(raw: string): any[] {
       const parsed = JSON.parse(s);
       if (Array.isArray(parsed)) return parsed;
       if (parsed && Array.isArray(parsed.topics)) return parsed.topics;
+      if (parsed && typeof parsed === 'object') return [parsed];
       return null;
     } catch { return null; }
   };
@@ -156,40 +186,56 @@ function extractTopicsFromAIResponse(raw: string): any[] {
   let result = tryParse(text);
   if (result) return result;
 
-  // Find first array boundary
-  const start = text.indexOf("[");
-  if (start === -1) {
-    console.warn("[extract] No '[' found in response");
+  // Find first array boundary or object boundary
+  const startIdx = Math.min(
+    text.indexOf("[") === -1 ? Infinity : text.indexOf("["),
+    text.indexOf("{") === -1 ? Infinity : text.indexOf("{")
+  );
+
+  if (startIdx === Infinity) {
+    console.warn("[extract] No JSON boundary found");
     return [];
   }
-  let slice = text.substring(start);
-
-  // Try parse as-is
+  
+  let slice = text.substring(startIdx);
   result = tryParse(slice);
   if (result) return result;
 
   // Repair: balance brackets/braces
   let braces = 0, brackets = 0;
-  for (const ch of slice) {
+  for (let i = 0; i < slice.length; i++) {
+    const ch = slice[i];
     if (ch === "{") braces++;
     else if (ch === "}") braces--;
     else if (ch === "[") brackets++;
     else if (ch === "]") brackets--;
+    
+    // If we closed the main array/object, try parsing up to here
+    if (braces === 0 && brackets === 0 && i > 0) {
+      const sub = tryParse(slice.substring(0, i + 1));
+      if (sub) return sub;
+    }
   }
-  // Drop trailing incomplete object after last complete one
+
+  // Final attempt: manual repair
   let repaired = slice.replace(/,\s*$/g, "");
-  while (braces > 0) { repaired += "}"; braces--; }
-  while (brackets > 0) { repaired += "]"; brackets--; }
+  let tempBraces = braces;
+  let tempBrackets = brackets;
+  while (tempBraces > 0) { repaired += "}"; tempBraces--; }
+  while (tempBrackets > 0) { repaired += "]"; tempBrackets--; }
 
   result = tryParse(repaired);
   if (result) return result;
 
   // Last resort: extract complete objects via regex
   const objects: any[] = [];
-  const objRegex = /\{[^{}]*\}/g;
+  const objRegex = /\{[^{}]*?\}/g;
   const matches = slice.match(objRegex) || [];
   for (const m of matches) {
-    try { objects.push(JSON.parse(m)); } catch {}
+    try { 
+      const parsed = JSON.parse(m);
+      if (parsed.topic || parsed.title) objects.push(parsed);
+    } catch {}
   }
   console.warn(`[extract] Recovered ${objects.length} objects via regex fallback`);
   return objects;
@@ -219,25 +265,32 @@ serve(async (req) => {
     if (Deno.env.get("LOVABLE_API_KEY")) providers.push({ name: "Lovable", key: Deno.env.get("LOVABLE_API_KEY") });
 
     const rss = await fetchGoogleTrendsRSS();
-    if (!rss) throw new Error("RSS not available");
+    if (!rss) throw new Error("RSS do Google Trends não disponível no momento. Tente novamente em alguns minutos.");
+
+    console.log(`[fetch-trends] RSS fetched, length: ${rss.length}`);
+    const itemsFound = rss.match(/<item[\s\S]*?<\/item>/gi) || [];
+    console.log(`[fetch-trends] Items found in RSS via regex: ${itemsFound.length}`);
 
     let topics: any[] = [];
     try {
       const { systemPrompt, userPrompt } = buildRSSCategorizationPrompt(rss, categories);
-      const { content } = await callAI(providers, systemPrompt, userPrompt);
+      const { content, provider } = await callAI(providers, systemPrompt, userPrompt);
+      console.log(`[fetch-trends] AI (${provider}) response length: ${content?.length || 0}`);
       topics = extractTopicsFromAIResponse(content);
-    } catch (aiErr) {
-      console.warn("[fetch-trends] AI parsing failed, using RSS fallback:", aiErr);
+    } catch (aiErr: any) {
+      console.warn("[fetch-trends] AI parsing failed:", aiErr.message);
     }
 
     // Fallback: parse RSS XML directly when AI fails or returns nothing
     if (!topics.length) {
-      console.log("[fetch-trends] Falling back to direct RSS parsing");
+      console.log("[fetch-trends] No topics from AI or AI failed. Falling back to direct RSS parsing...");
       topics = parseRSSDirectly(rss, categories);
+      console.log(`[fetch-trends] Direct RSS parsing recovered ${topics.length} topics`);
     }
 
     if (!topics.length) {
-      throw new Error("Nenhum tópico foi extraído do feed. Tente novamente em alguns minutos.");
+      console.error("[fetch-trends] Final topics count is 0. RSS preview:", rss.substring(0, 500));
+      throw new Error("Não foi possível extrair tópicos do feed. O formato do feed pode ter mudado.");
     }
 
     // 1. Buscar tópicos existentes do usuário que não foram usados
