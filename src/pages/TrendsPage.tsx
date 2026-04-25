@@ -296,6 +296,19 @@ const TrendsPage = () => {
                 <SelectItem value="oldest">Mais antigos</SelectItem>
               </SelectContent>
             </Select>
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <Select value={timeFilter} onValueChange={setTimeFilter}>
+              <SelectTrigger className="w-[180px] h-9">
+                <SelectValue placeholder="Período" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="24h">Últimas 24 horas</SelectItem>
+                <SelectItem value="48h">Últimas 48 horas</SelectItem>
+                <SelectItem value="7d">Últimos 7 dias</SelectItem>
+                <SelectItem value="all">Todo o histórico</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
