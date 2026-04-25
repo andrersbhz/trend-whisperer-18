@@ -603,7 +603,7 @@ serve(async (req) => {
       const scheduledAt = new Date(baseScheduledTime + (i + 1) * intervalMs);
 
       try {
-        const userPrompt = buildUserPrompt(topic.topic, topic.category);
+        const userPrompt = buildUserPrompt(topic.topic, topic.category, topic.context);
 
         let parsed: AIResponse;
         let usedProvider: string;
