@@ -150,7 +150,7 @@ function parseRSSDirectly(rss: string, categories: string[]): any[] {
       search_volume: traffic || "médio",
       category: guessCategory(`${title} ${newsTitle}`),
       context: newsTitle || null,
-      source_name: newsSource || null,
+      source_name: newsSource ? `Google Trends (${newsSource})` : "Google Trends",
       source_url: newsUrl || null,
     });
   }
