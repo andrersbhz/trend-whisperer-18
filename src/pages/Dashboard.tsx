@@ -343,7 +343,7 @@ const Dashboard = () => {
             <p className="text-xs text-muted-foreground">Assuntos quentes agora no Brasil</p>
           </CardHeader>
           <CardContent>
-            {loading ? (
+            {loadingTrends ? (
               <div className="flex justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin text-primary" />
               </div>
