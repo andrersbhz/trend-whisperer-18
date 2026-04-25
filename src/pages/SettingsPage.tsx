@@ -9,6 +9,7 @@ import GoogleAnalyticsSettings from '@/components/settings/GoogleAnalyticsSettin
 import AutomationSettings from '@/components/settings/AutomationSettings';
 import GeminiSettings from '@/components/settings/GeminiSettings';
 import OpenAISettings from '@/components/settings/OpenAISettings';
+import AzureCopilotSettings from '@/components/settings/AzureCopilotSettings';
 import GroqSettings from '@/components/settings/GroqSettings';
 import JetpackSettings from '@/components/settings/JetpackSettings';
 import FacebookSettings from '@/components/settings/FacebookSettings';
