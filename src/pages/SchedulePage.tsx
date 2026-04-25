@@ -164,6 +164,73 @@ const SchedulePage = () => {
     } catch (error) {
       toast({ title: 'Erro', description: getErrorMessage(error), variant: 'destructive' });
     }
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedIds(articles.map(a => a.id));
+    } else {
+      setSelectedIds([]);
+    }
+  };
+
+  const handleSelectOne = (articleId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedIds(prev => [...prev, articleId]);
+    } else {
+      setSelectedIds(prev => prev.filter(id => id !== articleId));
+    }
+  };
+
+  const handleBatchDelete = async () => {
+    if (!selectedIds.length) return;
+    if (!window.confirm(`Tem certeza que deseja excluir ${selectedIds.length} agendamentos?`)) return;
+    
+    setBatchActionLoading(true);
+    try {
+      await runBackendMutation(() =>
+        supabase.from('articles').delete().in('id', selectedIds),
+      );
+      setArticles(prev => prev.filter(a => !selectedIds.includes(a.id)));
+      
+      // Log action
+      await supabase.from('audit_logs').insert({
+        user_id: user?.id,
+        action: 'delete_multiple_articles',
+        details: { article_ids: selectedIds }
+      });
+
+      toast({ title: `${selectedIds.length} agendamentos excluídos!` });
+      setSelectedIds([]);
+    } catch (error) {
+      toast({ title: 'Erro ao excluir em lote', description: getErrorMessage(error), variant: 'destructive' });
+    } finally {
+      setBatchActionLoading(false);
+    }
+  };
+
+  const handleBatchApproval = async (newApproved: boolean) => {
+    if (!selectedIds.length) return;
+    
+    setBatchActionLoading(true);
+    try {
+      await runBackendMutation(() =>
+        supabase.from('articles').update({ is_approved: newApproved }).in('id', selectedIds),
+      );
+      setArticles(prev => prev.map(a => selectedIds.includes(a.id) ? { ...a, is_approved: newApproved } : a));
+      
+      // Log action
+      await supabase.from('audit_logs').insert({
+        user_id: user?.id,
+        action: newApproved ? 'approve_multiple_articles' : 'unapprove_multiple_articles',
+        details: { article_ids: selectedIds }
+      });
+
+      toast({ title: `${selectedIds.length} artigos ${newApproved ? 'aprovados' : 'pausados'}!` });
+      setSelectedIds([]);
+    } catch (error) {
+      toast({ title: 'Erro ao atualizar em lote', description: getErrorMessage(error), variant: 'destructive' });
+    } finally {
+      setBatchActionLoading(false);
+    }
   };
 
   if (loading) {
