@@ -148,11 +148,21 @@ const SettingsPage = () => {
         payload.groq_api_key = settings.groq_api_key;
       }
 
-      await runBackendMutation(() =>
-        supabase
-          .from('user_settings')
-          .upsert({ user_id: user.id, ...payload } as any, { onConflict: 'user_id' }),
-      );
+      const { data: existing } = await supabase
+        .from('user_settings')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (existing) {
+        await runBackendMutation(() =>
+          supabase.from('user_settings').update(payload as any).eq('user_id', user.id),
+        );
+      } else {
+        await runBackendMutation(() =>
+          supabase.from('user_settings').insert({ user_id: user.id, ...payload } as any),
+        );
+      }
 
       setHasExistingSettings(true);
       toast({ title: 'Salvo!', description: 'Configurações atualizadas com sucesso.' });
@@ -162,7 +172,26 @@ const SettingsPage = () => {
 
       setSettings(prev => ({ ...prev, wordpress_app_password: '', facebook_access_token: '', gemini_api_key: '', openai_api_key: '', groq_api_key: '' }));
     } catch (error) {
-      toast({ title: 'Erro', description: getErrorMessage(error), variant: 'destructive' });
+      if (getErrorMessage(error).includes('duplicate key')) {
+        // Retry with update if insert failed due to race condition
+        const payload: Record<string, unknown> = {
+          wordpress_url: settings.wordpress_url,
+          wordpress_username: settings.wordpress_username,
+          facebook_page_id: settings.facebook_page_id,
+          instagram_account_id: settings.instagram_account_id,
+          google_analytics_property_id: settings.google_analytics_property_id,
+          categories: settings.categories,
+          articles_per_day: settings.articles_per_day,
+          auto_publish: settings.auto_publish,
+          writer_prompt: settings.writer_prompt,
+        };
+        await runBackendMutation(() =>
+          supabase.from('user_settings').update(payload as any).eq('user_id', user.id),
+        );
+        toast({ title: 'Salvo!', description: 'Configurações atualizadas.' });
+      } else {
+        toast({ title: 'Erro', description: getErrorMessage(error), variant: 'destructive' });
+      }
     } finally {
       setSaving(false);
     }
