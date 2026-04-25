@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Loader2, Clock, Calendar, Save, Bot } from 'lucide-react';
+import { Loader2, Clock, Calendar, Save, Bot, Trash2, CheckCircle, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
@@ -35,7 +35,7 @@ const SchedulePage = () => {
           runBackendQuery(() =>
             supabase
               .from('articles')
-              .select('id, title, category, scheduled_at, status')
+              .select('id, title, category, scheduled_at, status, is_approved')
               .eq('user_id', user.id)
               .not('scheduled_at', 'is', null)
               .order('scheduled_at', { ascending: true }),
@@ -115,6 +115,51 @@ const SchedulePage = () => {
       toast({ title: 'Erro', description: getErrorMessage(error), variant: 'destructive' });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDelete = async (articleId: string) => {
+    if (!window.confirm('Tem certeza que deseja excluir este agendamento?')) return;
+    try {
+      await runBackendMutation(() =>
+        supabase.from('articles').delete().eq('id', articleId),
+      );
+      setArticles(prev => prev.filter(a => a.id !== articleId));
+      
+      // Log action
+      await supabase.from('audit_logs').insert({
+        user_id: user?.id,
+        action: 'delete_article',
+        details: { article_id: articleId }
+      });
+
+      toast({ title: 'Agendamento excluído!' });
+    } catch (error) {
+      toast({ title: 'Erro ao excluir', description: getErrorMessage(error), variant: 'destructive' });
+    }
+  };
+
+  const handleToggleApproval = async (articleId: string, currentApproved: boolean) => {
+    try {
+      const newApproved = !currentApproved;
+      await runBackendMutation(() =>
+        supabase.from('articles').update({ is_approved: newApproved }).eq('id', articleId),
+      );
+      setArticles(prev => prev.map(a => a.id === articleId ? { ...a, is_approved: newApproved } : a));
+      
+      // Log action
+      await supabase.from('audit_logs').insert({
+        user_id: user?.id,
+        action: newApproved ? 'approve_article' : 'unapprove_article',
+        details: { article_id: articleId }
+      });
+
+      toast({ 
+        title: newApproved ? 'Artigo aprovado!' : 'Artigo pausado', 
+        description: newApproved ? 'Ele será postado no horário agendado.' : 'Ele não será postado automaticamente.' 
+      });
+    } catch (error) {
+      toast({ title: 'Erro', description: getErrorMessage(error), variant: 'destructive' });
     }
   };
 
@@ -239,16 +284,38 @@ const SchedulePage = () => {
                       )}
                     </div>
                   </div>
-                  <Badge
-                    className={
-                      article.status === 'published'
-                        ? 'bg-success/20 text-success'
-                        : 'bg-primary/20 text-primary'
-                    }
-                    variant="secondary"
-                  >
-                    {article.status === 'published' ? 'Publicado' : 'Agendado'}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className={`h-8 px-2 ${article.is_approved ? 'text-success hover:text-success/80' : 'text-muted-foreground hover:text-foreground'}`}
+                      onClick={() => handleToggleApproval(article.id, !!article.is_approved)}
+                      title={article.is_approved ? 'Clique para não postar' : 'Clique para postar'}
+                    >
+                      {article.is_approved ? <CheckCircle className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
+                      <span className="ml-1 text-[10px] hidden sm:inline">{article.is_approved ? 'Postar' : 'Não Postar'}</span>
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 px-2 text-destructive hover:text-destructive/80"
+                      onClick={() => handleDelete(article.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                    <Badge
+                      className={
+                        article.status === 'published'
+                          ? 'bg-success/20 text-success'
+                          : article.is_approved === false
+                            ? 'bg-muted text-muted-foreground'
+                            : 'bg-primary/20 text-primary'
+                      }
+                      variant="secondary"
+                    >
+                      {article.status === 'published' ? 'Publicado' : article.is_approved === false ? 'Pausado' : 'Agendado'}
+                    </Badge>
+                  </div>
                 </div>
               </CardContent>
             </Card>
