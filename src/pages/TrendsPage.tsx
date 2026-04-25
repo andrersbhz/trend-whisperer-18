@@ -91,14 +91,26 @@ const TrendsPage = () => {
         }
       }
 
+      let query = supabase
+        .from('trending_topics')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('used', false);
+
+      if (timeFilter !== "all") {
+        const now = new Date();
+        const past = new Date();
+        if (timeFilter === "24h") past.setHours(now.getHours() - 24);
+        else if (timeFilter === "48h") past.setHours(now.getHours() - 48);
+        else if (timeFilter === "7d") past.setDate(now.getDate() - 7);
+        
+        query = query.gte('fetched_at', past.toISOString());
+      }
+
       const data = await runBackendQuery(() =>
-        supabase
-          .from('trending_topics')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('used', false)
+        query
           .order('fetched_at', { ascending: false })
-          .limit(50),
+          .limit(100)
       );
 
       setTopics(data || []);
