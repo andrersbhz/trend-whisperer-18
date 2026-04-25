@@ -335,19 +335,31 @@ async function generateImageGemini(apiKey: string, title: string, category: stri
   for (const model of models) {
     try {
       console.log(`[Image] Attempting generation with Gemini model: ${model}`);
-      // Use v1beta for Imagen 3 via modalities
+      // Try v1beta first
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-      const resp = await fetch(url, {
+      const body = {
+        contents: [{ parts: [{ text: IMAGE_PROMPT_TEMPLATE(title, category) }] }],
+        generationConfig: { 
+          response_modalities: ["IMAGE"],
+          candidate_count: 1
+        },
+      };
+
+      let resp = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: IMAGE_PROMPT_TEMPLATE(title, category) }] }],
-          generationConfig: { 
-            response_modalities: ["IMAGE"],
-            candidate_count: 1
-          },
-        }),
+        body: JSON.stringify(body),
       });
+
+      if (resp.status === 404) {
+        // Try v1 if v1beta is not available
+        const v1Url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`;
+        resp = await fetch(v1Url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+      }
       
       if (!resp.ok) { 
         const errText = await resp.text();
