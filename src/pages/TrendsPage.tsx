@@ -363,7 +363,7 @@ const TrendsPage = () => {
                       <p className="text-xs text-muted-foreground mt-0.5 italic line-clamp-1">{topic.context}</p>
                     )}
                     <div className="flex flex-wrap items-center gap-2 mt-1">
-                      <Badge variant="outline" className="text-[10px] h-5 bg-blue-500/10 text-blue-500 border-blue-500/20">Google Trends</Badge>
+                      <Badge variant="outline" className="text-[10px] h-5 bg-blue-500/10 text-blue-500 border-blue-500/20">Google Trends BR 🇧🇷</Badge>
                       <Badge variant="secondary">{topic.category}</Badge>
                       {topic.search_volume && (
                         <span className="text-xs text-muted-foreground">{topic.search_volume} buscas</span>
