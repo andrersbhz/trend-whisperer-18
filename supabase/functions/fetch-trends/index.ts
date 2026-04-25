@@ -171,10 +171,21 @@ serve(async (req) => {
     const rss = await fetchGoogleTrendsRSS();
     if (!rss) throw new Error("RSS not available");
 
-    const { systemPrompt, userPrompt } = buildRSSCategorizationPrompt(rss, categories);
-    const { content } = await callAI(providers, systemPrompt, userPrompt);
+    let topics: any[] = [];
+    try {
+      const { systemPrompt, userPrompt } = buildRSSCategorizationPrompt(rss, categories);
+      const { content } = await callAI(providers, systemPrompt, userPrompt);
+      topics = extractTopicsFromAIResponse(content);
+    } catch (aiErr) {
+      console.warn("[fetch-trends] AI parsing failed, using RSS fallback:", aiErr);
+    }
 
-    const topics = extractTopicsFromAIResponse(content);
+    // Fallback: parse RSS XML directly when AI fails or returns nothing
+    if (!topics.length) {
+      console.log("[fetch-trends] Falling back to direct RSS parsing");
+      topics = parseRSSDirectly(rss, categories);
+    }
+
     if (!topics.length) {
       throw new Error("Nenhum tópico foi extraído do feed. Tente novamente em alguns minutos.");
     }
