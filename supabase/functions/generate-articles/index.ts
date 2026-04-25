@@ -496,19 +496,30 @@ serve(async (req) => {
     let geminiApiKey: string | null = null;
     if (settings?.gemini_api_key) {
       const { data: decrypted } = await supabase.rpc("decrypt_credential", { enc_key: "", val: settings.gemini_api_key });
-      if (decrypted && typeof decrypted === "string" && decrypted.length > 5) geminiApiKey = decrypted;
+      if (decrypted && typeof decrypted === "string" && decrypted.length > 5) {
+        geminiApiKey = decrypted;
+        console.log(`[Pipeline] Gemini API Key loaded (length: ${geminiApiKey.length})`);
+      } else {
+        console.warn(`[Pipeline] Failed to decrypt Gemini API Key or key is invalid.`);
+      }
     }
 
     let openaiApiKey: string | null = null;
     if (settings?.openai_api_key) {
       const { data: decrypted } = await supabase.rpc("decrypt_credential", { enc_key: "", val: settings.openai_api_key });
-      if (decrypted && typeof decrypted === "string" && decrypted.length > 5) openaiApiKey = decrypted;
+      if (decrypted && typeof decrypted === "string" && decrypted.length > 5) {
+        openaiApiKey = decrypted;
+        console.log(`[Pipeline] OpenAI API Key loaded (length: ${openaiApiKey.length})`);
+      }
     }
 
     let groqApiKey: string | null = null;
     if (settings?.groq_api_key) {
       const { data: decrypted } = await supabase.rpc("decrypt_credential", { enc_key: "", val: settings.groq_api_key });
-      if (decrypted && typeof decrypted === "string" && decrypted.length > 5) groqApiKey = decrypted;
+      if (decrypted && typeof decrypted === "string" && decrypted.length > 5) {
+        groqApiKey = decrypted;
+        console.log(`[Pipeline] Groq API Key loaded (length: ${groqApiKey.length})`);
+      }
     }
 
 
@@ -521,7 +532,10 @@ serve(async (req) => {
     const providers: ProviderConfig[] = [];
     // Ordem de redundância definida pelo usuário:
     // 1. Gemini (Principal)
-    if (geminiApiKey) providers.push({ name: "Gemini", call: (s, u) => callGeminiDirect(geminiApiKey!, s, u) });
+    if (geminiApiKey) {
+      console.log(`[Pipeline] Adding Gemini provider with key ${geminiApiKey.substring(0, 8)}...`);
+      providers.push({ name: "Gemini", call: (s, u) => callGeminiDirect(geminiApiKey!, s, u) });
+    }
     
     // 2. OpenAI / ChatGPT (Secundário)
     if (openaiApiKey) providers.push({ name: "OpenAI", call: (s, u) => callOpenAIDirect(openaiApiKey!, s, u) });
