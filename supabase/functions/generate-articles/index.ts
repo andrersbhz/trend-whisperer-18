@@ -657,7 +657,7 @@ serve(async (req) => {
     const currentPendingCount = pendingQueue.length + (readyCount || 0);
     const remainingToTarget = Math.max(0, articlesPerDay - currentPendingCount);
     // Se forceCategory estiver presente, geramos todos os tópicos disponíveis dessa categoria (ou o limite máximo do batch)
-    const articlesToGenerate = forceCategory 
+    const articlesToGenerate = (forceCategory || (manualTopics && manualTopics.length > 0))
       ? Math.min(MAX_GENERATION_BATCH, topicsToUse.length)
       : Math.min(MAX_GENERATION_BATCH, remainingToTarget, topicsToUse.length);
 
