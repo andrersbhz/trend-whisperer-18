@@ -177,7 +177,15 @@ const TrendsPage = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Tendências</h1>
-          <p className="text-muted-foreground text-sm mt-1">Assuntos em alta no Brasil</p>
+          <div className="flex items-center gap-2 mt-1">
+            <p className="text-muted-foreground text-sm">Assuntos em alta no Brasil</p>
+            {lastUpdate && (
+              <span className="text-[10px] bg-secondary/50 px-2 py-0.5 rounded-full text-muted-foreground flex items-center gap-1">
+                <RefreshCw className={`h-2.5 w-2.5 ${fetching ? 'animate-spin' : ''}`} />
+                Última atualização: {lastUpdate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            )}
+          </div>
         </div>
         <div className="flex gap-2">
           {selectedTopics.length > 0 && (
