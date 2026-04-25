@@ -17,6 +17,8 @@ const TrendsPage = () => {
   const [fetching, setFetching] = useState(false);
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
   const [generating, setGenerating] = useState(false);
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const [refreshInterval, setRefreshInterval] = useState(30); // minutos
 
   const fetchTopics = async () => {
     if (!user) return;
