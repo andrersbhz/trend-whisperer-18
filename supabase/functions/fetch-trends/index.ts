@@ -166,6 +166,8 @@ function extractTopicsFromAIResponse(raw: string): any[] {
     return [];
   }
 
+  console.log(`[extract] Raw response starts with: ${raw.substring(0, 100)}`);
+  
   let text = raw.replace(/```json\n?/gi, "").replace(/```\n?/g, "").trim();
   // Remove control chars
   text = text.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "");
@@ -176,6 +178,7 @@ function extractTopicsFromAIResponse(raw: string): any[] {
       const parsed = JSON.parse(s);
       if (Array.isArray(parsed)) return parsed;
       if (parsed && Array.isArray(parsed.topics)) return parsed.topics;
+      if (parsed && typeof parsed === 'object') return [parsed];
       return null;
     } catch { return null; }
   };
@@ -183,40 +186,56 @@ function extractTopicsFromAIResponse(raw: string): any[] {
   let result = tryParse(text);
   if (result) return result;
 
-  // Find first array boundary
-  const start = text.indexOf("[");
-  if (start === -1) {
-    console.warn("[extract] No '[' found in response");
+  // Find first array boundary or object boundary
+  const startIdx = Math.min(
+    text.indexOf("[") === -1 ? Infinity : text.indexOf("["),
+    text.indexOf("{") === -1 ? Infinity : text.indexOf("{")
+  );
+
+  if (startIdx === Infinity) {
+    console.warn("[extract] No JSON boundary found");
     return [];
   }
-  let slice = text.substring(start);
-
-  // Try parse as-is
+  
+  let slice = text.substring(startIdx);
   result = tryParse(slice);
   if (result) return result;
 
   // Repair: balance brackets/braces
   let braces = 0, brackets = 0;
-  for (const ch of slice) {
+  for (let i = 0; i < slice.length; i++) {
+    const ch = slice[i];
     if (ch === "{") braces++;
     else if (ch === "}") braces--;
     else if (ch === "[") brackets++;
     else if (ch === "]") brackets--;
+    
+    // If we closed the main array/object, try parsing up to here
+    if (braces === 0 && brackets === 0 && i > 0) {
+      const sub = tryParse(slice.substring(0, i + 1));
+      if (sub) return sub;
+    }
   }
-  // Drop trailing incomplete object after last complete one
+
+  // Final attempt: manual repair
   let repaired = slice.replace(/,\s*$/g, "");
-  while (braces > 0) { repaired += "}"; braces--; }
-  while (brackets > 0) { repaired += "]"; brackets--; }
+  let tempBraces = braces;
+  let tempBrackets = brackets;
+  while (tempBraces > 0) { repaired += "}"; tempBraces--; }
+  while (tempBrackets > 0) { repaired += "]"; tempBrackets--; }
 
   result = tryParse(repaired);
   if (result) return result;
 
   // Last resort: extract complete objects via regex
   const objects: any[] = [];
-  const objRegex = /\{[^{}]*\}/g;
+  const objRegex = /\{[^{}]*?\}/g;
   const matches = slice.match(objRegex) || [];
   for (const m of matches) {
-    try { objects.push(JSON.parse(m)); } catch {}
+    try { 
+      const parsed = JSON.parse(m);
+      if (parsed.topic || parsed.title) objects.push(parsed);
+    } catch {}
   }
   console.warn(`[extract] Recovered ${objects.length} objects via regex fallback`);
   return objects;
