@@ -26,6 +26,8 @@ const SchedulePage = () => {
   const [autoPublish, setAutoPublish] = useState(false);
   const [savingAuto, setSavingAuto] = useState(false);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [batchActionLoading, setBatchActionLoading] = useState(false);
 
   useEffect(() => {
     if (!user) return;
