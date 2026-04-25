@@ -335,7 +335,7 @@ const TrendsPage = () => {
         </Card>
       ) : (
         <div className="grid gap-3">
-          {filteredAndSortedTopics.map((topic) => (
+          {filteredAndSortedTopics.slice(0, 50).map((topic) => (
             <Card key={topic.id} className="shadow-card">
               <CardContent className="p-4 flex items-center gap-4">
                 <Checkbox 
