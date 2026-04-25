@@ -229,25 +229,32 @@ serve(async (req) => {
     if (Deno.env.get("LOVABLE_API_KEY")) providers.push({ name: "Lovable", key: Deno.env.get("LOVABLE_API_KEY") });
 
     const rss = await fetchGoogleTrendsRSS();
-    if (!rss) throw new Error("RSS not available");
+    if (!rss) throw new Error("RSS do Google Trends não disponível no momento. Tente novamente em alguns minutos.");
+
+    console.log(`[fetch-trends] RSS fetched, length: ${rss.length}`);
+    const itemsFound = rss.match(/<item[\s\S]*?<\/item>/gi) || [];
+    console.log(`[fetch-trends] Items found in RSS via regex: ${itemsFound.length}`);
 
     let topics: any[] = [];
     try {
       const { systemPrompt, userPrompt } = buildRSSCategorizationPrompt(rss, categories);
-      const { content } = await callAI(providers, systemPrompt, userPrompt);
+      const { content, provider } = await callAI(providers, systemPrompt, userPrompt);
+      console.log(`[fetch-trends] AI (${provider}) response length: ${content?.length || 0}`);
       topics = extractTopicsFromAIResponse(content);
-    } catch (aiErr) {
-      console.warn("[fetch-trends] AI parsing failed, using RSS fallback:", aiErr);
+    } catch (aiErr: any) {
+      console.warn("[fetch-trends] AI parsing failed:", aiErr.message);
     }
 
     // Fallback: parse RSS XML directly when AI fails or returns nothing
     if (!topics.length) {
-      console.log("[fetch-trends] Falling back to direct RSS parsing");
+      console.log("[fetch-trends] No topics from AI or AI failed. Falling back to direct RSS parsing...");
       topics = parseRSSDirectly(rss, categories);
+      console.log(`[fetch-trends] Direct RSS parsing recovered ${topics.length} topics`);
     }
 
     if (!topics.length) {
-      throw new Error("Nenhum tópico foi extraído do feed. Tente novamente em alguns minutos.");
+      console.error("[fetch-trends] Final topics count is 0. RSS preview:", rss.substring(0, 500));
+      throw new Error("Não foi possível extrair tópicos do feed. O formato do feed pode ter mudado.");
     }
 
     // 1. Buscar tópicos existentes do usuário que não foram usados
