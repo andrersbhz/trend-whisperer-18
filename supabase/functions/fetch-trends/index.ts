@@ -109,9 +109,11 @@ serve(async (req) => {
 
     const { systemPrompt, userPrompt } = buildRSSCategorizationPrompt(rss, categories);
     const { content } = await callAI(providers, systemPrompt, userPrompt);
-    
-    const cleaned = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-    const topics = JSON.parse(cleaned);
+
+    const topics = extractTopicsFromAIResponse(content);
+    if (!topics.length) {
+      throw new Error("Nenhum tópico foi extraído do feed. Tente novamente em alguns minutos.");
+    }
 
     // 1. Buscar tópicos existentes do usuário que não foram usados
     const { data: existingTopics } = await supabase
