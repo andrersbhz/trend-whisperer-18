@@ -36,6 +36,7 @@ const TrendsPage = () => {
   const [refreshInterval, setRefreshInterval] = useState(30); // minutos
   const [sourceFilter, setSourceFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<"recent" | "oldest">("recent");
+  const [timeFilter, setTimeFilter] = useState<string>("24h");
 
   const sources = useMemo(() => {
     const uniqueSources = new Set<string>();
@@ -90,14 +91,26 @@ const TrendsPage = () => {
         }
       }
 
+      let query = supabase
+        .from('trending_topics')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('used', false);
+
+      if (timeFilter !== "all") {
+        const now = new Date();
+        const past = new Date();
+        if (timeFilter === "24h") past.setHours(now.getHours() - 24);
+        else if (timeFilter === "48h") past.setHours(now.getHours() - 48);
+        else if (timeFilter === "7d") past.setDate(now.getDate() - 7);
+        
+        query = query.gte('fetched_at', past.toISOString());
+      }
+
       const data = await runBackendQuery(() =>
-        supabase
-          .from('trending_topics')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('used', false)
+        query
           .order('fetched_at', { ascending: false })
-          .limit(50),
+          .limit(100)
       );
 
       setTopics(data || []);
@@ -118,7 +131,7 @@ const TrendsPage = () => {
     }, 60000); // verifica a cada minuto
 
     return () => clearInterval(timer);
-  }, [user]);
+  }, [user, timeFilter]);
 
   const handleFetchTrends = async () => {
     setFetching(true);
@@ -281,6 +294,21 @@ const TrendsPage = () => {
               <SelectContent>
                 <SelectItem value="recent">Mais recentes</SelectItem>
                 <SelectItem value="oldest">Mais antigos</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <Select value={timeFilter} onValueChange={setTimeFilter}>
+              <SelectTrigger className="w-[180px] h-9">
+                <SelectValue placeholder="Período" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="24h">Últimas 24 horas</SelectItem>
+                <SelectItem value="48h">Últimas 48 horas</SelectItem>
+                <SelectItem value="7d">Últimos 7 dias</SelectItem>
+                <SelectItem value="all">Todo o histórico</SelectItem>
               </SelectContent>
             </Select>
           </div>
