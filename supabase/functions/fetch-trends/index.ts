@@ -44,7 +44,7 @@ REGRAS:
 1. Extraia o título do tópico (<title>), o volume de buscas (<ht:approx_traffic>), o contexto da notícia (<ht:news_item_title>), o nome da fonte (<ht:news_item_source>) e o link da fonte (<ht:news_item_url>).
 2. Atribua uma categoria: ${categories.join(", ")}.
 3. Retorne APENAS um JSON válido no formato:
-[{"topic": "nome", "search_volume": "vol", "category": "cat", "context": "título da notícia real", "source_name": "Portal X", "source_url": "https://..."}]
+[{"topic": "nome", "search_volume": "vol", "category": "cat", "context": "título da notícia real", "source_name": "Google Trends (Portal X)", "source_url": "https://..."}]
 
 Extraia o máximo possível (até 40 tópicos).`;
 
