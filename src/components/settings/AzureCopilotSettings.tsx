@@ -57,7 +57,7 @@ const AzureCopilotSettings = forwardRef<HTMLDivElement, Props>(({ settings, onCh
   return (
     <ConnectionCard
       ref={ref}
-      icon={<span className="font-bold text-blue-600">M</span>}
+      icon={<Database className="h-5 w-5 text-blue-600" />}
       title="Microsoft Copilot (Azure OpenAI)"
       description="Redundância enterprise via Azure para garantir 100% de disponibilidade"
       connected={connected}
