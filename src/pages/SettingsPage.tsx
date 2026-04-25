@@ -118,6 +118,29 @@ const SettingsPage = () => {
 
   const handleSave = async () => {
     if (!user) return;
+
+    // Validation for Writer Prompt if it's being updated
+    if (settings.writer_prompt && settings.writer_prompt.trim().length > 0) {
+      if (settings.writer_prompt.trim().length < 50) {
+        toast({ 
+          title: 'Prompt inválido', 
+          description: 'O prompt do escritor deve ter pelo menos 50 caracteres.', 
+          variant: 'destructive' 
+        });
+        return;
+      }
+      const mandatoryKeywords = ['SEO', 'jornalista'];
+      const missingKeywords = mandatoryKeywords.filter(k => !settings.writer_prompt.toLowerCase().includes(k.toLowerCase()));
+      if (missingKeywords.length > 0) {
+        toast({ 
+          title: 'Prompt incompleto', 
+          description: `O prompt do escritor deve conter orientações sobre: ${missingKeywords.join(', ')}.`, 
+          variant: 'destructive' 
+        });
+        return;
+      }
+    }
+
     setSaving(true);
     try {
       const payload: Record<string, unknown> = {
@@ -163,6 +186,13 @@ const SettingsPage = () => {
           supabase.from('user_settings').insert({ user_id: user.id, ...payload } as any),
         );
       }
+
+      // Log action
+      await supabase.from('audit_logs').insert({
+        user_id: user.id,
+        action: 'update_settings',
+        details: { fields_updated: Object.keys(payload) }
+      });
 
       setHasExistingSettings(true);
       toast({ title: 'Salvo!', description: 'Configurações atualizadas com sucesso.' });
