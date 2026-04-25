@@ -9,8 +9,7 @@ const corsHeaders = {
 // ── RSS Fetching ─────────────────────────────────────────────────────────
 
 async function fetchGoogleTrendsRSS(): Promise<string | null> {
-  // Use the most reliable URL for Brazil trends
-  const url = "https://trends.google.com/trends/trendingsearches/daily/rss?geo=BR";
+  const url = "https://trends.google.com.br/trending/rss?geo=BR";
   try {
     console.log(`[RSS] Fetching Google Trends from ${url}`);
     const resp = await fetch(url, {
@@ -20,12 +19,12 @@ async function fetchGoogleTrendsRSS(): Promise<string | null> {
       }
     });
     if (!resp.ok) {
-      console.error(`[RSS] Fetch failed with status ${resp.status}: ${resp.statusText}`);
+      console.error(`[RSS] Fetch failed with status ${resp.status}`);
       return null;
     }
     const text = await resp.text();
-    if (!text || text.length < 100) {
-      console.error(`[RSS] Received empty or too short response: ${text?.substring(0, 100)}`);
+    if (!text || text.length < 500) {
+      console.error(`[RSS] Response too short: ${text?.length || 0} chars`);
       return null;
     }
     return text;
