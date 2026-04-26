@@ -74,7 +74,8 @@ async function withRetry<T>(operation: () => Promise<T>, retries = 2, baseDelayM
 }
 
 async function generateImageGemini(apiKey: string, title: string, category: string): Promise<string> {
-  const models = ["gemini-1.5-flash", "gemini-2.0-flash-exp"];
+  // Modelos corretos do Gemini que suportam geração de imagem (Nano Banana)
+  const models = ["gemini-2.5-flash-image-preview", "gemini-2.0-flash-preview-image-generation"];
   const errors: string[] = [];
 
   for (const model of models) {
