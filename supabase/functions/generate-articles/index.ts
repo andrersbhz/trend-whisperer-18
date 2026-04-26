@@ -310,17 +310,53 @@ async function callWithFallback(providers: ProviderConfig[], systemPrompt: strin
   throw new Error(`Todos os provedores de IA falharam:\n${errors.join("\n")}`);
 }
 
-// ── Image generation (Gemini exclusivo) ─────────────────────────────────
+// ── Image generation (OpenAI and Gemini Fallback) ─────────────────────────────────
 
-const IMAGE_PROMPT_TEMPLATE = (title: string, category: string) =>
-  `Create a professional, photorealistic news article featured image about: "${title}" (category: ${category}). Requirements: Editorial/journalistic style, visually represents the article topic, NO text overlay, NO watermarks, NO logos, high quality, 16:9 aspect ratio, vibrant colors, professional lighting, suitable as a WordPress featured image.`;
+async function generateImageOpenAI(apiKey: string, title: string, category: string): Promise<string | null> {
+  try {
+    console.log(`[Image] Attempting generation with DALL-E 3 (OpenAI)`);
+    const prompt = buildSafeImagePrompt(title, category);
+    
+    const resp = await fetch("https://api.openai.com/v1/images/generations", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "dall-e-3",
+        prompt: prompt,
+        n: 1,
+        size: "1024x1024", // DALL-E 3 standard
+        response_format: "b64_json",
+      }),
+    });
+
+    if (!resp.ok) {
+      const errText = await resp.text();
+      console.warn(`[Image] OpenAI DALL-E 3 failed (${resp.status}): ${errText.substring(0, 200)}`);
+      return null;
+    }
+
+    const data = await resp.json();
+    if (data.data?.[0]?.b64_json) {
+      console.log(`[Image] Success! Image generated with DALL-E 3`);
+      return `data:image/png;base64,${data.data[0].b64_json}`;
+    }
+  } catch (err) {
+    console.error(`[Image] OpenAI error:`, err);
+  }
+  return null;
+}
 
 async function generateImageGemini(apiKey: string, title: string, category: string): Promise<string | null> {
-  const models = ["gemini-1.5-flash-8b"];
+  // Modelos Gemini que suportam geração de imagem (necessita acesso à API Imagen via Gemini)
+  // Atualmente o Gemini API suporta Imagen através de modelos específicos ou endpoints.
+  // Tentando o modelo imagen-3.0-generate-001 (se disponível na conta do usuário)
+  const models = ["gemini-2.0-flash-exp", "gemini-1.5-pro"]; 
   for (const model of models) {
     try {
       console.log(`[Image] Attempting generation with Gemini model: ${model}`);
-      // Gemini Image Generation logic
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
       const body = {
         contents: [{ parts: [{ text: buildSafeImagePrompt(title, category) }] }],
@@ -339,8 +375,6 @@ async function generateImageGemini(apiKey: string, title: string, category: stri
       }
       
       const data = await resp.json();
-      // Note: Most Gemini models don't return images directly in this way unless it's a specific multimodal response
-      // or using the Imagen API. We keep this for compatibility if the model supports it.
       const imgPart = data.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData?.mimeType?.startsWith("image/"));
       
       if (imgPart?.inlineData) {
