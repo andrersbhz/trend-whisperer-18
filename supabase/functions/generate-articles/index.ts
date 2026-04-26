@@ -321,7 +321,7 @@ async function generateImageGemini(apiKey: string, title: string, category: stri
     try {
       console.log(`[Image] Attempting generation with Gemini model: ${model}`);
       // Gemini Image Generation logic
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      const url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`;
       const body = {
         contents: [{ parts: [{ text: buildSafeImagePrompt(title, category) }] }],
       };
