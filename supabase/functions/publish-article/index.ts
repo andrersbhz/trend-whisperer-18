@@ -390,9 +390,15 @@ serve(async (req) => {
     }
   } catch (error) {
     console.error("publish-article error:", error);
+    const message = error instanceof Error ? error.message : "Erro desconhecido";
+    const isMissingConfiguration =
+      message.includes("Configurações") ||
+      message.includes("não configurad") ||
+      message.includes("não encontrado");
+
     return new Response(
-      JSON.stringify({ success: false, error: error instanceof Error ? error.message : "Erro desconhecido" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ success: false, error: message, message }),
+      { status: isMissingConfiguration ? 200 : 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
