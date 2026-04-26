@@ -190,7 +190,11 @@ serve(async (req) => {
 
     let updated = 0;
     let failed = 0;
+    let skipped = 0;
     const details: Array<{ articleId: string; title: string; reason: string }> = [];
+    const startTime = Date.now();
+    const MAX_DURATION_MS = 120_000; // Para com folga antes do timeout de 150s
+    const MAX_PER_CALL = 5; // Limita lote por chamada para evitar timeout
 
     // Considera quebrada: source.unsplash.com (descontinuado), picsum (placeholder) ou pexels (legado)
     const isBrokenImageUrl = (url: string | null | undefined): boolean => {
@@ -198,11 +202,19 @@ serve(async (req) => {
       return /source\.unsplash\.com|picsum\.photos|images\.pexels\.com/i.test(url);
     };
 
+    let processed = 0;
     for (const article of articles) {
       if (!force && article.featured_image_url && !isBrokenImageUrl(article.featured_image_url)) {
         console.log(`Skipping ${article.id} - already has valid image`);
         continue;
       }
+
+      // Para se atingir limite de tempo ou de lote (evita 504)
+      if (Date.now() - startTime > MAX_DURATION_MS || processed >= MAX_PER_CALL) {
+        skipped++;
+        continue;
+      }
+      processed++;
 
       let imageUrl: string | null = null;
       const providerErrors: string[] = [];
@@ -236,7 +248,7 @@ serve(async (req) => {
         console.log(`Image set for article: ${article.title}`);
       }
 
-      await sleep(800);
+      await sleep(500);
     }
 
     const message = updated > 0
