@@ -316,16 +316,14 @@ const IMAGE_PROMPT_TEMPLATE = (title: string, category: string) =>
   `Create a professional, photorealistic news article featured image about: "${title}" (category: ${category}). Requirements: Editorial/journalistic style, visually represents the article topic, NO text overlay, NO watermarks, NO logos, high quality, 16:9 aspect ratio, vibrant colors, professional lighting, suitable as a WordPress featured image.`;
 
 async function generateImageGemini(apiKey: string, title: string, category: string): Promise<string | null> {
-  // Preferencial: gemini-2.0-flash (padrão) -> gemini-2.0-flash-exp -> gemini-1.5-flash
-  // Nota: Gemini 2.0+ suporta Image Generation nativamente via API "Imagen" integrada ou via resposta multimodal dependendo do modelo.
   const models = ["gemini-2.0-flash", "gemini-1.5-flash"];
   for (const model of models) {
     try {
       console.log(`[Image] Attempting generation with Gemini model: ${model}`);
-      // Gemini Image Generation
+      // Gemini Image Generation logic
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
       const body = {
-        contents: [{ parts: [{ text: IMAGE_PROMPT_TEMPLATE(title, category) }] }],
+        contents: [{ parts: [{ text: buildSafeImagePrompt(title, category) }] }],
       };
 
       const resp = await fetch(url, {
@@ -341,17 +339,16 @@ async function generateImageGemini(apiKey: string, title: string, category: stri
       }
       
       const data = await resp.json();
+      // Note: Most Gemini models don't return images directly in this way unless it's a specific multimodal response
+      // or using the Imagen API. We keep this for compatibility if the model supports it.
       const imgPart = data.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData?.mimeType?.startsWith("image/"));
       
       if (imgPart?.inlineData) {
         console.log(`[Image] Success! Image generated with model: ${model}`);
         return `data:${imgPart.inlineData.mimeType};base64,${imgPart.inlineData.data}`;
-      } else {
-        // Log simplified response to avoid too much noise but see if there's a reason for no image
-        console.warn(`[Image] Gemini model ${model} returned no image data.`);
       }
     } catch (err) { 
-      console.error(`[Image] Gemini model ${model} unexpected error:`, err); 
+      console.error(`[Image] Gemini model ${model} error:`, err); 
     }
   }
   return null;
