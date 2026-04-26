@@ -33,6 +33,7 @@ const ArticlesPage = () => {
   const [cleaningUp, setCleaningUp] = useState(false);
   const [userCategories, setUserCategories] = useState<string[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(false);
+  const [errorState, setErrorState] = useState<string | null>(null);
 
   const PAGE_SIZE = 20;
 
@@ -46,6 +47,7 @@ const ArticlesPage = () => {
     console.log('[ArticlesPage] Fetching articles...', { from, to, userId: user.id });
 
     try {
+      setErrorState(null);
       const data = await runBackendQuery(() =>
         supabase
           .from('articles')
@@ -69,8 +71,9 @@ const ArticlesPage = () => {
       } catch (e) {
         console.warn('[ArticlesPage] count error', e);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('[ArticlesPage] fetchArticles error:', error);
+      setErrorState(getErrorMessage(error));
       if (!append) {
         setArticles([]);
       }
@@ -89,6 +92,8 @@ const ArticlesPage = () => {
       fetchCategories();
     } else {
       console.log('[ArticlesPage] No user available in useEffect');
+      // Se não houver usuário e não estiver mais carregando o auth, para o loading local
+      setLoading(false);
     }
   }, [user]);
 
@@ -300,8 +305,25 @@ const ArticlesPage = () => {
       <div className="flex flex-col items-center justify-center py-20 gap-4">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
         <p className="text-sm text-muted-foreground">Carregando seus artigos...</p>
-        <Button variant="ghost" size="sm" onClick={() => fetchArticles()} className="text-xs">
-          Tentar carregar novamente
+        <div className="flex gap-2">
+          <Button variant="ghost" size="sm" onClick={() => fetchArticles()} className="text-xs">
+            Tentar carregar novamente
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => setLoading(false)} className="text-xs">
+            Pular carregamento
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (errorState) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 gap-4">
+        <div className="text-destructive font-medium">Erro ao carregar dados</div>
+        <p className="text-sm text-muted-foreground">{errorState}</p>
+        <Button onClick={() => fetchArticles()} variant="outline">
+          Tentar Novamente
         </Button>
       </div>
     );
