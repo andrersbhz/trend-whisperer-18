@@ -316,7 +316,7 @@ const IMAGE_PROMPT_TEMPLATE = (title: string, category: string) =>
   `Create a professional, photorealistic news article featured image about: "${title}" (category: ${category}). Requirements: Editorial/journalistic style, visually represents the article topic, NO text overlay, NO watermarks, NO logos, high quality, 16:9 aspect ratio, vibrant colors, professional lighting, suitable as a WordPress featured image.`;
 
 async function generateImageGemini(apiKey: string, title: string, category: string): Promise<string | null> {
-  const models = ["gemini-1.5-pro"]; // Pro tem suporte a ferramentas multimodal melhor definido
+  const models = ["gemini-1.5-pro-002", "gemini-1.5-flash-002"]; // Versões fixadas estáveis
   for (const model of models) {
     try {
       console.log(`[Image] Attempting generation with Gemini model: ${model}`);
