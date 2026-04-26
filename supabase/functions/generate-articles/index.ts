@@ -315,25 +315,25 @@ async function callWithFallback(providers: ProviderConfig[], systemPrompt: strin
 // ── Image generation ─────────────────────────────────
 
 const IMAGE_PROMPT_TEMPLATE = (title: string, category: string) =>
-  `Create a professional, photorealistic news article featured image about: "${title}" (category: ${category}). Requirements: Editorial/journalistic style, visually represents the article topic, NO text overlay, NO watermarks, NO logos, high quality, 16:9 aspect ratio, vibrant colors, professional lighting, suitable as a WordPress featured image.`;
+  `Photorealistic news photography: "${title}" (category: ${category}). Style: Authentic editorial photojournalism, shot on 35mm lens, f/2.8, natural lighting, high-quality press photo. Requirements: Genuine realistic textures, NO digital art look, NO 3D render style, NO plastic skin, NO text overlay, NO watermarks, 16:9 aspect ratio, realistic colors, sharp focus on the subject. Must look like a real photo taken by a professional news photographer.`;
 
 const SENSITIVE_TERMS = /\b(pf|polícia|policia|prende|prisão|prisao|preso|presa|fraude|lavagem|crime|criminoso|assassin|morte|morto|morta|tiro|tiroteio|drog|tráfico|trafico|narco|estupro|abuso|violência|violencia|terror|atentado|guerra|conflito|tse|stf|impeachment|julga|condena|investigação|investigacao|operação|operacao|megaoperação|megaoperacao|cpi|escândalo|escandalo|denúncia|denuncia|corrupção|corrupcao|propina|suborno)\b/i;
 
 const SAFE_CATEGORY_PROMPT: Record<string, string> = {
-  esportes: "A vibrant sports stadium scene with dramatic lighting, cheering crowd silhouettes, no players visible, professional editorial photography style.",
-  politica: "A modern government building exterior with national flags waving, golden hour lighting, wide architectural shot, editorial photography style.",
-  policia: "A modern city street at dusk with blurred lights and a sense of urgency, abstract editorial style, no people or vehicles visible.",
-  saude: "A bright modern hospital corridor with soft natural light, clean medical aesthetic, no people, professional editorial photography.",
-  celebridades: "A red carpet event scene with bright spotlights, golden glamour aesthetic, no faces visible, editorial fashion photography style.",
-  financas: "A modern financial district skyline with glass skyscrapers and stock market screens glowing, golden hour, editorial business photography.",
-  tecnologia: "A futuristic tech workspace with glowing screens and abstract digital elements, modern editorial style, cinematic lighting.",
-  entretenimento: "A vibrant concert or theater stage with dramatic stage lights and bokeh effects, editorial entertainment photography.",
+  esportes: "An authentic, high-quality press photo of a real sports stadium, natural daylight, professional photography, wide architectural shot.",
+  politica: "A realistic, non-rendered photo of a government palace facade or national congress building, natural sky, shot on a professional DSLR.",
+  policia: "A high-quality news photo of a modern city street at night, realistic motion blur of traffic, authentic nighttime textures, no CGI.",
+  saude: "A realistic, clean medical environment shot from a hallway, natural lighting, sharp focus, authentic hospital atmosphere.",
+  celebridades: "A professional press photo of a luxury event entrance, bokeh background with flash highlights, authentic red carpet texture.",
+  financas: "A sharp, realistic wide shot of a glass-walled financial district, reflections of real buildings, morning light, authentic business environment.",
+  tecnologia: "A clean, photorealistic macro shot of high-tech components or a modern office workspace with realistic lighting and depth of field.",
+  entretenimento: "A professional concert stage photo with realistic lens flare and stage smoke, vibrant but natural colors, high-speed photography.",
 };
 
 function buildSafeImagePrompt(title: string, category: string): string {
   if (SENSITIVE_TERMS.test(title)) {
     const safe = SAFE_CATEGORY_PROMPT[category] || SAFE_CATEGORY_PROMPT.politica;
-    return `Create a professional, photorealistic news article featured image. Scene: ${safe} Requirements: Editorial/journalistic style, NO text overlay, NO watermarks, NO logos, NO recognizable people, high quality, 16:9 aspect ratio, vibrant colors, professional lighting, suitable as a WordPress featured image.`;
+    return `Photorealistic news photography. Scene: ${safe} Style: Authentic editorial photojournalism, high-quality press photo. Requirements: Realistic textures, NO digital art, NO 3D render, NO text overlay, NO watermarks, NO recognizable people, 16:9 aspect ratio, natural lighting.`;
   }
   return IMAGE_PROMPT_TEMPLATE(title, category);
 }

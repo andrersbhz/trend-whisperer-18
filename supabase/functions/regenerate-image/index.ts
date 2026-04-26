@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 const IMAGE_PROMPT_TEMPLATE = (title: string, category: string) =>
-  `Create a professional, photorealistic news article featured image about: "${title}" (category: ${category}). Requirements: Editorial/journalistic style, visually represents the article topic, NO text overlay, NO watermarks, NO logos, high quality, 16:9 aspect ratio, vibrant colors, professional lighting, suitable as a WordPress featured image.`;
+  `Photorealistic news photography: "${title}" (category: ${category}). Style: Authentic editorial photojournalism, shot on 35mm lens, f/2.8, natural lighting, high-quality press photo. Requirements: Genuine realistic textures, NO digital art look, NO 3D render style, NO plastic skin, NO text overlay, NO watermarks, 16:9 aspect ratio, realistic colors, sharp focus on the subject. Must look like a real photo taken by a professional news photographer.`;
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
