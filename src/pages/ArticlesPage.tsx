@@ -193,8 +193,10 @@ const ArticlesPage = () => {
       if (error) throw error;
       
       toast({ title: 'Excluído', description: 'Artigo removido.' });
-      fetchArticles();
+      setArticles(prev => prev.filter(a => a.id !== articleId));
+      setTotalCount(prev => Math.max(0, prev - 1));
     } catch (error) {
+      console.error('[ArticlesPage] Error deleting article:', error);
       toast({ title: 'Erro ao excluir', description: getErrorMessage(error), variant: 'destructive' });
     }
   };
