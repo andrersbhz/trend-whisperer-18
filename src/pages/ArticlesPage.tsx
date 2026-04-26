@@ -186,12 +186,16 @@ const ArticlesPage = () => {
   };
 
   const handleDelete = async (articleId: string) => {
+    if (!confirm('Tem certeza que deseja excluir este artigo?')) return;
+    
     try {
-      await runBackendMutation(() => supabase.from('articles').delete().eq('id', articleId));
+      const { error } = await supabase.from('articles').delete().eq('id', articleId);
+      if (error) throw error;
+      
       toast({ title: 'Excluído', description: 'Artigo removido.' });
       fetchArticles();
     } catch (error) {
-      toast({ title: 'Erro', description: getErrorMessage(error), variant: 'destructive' });
+      toast({ title: 'Erro ao excluir', description: getErrorMessage(error), variant: 'destructive' });
     }
   };
 
