@@ -310,49 +310,12 @@ async function callWithFallback(providers: ProviderConfig[], systemPrompt: strin
   throw new Error(`Todos os provedores de IA falharam:\n${errors.join("\n")}`);
 }
 
-// ── Image generation (Gemini exclusivo) ─────────────────────────────────
+// ── Image generation (OpenAI and Gemini Fallback) ─────────────────────────────────
+
+// ── Image generation ─────────────────────────────────
 
 const IMAGE_PROMPT_TEMPLATE = (title: string, category: string) =>
   `Create a professional, photorealistic news article featured image about: "${title}" (category: ${category}). Requirements: Editorial/journalistic style, visually represents the article topic, NO text overlay, NO watermarks, NO logos, high quality, 16:9 aspect ratio, vibrant colors, professional lighting, suitable as a WordPress featured image.`;
-
-async function generateImageGemini(apiKey: string, title: string, category: string): Promise<string | null> {
-  const models = ["gemini-1.5-flash-8b"];
-  for (const model of models) {
-    try {
-      console.log(`[Image] Attempting generation with Gemini model: ${model}`);
-      // Gemini Image Generation logic
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-      const body = {
-        contents: [{ parts: [{ text: buildSafeImagePrompt(title, category) }] }],
-      };
-
-      const resp = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-
-      if (!resp.ok) {
-        const errText = await resp.text();
-        console.warn(`[Image] Gemini model ${model} failed (${resp.status}): ${errText.substring(0, 200)}`);
-        continue;
-      }
-      
-      const data = await resp.json();
-      // Note: Most Gemini models don't return images directly in this way unless it's a specific multimodal response
-      // or using the Imagen API. We keep this for compatibility if the model supports it.
-      const imgPart = data.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData?.mimeType?.startsWith("image/"));
-      
-      if (imgPart?.inlineData) {
-        console.log(`[Image] Success! Image generated with model: ${model}`);
-        return `data:${imgPart.inlineData.mimeType};base64,${imgPart.inlineData.data}`;
-      }
-    } catch (err) { 
-      console.error(`[Image] Gemini model ${model} error:`, err); 
-    }
-  }
-  return null;
-}
 
 const SENSITIVE_TERMS = /\b(pf|polícia|policia|prende|prisão|prisao|preso|presa|fraude|lavagem|crime|criminoso|assassin|morte|morto|morta|tiro|tiroteio|drog|tráfico|trafico|narco|estupro|abuso|violência|violencia|terror|atentado|guerra|conflito|tse|stf|impeachment|julga|condena|investigação|investigacao|operação|operacao|megaoperação|megaoperacao|cpi|escândalo|escandalo|denúncia|denuncia|corrupção|corrupcao|propina|suborno)\b/i;
 
@@ -375,40 +338,75 @@ function buildSafeImagePrompt(title: string, category: string): string {
   return IMAGE_PROMPT_TEMPLATE(title, category);
 }
 
-async function generateImageDallE(apiKey: string, title: string, category: string): Promise<string | null> {
-  const prompt = buildSafeImagePrompt(title, category);
+async function generateImageOpenAI(apiKey: string, title: string, category: string): Promise<string | null> {
   try {
-    console.log(`[Image] Calling DALL-E 3 with prompt: ${prompt.substring(0, 100)}...`);
+    const prompt = buildSafeImagePrompt(title, category);
+    console.log(`[Image] Calling DALL-E 3 for: ${title.substring(0, 50)}...`);
+    
     const resp = await fetch("https://api.openai.com/v1/images/generations", {
       method: "POST",
-      headers: { 
-        "Authorization": `Bearer ${apiKey}`, 
-        "Content-Type": "application/json" 
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         model: "dall-e-3",
         prompt: prompt,
         n: 1,
-        size: "1024x1024", // Changed from 1792x1024 to standard square for better compatibility/cost
-        quality: "standard",
+        size: "1024x1024",
         response_format: "b64_json",
       }),
     });
-    
+
     if (!resp.ok) {
-      const errBody = await resp.text().catch(() => "");
-      console.error(`[Image] DALL-E API Error ${resp.status}: ${errBody}`);
+      const errText = await resp.text();
+      console.warn(`[Image] OpenAI DALL-E 3 failed (${resp.status}): ${errText.substring(0, 200)}`);
       return null;
     }
-    
+
     const data = await resp.json();
-    const b64 = data.data?.[0]?.b64_json;
-    if (b64) {
-      return `data:image/png;base64,${b64}`;
+    if (data.data?.[0]?.b64_json) {
+      console.log(`[Image] Success! Image generated with DALL-E 3`);
+      return `data:image/png;base64,${data.data[0].b64_json}`;
     }
-    console.warn("[Image] DALL-E returned success but no image data.");
-  } catch (err) { 
-    console.error("[Image] DALL-E unexpected error:", err); 
+  } catch (err) {
+    console.error(`[Image] OpenAI error:`, err);
+  }
+  return null;
+}
+
+async function generateImageGemini(apiKey: string, title: string, category: string): Promise<string | null> {
+  const models = ["gemini-2.0-flash-exp", "gemini-1.5-pro"]; 
+  for (const model of models) {
+    try {
+      console.log(`[Image] Attempting generation with Gemini model: ${model}`);
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      const body = {
+        contents: [{ parts: [{ text: buildSafeImagePrompt(title, category) }] }],
+      };
+
+      const resp = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      if (!resp.ok) {
+        const errText = await resp.text();
+        console.warn(`[Image] Gemini model ${model} failed (${resp.status}): ${errText.substring(0, 200)}`);
+        continue;
+      }
+      
+      const data = await resp.json();
+      const imgPart = data.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData?.mimeType?.startsWith("image/"));
+      
+      if (imgPart?.inlineData) {
+        console.log(`[Image] Success! Image generated with model: ${model}`);
+        return `data:${imgPart.inlineData.mimeType};base64,${imgPart.inlineData.data}`;
+      }
+    } catch (err) { 
+      console.error(`[Image] Gemini model ${model} error:`, err); 
+    }
   }
   return null;
 }
@@ -536,29 +534,31 @@ serve(async (req) => {
     }
 
     const providers: ProviderConfig[] = [];
-    // Ordem de redundância definida pelo usuário:
-    // 1. Gemini (Principal)
+    // Ordem de redundância ajustada:
+    // 1. Groq (Texto - Mais rápido)
+    if (groqApiKey) {
+      providers.push({ name: "Groq", call: (s, u) => callGroqDirect(groqApiKey!, s, u) });
+    }
+    
+    // 2. Gemini (Principal fallback)
     if (geminiApiKey) {
       console.log(`[Pipeline] Adding Gemini provider with key ${geminiApiKey.substring(0, 8)}...`);
       providers.push({ name: "Gemini", call: (s, u) => callGeminiDirect(geminiApiKey!, s, u) });
     }
     
-    // 2. OpenAI / ChatGPT (Secundário)
+    // 3. OpenAI / ChatGPT (Texto fallback)
     if (openaiApiKey) providers.push({ name: "OpenAI", call: (s, u) => callOpenAIDirect(openaiApiKey!, s, u) });
     
-    // 3. Azure Copilot (Terceiro)
+    // 4. Azure Copilot (Final fallback)
     if (azureApiKey && settings?.azure_openai_endpoint && settings?.azure_openai_deployment_name) {
       providers.push({ 
         name: "Azure Copilot", 
         call: (s, u) => callAzureOpenAIDirect(azureApiKey!, settings.azure_openai_endpoint, settings.azure_openai_deployment_name, s, u) 
       });
     }
-    
-    // 4. Groq (Demais)
-    if (groqApiKey) providers.push({ name: "Groq", call: (s, u) => callGroqDirect(groqApiKey!, s, u) });
 
     if (providers.length === 0) {
-      throw new Error("Nenhuma chave de IA configurada. Configure sua chave Gemini em Configurações.");
+      throw new Error("Nenhuma chave de IA configurada. Configure sua chave Gemini ou Groq em Configurações.");
     }
 
     console.log(`[Pipeline] Available AI providers: ${providers.map(p => p.name).join(" → ")}`);
@@ -787,8 +787,7 @@ serve(async (req) => {
         // 1. ChatGPT (DALL-E 3) agora é o principal para imagens
         if (openaiApiKey) {
           try { 
-            featuredImageUrl = await generateImageDallE(openaiApiKey, parsed.title, topic.category); 
-            if (featuredImageUrl) console.log(`[Image] Success! Image generated with DALL-E 3`);
+            featuredImageUrl = await generateImageOpenAI(openaiApiKey, parsed.title, topic.category); 
           } catch (imgErr) { 
             console.warn(`[Image] DALL-E falhou para "${parsed.title}":`, imgErr); 
           }
