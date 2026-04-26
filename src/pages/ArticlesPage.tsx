@@ -44,39 +44,32 @@ const ArticlesPage = () => {
     const from = append ? articles.length : 0;
     const to = from + PAGE_SIZE - 1;
 
-    console.log('[ArticlesPage] Fetching articles...', { from, to, userId: user.id });
-
     try {
       setErrorState(null);
-      const data = await runBackendQuery(() =>
+      
+      // Parallelize article fetch and total count for speed
+      const [articlesResult, countResult] = await Promise.all([
         supabase
           .from('articles')
           .select('id, title, status, category, seo_keyword, meta_description, featured_image_url')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
           .range(from, to),
-      );
-
-      console.log('[ArticlesPage] Articles fetched:', data?.length);
-
-      setHasMore((data || []).length === PAGE_SIZE);
-      setArticles((current) => (append ? [...current, ...(data || [])] : data || []));
-
-      try {
-        const { count } = await supabase
+        supabase
           .from('articles')
           .select('id', { count: 'exact', head: true })
-          .eq('user_id', user.id);
-        setTotalCount(count ?? 0);
-      } catch (e) {
-        console.warn('[ArticlesPage] count error', e);
-      }
+          .eq('user_id', user.id)
+      ]);
+
+      if (articlesResult.error) throw articlesResult.error;
+
+      const data = articlesResult.data;
+      setHasMore((data || []).length === PAGE_SIZE);
+      setArticles((current) => (append ? [...current, ...(data || [])] : data || []));
+      setTotalCount(countResult.count ?? 0);
     } catch (error: any) {
       console.error('[ArticlesPage] fetchArticles error:', error);
       setErrorState(getErrorMessage(error));
-      if (!append) {
-        setArticles([]);
-      }
       toast({ title: 'Erro ao carregar artigos', description: getErrorMessage(error), variant: 'destructive' });
     } finally {
       setLoading(false);
@@ -86,14 +79,9 @@ const ArticlesPage = () => {
 
   useEffect(() => {
     if (user) {
-      console.log('[ArticlesPage] User available, starting fetch');
       setLoading(true);
-      fetchArticles();
-      fetchCategories();
-    } else {
-      console.log('[ArticlesPage] No user available in useEffect');
-      // Se não houver usuário e não estiver mais carregando o auth, para o loading local
-      setLoading(false);
+      // Fetch everything in parallel
+      Promise.all([fetchArticles(), fetchCategories()]);
     }
   }, [user]);
 
@@ -101,8 +89,7 @@ const ArticlesPage = () => {
     if (!user) return;
     setLoadingCategories(true);
     try {
-      const { data, error } = await supabase.from('user_settings').select('categories').eq('user_id', user.id).maybeSingle();
-      if (error) throw error;
+      const { data } = await supabase.from('user_settings').select('categories').eq('user_id', user.id).maybeSingle();
       setUserCategories(data?.categories || ['esportes', 'politica', 'policia', 'saude', 'celebridades', 'financas']);
     } catch (e) {
       console.error('Error fetching categories', e);
@@ -336,13 +323,14 @@ const ArticlesPage = () => {
       style={{ animationDelay: `${Math.min(idx, 10) * 30}ms` }}
     >
       <CardContent className="p-0">
-        <div className="flex items-stretch">
+        <div className="flex items-stretch min-h-[80px]">
           <div className="relative w-20 sm:w-28 shrink-0 bg-secondary/40 overflow-hidden">
             {article.featured_image_url ? (
               <img
                 src={article.featured_image_url}
                 alt={article.title}
-                className="absolute inset-0 w-full h-full object-cover"
+                className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300 opacity-0"
+                onLoad={(e) => (e.currentTarget.style.opacity = "1")}
                 loading="lazy"
               />
             ) : (
