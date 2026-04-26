@@ -821,8 +821,7 @@ serve(async (req) => {
         // 1. ChatGPT (DALL-E 3) agora é o principal para imagens
         if (openaiApiKey) {
           try { 
-            featuredImageUrl = await generateImageDallE(openaiApiKey, parsed.title, topic.category); 
-            if (featuredImageUrl) console.log(`[Image] Success! Image generated with DALL-E 3`);
+            featuredImageUrl = await generateImageOpenAI(openaiApiKey, parsed.title, topic.category); 
           } catch (imgErr) { 
             console.warn(`[Image] DALL-E falhou para "${parsed.title}":`, imgErr); 
           }
