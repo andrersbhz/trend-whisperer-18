@@ -381,31 +381,38 @@ function buildSafeImagePrompt(title: string, category: string): string {
 async function generateImageDallE(apiKey: string, title: string, category: string): Promise<string | null> {
   const prompt = buildSafeImagePrompt(title, category);
   try {
+    console.log(`[Image] Calling DALL-E 3 with prompt: ${prompt.substring(0, 100)}...`);
     const resp = await fetch("https://api.openai.com/v1/images/generations", {
       method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      headers: { 
+        "Authorization": `Bearer ${apiKey}`, 
+        "Content-Type": "application/json" 
+      },
       body: JSON.stringify({
         model: "dall-e-3",
-        prompt,
+        prompt: prompt,
         n: 1,
-        size: "1792x1024",
+        size: "1024x1024", // Changed from 1792x1024 to standard square for better compatibility/cost
         quality: "standard",
         response_format: "b64_json",
       }),
     });
+    
     if (!resp.ok) {
       const errBody = await resp.text().catch(() => "");
-      const isPolicy = /content_policy|safety|moderation/i.test(errBody);
-      console.warn(`DALL-E failed ${resp.status}${isPolicy ? " (content policy)" : ""}: ${errBody.substring(0, 200)}`);
+      console.error(`[Image] DALL-E API Error ${resp.status}: ${errBody}`);
       return null;
     }
+    
     const data = await resp.json();
     const b64 = data.data?.[0]?.b64_json;
     if (b64) {
-      console.log("Image generated with DALL-E 3");
       return `data:image/png;base64,${b64}`;
     }
-  } catch (err) { console.warn("DALL-E error:", err); }
+    console.warn("[Image] DALL-E returned success but no image data.");
+  } catch (err) { 
+    console.error("[Image] DALL-E unexpected error:", err); 
+  }
   return null;
 }
 
