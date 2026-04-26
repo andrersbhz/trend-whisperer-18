@@ -189,12 +189,12 @@ const ArticlesPage = () => {
     if (!confirm('Tem certeza que deseja excluir este artigo?')) return;
     
     try {
-      await runBackendMutation(() => 
-        supabase.from('articles').delete().eq('id', articleId)
-      );
+      const { error } = await supabase.from('articles').delete().eq('id', articleId);
+      if (error) throw error;
       
       toast({ title: 'Excluído', description: 'Artigo removido.' });
-      fetchArticles();
+      setArticles(prev => prev.filter(a => a.id !== articleId));
+      setTotalCount(prev => Math.max(0, prev - 1));
     } catch (error) {
       console.error('[ArticlesPage] Error deleting article:', error);
       toast({ title: 'Erro ao excluir', description: getErrorMessage(error), variant: 'destructive' });
