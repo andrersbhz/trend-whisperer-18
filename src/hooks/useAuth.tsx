@@ -33,8 +33,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     const timeoutId = window.setTimeout(() => {
+      console.warn('[useAuth] Auth timeout reached, forcing loading state to false');
       finishAuthLoading(null);
-    }, 5000);
+    }, 10000);
 
     const initializeAuth = async () => {
       try {
