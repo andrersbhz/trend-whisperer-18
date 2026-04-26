@@ -312,10 +312,36 @@ async function callWithFallback(providers: ProviderConfig[], systemPrompt: strin
 
 // ── Image generation (OpenAI and Gemini Fallback) ─────────────────────────────────
 
+// ── Image generation ─────────────────────────────────
+
+const IMAGE_PROMPT_TEMPLATE = (title: string, category: string) =>
+  `Create a professional, photorealistic news article featured image about: "${title}" (category: ${category}). Requirements: Editorial/journalistic style, visually represents the article topic, NO text overlay, NO watermarks, NO logos, high quality, 16:9 aspect ratio, vibrant colors, professional lighting, suitable as a WordPress featured image.`;
+
+const SENSITIVE_TERMS = /\b(pf|polícia|policia|prende|prisão|prisao|preso|presa|fraude|lavagem|crime|criminoso|assassin|morte|morto|morta|tiro|tiroteio|drog|tráfico|trafico|narco|estupro|abuso|violência|violencia|terror|atentado|guerra|conflito|tse|stf|impeachment|julga|condena|investigação|investigacao|operação|operacao|megaoperação|megaoperacao|cpi|escândalo|escandalo|denúncia|denuncia|corrupção|corrupcao|propina|suborno)\b/i;
+
+const SAFE_CATEGORY_PROMPT: Record<string, string> = {
+  esportes: "A vibrant sports stadium scene with dramatic lighting, cheering crowd silhouettes, no players visible, professional editorial photography style.",
+  politica: "A modern government building exterior with national flags waving, golden hour lighting, wide architectural shot, editorial photography style.",
+  policia: "A modern city street at dusk with blurred lights and a sense of urgency, abstract editorial style, no people or vehicles visible.",
+  saude: "A bright modern hospital corridor with soft natural light, clean medical aesthetic, no people, professional editorial photography.",
+  celebridades: "A red carpet event scene with bright spotlights, golden glamour aesthetic, no faces visible, editorial fashion photography style.",
+  financas: "A modern financial district skyline with glass skyscrapers and stock market screens glowing, golden hour, editorial business photography.",
+  tecnologia: "A futuristic tech workspace with glowing screens and abstract digital elements, modern editorial style, cinematic lighting.",
+  entretenimento: "A vibrant concert or theater stage with dramatic stage lights and bokeh effects, editorial entertainment photography.",
+};
+
+function buildSafeImagePrompt(title: string, category: string): string {
+  if (SENSITIVE_TERMS.test(title)) {
+    const safe = SAFE_CATEGORY_PROMPT[category] || SAFE_CATEGORY_PROMPT.politica;
+    return `Create a professional, photorealistic news article featured image. Scene: ${safe} Requirements: Editorial/journalistic style, NO text overlay, NO watermarks, NO logos, NO recognizable people, high quality, 16:9 aspect ratio, vibrant colors, professional lighting, suitable as a WordPress featured image.`;
+  }
+  return IMAGE_PROMPT_TEMPLATE(title, category);
+}
+
 async function generateImageOpenAI(apiKey: string, title: string, category: string): Promise<string | null> {
   try {
-    console.log(`[Image] Attempting generation with DALL-E 3 (OpenAI)`);
     const prompt = buildSafeImagePrompt(title, category);
+    console.log(`[Image] Calling DALL-E 3 for: ${title.substring(0, 50)}...`);
     
     const resp = await fetch("https://api.openai.com/v1/images/generations", {
       method: "POST",
@@ -327,7 +353,7 @@ async function generateImageOpenAI(apiKey: string, title: string, category: stri
         model: "dall-e-3",
         prompt: prompt,
         n: 1,
-        size: "1024x1024", // DALL-E 3 standard
+        size: "1024x1024",
         response_format: "b64_json",
       }),
     });
@@ -350,9 +376,6 @@ async function generateImageOpenAI(apiKey: string, title: string, category: stri
 }
 
 async function generateImageGemini(apiKey: string, title: string, category: string): Promise<string | null> {
-  // Modelos Gemini que suportam geração de imagem (necessita acesso à API Imagen via Gemini)
-  // Atualmente o Gemini API suporta Imagen através de modelos específicos ou endpoints.
-  // Tentando o modelo imagen-3.0-generate-001 (se disponível na conta do usuário)
   const models = ["gemini-2.0-flash-exp", "gemini-1.5-pro"]; 
   for (const model of models) {
     try {
@@ -384,65 +407,6 @@ async function generateImageGemini(apiKey: string, title: string, category: stri
     } catch (err) { 
       console.error(`[Image] Gemini model ${model} error:`, err); 
     }
-  }
-  return null;
-}
-
-const SENSITIVE_TERMS = /\b(pf|polícia|policia|prende|prisão|prisao|preso|presa|fraude|lavagem|crime|criminoso|assassin|morte|morto|morta|tiro|tiroteio|drog|tráfico|trafico|narco|estupro|abuso|violência|violencia|terror|atentado|guerra|conflito|tse|stf|impeachment|julga|condena|investigação|investigacao|operação|operacao|megaoperação|megaoperacao|cpi|escândalo|escandalo|denúncia|denuncia|corrupção|corrupcao|propina|suborno)\b/i;
-
-const SAFE_CATEGORY_PROMPT: Record<string, string> = {
-  esportes: "A vibrant sports stadium scene with dramatic lighting, cheering crowd silhouettes, no players visible, professional editorial photography style.",
-  politica: "A modern government building exterior with national flags waving, golden hour lighting, wide architectural shot, editorial photography style.",
-  policia: "A modern city street at dusk with blurred lights and a sense of urgency, abstract editorial style, no people or vehicles visible.",
-  saude: "A bright modern hospital corridor with soft natural light, clean medical aesthetic, no people, professional editorial photography.",
-  celebridades: "A red carpet event scene with bright spotlights, golden glamour aesthetic, no faces visible, editorial fashion photography style.",
-  financas: "A modern financial district skyline with glass skyscrapers and stock market screens glowing, golden hour, editorial business photography.",
-  tecnologia: "A futuristic tech workspace with glowing screens and abstract digital elements, modern editorial style, cinematic lighting.",
-  entretenimento: "A vibrant concert or theater stage with dramatic stage lights and bokeh effects, editorial entertainment photography.",
-};
-
-function buildSafeImagePrompt(title: string, category: string): string {
-  if (SENSITIVE_TERMS.test(title)) {
-    const safe = SAFE_CATEGORY_PROMPT[category] || SAFE_CATEGORY_PROMPT.politica;
-    return `Create a professional, photorealistic news article featured image. Scene: ${safe} Requirements: Editorial/journalistic style, NO text overlay, NO watermarks, NO logos, NO recognizable people, high quality, 16:9 aspect ratio, vibrant colors, professional lighting, suitable as a WordPress featured image.`;
-  }
-  return IMAGE_PROMPT_TEMPLATE(title, category);
-}
-
-async function generateImageDallE(apiKey: string, title: string, category: string): Promise<string | null> {
-  const prompt = buildSafeImagePrompt(title, category);
-  try {
-    console.log(`[Image] Calling DALL-E 3 with prompt: ${prompt.substring(0, 100)}...`);
-    const resp = await fetch("https://api.openai.com/v1/images/generations", {
-      method: "POST",
-      headers: { 
-        "Authorization": `Bearer ${apiKey}`, 
-        "Content-Type": "application/json" 
-      },
-      body: JSON.stringify({
-        model: "dall-e-3",
-        prompt: prompt,
-        n: 1,
-        size: "1024x1024", // Changed from 1792x1024 to standard square for better compatibility/cost
-        quality: "standard",
-        response_format: "b64_json",
-      }),
-    });
-    
-    if (!resp.ok) {
-      const errBody = await resp.text().catch(() => "");
-      console.error(`[Image] DALL-E API Error ${resp.status}: ${errBody}`);
-      return null;
-    }
-    
-    const data = await resp.json();
-    const b64 = data.data?.[0]?.b64_json;
-    if (b64) {
-      return `data:image/png;base64,${b64}`;
-    }
-    console.warn("[Image] DALL-E returned success but no image data.");
-  } catch (err) { 
-    console.error("[Image] DALL-E unexpected error:", err); 
   }
   return null;
 }
