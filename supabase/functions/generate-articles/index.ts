@@ -73,7 +73,7 @@ const ARTICLE_TOOL_PARAMS = {
 };
 
 async function callGeminiDirect(apiKey: string, systemPrompt: string, userPrompt: string): Promise<AIResponse> {
-  const model = "gemini-2.0-flash"; // Usando Gemini 2.0 Flash (Nano Banana)
+  const model = "gemini-1.5-flash-8b"; // Versão Flash 8b que é mais disponível globalmente
   let lastError: any = null;
 
   try {
@@ -110,7 +110,7 @@ async function callGeminiDirect(apiKey: string, systemPrompt: string, userPrompt
     }
 
     // Fallback: Try v1 (JSON mode)
-    const v1Url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`;
+    const v1Url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
     const v1Body = {
       contents: [{ 
         role: "user", 
@@ -316,16 +316,14 @@ const IMAGE_PROMPT_TEMPLATE = (title: string, category: string) =>
   `Create a professional, photorealistic news article featured image about: "${title}" (category: ${category}). Requirements: Editorial/journalistic style, visually represents the article topic, NO text overlay, NO watermarks, NO logos, high quality, 16:9 aspect ratio, vibrant colors, professional lighting, suitable as a WordPress featured image.`;
 
 async function generateImageGemini(apiKey: string, title: string, category: string): Promise<string | null> {
-  // Preferencial: gemini-2.0-flash (padrão) -> gemini-2.0-flash-exp -> gemini-1.5-flash
-  // Nota: Gemini 2.0+ suporta Image Generation nativamente via API "Imagen" integrada ou via resposta multimodal dependendo do modelo.
-  const models = ["gemini-2.0-flash", "gemini-1.5-flash"];
+  const models = ["gemini-1.5-flash-8b"];
   for (const model of models) {
     try {
       console.log(`[Image] Attempting generation with Gemini model: ${model}`);
-      // Gemini Image Generation
+      // Gemini Image Generation logic
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
       const body = {
-        contents: [{ parts: [{ text: IMAGE_PROMPT_TEMPLATE(title, category) }] }],
+        contents: [{ parts: [{ text: buildSafeImagePrompt(title, category) }] }],
       };
 
       const resp = await fetch(url, {
@@ -341,17 +339,16 @@ async function generateImageGemini(apiKey: string, title: string, category: stri
       }
       
       const data = await resp.json();
+      // Note: Most Gemini models don't return images directly in this way unless it's a specific multimodal response
+      // or using the Imagen API. We keep this for compatibility if the model supports it.
       const imgPart = data.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData?.mimeType?.startsWith("image/"));
       
       if (imgPart?.inlineData) {
         console.log(`[Image] Success! Image generated with model: ${model}`);
         return `data:${imgPart.inlineData.mimeType};base64,${imgPart.inlineData.data}`;
-      } else {
-        // Log simplified response to avoid too much noise but see if there's a reason for no image
-        console.warn(`[Image] Gemini model ${model} returned no image data.`);
       }
     } catch (err) { 
-      console.error(`[Image] Gemini model ${model} unexpected error:`, err); 
+      console.error(`[Image] Gemini model ${model} error:`, err); 
     }
   }
   return null;
@@ -381,31 +378,38 @@ function buildSafeImagePrompt(title: string, category: string): string {
 async function generateImageDallE(apiKey: string, title: string, category: string): Promise<string | null> {
   const prompt = buildSafeImagePrompt(title, category);
   try {
+    console.log(`[Image] Calling DALL-E 3 with prompt: ${prompt.substring(0, 100)}...`);
     const resp = await fetch("https://api.openai.com/v1/images/generations", {
       method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      headers: { 
+        "Authorization": `Bearer ${apiKey}`, 
+        "Content-Type": "application/json" 
+      },
       body: JSON.stringify({
         model: "dall-e-3",
-        prompt,
+        prompt: prompt,
         n: 1,
-        size: "1792x1024",
+        size: "1024x1024", // Changed from 1792x1024 to standard square for better compatibility/cost
         quality: "standard",
         response_format: "b64_json",
       }),
     });
+    
     if (!resp.ok) {
       const errBody = await resp.text().catch(() => "");
-      const isPolicy = /content_policy|safety|moderation/i.test(errBody);
-      console.warn(`DALL-E failed ${resp.status}${isPolicy ? " (content policy)" : ""}: ${errBody.substring(0, 200)}`);
+      console.error(`[Image] DALL-E API Error ${resp.status}: ${errBody}`);
       return null;
     }
+    
     const data = await resp.json();
     const b64 = data.data?.[0]?.b64_json;
     if (b64) {
-      console.log("Image generated with DALL-E 3");
       return `data:image/png;base64,${b64}`;
     }
-  } catch (err) { console.warn("DALL-E error:", err); }
+    console.warn("[Image] DALL-E returned success but no image data.");
+  } catch (err) { 
+    console.error("[Image] DALL-E unexpected error:", err); 
+  }
   return null;
 }
 
