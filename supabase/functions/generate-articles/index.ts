@@ -315,7 +315,7 @@ async function callWithFallback(providers: ProviderConfig[], systemPrompt: strin
 // ── Image generation ─────────────────────────────────
 
 const IMAGE_PROMPT_TEMPLATE = (title: string, category: string) =>
-  `Photorealistic news photography: "${title}" (category: ${category}). Style: Authentic editorial photojournalism, shot on 35mm lens, f/2.8, natural lighting, high-quality press photo. Requirements: Genuine realistic textures, NO digital art look, NO 3D render style, NO plastic skin, NO text overlay, NO watermarks, 16:9 aspect ratio, realistic colors, sharp focus on the subject. Must look like a real photo taken by a professional news photographer.`;
+  `4K Ultra-realistic news photography: "${title}" (category: ${category}). Style: Authentic 100% realistic editorial photojournalism, shot on high-end DSLR, 35mm lens, f/2.8, natural lighting, sharp details, high-quality press photo. Requirements: Genuine realistic textures, NO digital art look, NO CGI, NO 3D render style, NO plastic skin, NO text overlay, NO watermarks, 16:9 aspect ratio, natural colors, sharp focus. The image must be indistinguishable from a real professional news photograph and strictly follow the article topic: ${title}.`;
 
 const SENSITIVE_TERMS = /\b(pf|polícia|policia|prende|prisão|prisao|preso|presa|fraude|lavagem|crime|criminoso|assassin|morte|morto|morta|tiro|tiroteio|drog|tráfico|trafico|narco|estupro|abuso|violência|violencia|terror|atentado|guerra|conflito|tse|stf|impeachment|julga|condena|investigação|investigacao|operação|operacao|megaoperação|megaoperacao|cpi|escândalo|escandalo|denúncia|denuncia|corrupção|corrupcao|propina|suborno)\b/i;
 
