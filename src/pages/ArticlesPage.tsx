@@ -43,6 +43,8 @@ const ArticlesPage = () => {
     const from = append ? articles.length : 0;
     const to = from + PAGE_SIZE - 1;
 
+    console.log('[ArticlesPage] Fetching articles...', { from, to, userId: user.id });
+
     try {
       const data = await runBackendQuery(() =>
         supabase
@@ -53,10 +55,11 @@ const ArticlesPage = () => {
           .range(from, to),
       );
 
+      console.log('[ArticlesPage] Articles fetched:', data?.length);
+
       setHasMore((data || []).length === PAGE_SIZE);
       setArticles((current) => (append ? [...current, ...(data || [])] : data || []));
 
-      // Total count (separate query for accurate badge)
       try {
         const { count } = await supabase
           .from('articles')
@@ -79,18 +82,22 @@ const ArticlesPage = () => {
   };
 
   useEffect(() => {
-    setLoading(true);
-    setLoadingMore(false);
-    setHasMore(false);
-    fetchArticles();
-    fetchCategories();
+    if (user) {
+      console.log('[ArticlesPage] User available, starting fetch');
+      setLoading(true);
+      fetchArticles();
+      fetchCategories();
+    } else {
+      console.log('[ArticlesPage] No user available in useEffect');
+    }
   }, [user]);
 
   const fetchCategories = async () => {
     if (!user) return;
     setLoadingCategories(true);
     try {
-      const { data } = await supabase.from('user_settings').select('categories').eq('user_id', user.id).single();
+      const { data, error } = await supabase.from('user_settings').select('categories').eq('user_id', user.id).maybeSingle();
+      if (error) throw error;
       setUserCategories(data?.categories || ['esportes', 'politica', 'policia', 'saude', 'celebridades', 'financas']);
     } catch (e) {
       console.error('Error fetching categories', e);
@@ -290,8 +297,12 @@ const ArticlesPage = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
+      <div className="flex flex-col items-center justify-center py-20 gap-4">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-sm text-muted-foreground">Carregando seus artigos...</p>
+        <Button variant="ghost" size="sm" onClick={() => fetchArticles()} className="text-xs">
+          Tentar carregar novamente
+        </Button>
       </div>
     );
   }
