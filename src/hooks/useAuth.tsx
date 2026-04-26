@@ -95,6 +95,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) throw new Error('useAuth must be used within AuthProvider');
+  if (!context) {
+    // Return a safe default instead of throwing to prevent blank screens
+    // during HMR or rendering edge cases
+    console.warn('useAuth called outside AuthProvider — returning default state');
+    return {
+      user: null,
+      session: null,
+      loading: false,
+      signIn: async () => { throw new Error('AuthProvider not mounted'); },
+      signUp: async () => { throw new Error('AuthProvider not mounted'); },
+      signOut: async () => { throw new Error('AuthProvider not mounted'); },
+    };
+  }
   return context;
 };
