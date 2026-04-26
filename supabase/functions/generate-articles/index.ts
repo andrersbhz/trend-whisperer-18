@@ -73,7 +73,7 @@ const ARTICLE_TOOL_PARAMS = {
 };
 
 async function callGeminiDirect(apiKey: string, systemPrompt: string, userPrompt: string): Promise<AIResponse> {
-  const model = "gemini-2.0-flash-exp"; // Atualizado para gemini-2.0-flash-exp para maior compatibilidade atual
+  const model = "gemini-1.5-flash"; // Estável e compatível
   let lastError: any = null;
 
   try {
