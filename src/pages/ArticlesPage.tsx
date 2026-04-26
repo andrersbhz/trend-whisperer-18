@@ -188,13 +188,17 @@ const ArticlesPage = () => {
   const handleDelete = async (articleId: string) => {
     if (!confirm('Tem certeza que deseja excluir este artigo?')) return;
     
+    console.log('[ArticlesPage] Deleting article:', articleId);
     try {
-      const { error } = await supabase.from('articles').delete().eq('id', articleId);
+      const { error, status, statusText } = await supabase.from('articles').delete().eq('id', articleId);
+      console.log('[ArticlesPage] Delete result:', { error, status, statusText });
+      
       if (error) throw error;
       
       toast({ title: 'Excluído', description: 'Artigo removido.' });
       fetchArticles();
     } catch (error) {
+      console.error('[ArticlesPage] Error deleting article:', error);
       toast({ title: 'Erro ao excluir', description: getErrorMessage(error), variant: 'destructive' });
     }
   };
