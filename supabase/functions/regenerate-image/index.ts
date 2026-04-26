@@ -252,11 +252,11 @@ serve(async (req) => {
     }
 
     const message = updated > 0
-      ? `${updated} imagens geradas com IA${failed > 0 ? ` (${failed} falharam)` : ""}.`
+      ? `${updated} imagens geradas com IA${failed > 0 ? ` (${failed} falharam)` : ""}${skipped > 0 ? ` — ${skipped} restantes, rode novamente para continuar` : ""}.`
       : "Nenhuma imagem foi gerada. Verifique suas chaves de IA e cota.";
 
     return new Response(
-      JSON.stringify({ success: updated > 0, message, updated, failed, details: details.slice(0, 3) }),
+      JSON.stringify({ success: updated > 0, message, updated, failed, skipped, details: details.slice(0, 3) }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
