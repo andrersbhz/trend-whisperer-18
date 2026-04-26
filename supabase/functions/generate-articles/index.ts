@@ -110,7 +110,7 @@ async function callGeminiDirect(apiKey: string, systemPrompt: string, userPrompt
     }
 
     // Fallback: Try v1 (JSON mode)
-    const v1Url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`;
+    const v1Url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
     const v1Body = {
       contents: [{ 
         role: "user", 
