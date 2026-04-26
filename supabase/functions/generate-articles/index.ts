@@ -73,7 +73,7 @@ const ARTICLE_TOOL_PARAMS = {
 };
 
 async function callGeminiDirect(apiKey: string, systemPrompt: string, userPrompt: string): Promise<AIResponse> {
-  const model = "gemini-1.5-pro"; // Nome padrão estável
+  const model = "gemini-1.5-flash-8b"; // Versão Flash 8b que é mais disponível globalmente
   let lastError: any = null;
 
   try {
