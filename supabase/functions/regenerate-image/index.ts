@@ -74,7 +74,8 @@ async function withRetry<T>(operation: () => Promise<T>, retries = 2, baseDelayM
 }
 
 async function generateImageGemini(apiKey: string, title: string, category: string): Promise<string> {
-  const models = ["gemini-1.5-flash", "gemini-2.0-flash-exp"];
+  // Modelos corretos do Gemini que suportam geração de imagem (Nano Banana)
+  const models = ["gemini-2.5-flash-image-preview", "gemini-2.0-flash-preview-image-generation"];
   const errors: string[] = [];
 
   for (const model of models) {
@@ -189,7 +190,11 @@ serve(async (req) => {
 
     let updated = 0;
     let failed = 0;
+    let skipped = 0;
     const details: Array<{ articleId: string; title: string; reason: string }> = [];
+    const startTime = Date.now();
+    const MAX_DURATION_MS = 120_000; // Para com folga antes do timeout de 150s
+    const MAX_PER_CALL = 5; // Limita lote por chamada para evitar timeout
 
     // Considera quebrada: source.unsplash.com (descontinuado), picsum (placeholder) ou pexels (legado)
     const isBrokenImageUrl = (url: string | null | undefined): boolean => {
@@ -197,11 +202,19 @@ serve(async (req) => {
       return /source\.unsplash\.com|picsum\.photos|images\.pexels\.com/i.test(url);
     };
 
+    let processed = 0;
     for (const article of articles) {
       if (!force && article.featured_image_url && !isBrokenImageUrl(article.featured_image_url)) {
         console.log(`Skipping ${article.id} - already has valid image`);
         continue;
       }
+
+      // Para se atingir limite de tempo ou de lote (evita 504)
+      if (Date.now() - startTime > MAX_DURATION_MS || processed >= MAX_PER_CALL) {
+        skipped++;
+        continue;
+      }
+      processed++;
 
       let imageUrl: string | null = null;
       const providerErrors: string[] = [];
@@ -235,15 +248,15 @@ serve(async (req) => {
         console.log(`Image set for article: ${article.title}`);
       }
 
-      await sleep(800);
+      await sleep(500);
     }
 
     const message = updated > 0
-      ? `${updated} imagens geradas com IA${failed > 0 ? ` (${failed} falharam)` : ""}.`
+      ? `${updated} imagens geradas com IA${failed > 0 ? ` (${failed} falharam)` : ""}${skipped > 0 ? ` — ${skipped} restantes, rode novamente para continuar` : ""}.`
       : "Nenhuma imagem foi gerada. Verifique suas chaves de IA e cota.";
 
     return new Response(
-      JSON.stringify({ success: updated > 0, message, updated, failed, details: details.slice(0, 3) }),
+      JSON.stringify({ success: updated > 0, message, updated, failed, skipped, details: details.slice(0, 3) }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
