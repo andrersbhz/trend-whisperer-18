@@ -177,6 +177,15 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           </button>
           <h2 className="font-semibold text-foreground truncate">{currentLabel}</h2>
           <div className="ml-auto flex items-center gap-2">
+            <Button
+              onClick={handleGlobalGenerate}
+              disabled={generating}
+              size="sm"
+              className="gradient-primary h-8 gap-2 shadow-neon-lilac hover:scale-[1.02] transition-transform text-xs font-bold px-3 sm:px-4"
+            >
+              {generating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+              <span>{generating ? 'Gerando...' : 'Ligar Robô'}</span>
+            </Button>
             <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-success/10 border border-success/20">
               <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse-dot" />
               <span className="text-[11px] font-medium text-success">Online</span>
