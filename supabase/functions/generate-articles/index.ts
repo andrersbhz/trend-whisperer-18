@@ -584,20 +584,24 @@ serve(async (req) => {
       topics = manualTopics.map(t => typeof t === "string" ? { topic: t, category: forceCategory || "geral" } : t);
       console.log(`[Pipeline] Using ${topics.length} manual topics`);
     } else {
-      const userCategories: string[] = settings?.categories || ["esportes", "politica", "policia", "saude", "celebridades", "financas"];
+    const userCategoriesToSearch: string[] = settings?.categories || ["esportes", "politica", "policia", "saude", "celebridades", "financas"];
+    if (manualTopics && Array.isArray(manualTopics) && manualTopics.length > 0) {
+      topics = manualTopics.map(t => typeof t === "string" ? { topic: t, category: forceCategory || "geral" } : t);
+      console.log(`[Pipeline] Using ${topics.length} manual topics`);
+    } else {
       const { data: dbTopics } = await supabase
         .from("trending_topics")
         .select("*")
         .eq("user_id", userId)
         .eq("used", false)
-        .in("category", userCategories); // Apenas categorias marcadas pelo usuário
+        .in("category", userCategoriesToSearch); // Apenas categorias marcadas pelo usuário
       topics = dbTopics || [];
-      console.log(`[Pipeline] Auto-generating from ${topics.length} topics in marked categories: ${userCategories.join(", ")}`);
+      console.log(`[Pipeline] Auto-generating from ${topics.length} topics in marked categories: ${userCategoriesToSearch.join(", ")}`);
     }
 
     const userCategories: string[] = forceCategory 
       ? [forceCategory] 
-      : (settings?.categories || ["esportes", "politica", "policia", "saude", "celebridades", "financas"]);
+      : userCategoriesToSearch;
 
     // Conta artigos criados nas últimas 24h por categoria para priorizar as mais defasadas
     const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
