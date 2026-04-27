@@ -57,7 +57,7 @@ const ArticlesPage = () => {
       const [articlesResult, countResult] = await Promise.all([
         supabase
           .from('articles')
-          .select('id, title, status, category, seo_keyword, meta_description, featured_image_url')
+          .select('id, title, status, category, seo_keyword, meta_description, featured_image_url, scheduled_at')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
           .range(from, to),
@@ -541,10 +541,11 @@ const ArticlesPage = () => {
         </div>
       </div>
 
-      <Tabs defaultValue="prontos" className="w-full">
-        <TabsList className="mb-6 grid w-full max-w-md grid-cols-3 bg-secondary/50 p-1">
-          <TabsTrigger value="prontos" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">Posts Prontos</TabsTrigger>
+      <Tabs defaultValue="todos" className="w-full">
+        <TabsList className="mb-6 grid w-full max-w-md grid-cols-4 bg-secondary/50 p-1">
           <TabsTrigger value="todos" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">Todos</TabsTrigger>
+          <TabsTrigger value="agendados" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">Agendados</TabsTrigger>
+          <TabsTrigger value="prontos" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">Prontos</TabsTrigger>
           <TabsTrigger value="categorias" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">Categorias</TabsTrigger>
         </TabsList>
 
@@ -602,6 +603,23 @@ const ArticlesPage = () => {
           )}
         </TabsContent>
 
+        <TabsContent value="agendados">
+          {articles.filter(a => a.scheduled_at && a.status !== 'published').length === 0 ? (
+            <Card className="glass-card">
+              <CardContent className="py-16 text-center">
+                <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-foreground font-medium">Nenhum artigo agendado</p>
+                <p className="text-sm text-muted-foreground mt-1">Veja a aba de Tendências para agendar novos posts</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-4">
+              {articles.filter(a => a.scheduled_at && a.status !== 'published').map((article, idx) => (
+                <ArticleCard key={article.id} article={article} idx={idx} />
+              ))}
+            </div>
+          )}
+        </TabsContent>
         <TabsContent value="categorias">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {userCategories.map((category) => (
@@ -628,6 +646,7 @@ const ArticlesPage = () => {
           </div>
         </TabsContent>
       </Tabs>
+
 
       <Dialog
         open={previewOpen}
