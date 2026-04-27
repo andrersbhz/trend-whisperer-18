@@ -82,7 +82,8 @@ const AutomationSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChan
             Dica: Para imagens reais, peça texturas de pele, iluminação natural e evite termos como "3D render", "unreal engine" ou "smooth skin".
           </p>
         </CardContent>
-
+      </Card>
+ 
       {/* Robô de Publicação */}
       <Card className="shadow-card">
         <CardHeader>
