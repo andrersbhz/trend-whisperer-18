@@ -187,14 +187,19 @@ const ArticlesPage = () => {
   const handleDelete = async (articleId: string) => {
     if (!confirm('Tem certeza que deseja excluir este artigo?')) return;
     
+    // Optimistic update for immediate speed
+    const previousArticles = [...articles];
+    setArticles(prev => prev.filter(a => a.id !== articleId));
+    setTotalCount(prev => Math.max(0, prev - 1));
+
     try {
       const { error } = await supabase.from('articles').delete().eq('id', articleId);
       if (error) throw error;
-      
       toast({ title: 'Excluído', description: 'Artigo removido.' });
-      setArticles(prev => prev.filter(a => a.id !== articleId));
-      setTotalCount(prev => Math.max(0, prev - 1));
     } catch (error) {
+      // Rollback on error
+      setArticles(previousArticles);
+      setTotalCount(previousArticles.length);
       console.error('[ArticlesPage] Error deleting article:', error);
       toast({ title: 'Erro ao excluir', description: getErrorMessage(error), variant: 'destructive' });
     }
@@ -319,8 +324,8 @@ const ArticlesPage = () => {
   const ArticleCard = ({ article, idx }: { article: any, idx: number }) => (
     <Card
       key={article.id}
-      className={`glass-card hover-lift overflow-hidden animate-float-up ${article.status === 'failed' ? 'border-destructive/30' : ''}`}
-      style={{ animationDelay: `${Math.min(idx, 10) * 30}ms` }}
+      className={`glass-card hover-lift overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-300 ${article.status === 'failed' ? 'border-destructive/30' : ''}`}
+      style={{ animationDelay: `${Math.min(idx, 5) * 50}ms` }}
     >
       <CardContent className="p-0">
         <div className="flex items-stretch min-h-[80px]">
