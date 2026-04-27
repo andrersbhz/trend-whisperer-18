@@ -110,7 +110,7 @@ async function callGeminiDirect(apiKey: string, systemPrompt: string, userPrompt
       console.warn(`[AI] Gemini v1beta failed (${resp.status}): ${errText.substring(0, 200)}`);
     }
 
-    // Fallback: Try v1 (JSON mode)
+    // Fallback: Try v1beta without tools (plain text/JSON prompt)
     const v1Url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     const v1Body = {
       contents: [{ 
@@ -133,7 +133,7 @@ async function callGeminiDirect(apiKey: string, systemPrompt: string, userPrompt
       return JSON.parse(text) as AIResponse;
     }
     const v1Err = await v1Resp.text();
-    throw new Error(`Gemini API failed (v1beta & v1). v1 error: ${v1Err}`);
+    throw new Error(`Gemini API failed (v1beta tools & v1beta plain). Error: ${v1Err}`);
   } catch (err) {
     throw err;
   }
