@@ -111,7 +111,7 @@ async function callGeminiDirect(apiKey: string, systemPrompt: string, userPrompt
     }
 
     // Fallback: Try v1 (JSON mode)
-    const v1Url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+    const v1Url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     const v1Body = {
       contents: [{ 
         role: "user", 
@@ -123,6 +123,8 @@ async function callGeminiDirect(apiKey: string, systemPrompt: string, userPrompt
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(v1Body),
     });
+    
+    console.log(`[AI] Gemini fallback response status: ${v1Resp.status}`);
 
     if (v1Resp.ok) {
       const v1Data = await v1Resp.json();
@@ -383,11 +385,11 @@ async function generateImageOpenAI(apiKey: string, title: string, category: stri
 }
 
 async function generateImageGemini(apiKey: string, title: string, category: string, visualElements: string): Promise<string | null> {
-  const models = ["gemini-2.0-flash-exp", "gemini-1.5-pro"]; 
+  const models = ["gemini-1.5-flash", "gemini-1.5-pro"]; 
   for (const model of models) {
     try {
       console.log(`[Image] Attempting generation with Gemini model: ${model}`);
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
       const body = {
         contents: [{ parts: [{ text: buildSafeImagePrompt(title, category, visualElements) }] }],
       };
@@ -834,17 +836,20 @@ serve(async (req) => {
           image_alt: parsed.image_alt,
           image_caption: parsed.image_caption,
         }).select().single();
-
+        
         if (insertError) {
+          console.error(`[Pipeline] Supabase insert error for ${parsed.title}:`, insertError.message);
           failureReasons.push({ status: 500, message: insertError.message });
           continue;
         }
 
         if (topic.id) {
-          await supabase.from("trending_topics").update({ used: true }).eq("id", topic.id);
+          const { error: updateError } = await supabase.from("trending_topics").update({ used: true }).eq("id", topic.id);
+          if (updateError) console.warn(`[Pipeline] Failed to mark topic as used: ${updateError.message}`);
         }
 
         generatedArticles.push(article);
+        console.log(`[Pipeline] Article successfully saved: ${article.id}`);
         console.log(`[Pipeline] Article ${i + 1} generated via ${usedProvider}: ${parsed.title}`);
         await new Promise((resolve) => setTimeout(resolve, 500));
       } catch (err) {
