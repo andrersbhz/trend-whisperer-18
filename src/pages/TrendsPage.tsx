@@ -166,19 +166,21 @@ const TrendsPage = () => {
       // Step 2: Gerar artigos
       const body: any = { userId: user.id };
       
-      if (topicsToUse && topicsToUse.length > 0) {
-        body.topics = topicsToUse.map(t => ({
+      // Se não houver tópicos passados (botão "Gerar Tudo"), pegamos os 50 primeiros da lista filtrada
+      const finalTopics = topicsToUse && topicsToUse.length > 0 
+        ? topicsToUse 
+        : filteredAndSortedTopics.filter(t => !t.used).slice(0, 50);
+
+      if (finalTopics.length > 0) {
+        body.topics = finalTopics.map(t => ({
           topic: t.topic,
           category: t.category,
           search_volume: t.search_volume,
           context: t.context
         }));
         
-        // Se houver tópicos selecionados, vamos garantir que a função use APENAS essas categorias
-        const uniqueCategories = Array.from(new Set(topicsToUse.map(t => t.category)));
-        if (uniqueCategories.length === 1) {
-          body.forceCategory = uniqueCategories[0];
-        }
+        // Garante que usamos os tópicos selecionados/filtrados
+        console.log(`[TrendsPage] Enviando ${finalTopics.length} tópicos para geração`);
       }
 
       const { data, error } = await supabase.functions.invoke('generate-articles', {
