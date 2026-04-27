@@ -117,6 +117,7 @@ serve(async (req) => {
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
         "Authorization": authHeader,
+        "X-WP-Nonce": "", // Some servers require this even if empty to allow REST
       };
       const body: Record<string, unknown> = {
         title: article.title,
