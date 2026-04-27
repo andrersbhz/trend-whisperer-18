@@ -40,20 +40,20 @@ const AutomationSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChan
             <CardTitle className="text-lg">Perfil do Escritor</CardTitle>
           </div>
           <CardDescription>
-            Defina como a IA deve escrever seus artigos. Este prompt será usado em toda geração para garantir consistência de estilo e máxima otimização SEO.
+            Defina como a IA deve escrever seus artigos <strong>e gerar as imagens</strong>. Este é o ÚNICO prompt usado em toda geração — inclua aqui tanto as instruções de texto quanto as instruções visuais. As imagens sempre seguirão o conteúdo do artigo.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          <Label htmlFor="writer-prompt-settings">Prompt de estilo e SEO</Label>
+          <Label htmlFor="writer-prompt-settings">Prompt do escritor (texto + imagem)</Label>
           <Textarea
             id="writer-prompt-settings"
             value={settings.writer_prompt}
             onChange={(e) => onChange({ writer_prompt: e.target.value })}
-            placeholder="Ex: Sou um jornalista especializado em tecnologia. Escreva artigos com tom informal mas informativo, use listas e subtítulos, otimize para SEO com keywords de cauda longa..."
-            className="min-h-[140px] text-sm"
+            placeholder={`Ex: Sou um jornalista especializado em tecnologia. Escreva artigos com tom informal mas informativo, use listas e subtítulos, otimize para SEO com keywords de cauda longa.\n\nIMAGEM: Fotografia editorial realista, estilo fotojornalismo brasileiro, luz natural, sem CGI, 16:9, deve representar fielmente os elementos visuais descritos no artigo.`}
+            className="min-h-[200px] text-sm"
           />
           <p className="text-xs text-muted-foreground">
-            Dica: Inclua seu nicho, tom de voz desejado, público-alvo, técnicas de SEO preferidas (cauda longa, LSI keywords, featured snippets, etc.)
+            Dica: Inclua (1) estilo de escrita, nicho, tom, público-alvo, técnicas de SEO; e (2) instruções de imagem (estilo fotográfico, iluminação, restrições). A imagem usará automaticamente o título e os elementos visuais do artigo gerado.
           </p>
         </CardContent>
       </Card>

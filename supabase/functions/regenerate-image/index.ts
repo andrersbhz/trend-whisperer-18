@@ -6,8 +6,17 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const IMAGE_PROMPT_TEMPLATE = (title: string, category: string) =>
-  `4K Ultra-realistic news photography: "${title}" (category: ${category}). Style: Authentic 100% realistic editorial photojournalism, shot on high-end DSLR, 35mm lens, f/2.8, natural lighting, sharp details, high-quality press photo. Requirements: Genuine realistic textures, NO digital art look, NO CGI, NO 3D render style, NO plastic skin, NO text overlay, NO watermarks, 16:9 aspect ratio, natural colors, sharp focus. The image must be indistinguishable from a real professional news photograph and strictly follow the article topic: ${title}.`;
+// O prompt da imagem é DERIVADO do conteúdo do artigo + perfil do escritor (writer_prompt).
+// Não há mais template fixo: a imagem segue sempre o título e os elementos visuais do artigo.
+function buildImagePrompt(title: string, visualElements: string | null | undefined, writerPrompt: string | null | undefined): string {
+  const userImageGuidance = writerPrompt && writerPrompt.trim().length > 10
+    ? `\nDIRETRIZES DO USUÁRIO (perfil do escritor — aplique estilo visual coerente):\n${writerPrompt.trim()}\n`
+    : "";
+  return `Imagem editorial para o artigo intitulado: "${title}".
+ELEMENTOS VISUAIS DO ARTIGO (siga fielmente): ${visualElements || "Cena coerente com o título do artigo"}.
+${userImageGuidance}
+REQUISITOS: A imagem deve representar fielmente o conteúdo do artigo. Sem texto sobreposto, sem marcas d'água, proporção 16:9.`;
+}
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -73,7 +82,7 @@ async function withRetry<T>(operation: () => Promise<T>, retries = 2, baseDelayM
   throw lastError instanceof Error ? lastError : new Error(String(lastError));
 }
 
-async function generateImageGemini(apiKey: string, title: string, category: string): Promise<string> {
+async function generateImageGemini(apiKey: string, title: string, visualElements: string | null, writerPrompt: string | null): Promise<string> {
   // Modelos corretos do Gemini que suportam geração de imagem (Nano Banana)
   const models = ["gemini-2.5-flash-image-preview", "gemini-2.0-flash-preview-image-generation"];
   const errors: string[] = [];
@@ -86,7 +95,7 @@ async function generateImageGemini(apiKey: string, title: string, category: stri
           method: "POST",
           headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
           body: JSON.stringify({
-            contents: [{ parts: [{ text: IMAGE_PROMPT_TEMPLATE(title, category) }] }],
+            contents: [{ parts: [{ text: buildImagePrompt(title, visualElements, writerPrompt) }] }],
             generationConfig: { responseModalities: ["IMAGE", "TEXT"] },
           }),
         });
@@ -115,14 +124,14 @@ async function generateImageGemini(apiKey: string, title: string, category: stri
   throw new ProviderError(errors.join(" | ") || "Falha ao gerar imagem com Gemini", 500, false, errors.some((message) => isBillingIssue(0, message)));
 }
 
-async function generateImageDallE(apiKey: string, title: string, category: string): Promise<string> {
+async function generateImageDallE(apiKey: string, title: string, visualElements: string | null, writerPrompt: string | null): Promise<string> {
   return await withRetry(async () => {
     const resp = await fetch("https://api.openai.com/v1/images/generations", {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         model: "dall-e-3",
-        prompt: IMAGE_PROMPT_TEMPLATE(title, category),
+        prompt: buildImagePrompt(title, visualElements, writerPrompt),
         n: 1,
         size: "1792x1024",
         quality: "standard",
@@ -162,9 +171,10 @@ serve(async (req) => {
     let openaiApiKey: string | null = null;
     const { data: settings } = await supabase
       .from("user_settings")
-      .select("gemini_api_key, openai_api_key")
+      .select("gemini_api_key, openai_api_key, writer_prompt")
       .eq("user_id", userId)
       .single();
+    const writerPrompt: string | null = settings?.writer_prompt || null;
 
     if (settings?.gemini_api_key) {
       const { data: decrypted } = await supabase.rpc("decrypt_credential", { enc_key: "", val: settings.gemini_api_key });
@@ -182,7 +192,7 @@ serve(async (req) => {
     // Fetch articles
     const { data: articles } = await supabase
       .from("articles")
-      .select("id, title, category, featured_image_url")
+      .select("id, title, category, featured_image_url, visual_elements")
       .eq("user_id", userId)
       .in("id", articleIds);
 
@@ -221,13 +231,13 @@ serve(async (req) => {
 
       // Cadeia: Gemini (prioridade) → OpenAI DALL-E (backup)
       if (geminiApiKey) {
-        try { imageUrl = await generateImageGemini(geminiApiKey, article.title, article.category); }
+        try { imageUrl = await generateImageGemini(geminiApiKey, article.title, (article as any).visual_elements || null, writerPrompt); }
         catch (error) { providerErrors.push(`Gemini: ${getErrorMessage(error)}`); }
       }
       
       // Se Gemini falhou ou não estava disponível, tenta OpenAI
       if (!imageUrl && openaiApiKey) {
-        try { imageUrl = await generateImageDallE(openaiApiKey, article.title, article.category); }
+        try { imageUrl = await generateImageDallE(openaiApiKey, article.title, (article as any).visual_elements || null, writerPrompt); }
         catch (error) { providerErrors.push(`OpenAI: ${getErrorMessage(error)}`); }
       }
 
