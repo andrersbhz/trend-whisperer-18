@@ -78,21 +78,15 @@ async function callGeminiDirect(apiKey: string, systemPrompt: string, userPrompt
   let lastError: any = null;
 
   try {
-    // Try v1beta with tools
+    // Simple fetch with generic model for best compatibility
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     const body = {
-      system_instruction: { parts: [{ text: systemPrompt }] },
-      contents: [{ role: "user", parts: [{ text: userPrompt }] }],
-      tools: [{ function_declarations: [{
-        name: "create_article",
-        description: "Cria um artigo completo para publicação no WordPress com todos os campos SEO.",
-        parameters: {
-          type: "OBJECT",
-          properties: Object.fromEntries(Object.entries(ARTICLE_TOOL_PARAMS).map(([k, v]) => [k, { type: "STRING", description: v }])),
-          required: Object.keys(ARTICLE_TOOL_PARAMS),
-        },
-      }] }],
-      tool_config: { function_calling_config: { mode: "ANY", allowed_function_names: ["create_article"] } },
+      contents: [{ 
+        role: "user", 
+        parts: [
+          { text: `${systemPrompt}\n\nUSER REQUEST: ${userPrompt}\n\nIMPORTANT: Return ONLY valid JSON matching the article schema.` }
+        ] 
+      }]
     };
 
     const resp = await fetch(url, {
@@ -103,37 +97,14 @@ async function callGeminiDirect(apiKey: string, systemPrompt: string, userPrompt
 
     if (resp.ok) {
       const data = await resp.json();
-      const fnCall = data.candidates?.[0]?.content?.parts?.find((p: any) => p.functionCall);
-      if (fnCall?.functionCall?.args) return fnCall.functionCall.args as AIResponse;
+      let text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      text = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+      return JSON.parse(text) as AIResponse;
     } else {
       const errText = await resp.text();
       console.warn(`[AI] Gemini v1beta failed (${resp.status}): ${errText.substring(0, 200)}`);
+      throw new Error(`Gemini API failed with status ${resp.status}: ${errText}`);
     }
-
-    // Fallback: Try v1beta without tools (plain text/JSON prompt)
-    const v1Url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-    const v1Body = {
-      contents: [{ 
-        role: "user", 
-        parts: [{ text: `${systemPrompt}\n\nUSER REQUEST: ${userPrompt}\n\nIMPORTANT: Return ONLY valid JSON matching the article schema.` }] 
-      }]
-    };
-    const v1Resp = await fetch(v1Url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(v1Body),
-    });
-    
-    console.log(`[AI] Gemini fallback response status: ${v1Resp.status}`);
-
-    if (v1Resp.ok) {
-      const v1Data = await v1Resp.json();
-      let text = v1Data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-      text = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-      return JSON.parse(text) as AIResponse;
-    }
-    const v1Err = await v1Resp.text();
-    throw new Error(`Gemini API failed (v1beta tools & v1beta plain). Error: ${v1Err}`);
   } catch (err) {
     throw err;
   }

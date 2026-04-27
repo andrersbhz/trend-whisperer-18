@@ -11,9 +11,14 @@ import {
   Newspaper,
   Menu,
   X,
+  Sparkles,
+  Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { getErrorMessage } from '@/lib/backend';
 
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
@@ -26,7 +31,40 @@ const navItems = [
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const { user, signOut } = useAuth();
   const location = useLocation();
+  const { toast } = useToast();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [generating, setGenerating] = useState(false);
+
+  const handleGlobalGenerate = async () => {
+    if (!user || generating) return;
+    setGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-articles', {
+        body: { userId: user.id },
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: data?.success ? 'Artigos gerados!' : 'Atenção',
+        description: data?.message || 'A geração de artigos foi iniciada com sucesso.',
+        variant: data?.success ? 'default' : 'destructive',
+      });
+      
+      // Trigger a refresh if we are on the articles page
+      if (location.pathname === '/articles') {
+        window.dispatchEvent(new CustomEvent('refresh-articles'));
+      }
+    } catch (error) {
+      toast({ 
+        title: 'Erro ao gerar artigos', 
+        description: getErrorMessage(error), 
+        variant: 'destructive' 
+      });
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   // Close sidebar on route change (mobile)
   useEffect(() => {
@@ -139,6 +177,15 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           </button>
           <h2 className="font-semibold text-foreground truncate">{currentLabel}</h2>
           <div className="ml-auto flex items-center gap-2">
+            <Button
+              onClick={handleGlobalGenerate}
+              disabled={generating}
+              size="sm"
+              className="gradient-primary h-8 gap-2 shadow-neon-lilac hover:scale-[1.02] transition-transform text-xs font-bold px-3 sm:px-4"
+            >
+              {generating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+              <span>{generating ? 'Gerando...' : 'Ligar Robô'}</span>
+            </Button>
             <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-success/10 border border-success/20">
               <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse-dot" />
               <span className="text-[11px] font-medium text-success">Online</span>

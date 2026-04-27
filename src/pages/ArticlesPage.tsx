@@ -105,8 +105,15 @@ const ArticlesPage = () => {
 
   useEffect(() => {
     const handleUpdate = (e: any) => setDiagMetrics(e.detail);
+    const handleRefresh = () => fetchArticles();
+    
     window.addEventListener('diagnostics-updated', handleUpdate);
-    return () => window.removeEventListener('diagnostics-updated', handleUpdate);
+    window.addEventListener('refresh-articles', handleRefresh);
+    
+    return () => {
+      window.removeEventListener('diagnostics-updated', handleUpdate);
+      window.removeEventListener('refresh-articles', handleRefresh);
+    };
   }, []);
 
   const fetchCategories = async () => {
