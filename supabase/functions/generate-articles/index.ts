@@ -78,38 +78,32 @@ async function callGeminiDirect(apiKey: string, systemPrompt: string, userPrompt
   let lastError: any = null;
 
   try {
-    // Use Lovable Gateway for stability if direct Gemini fails
-    try {
-      // First try v1beta models/gemini-1.5-flash (Standard)
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-      const body = {
-        contents: [{ 
-          role: "user", 
-          parts: [
-            { text: `${systemPrompt}\n\nUSER REQUEST: ${userPrompt}\n\nIMPORTANT: Return ONLY valid JSON matching the article schema.` }
-          ] 
-        }]
-      };
+    // Use standard models endpoint with 1.5-flash
+    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    const body = {
+      contents: [{ 
+        role: "user", 
+        parts: [
+          { text: `${systemPrompt}\n\nUSER REQUEST: ${userPrompt}\n\nIMPORTANT: Return ONLY valid JSON matching the article schema.` }
+        ] 
+      }]
+    };
 
-      const resp = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
+    const resp = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
 
-      if (resp.ok) {
-        const data = await resp.json();
-        let text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-        text = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-        return JSON.parse(text) as AIResponse;
-      }
-      
+    if (resp.ok) {
+      const data = await resp.json();
+      let text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      text = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+      return JSON.parse(text) as AIResponse;
+    } else {
       const errText = await resp.text();
-      console.warn(`[AI] Gemini direct failed (${resp.status}): ${errText.substring(0, 200)}`);
-      throw new Error(`Gemini direct failed`);
-    } catch (directErr) {
-      console.log(`[AI] Gemini direct failed, falling back to OpenAI/Groq via callWithFallback sequence...`);
-      throw directErr;
+      console.warn(`[AI] Gemini v1 failed (${resp.status}): ${errText.substring(0, 200)}`);
+      throw new Error(`Gemini API failed with status ${resp.status}: ${errText}`);
     }
   } catch (err) {
     throw err;
