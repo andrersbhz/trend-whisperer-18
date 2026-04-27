@@ -699,81 +699,108 @@ const ArticlesPage = () => {
             </div>
           ) : (
             <div className="p-6 space-y-6">
-              {/* Top Section: Title & Image */}
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1 block">Título do Post</label>
-                    <h2 className="text-xl font-bold leading-tight">{preview?.title}</h2>
+              {/* Preview Header - Main Image and SEO Highlights */}
+              <div className="relative group">
+                <label className="absolute top-4 left-4 z-10 text-[10px] font-bold uppercase tracking-widest text-white drop-shadow-md bg-black/40 px-2 py-1 rounded backdrop-blur-sm border border-white/20">
+                  Imagem do Artigo (IA)
+                </label>
+                {preview?.featured_image_url ? (
+                  <div className="aspect-[16/9] rounded-xl overflow-hidden border shadow-xl bg-muted relative group">
+                    <img 
+                      src={preview.featured_image_url} 
+                      alt={preview.title} 
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60" />
+                    <div className="absolute bottom-6 left-6 right-6">
+                      <h2 className="text-2xl md:text-3xl font-bold text-white leading-tight drop-shadow-lg line-clamp-2">
+                        {preview?.title}
+                      </h2>
+                    </div>
                   </div>
-                  
-                  <div>
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1 block">Slug (URL)</label>
-                    <code className="text-xs bg-secondary/50 px-2 py-1 rounded block truncate border border-border/50">
-                      /{preview?.slug || preview?.seo_keyword?.toLowerCase().replace(/[^a-z0-9]+/g, '-')}
-                    </code>
+                ) : (
+                  <div className="aspect-[16/9] rounded-xl bg-secondary/30 flex flex-col items-center justify-center border-2 border-dashed border-primary/20 gap-3">
+                    <div className="p-4 rounded-full bg-primary/10">
+                      <ImagePlus className="h-8 w-8 text-primary/60" />
+                    </div>
+                    <p className="text-sm font-medium text-muted-foreground">Imagem não gerada para este artigo</p>
                   </div>
+                )}
+              </div>
 
-                  <div className="flex gap-2 flex-wrap">
-                    <Badge variant="secondary" className="bg-primary/10 text-primary capitalize">{preview?.category}</Badge>
-                    {preview?.status && (
-                      <Badge className={`${statusColors[preview.status]} border-none`}>
-                        {statusLabels[preview.status]}
-                      </Badge>
-                    )}
+              {/* SEO Summary Card */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-4 rounded-xl bg-primary/5 border border-primary/10 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-primary/20">
+                      <Activity className="h-4 w-4 text-primary" />
+                    </div>
+                    <span className="text-xs font-bold uppercase tracking-wider text-primary/80">Palavra-Chave</span>
                   </div>
+                  <p className="text-sm font-bold truncate">🔑 {preview?.seo_keyword || 'N/A'}</p>
                 </div>
-
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1 block">Imagem Destacada</label>
-                  {preview?.featured_image_url ? (
-                    <div className="relative aspect-video rounded-lg overflow-hidden border shadow-sm">
-                      <img src={preview.featured_image_url} alt={preview.title} className="w-full h-full object-cover" />
+                
+                <div className="md:col-span-2 p-4 rounded-xl bg-secondary/5 border border-border/50 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-muted-foreground/20">
+                      <FileText className="h-4 w-4 text-muted-foreground" />
                     </div>
-                  ) : (
-                    <div className="aspect-video rounded-lg bg-secondary/30 flex items-center justify-center border border-dashed">
-                      <ImagePlus className="h-8 w-8 text-muted-foreground/40" />
-                    </div>
-                  )}
+                    <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Meta Descrição</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                    {preview?.meta_description || 'Nenhuma descrição gerada para o Google.'}
+                  </p>
                 </div>
               </div>
 
-              {/* SEO Details */}
-              <div className="grid md:grid-cols-2 gap-4">
-                <Card className="bg-secondary/20 border-border/50">
-                  <CardContent className="p-4">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2 block">Otimização SEO</label>
-                    <div className="space-y-3">
+              <Tabs defaultValue="conteudo" className="w-full">
+                <TabsList className="grid w-full grid-cols-2 max-w-[400px] mb-4">
+                  <TabsTrigger value="conteudo">Conteúdo</TabsTrigger>
+                  <TabsTrigger value="seo-detalhes">Detalhes Técnicos</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="conteudo" className="mt-0">
+                  <div className="prose prose-sm prose-invert max-w-none text-foreground bg-secondary/10 p-6 rounded-xl border border-border/50 shadow-inner min-h-[300px]">
+                    <div
+                      className="article-content"
+                      dangerouslySetInnerHTML={{ __html: preview?.content || '' }}
+                    />
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="seo-detalhes" className="space-y-4 mt-0">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-4">
                       <div>
-                        <p className="text-[11px] font-medium text-muted-foreground">Palavra-Chave Foco</p>
-                        <p className="text-sm font-semibold text-primary">🔑 {preview?.seo_keyword || 'Não definida'}</p>
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1 block">SEO Title (WordPress)</label>
+                        <p className="text-sm p-3 rounded-lg bg-secondary/20 border border-border/40 font-medium">
+                          {preview?.seo_title || preview?.title}
+                        </p>
                       </div>
                       <div>
-                        <p className="text-[11px] font-medium text-muted-foreground">SEO Title</p>
-                        <p className="text-sm line-clamp-1">{preview?.seo_title || preview?.title}</p>
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1 block">Slug / URL</label>
+                        <p className="text-sm p-3 rounded-lg bg-secondary/20 border border-border/40 font-mono">
+                          /{preview?.slug || preview?.seo_keyword?.toLowerCase().replace(/[^a-z0-9]+/g, '-')}
+                        </p>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-secondary/20 border-border/50">
-                  <CardContent className="p-4">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2 block">Meta Descrição</label>
-                    <p className="text-xs text-foreground leading-relaxed italic">
-                      {preview?.meta_description || 'Nenhuma descrição gerada.'}
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Content Preview */}
-              <div className="space-y-3 border-t pt-6">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2 block">Conteúdo do Artigo</label>
-                <div
-                  className="prose prose-sm prose-invert max-w-none text-foreground bg-card/30 p-4 rounded-lg border border-border/50"
-                  dangerouslySetInnerHTML={{ __html: preview?.content || '' }}
-                />
-              </div>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1 block">Categoria</label>
+                        <Badge className="bg-primary/20 text-primary border-primary/20 text-sm px-4 py-1 h-auto capitalize">
+                          {preview?.category}
+                        </Badge>
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1 block">Visual Elements (IA Prompt)</label>
+                        <p className="text-xs p-3 rounded-lg bg-secondary/20 border border-border/40 text-muted-foreground italic">
+                          {preview?.visual_elements || 'Extraído automaticamente do conteúdo'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
             </div>
           )}
         </DialogContent>
