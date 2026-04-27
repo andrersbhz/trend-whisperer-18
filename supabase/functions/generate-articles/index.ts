@@ -74,7 +74,7 @@ const ARTICLE_TOOL_PARAMS = {
 };
 
 async function callGeminiDirect(apiKey: string, systemPrompt: string, userPrompt: string): Promise<AIResponse> {
-  const model = "gemini-1.5-flash-8b"; // Versão Flash 8b que é mais disponível globalmente
+  const model = "gemini-1.5-flash"; // Usando 1.5-flash padrão que é mais estável e disponível
   let lastError: any = null;
 
   try {
@@ -111,7 +111,7 @@ async function callGeminiDirect(apiKey: string, systemPrompt: string, userPrompt
     }
 
     // Fallback: Try v1 (JSON mode)
-    const v1Url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+    const v1Url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`;
     const v1Body = {
       contents: [{ 
         role: "user", 
