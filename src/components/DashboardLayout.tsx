@@ -11,9 +11,14 @@ import {
   Newspaper,
   Menu,
   X,
+  Sparkles,
+  Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { getErrorMessage } from '@/lib/backend';
 
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
