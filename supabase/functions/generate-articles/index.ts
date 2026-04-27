@@ -835,22 +835,21 @@ serve(async (req) => {
           visual_elements: parsed.visual_elements,
           image_alt: parsed.image_alt,
           image_caption: parsed.image_caption,
-        }).select();
+        }).select().single();
         
-        console.log(`[Pipeline] Supabase insert result:`, JSON.stringify(article));
-        
-        const singleArticle = Array.isArray(article) ? article[0] : article;
-
         if (insertError) {
+          console.error(`[Pipeline] Supabase insert error for ${parsed.title}:`, insertError.message);
           failureReasons.push({ status: 500, message: insertError.message });
           continue;
         }
 
         if (topic.id) {
-          await supabase.from("trending_topics").update({ used: true }).eq("id", topic.id);
+          const { error: updateError } = await supabase.from("trending_topics").update({ used: true }).eq("id", topic.id);
+          if (updateError) console.warn(`[Pipeline] Failed to mark topic as used: ${updateError.message}`);
         }
 
         generatedArticles.push(article);
+        console.log(`[Pipeline] Article successfully saved: ${article.id}`);
         console.log(`[Pipeline] Article ${i + 1} generated via ${usedProvider}: ${parsed.title}`);
         await new Promise((resolve) => setTimeout(resolve, 500));
       } catch (err) {
