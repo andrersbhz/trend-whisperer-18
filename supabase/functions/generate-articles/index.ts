@@ -74,12 +74,12 @@ const ARTICLE_TOOL_PARAMS = {
 };
 
 async function callGeminiDirect(apiKey: string, systemPrompt: string, userPrompt: string): Promise<AIResponse> {
-  const model = "gemini-1.5-flash-8b"; // Versão Flash 8b que é mais disponível globalmente
+  const model = "gemini-1.5-flash";
   let lastError: any = null;
 
   try {
     // Try v1beta with tools
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     const body = {
       system_instruction: { parts: [{ text: systemPrompt }] },
       contents: [{ role: "user", parts: [{ text: userPrompt }] }],
@@ -110,7 +110,7 @@ async function callGeminiDirect(apiKey: string, systemPrompt: string, userPrompt
       console.warn(`[AI] Gemini v1beta failed (${resp.status}): ${errText.substring(0, 200)}`);
     }
 
-    // Fallback: Try v1 (JSON mode)
+    // Fallback: Try v1beta without tools (plain text/JSON prompt)
     const v1Url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     const v1Body = {
       contents: [{ 
@@ -133,7 +133,7 @@ async function callGeminiDirect(apiKey: string, systemPrompt: string, userPrompt
       return JSON.parse(text) as AIResponse;
     }
     const v1Err = await v1Resp.text();
-    throw new Error(`Gemini API failed (v1beta & v1). v1 error: ${v1Err}`);
+    throw new Error(`Gemini API failed (v1beta tools & v1beta plain). Error: ${v1Err}`);
   } catch (err) {
     throw err;
   }
@@ -498,7 +498,9 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { userId, topics: manualTopics, forceCategory } = await req.json();
+    const reqBody = await req.text();
+    if (!reqBody) throw new Error("Request body is empty");
+    const { userId, topics: manualTopics, forceCategory } = JSON.parse(reqBody);
     if (!userId) throw new Error("userId is required");
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -580,24 +582,25 @@ serve(async (req) => {
     console.log(`[Pipeline] Available AI providers: ${providers.map(p => p.name).join(" → ")}`);
 
     let topics = [];
+    const userCategoriesToSearch: string[] = settings?.categories || ["esportes", "politica", "policia", "saude", "celebridades", "financas"];
+    
     if (manualTopics && Array.isArray(manualTopics) && manualTopics.length > 0) {
       topics = manualTopics.map(t => typeof t === "string" ? { topic: t, category: forceCategory || "geral" } : t);
       console.log(`[Pipeline] Using ${topics.length} manual topics`);
     } else {
-      const userCategories: string[] = settings?.categories || ["esportes", "politica", "policia", "saude", "celebridades", "financas"];
       const { data: dbTopics } = await supabase
         .from("trending_topics")
         .select("*")
         .eq("user_id", userId)
         .eq("used", false)
-        .in("category", userCategories); // Apenas categorias marcadas pelo usuário
+        .in("category", userCategoriesToSearch); // Apenas categorias marcadas pelo usuário
       topics = dbTopics || [];
-      console.log(`[Pipeline] Auto-generating from ${topics.length} topics in marked categories: ${userCategories.join(", ")}`);
+      console.log(`[Pipeline] Auto-generating from ${topics.length} topics in marked categories: ${userCategoriesToSearch.join(", ")}`);
     }
 
     const userCategories: string[] = forceCategory 
       ? [forceCategory] 
-      : (settings?.categories || ["esportes", "politica", "policia", "saude", "celebridades", "financas"]);
+      : userCategoriesToSearch;
 
     // Conta artigos criados nas últimas 24h por categoria para priorizar as mais defasadas
     const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
