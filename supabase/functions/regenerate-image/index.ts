@@ -6,8 +6,17 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const IMAGE_PROMPT_TEMPLATE = (title: string, category: string) =>
-  `4K Ultra-realistic news photography: "${title}" (category: ${category}). Style: Authentic 100% realistic editorial photojournalism, shot on high-end DSLR, 35mm lens, f/2.8, natural lighting, sharp details, high-quality press photo. Requirements: Genuine realistic textures, NO digital art look, NO CGI, NO 3D render style, NO plastic skin, NO text overlay, NO watermarks, 16:9 aspect ratio, natural colors, sharp focus. The image must be indistinguishable from a real professional news photograph and strictly follow the article topic: ${title}.`;
+// O prompt da imagem é DERIVADO do conteúdo do artigo + perfil do escritor (writer_prompt).
+// Não há mais template fixo: a imagem segue sempre o título e os elementos visuais do artigo.
+function buildImagePrompt(title: string, visualElements: string | null | undefined, writerPrompt: string | null | undefined): string {
+  const userImageGuidance = writerPrompt && writerPrompt.trim().length > 10
+    ? `\nDIRETRIZES DO USUÁRIO (perfil do escritor — aplique estilo visual coerente):\n${writerPrompt.trim()}\n`
+    : "";
+  return `Imagem editorial para o artigo intitulado: "${title}".
+ELEMENTOS VISUAIS DO ARTIGO (siga fielmente): ${visualElements || "Cena coerente com o título do artigo"}.
+${userImageGuidance}
+REQUISITOS: A imagem deve representar fielmente o conteúdo do artigo. Sem texto sobreposto, sem marcas d'água, proporção 16:9.`;
+}
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
