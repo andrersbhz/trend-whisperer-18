@@ -58,6 +58,10 @@ const ArticlesPage = () => {
     try {
       setErrorState(null);
       
+    try {
+      setErrorState(null);
+      setInitialFetchDone(true); // Mark as done to prevent infinite retry loops on error
+      
       // Parallelize article fetch and total count for speed
       const [articlesResult, countResult] = await Promise.all([
         supabase
@@ -83,7 +87,6 @@ const ArticlesPage = () => {
         setTotalCount(countResult.count);
       }
       
-      setInitialFetchDone(true);
       diagnostics.endTimer(startTime, 'Carregar Artigos', 'success', `${(data || []).length} itens`);
     } catch (error: any) {
       diagnostics.endTimer(startTime, 'Carregar Artigos', 'error', getErrorMessage(error));
