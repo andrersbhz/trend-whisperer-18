@@ -315,19 +315,19 @@ async function callWithFallback(providers: ProviderConfig[], systemPrompt: strin
 // ── Image generation ─────────────────────────────────
 
 const IMAGE_PROMPT_TEMPLATE = (title: string, category: string) =>
-  `4K Ultra-realistic news photography: "${title}" (category: ${category}). Style: Authentic 100% realistic editorial photojournalism, shot on high-end DSLR, 35mm lens, f/2.8, natural lighting, sharp details, high-quality press photo. Requirements: Genuine realistic textures, NO digital art look, NO CGI, NO 3D render style, NO plastic skin, NO text overlay, NO watermarks, 16:9 aspect ratio, natural colors, sharp focus. The image must be indistinguishable from a real professional news photograph and strictly follow the article topic: ${title}.`;
+  `FOTOGRAFIA REALISTA EM 8K: Notícia sobre "${title}" (categoria: ${category}). ESTILO: Fotojornalismo editorial autêntico tirado com uma Sony A7R IV, lente de 35mm, f/4.0. CARACTERÍSTICAS: Iluminação natural do dia, detalhes nítidos de textura de pele e tecido, profundidade de campo realista (bokeh suave no fundo), cores naturais e equilibradas (sem saturação excessiva). REQUISITOS: Proibido visual de arte digital, proibido CGI, proibido renderização 3D, proibido pessoas com pele de plástico, proibido textos ou logos na imagem, proporção 16:9. A imagem DEVE parecer uma fotografia real tirada por um fotógrafo de imprensa profissional no local do fato.`;
 
 const SENSITIVE_TERMS = /\b(pf|polícia|policia|prende|prisão|prisao|preso|presa|fraude|lavagem|crime|criminoso|assassin|morte|morto|morta|tiro|tiroteio|drog|tráfico|trafico|narco|estupro|abuso|violência|violencia|terror|atentado|guerra|conflito|tse|stf|impeachment|julga|condena|investigação|investigacao|operação|operacao|megaoperação|megaoperacao|cpi|escândalo|escandalo|denúncia|denuncia|corrupção|corrupcao|propina|suborno)\b/i;
 
 const SAFE_CATEGORY_PROMPT: Record<string, string> = {
-  esportes: "An authentic, high-quality press photo of a real sports stadium, natural daylight, professional photography, wide architectural shot.",
-  politica: "A realistic, non-rendered photo of a government palace facade or national congress building, natural sky, shot on a professional DSLR.",
-  policia: "A high-quality news photo of a modern city street at night, realistic motion blur of traffic, authentic nighttime textures, no CGI.",
-  saude: "A realistic, clean medical environment shot from a hallway, natural lighting, sharp focus, authentic hospital atmosphere.",
-  celebridades: "A professional press photo of a luxury event entrance, bokeh background with flash highlights, authentic red carpet texture.",
-  financas: "A sharp, realistic wide shot of a glass-walled financial district, reflections of real buildings, morning light, authentic business environment.",
-  tecnologia: "A clean, photorealistic macro shot of high-tech components or a modern office workspace with realistic lighting and depth of field.",
-  entretenimento: "A professional concert stage photo with realistic lens flare and stage smoke, vibrant but natural colors, high-speed photography.",
+  esportes: "Uma fotografia real de imprensa de um estádio de esportes moderno durante o dia, luz natural, fotografia profissional, sem pessoas reconhecíveis.",
+  politica: "Uma fotografia real de uma fachada de palácio governamental ou congresso nacional, céu natural, tirada com DSLR profissional.",
+  policia: "Uma fotografia real de uma rua de cidade moderna à noite, luzes de trânsito reais, texturas noturnas autênticas, atmosfera real de cidade.",
+  saude: "Uma fotografia real de um ambiente médico limpo, iluminação hospitalar natural, foco nítido, atmosfera profissional.",
+  celebridades: "Uma fotografia real de uma entrada de evento de luxo, luzes de flashes ao fundo, texturas reais de tapete e decoração.",
+  financas: "Uma fotografia real de um distrito financeiro com prédios de vidro, reflexos reais, luz da manhã, ambiente de negócios autêntico.",
+  tecnologia: "Uma fotografia macro real de componentes tecnológicos ou escritório moderno com iluminação natural e profundidade de campo real.",
+  entretenimento: "Uma fotografia real de um palco de concerto com fumaça e luzes reais, cores naturais de show, fotografia de alta velocidade.",
 };
 
 function buildSafeImagePrompt(title: string, category: string): string {
