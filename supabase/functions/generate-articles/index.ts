@@ -339,12 +339,12 @@ const SAFE_CATEGORY_PROMPT: Record<string, string> = {
   entretenimento: "Uma fotografia real de um palco de concerto com fumaça e luzes reais, cores naturais de show.",
 };
 
-function buildSafeImagePrompt(title: string, category: string): string {
+function buildSafeImagePrompt(title: string, category: string, content: string): string {
   if (SENSITIVE_TERMS.test(title)) {
     const safe = SAFE_CATEGORY_PROMPT[category] || SAFE_CATEGORY_PROMPT.politica;
     return `Photorealistic news photography. Scene: ${safe} Style: Authentic editorial photojournalism, high-quality press photo. Requirements: Realistic textures, NO digital art, NO 3D render, NO text overlay, NO watermarks, NO recognizable people, 16:9 aspect ratio, natural lighting.`;
   }
-  return IMAGE_PROMPT_TEMPLATE(title, category);
+  return IMAGE_PROMPT_TEMPLATE(title, category, content);
 }
 
 async function generateImageOpenAI(apiKey: string, title: string, category: string): Promise<string | null> {
