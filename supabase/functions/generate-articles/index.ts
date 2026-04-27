@@ -58,7 +58,7 @@ async function withRetry<T>(fn: () => Promise<T>, maxRetries = 2, baseDelayMs = 
 
 // ── AI provider abstraction ──────────────────────────────────────────────
 
-interface AIResponse { title: string; content: string; excerpt: string; seo_keyword: string; seo_title: string; meta_description: string; slug: string; image_alt: string; image_caption: string; }
+interface AIResponse { title: string; content: string; excerpt: string; seo_keyword: string; seo_title: string; meta_description: string; slug: string; image_alt: string; image_caption: string; visual_elements: string; }
 
 const ARTICLE_TOOL_PARAMS = {
   title: "Título H1 do artigo, máximo 60 caracteres",
@@ -70,6 +70,7 @@ const ARTICLE_TOOL_PARAMS = {
   slug: "Slug para URL",
   image_alt: "Texto alternativo da imagem",
   image_caption: "Legenda da imagem",
+  visual_elements: "3 a 5 elementos visuais específicos do artigo (pessoas, cenário, ações, objetos) separados por vírgula",
 };
 
 async function callGeminiDirect(apiKey: string, systemPrompt: string, userPrompt: string): Promise<AIResponse> {
