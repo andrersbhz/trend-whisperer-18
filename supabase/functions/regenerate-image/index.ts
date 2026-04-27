@@ -171,10 +171,15 @@ serve(async (req) => {
     let openaiApiKey: string | null = null;
     const { data: settings } = await supabase
       .from("user_settings")
-      .select("gemini_api_key, openai_api_key, writer_prompt")
+      .select("gemini_api_key, openai_api_key, writer_prompt, image_mode")
       .eq("user_id", userId)
       .single();
     const writerPrompt: string | null = settings?.writer_prompt || null;
+    const imageMode = settings?.image_mode || "ai";
+
+    if (imageMode !== "ai") {
+      throw new Error(`A regeneração por IA está desativada. Altere o Modo de Imagem para "Gerada por IA" nas configurações.`);
+    }
 
     if (settings?.gemini_api_key) {
       const { data: decrypted } = await supabase.rpc("decrypt_credential", { enc_key: "", val: settings.gemini_api_key });
