@@ -122,7 +122,7 @@ serve(async (req) => {
       const body: Record<string, unknown> = {
         title: article.title,
         content: article.content || "",
-        status: "draft",
+        status: "publish",
         excerpt: article.excerpt || article.meta_description || "",
       };
 
