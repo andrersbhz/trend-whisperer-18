@@ -580,11 +580,8 @@ serve(async (req) => {
     console.log(`[Pipeline] Available AI providers: ${providers.map(p => p.name).join(" → ")}`);
 
     let topics = [];
-    if (manualTopics && Array.isArray(manualTopics) && manualTopics.length > 0) {
-      topics = manualTopics.map(t => typeof t === "string" ? { topic: t, category: forceCategory || "geral" } : t);
-      console.log(`[Pipeline] Using ${topics.length} manual topics`);
-    } else {
     const userCategoriesToSearch: string[] = settings?.categories || ["esportes", "politica", "policia", "saude", "celebridades", "financas"];
+    
     if (manualTopics && Array.isArray(manualTopics) && manualTopics.length > 0) {
       topics = manualTopics.map(t => typeof t === "string" ? { topic: t, category: forceCategory || "geral" } : t);
       console.log(`[Pipeline] Using ${topics.length} manual topics`);
