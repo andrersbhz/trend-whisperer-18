@@ -41,6 +41,8 @@ export type Database = {
           featured_image_url: string | null
           focus_keyword: string | null
           id: string
+          image_alt: string | null
+          image_caption: string | null
           is_approved: boolean | null
           meta_description: string | null
           meta_title: string | null
@@ -57,6 +59,7 @@ export type Database = {
           trending_topic: string | null
           updated_at: string
           user_id: string
+          visual_elements: Json | null
           wordpress_post_id: string | null
         }
         Insert: {
@@ -70,6 +73,8 @@ export type Database = {
           featured_image_url?: string | null
           focus_keyword?: string | null
           id?: string
+          image_alt?: string | null
+          image_caption?: string | null
           is_approved?: boolean | null
           meta_description?: string | null
           meta_title?: string | null
@@ -86,6 +91,7 @@ export type Database = {
           trending_topic?: string | null
           updated_at?: string
           user_id: string
+          visual_elements?: Json | null
           wordpress_post_id?: string | null
         }
         Update: {
@@ -99,6 +105,8 @@ export type Database = {
           featured_image_url?: string | null
           focus_keyword?: string | null
           id?: string
+          image_alt?: string | null
+          image_caption?: string | null
           is_approved?: boolean | null
           meta_description?: string | null
           meta_title?: string | null
@@ -115,6 +123,7 @@ export type Database = {
           trending_topic?: string | null
           updated_at?: string
           user_id?: string
+          visual_elements?: Json | null
           wordpress_post_id?: string | null
         }
         Relationships: []
@@ -308,6 +317,7 @@ export type Database = {
           google_analytics_property_id: string | null
           groq_api_key: string | null
           id: string
+          image_prompt_template: string | null
           instagram_account_id: string | null
           last_trends_fetch: string | null
           linkedin_access_token: string | null
@@ -337,6 +347,7 @@ export type Database = {
           google_analytics_property_id?: string | null
           groq_api_key?: string | null
           id?: string
+          image_prompt_template?: string | null
           instagram_account_id?: string | null
           last_trends_fetch?: string | null
           linkedin_access_token?: string | null
@@ -366,6 +377,7 @@ export type Database = {
           google_analytics_property_id?: string | null
           groq_api_key?: string | null
           id?: string
+          image_prompt_template?: string | null
           instagram_account_id?: string | null
           last_trends_fetch?: string | null
           linkedin_access_token?: string | null
