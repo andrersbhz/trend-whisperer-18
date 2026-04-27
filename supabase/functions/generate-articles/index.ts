@@ -320,7 +320,7 @@ const IMAGE_PROMPT_TEMPLATE = (title: string, category: string): string =>
    TÉCNICA: Câmera Nikon D850 ou Canon EOS-1D X Mark III, ISO alto com ruído de granulação natural sutil, lente 35mm f/2.8 ou 50mm f/1.8 com profundidade de campo óptica real. 
    DETALHES OBRIGATÓRIOS: Textura de pele humana real com poros visíveis, suor, rugas e imperfeições naturais. Roupas com tramas de tecido nítidas. Iluminação de ambiente comum (sol direto ou luz interna fluorescente), sem tratamento de cor artístico.
    PROIBIDO (NEGATIVO): Sem aspecto 3D, sem renderização CGI, sem filtros de "suavização de pele", sem rostos simétricos de boneco, sem cores vibrantes ou saturadas, sem iluminação de estúdio perfeita, sem retoque digital, sem visual de "arte de IA". 
-   A imagem DEVE parecer uma foto real e espontânea para jornalismo profissional.`;
+   A imagem DEVE ser gerada obrigatoriamente a partir do título: "${title}".`;
 
 const SENSITIVE_TERMS = /\b(fraude|lavagem|estupro|abuso|terror|atentado|guerra|propina|suborno)\b/i;
 
