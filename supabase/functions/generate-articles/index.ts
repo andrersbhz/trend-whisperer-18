@@ -111,7 +111,7 @@ async function callGeminiDirect(apiKey: string, systemPrompt: string, userPrompt
     }
 
     // Fallback: Try v1 (JSON mode)
-    const v1Url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`;
+    const v1Url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
     const v1Body = {
       contents: [{ 
         role: "user", 
@@ -387,7 +387,7 @@ async function generateImageGemini(apiKey: string, title: string, category: stri
   for (const model of models) {
     try {
       console.log(`[Image] Attempting generation with Gemini model: ${model}`);
-      const url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
       const body = {
         contents: [{ parts: [{ text: buildSafeImagePrompt(title, category, visualElements) }] }],
       };
