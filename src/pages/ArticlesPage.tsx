@@ -452,7 +452,7 @@ const ArticlesPage = () => {
             </Button>
           </CollapsibleTrigger>
           {showDiagnostics && (
-            <Button variant="ghost" size="xs" onClick={() => diagnostics.clear()} className="h-6 text-[10px]">
+            <Button variant="ghost" size="sm" onClick={() => diagnostics.clear()} className="h-6 text-[10px]">
               Limpar Logs
             </Button>
           )}
