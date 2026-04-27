@@ -463,6 +463,7 @@ serve(async (req) => {
     const { data: settings } = await supabase.from("user_settings").select("*").eq("user_id", userId).single();
     const writerPrompt = settings?.writer_prompt || null;
     const systemPrompt = buildSystemPrompt(writerPrompt);
+    const imageMode = settings?.image_mode || "ai";
 
     let geminiApiKey: string | null = null;
     if (settings?.gemini_api_key) {
