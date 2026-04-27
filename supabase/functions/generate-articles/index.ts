@@ -284,45 +284,26 @@ async function callWithFallback(providers: ProviderConfig[], systemPrompt: strin
   throw new Error(`Todos os provedores de IA falharam:\n${errors.join("\n")}`);
 }
 
-// ── Image generation (OpenAI and Gemini Fallback) ─────────────────────────────────
-
 // ── Image generation ─────────────────────────────────
+// O prompt da imagem é DERIVADO do conteúdo do artigo + perfil do escritor (writer_prompt).
+// Não há mais template fixo de imagem: a imagem segue sempre o título e os visual_elements gerados.
 
-const IMAGE_PROMPT_TEMPLATE = (title: string, category: string, visualElements: string): string => {
-  return `FOTOGRAFIA REALISTA: Foto de imprensa autêntica para o título: "${title}". 
-   CENA E ELEMENTOS VISUAIS: ${visualElements || "Cena jornalística comum"}.
-   ESTILO: Fotografia comum de fotojornalismo brasileiro (estilo Reuters/Associated Press). 
-   AMBIENTE: Luz natural, cena real do dia a dia, tirada em local público ou ambiente profissional.
-   REQUISITOS: Texturas humanas reais, pele com poros, iluminação natural, sem filtros, sem retoques.
-   PROIBIÇÃO: Absolutamente nada de estilo 3D, CGI, renderização digital ou aspecto plástico. Deve parecer uma foto tirada por um celular ou câmera DSLR comum.`;
-};
+function buildImagePrompt(title: string, visualElements: string, writerPrompt?: string | null): string {
+  const userImageGuidance = writerPrompt && writerPrompt.trim().length > 10
+    ? `\nDIRETRIZES DO USUÁRIO (perfil do escritor — aplique estilo visual coerente):\n${writerPrompt.trim()}\n`
+    : "";
 
-const SENSITIVE_TERMS = /\b(fraude|lavagem|estupro|abuso|terror|atentado|guerra|propina|suborno)\b/i;
-
-const SAFE_CATEGORY_PROMPT: Record<string, string> = {
-  esportes: "Uma fotografia real de imprensa de um estádio de esportes moderno durante o dia com jogadores reais em campo, uniformes de times brasileiros autênticos, luz natural, fotografia profissional.",
-  politica: "Uma fotografia real de uma fachada de palácio governamental ou congresso nacional no Brasil, céu natural, tirada com DSLR profissional.",
-  policia: "Uma fotografia real de uma viatura policial brasileira moderna em uma rua de cidade, iluminação de dia, foco nítido, atmosfera de fotojornalismo.",
-  saude: "Uma fotografia real de um ambiente médico limpo, profissionais de saúde brasileiros, iluminação hospitalar natural, atmosfera profissional.",
-  celebridades: "Uma fotografia real de uma entrada de evento de luxo no Brasil, celebridades no tapete vermelho, luzes de flashes ao fundo.",
-  financas: "Uma fotografia real de um distrito financeiro de São Paulo com prédios de vidro, luz da manhã, ambiente de negócios autêntico.",
-  tecnologia: "Uma fotografia macro real de componentes tecnológicos ou escritório moderno com iluminação natural.",
-  entretenimento: "Uma fotografia real de um palco de concerto com fumaça e luzes reais, cores naturais de show.",
-};
-
-function buildSafeImagePrompt(title: string, category: string, visualElements: string): string {
-  if (SENSITIVE_TERMS.test(title)) {
-    const safe = SAFE_CATEGORY_PROMPT[category] || SAFE_CATEGORY_PROMPT.politica;
-    return `Photorealistic news photography. Scene: ${safe} Style: Authentic editorial photojournalism, high-quality press photo. Requirements: Realistic textures, NO digital art, NO 3D render, NO text overlay, NO watermarks, NO recognizable people, 16:9 aspect ratio, natural lighting.`;
-  }
-  return IMAGE_PROMPT_TEMPLATE(title, category, visualElements);
+  return `Imagem editorial para o artigo intitulado: "${title}".
+ELEMENTOS VISUAIS DO ARTIGO (siga fielmente): ${visualElements || "Cena coerente com o título do artigo"}.
+${userImageGuidance}
+REQUISITOS: A imagem deve representar fielmente o conteúdo do artigo. Sem texto sobreposto, sem marcas d'água, proporção 16:9.`;
 }
 
-async function generateImageOpenAI(apiKey: string, title: string, category: string, visualElements: string): Promise<string | null> {
+async function generateImageOpenAI(apiKey: string, title: string, visualElements: string, writerPrompt?: string | null): Promise<string | null> {
   try {
-    const prompt = buildSafeImagePrompt(title, category, visualElements);
+    const prompt = buildImagePrompt(title, visualElements, writerPrompt);
     console.log(`[Image] Calling DALL-E 3 for: ${title.substring(0, 50)}...`);
-    
+
     const resp = await fetch("https://api.openai.com/v1/images/generations", {
       method: "POST",
       headers: {
@@ -333,7 +314,7 @@ async function generateImageOpenAI(apiKey: string, title: string, category: stri
         model: "dall-e-3",
         prompt: prompt,
         n: 1,
-        size: "1024x1024",
+        size: "1792x1024",
         response_format: "b64_json",
       }),
     });
@@ -355,19 +336,20 @@ async function generateImageOpenAI(apiKey: string, title: string, category: stri
   return null;
 }
 
-async function generateImageGemini(apiKey: string, title: string, category: string, visualElements: string): Promise<string | null> {
-  const models = ["gemini-1.5-flash", "gemini-1.5-pro"]; 
+async function generateImageGemini(apiKey: string, title: string, visualElements: string, writerPrompt?: string | null): Promise<string | null> {
+  const models = ["gemini-2.5-flash-image-preview", "gemini-2.0-flash-preview-image-generation"];
   for (const model of models) {
     try {
       console.log(`[Image] Attempting generation with Gemini model: ${model}`);
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
       const body = {
-        contents: [{ parts: [{ text: buildSafeImagePrompt(title, category, visualElements) }] }],
+        contents: [{ parts: [{ text: buildImagePrompt(title, visualElements, writerPrompt) }] }],
+        generationConfig: { responseModalities: ["IMAGE", "TEXT"] },
       };
 
       const resp = await fetch(url, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
         body: JSON.stringify(body),
       });
 
@@ -376,16 +358,16 @@ async function generateImageGemini(apiKey: string, title: string, category: stri
         console.warn(`[Image] Gemini model ${model} failed (${resp.status}): ${errText.substring(0, 200)}`);
         continue;
       }
-      
+
       const data = await resp.json();
       const imgPart = data.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData?.mimeType?.startsWith("image/"));
-      
+
       if (imgPart?.inlineData) {
         console.log(`[Image] Success! Image generated with model: ${model}`);
         return `data:${imgPart.inlineData.mimeType};base64,${imgPart.inlineData.data}`;
       }
-    } catch (err) { 
-      console.error(`[Image] Gemini model ${model} error:`, err); 
+    } catch (err) {
+      console.error(`[Image] Gemini model ${model} error:`, err);
     }
   }
   return null;
