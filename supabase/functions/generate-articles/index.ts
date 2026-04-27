@@ -78,20 +78,15 @@ async function callGeminiDirect(apiKey: string, systemPrompt: string, userPrompt
   let lastError: any = null;
 
   try {
-    // Try v1beta with response_mime_type
+    // Use plain text JSON prompt for better compatibility
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     const body = {
       contents: [{ 
         role: "user", 
         parts: [
-          { text: systemPrompt },
-          { text: userPrompt },
-          { text: "IMPORTANTE: Retorne APENAS o JSON válido sem markdown." }
+          { text: `${systemPrompt}\n\nUSER REQUEST: ${userPrompt}\n\nIMPORTANT: Return ONLY valid JSON matching the article schema.` }
         ] 
-      }],
-      generationConfig: {
-        response_mime_type: "application/json",
-      }
+      }]
     };
 
     const resp = await fetch(url, {
