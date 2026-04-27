@@ -463,6 +463,7 @@ serve(async (req) => {
     const { data: settings } = await supabase.from("user_settings").select("*").eq("user_id", userId).single();
     const writerPrompt = settings?.writer_prompt || null;
     const systemPrompt = buildSystemPrompt(writerPrompt);
+    const imageMode = settings?.image_mode || "ai";
 
     let geminiApiKey: string | null = null;
     if (settings?.gemini_api_key) {
@@ -753,30 +754,38 @@ serve(async (req) => {
           continue;
         }
 
-        // GERAÇÃO DE IMAGEM: a imagem segue o conteúdo do artigo + perfil do escritor (writer_prompt)
+        // GERAÇÃO DE IMAGEM: depende do imageMode configurado
         let featuredImageUrl: string | null = null;
         const writerPromptForImage = settings?.writer_prompt || null;
 
-        // 1. ChatGPT (DALL-E 3) como principal para imagens
-        if (openaiApiKey) {
-          try {
-            featuredImageUrl = await generateImageOpenAI(openaiApiKey, parsed.title, parsed.visual_elements, writerPromptForImage);
-          } catch (imgErr) {
-            console.warn(`[Image] DALL-E falhou para "${parsed.title}":`, imgErr);
+        if (imageMode === "ai") {
+          // 1. ChatGPT (DALL-E 3) como principal para imagens
+          if (openaiApiKey) {
+            try {
+              featuredImageUrl = await generateImageOpenAI(openaiApiKey, parsed.title, parsed.visual_elements, writerPromptForImage);
+            } catch (imgErr) {
+              console.warn(`[Image] DALL-E falhou para "${parsed.title}":`, imgErr);
+            }
           }
-        }
 
-        // 2. Gemini como fallback para imagens
-        if (!featuredImageUrl && geminiApiKey) {
-          try {
-            featuredImageUrl = await generateImageGemini(geminiApiKey, parsed.title, parsed.visual_elements, writerPromptForImage);
-          } catch (imgErr) {
-            console.warn(`[Image] Gemini fallback falhou para "${parsed.title}":`, imgErr);
+          // 2. Gemini como fallback para imagens
+          if (!featuredImageUrl && geminiApiKey) {
+            try {
+              featuredImageUrl = await generateImageGemini(geminiApiKey, parsed.title, parsed.visual_elements, writerPromptForImage);
+            } catch (imgErr) {
+              console.warn(`[Image] Gemini fallback falhou para "${parsed.title}":`, imgErr);
+            }
           }
-        }
-        
-        if (!featuredImageUrl) {
-          console.warn(`[Image] Nenhum provedor gerou imagem para "${parsed.title}" — artigo criado sem imagem`);
+          
+          if (!featuredImageUrl) {
+            console.warn(`[Image] Nenhum provedor gerou imagem para "${parsed.title}" — artigo criado sem imagem`);
+          }
+        } else if (imageMode === "manual") {
+          console.log(`[Image] Modo manual detectado para "${parsed.title}" — aguardando upload.`);
+          featuredImageUrl = null;
+        } else {
+          console.log(`[Image] Modo "nenhuma" detectado para "${parsed.title}".`);
+          featuredImageUrl = null;
         }
 
         const { data: article, error: insertError } = await supabase.from("articles").insert({
