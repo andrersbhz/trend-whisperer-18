@@ -314,13 +314,17 @@ async function callWithFallback(providers: ProviderConfig[], systemPrompt: strin
 
 // ── Image generation ─────────────────────────────────
 
-const IMAGE_PROMPT_TEMPLATE = (title: string, category: string): string =>
-  `FOTOGRAFIA REALISTA HIPER-DETALHADA: Cena real de fotojornalismo para "${title}" (categoria: ${category}). 
-   ESTILO: Fotografia documental autêntica, estilo Reuters/Associated Press. 
+const IMAGE_PROMPT_TEMPLATE = (title: string, category: string, content: string): string => {
+  const cleanContent = content.replace(/<[^>]*>/g, "").substring(0, 500);
+  return `FOTOGRAFIA REALISTA HIPER-DETALHADA: Cena real de fotojornalismo.
+   TÍTULO: "${title}"
+   CONTEXTO: "${cleanContent}"
+   CATEGORIA: ${category}
+   ESTILO: Fotografia documental autêntica, estilo Reuters/Associated Press, tirada em campo.
    QUALIDADE DE IMAGEM: Captura em 8K, RAW, sem edição. Câmera Full Frame, lente prime (35mm ou 50mm). Ruído digital natural em ISO alto, sem suavização de ruído por software. 
    REALISMO OBRIGATÓRIO: Pele com imperfeições, poros dilatados, suor, brilho oleoso natural, rugas de expressão. Iluminação natural de ambiente (luz dura do sol ou luz interna precária), sombras reais. 
-   PROIBIÇÃO TOTAL (ULTRA-CRÍTICO): ABSOLUTAMENTE NADA de estilo 3D, NADA de renderização CGI, NADA de aspecto plástico, NADA de "filtro de beleza", NADA de rostos perfeitos ou simétricos, NADA de cores vibrantes de anime ou videogame. 
-   ORDEM: A imagem DEVE ser uma fotografia real, crua e espontânea, gerada a partir do título: "${title}".`;
+   PROIBIÇÃO TOTAL (ULTRA-CRÍTICO): ABSOLUTAMENTE NADA de estilo 3D, NADA de renderização CGI, NADA de aspecto plástico, NADA de "filtro de beleza", NADA de rostos perfeitos ou simétricos, NADA de cores vibrantes de anime ou videogame.`;
+};
 
 const SENSITIVE_TERMS = /\b(fraude|lavagem|estupro|abuso|terror|atentado|guerra|propina|suborno)\b/i;
 
@@ -335,17 +339,17 @@ const SAFE_CATEGORY_PROMPT: Record<string, string> = {
   entretenimento: "Uma fotografia real de um palco de concerto com fumaça e luzes reais, cores naturais de show.",
 };
 
-function buildSafeImagePrompt(title: string, category: string): string {
+function buildSafeImagePrompt(title: string, category: string, content: string): string {
   if (SENSITIVE_TERMS.test(title)) {
     const safe = SAFE_CATEGORY_PROMPT[category] || SAFE_CATEGORY_PROMPT.politica;
     return `Photorealistic news photography. Scene: ${safe} Style: Authentic editorial photojournalism, high-quality press photo. Requirements: Realistic textures, NO digital art, NO 3D render, NO text overlay, NO watermarks, NO recognizable people, 16:9 aspect ratio, natural lighting.`;
   }
-  return IMAGE_PROMPT_TEMPLATE(title, category);
+  return IMAGE_PROMPT_TEMPLATE(title, category, content);
 }
 
-async function generateImageOpenAI(apiKey: string, title: string, category: string): Promise<string | null> {
+async function generateImageOpenAI(apiKey: string, title: string, category: string, content: string): Promise<string | null> {
   try {
-    const prompt = buildSafeImagePrompt(title, category);
+    const prompt = buildSafeImagePrompt(title, category, content);
     console.log(`[Image] Calling DALL-E 3 for: ${title.substring(0, 50)}...`);
     
     const resp = await fetch("https://api.openai.com/v1/images/generations", {
@@ -380,14 +384,14 @@ async function generateImageOpenAI(apiKey: string, title: string, category: stri
   return null;
 }
 
-async function generateImageGemini(apiKey: string, title: string, category: string): Promise<string | null> {
+async function generateImageGemini(apiKey: string, title: string, category: string, content: string): Promise<string | null> {
   const models = ["gemini-2.0-flash-exp", "gemini-1.5-pro"]; 
   for (const model of models) {
     try {
       console.log(`[Image] Attempting generation with Gemini model: ${model}`);
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
       const body = {
-        contents: [{ parts: [{ text: buildSafeImagePrompt(title, category) }] }],
+        contents: [{ parts: [{ text: buildSafeImagePrompt(title, category, content) }] }],
       };
 
       const resp = await fetch(url, {
@@ -792,7 +796,7 @@ serve(async (req) => {
         // 1. ChatGPT (DALL-E 3) agora é o principal para imagens
         if (openaiApiKey) {
           try { 
-            featuredImageUrl = await generateImageOpenAI(openaiApiKey, parsed.title, topic.category); 
+            featuredImageUrl = await generateImageOpenAI(openaiApiKey, parsed.title, topic.category, parsed.content); 
           } catch (imgErr) { 
             console.warn(`[Image] DALL-E falhou para "${parsed.title}":`, imgErr); 
           }
@@ -801,7 +805,7 @@ serve(async (req) => {
         // 2. Gemini como fallback para imagens
         if (!featuredImageUrl && geminiApiKey) {
           try { 
-            featuredImageUrl = await generateImageGemini(geminiApiKey, parsed.title, topic.category); 
+            featuredImageUrl = await generateImageGemini(geminiApiKey, parsed.title, topic.category, parsed.content); 
           } catch (imgErr) { 
             console.warn(`[Image] Gemini fallback falhou para "${parsed.title}":`, imgErr); 
           }
