@@ -245,6 +245,43 @@ const SchedulePage = () => {
     }
   };
 
+  const handlePreview = async (articleId: string) => {
+    setPreviewOpen(true);
+    setPreviewLoading(true);
+
+    try {
+      const { data, error } = await supabase
+        .from('articles')
+        .select('*')
+        .eq('id', articleId)
+        .maybeSingle();
+
+      if (error) throw error;
+      setPreview(data);
+    } catch (error) {
+      setPreviewOpen(false);
+      toast({ title: 'Erro ao carregar prévia', description: getErrorMessage(error), variant: 'destructive' });
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  const handleUpdateArticle = async (articleId: string, updates: any) => {
+    try {
+      setPreviewLoading(true);
+      const { error } = await supabase.from('articles').update(updates).eq('id', articleId);
+      if (error) throw error;
+      
+      setArticles(prev => prev.map(a => a.id === articleId ? { ...a, ...updates } : a));
+      setPreview(prev => ({ ...prev, ...updates }));
+      toast({ title: 'Artigo atualizado!' });
+    } catch (error) {
+      toast({ title: 'Erro ao atualizar', description: getErrorMessage(error), variant: 'destructive' });
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
