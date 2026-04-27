@@ -31,7 +31,40 @@ const navItems = [
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const { user, signOut } = useAuth();
   const location = useLocation();
+  const { toast } = useToast();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [generating, setGenerating] = useState(false);
+
+  const handleGlobalGenerate = async () => {
+    if (!user || generating) return;
+    setGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-articles', {
+        body: { userId: user.id },
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: data?.success ? 'Artigos gerados!' : 'Atenção',
+        description: data?.message || 'A geração de artigos foi iniciada com sucesso.',
+        variant: data?.success ? 'default' : 'destructive',
+      });
+      
+      // Trigger a refresh if we are on the articles page
+      if (location.pathname === '/articles') {
+        window.dispatchEvent(new CustomEvent('refresh-articles'));
+      }
+    } catch (error) {
+      toast({ 
+        title: 'Erro ao gerar artigos', 
+        description: getErrorMessage(error), 
+        variant: 'destructive' 
+      });
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   // Close sidebar on route change (mobile)
   useEffect(() => {
