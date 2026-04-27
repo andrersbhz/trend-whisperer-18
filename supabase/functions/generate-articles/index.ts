@@ -335,17 +335,22 @@ const SAFE_CATEGORY_PROMPT: Record<string, string> = {
   entretenimento: "Uma fotografia real de um palco de concerto com fumaça e luzes reais, cores naturais de show.",
 };
 
-function buildSafeImagePrompt(title: string, category: string): string {
+function buildSafeImagePrompt(title: string, category: string, customTemplate: string | null = null): string {
   if (SENSITIVE_TERMS.test(title)) {
     const safe = SAFE_CATEGORY_PROMPT[category] || SAFE_CATEGORY_PROMPT.politica;
     return `Photorealistic news photography. Scene: ${safe} Style: Authentic editorial photojournalism, high-quality press photo. Requirements: Realistic textures, NO digital art, NO 3D render, NO text overlay, NO watermarks, NO recognizable people, 16:9 aspect ratio, natural lighting.`;
   }
+  
+  if (customTemplate && customTemplate.trim().length > 10) {
+    return customTemplate.replace(/{title}/gi, title);
+  }
+  
   return IMAGE_PROMPT_TEMPLATE(title, category);
 }
 
-async function generateImageOpenAI(apiKey: string, title: string, category: string): Promise<string | null> {
+async function generateImageOpenAI(apiKey: string, title: string, category: string, customTemplate: string | null = null): Promise<string | null> {
   try {
-    const prompt = buildSafeImagePrompt(title, category);
+    const prompt = buildSafeImagePrompt(title, category, customTemplate);
     console.log(`[Image] Calling DALL-E 3 for: ${title.substring(0, 50)}...`);
     
     const resp = await fetch("https://api.openai.com/v1/images/generations", {
@@ -380,14 +385,14 @@ async function generateImageOpenAI(apiKey: string, title: string, category: stri
   return null;
 }
 
-async function generateImageGemini(apiKey: string, title: string, category: string): Promise<string | null> {
+async function generateImageGemini(apiKey: string, title: string, category: string, customTemplate: string | null = null): Promise<string | null> {
   const models = ["gemini-2.0-flash-exp", "gemini-1.5-pro"]; 
   for (const model of models) {
     try {
       console.log(`[Image] Attempting generation with Gemini model: ${model}`);
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
       const body = {
-        contents: [{ parts: [{ text: buildSafeImagePrompt(title, category) }] }],
+        contents: [{ parts: [{ text: buildSafeImagePrompt(title, category, customTemplate) }] }],
       };
 
       const resp = await fetch(url, {
@@ -788,11 +793,12 @@ serve(async (req) => {
 
         // GERAÇÃO DE IMAGEM: ChatGPT (DALL-E 3) como principal, Gemini como fallback
         let featuredImageUrl: string | null = null;
+        const imagePromptTemplate = settings?.image_prompt_template || null;
         
         // 1. ChatGPT (DALL-E 3) agora é o principal para imagens
         if (openaiApiKey) {
           try { 
-            featuredImageUrl = await generateImageOpenAI(openaiApiKey, parsed.title, topic.category); 
+            featuredImageUrl = await generateImageOpenAI(openaiApiKey, parsed.title, topic.category, imagePromptTemplate); 
           } catch (imgErr) { 
             console.warn(`[Image] DALL-E falhou para "${parsed.title}":`, imgErr); 
           }
@@ -801,7 +807,7 @@ serve(async (req) => {
         // 2. Gemini como fallback para imagens
         if (!featuredImageUrl && geminiApiKey) {
           try { 
-            featuredImageUrl = await generateImageGemini(geminiApiKey, parsed.title, topic.category); 
+            featuredImageUrl = await generateImageGemini(geminiApiKey, parsed.title, topic.category, imagePromptTemplate); 
           } catch (imgErr) { 
             console.warn(`[Image] Gemini fallback falhou para "${parsed.title}":`, imgErr); 
           }

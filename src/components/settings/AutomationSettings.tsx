@@ -4,7 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
-import { Settings, PenTool } from 'lucide-react';
+import { Settings, PenTool, Image } from 'lucide-react';
 import type { UserSettings } from '@/pages/SettingsPage';
 import { forwardRef } from 'react';
 
@@ -57,7 +57,33 @@ const AutomationSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChan
           </p>
         </CardContent>
       </Card>
-
+ 
+      {/* Image Prompt Profile */}
+      <Card className="shadow-card">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Image className="h-5 w-5 text-primary" />
+            <CardTitle className="text-lg">Prompt de Imagem</CardTitle>
+          </div>
+          <CardDescription>
+            Defina como a IA deve gerar as imagens dos seus artigos. Descreva o estilo (ex: realismo fotográfico, Nikon D850), iluminação e o que evitar. Use <strong>{"{title}"}</strong> para inserir o título do artigo no prompt.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Label htmlFor="image-prompt-settings">Instruções para Imagens (DALL-E / Gemini)</Label>
+          <Textarea
+            id="image-prompt-settings"
+            value={settings.image_prompt_template}
+            onChange={(e) => onChange({ image_prompt_template: e.target.value })}
+            placeholder="Ex: Realistic photography, RAW photo of {title}, shot on Nikon D850, 35mm lens, natural lighting, high skin texture detail, 8k resolution, authentic news style..."
+            className="min-h-[140px] text-sm"
+          />
+          <p className="text-xs text-muted-foreground">
+            Dica: Para imagens reais, peça texturas de pele, iluminação natural e evite termos como "3D render", "unreal engine" ou "smooth skin".
+          </p>
+        </CardContent>
+      </Card>
+ 
       {/* Robô de Publicação */}
       <Card className="shadow-card">
         <CardHeader>
