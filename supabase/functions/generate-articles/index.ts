@@ -347,9 +347,9 @@ function buildSafeImagePrompt(title: string, category: string, content: string):
   return IMAGE_PROMPT_TEMPLATE(title, category, content);
 }
 
-async function generateImageOpenAI(apiKey: string, title: string, category: string): Promise<string | null> {
+async function generateImageOpenAI(apiKey: string, title: string, category: string, content: string): Promise<string | null> {
   try {
-    const prompt = buildSafeImagePrompt(title, category);
+    const prompt = buildSafeImagePrompt(title, category, content);
     console.log(`[Image] Calling DALL-E 3 for: ${title.substring(0, 50)}...`);
     
     const resp = await fetch("https://api.openai.com/v1/images/generations", {
