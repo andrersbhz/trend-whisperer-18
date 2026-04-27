@@ -33,6 +33,7 @@ export interface UserSettings {
   articles_per_day: number;
   auto_publish: boolean;
   writer_prompt: string;
+  image_prompt_template: string;
 }
 
 const defaultSettings: UserSettings = {
@@ -53,6 +54,7 @@ const defaultSettings: UserSettings = {
   articles_per_day: 3,
   auto_publish: false,
   writer_prompt: '',
+  image_prompt_template: '',
 };
 
 interface CredentialsStatus {
