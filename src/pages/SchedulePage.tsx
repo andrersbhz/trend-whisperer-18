@@ -14,6 +14,13 @@ import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { getErrorMessage, runBackendMutation, runBackendQuery } from '@/lib/backend';
 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+
 const SchedulePage = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -28,6 +35,9 @@ const SchedulePage = () => {
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [batchActionLoading, setBatchActionLoading] = useState(false);
+  const [preview, setPreview] = useState<any | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(false);
 
   useEffect(() => {
     if (!user) return;
