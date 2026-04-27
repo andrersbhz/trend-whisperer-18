@@ -792,7 +792,7 @@ serve(async (req) => {
         // 1. ChatGPT (DALL-E 3) agora é o principal para imagens
         if (openaiApiKey) {
           try { 
-            featuredImageUrl = await generateImageOpenAI(openaiApiKey, parsed.title, topic.category, parsed.content); 
+            featuredImageUrl = await generateImageOpenAI(openaiApiKey, parsed.title, topic.category); 
           } catch (imgErr) { 
             console.warn(`[Image] DALL-E falhou para "${parsed.title}":`, imgErr); 
           }
@@ -801,7 +801,7 @@ serve(async (req) => {
         // 2. Gemini como fallback para imagens
         if (!featuredImageUrl && geminiApiKey) {
           try { 
-            featuredImageUrl = await generateImageGemini(geminiApiKey, parsed.title, topic.category, parsed.content); 
+            featuredImageUrl = await generateImageGemini(geminiApiKey, parsed.title, topic.category); 
           } catch (imgErr) { 
             console.warn(`[Image] Gemini fallback falhou para "${parsed.title}":`, imgErr); 
           }
