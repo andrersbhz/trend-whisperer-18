@@ -82,7 +82,7 @@ async function withRetry<T>(operation: () => Promise<T>, retries = 2, baseDelayM
   throw lastError instanceof Error ? lastError : new Error(String(lastError));
 }
 
-async function generateImageGemini(apiKey: string, title: string, category: string): Promise<string> {
+async function generateImageGemini(apiKey: string, title: string, visualElements: string | null, writerPrompt: string | null): Promise<string> {
   // Modelos corretos do Gemini que suportam geração de imagem (Nano Banana)
   const models = ["gemini-2.5-flash-image-preview", "gemini-2.0-flash-preview-image-generation"];
   const errors: string[] = [];
@@ -95,7 +95,7 @@ async function generateImageGemini(apiKey: string, title: string, category: stri
           method: "POST",
           headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
           body: JSON.stringify({
-            contents: [{ parts: [{ text: IMAGE_PROMPT_TEMPLATE(title, category) }] }],
+            contents: [{ parts: [{ text: buildImagePrompt(title, visualElements, writerPrompt) }] }],
             generationConfig: { responseModalities: ["IMAGE", "TEXT"] },
           }),
         });
@@ -124,14 +124,14 @@ async function generateImageGemini(apiKey: string, title: string, category: stri
   throw new ProviderError(errors.join(" | ") || "Falha ao gerar imagem com Gemini", 500, false, errors.some((message) => isBillingIssue(0, message)));
 }
 
-async function generateImageDallE(apiKey: string, title: string, category: string): Promise<string> {
+async function generateImageDallE(apiKey: string, title: string, visualElements: string | null, writerPrompt: string | null): Promise<string> {
   return await withRetry(async () => {
     const resp = await fetch("https://api.openai.com/v1/images/generations", {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         model: "dall-e-3",
-        prompt: IMAGE_PROMPT_TEMPLATE(title, category),
+        prompt: buildImagePrompt(title, visualElements, writerPrompt),
         n: 1,
         size: "1792x1024",
         quality: "standard",
