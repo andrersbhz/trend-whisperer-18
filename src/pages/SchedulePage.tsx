@@ -108,7 +108,6 @@ const SchedulePage = () => {
 
   const handleEdit = (article: any) => {
     setEditingId(article.id);
-    // Format to datetime-local input format
     const d = new Date(article.scheduled_at);
     setEditValue(format(d, "yyyy-MM-dd'T'HH:mm"));
   };
@@ -139,7 +138,6 @@ const SchedulePage = () => {
       );
       setArticles(prev => prev.filter(a => a.id !== articleId));
       
-      // Log action
       await supabase.from('audit_logs').insert({
         user_id: user?.id,
         action: 'delete_article',
@@ -160,7 +158,6 @@ const SchedulePage = () => {
       );
       setArticles(prev => prev.map(a => a.id === articleId ? { ...a, is_approved: newApproved } : a));
       
-      // Log action
       await supabase.from('audit_logs').insert({
         user_id: user?.id,
         action: newApproved ? 'approve_article' : 'unapprove_article',
@@ -203,7 +200,6 @@ const SchedulePage = () => {
       );
       setArticles(prev => prev.filter(a => !selectedIds.includes(a.id)));
       
-      // Log action
       await supabase.from('audit_logs').insert({
         user_id: user?.id,
         action: 'delete_multiple_articles',
@@ -229,7 +225,6 @@ const SchedulePage = () => {
       );
       setArticles(prev => prev.map(a => selectedIds.includes(a.id) ? { ...a, is_approved: newApproved } : a));
       
-      // Log action
       await supabase.from('audit_logs').insert({
         user_id: user?.id,
         action: newApproved ? 'approve_multiple_articles' : 'unapprove_multiple_articles',
@@ -297,7 +292,6 @@ const SchedulePage = () => {
         <p className="text-sm mt-1">Artigos agendados para publicação automática — clique na data para editar</p>
       </div>
 
-      {/* Robô de Publicação Automática */}
       <Card className="glass-card neon-border-pink">
         <CardHeader>
           <div className="flex items-center gap-2">
@@ -489,7 +483,53 @@ const SchedulePage = () => {
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
+                        <Badge
+                          className={
+                            article.status === 'published'
+                              ? 'bg-success/20 text-success'
+                              : article.is_approved === false
+                                ? 'bg-muted text-muted-foreground'
+                                : 'bg-primary/20 text-primary'
+                          }
+                          variant="secondary"
+                        >
+                          {article.status === 'published' ? 'Publicado' : article.is_approved === false ? 'Pausado' : 'Agendado'}
+                        </Badge>
                       </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+      <Dialog
+        open={previewOpen}
+        onOpenChange={(open) => {
+          setPreviewOpen(open);
+          if (!open) setPreview(null);
+        }}
+      >
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto glass-card border-border p-0">
+          <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b p-4 flex items-center justify-between">
+            <DialogHeader className="p-0">
+              <DialogTitle className="text-lg font-bold">Editar Agendamento</DialogTitle>
+            </DialogHeader>
+            <Button 
+              onClick={() => handleUpdateArticle(preview.id, { 
+                title: preview.title, 
+                content: preview.content,
+                meta_description: preview.meta_description,
+                seo_keyword: preview.seo_keyword
+              })}
+              disabled={previewLoading}
+              className="gradient-primary"
+            >
+              {previewLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+              Salvar Alterações
+            </Button>
+          </div>
           
           {previewLoading && !preview ? (
             <div className="flex items-center justify-center py-20">
