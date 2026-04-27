@@ -257,6 +257,11 @@ serve(async (req) => {
 
         // Set Yoast SEO meta fields (focus keyword, meta description, SEO title)
         const yoastMeta: Record<string, string> = {};
+        if (article.seo_title) yoastMeta._yoast_wpseo_title = article.seo_title;
+        if (article.meta_description) yoastMeta._yoast_wpseo_metadesc = article.meta_description;
+        if (article.seo_keyword) yoastMeta._yoast_wpseo_focuskw = article.seo_keyword;
+
+        if (Object.keys(yoastMeta).length > 0) {
           updateBody.meta = yoastMeta;
         }
 
