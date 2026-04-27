@@ -194,9 +194,6 @@ serve(async (req) => {
         } catch (imgErr) { console.error("WP image upload failed:", imgErr); }
       }
 
-      // Note: Yoast SEO meta fields will be set via a separate update after post creation
-      // to avoid WordPress crashing if Yoast is not installed or meta keys are unregistered
-
       const endpoint = `${wpUrl}/wp-json/wp/v2/posts`;
       console.log(`POST (standard) ${endpoint}`);
       return fetch(endpoint, { method: "POST", headers, body: JSON.stringify(body) });
