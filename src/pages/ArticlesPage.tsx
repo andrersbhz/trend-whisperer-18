@@ -43,11 +43,15 @@ const ArticlesPage = () => {
 
   const PAGE_SIZE = 20;
 
-  const fetchArticles = async (options?: { append?: boolean }) => {
+  const fetchArticles = async (options?: { append?: boolean; silent?: boolean }) => {
     if (!user) return;
     const startTime = diagnostics.startTimer();
-
+    const silent = options?.silent ?? false;
     const append = options?.append ?? false;
+
+    if (!silent && !append) setLoading(true);
+    if (append) setLoadingMore(true);
+
     const from = append ? articles.length : 0;
     const to = from + PAGE_SIZE - 1;
 
@@ -62,10 +66,11 @@ const ArticlesPage = () => {
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
           .range(from, to),
-        supabase
+        // Only fetch count if we're not appending, to save time
+        !append ? supabase
           .from('articles')
           .select('id', { count: 'exact', head: true })
-          .eq('user_id', user.id)
+          .eq('user_id', user.id) : Promise.resolve({ count: totalCount, error: null })
       ]);
 
       if (articlesResult.error) throw articlesResult.error;
@@ -73,7 +78,12 @@ const ArticlesPage = () => {
       const data = articlesResult.data;
       setHasMore((data || []).length === PAGE_SIZE);
       setArticles((current) => (append ? [...current, ...(data || [])] : data || []));
-      setTotalCount(countResult.count ?? 0);
+      
+      if (!append && countResult.count !== null) {
+        setTotalCount(countResult.count);
+      }
+      
+      setInitialFetchDone(true);
       diagnostics.endTimer(startTime, 'Carregar Artigos', 'success', `${(data || []).length} itens`);
     } catch (error: any) {
       diagnostics.endTimer(startTime, 'Carregar Artigos', 'error', getErrorMessage(error));
@@ -87,12 +97,11 @@ const ArticlesPage = () => {
   };
 
   useEffect(() => {
-    if (user) {
-      setLoading(true);
-      // Fetch everything in parallel
+    if (user && !initialFetchDone) {
+      setDiagMetrics(diagnostics.getMetrics());
       Promise.all([fetchArticles(), fetchCategories()]);
     }
-  }, [user]);
+  }, [user, initialFetchDone]);
 
   useEffect(() => {
     const handleUpdate = (e: any) => setDiagMetrics(e.detail);
