@@ -171,9 +171,10 @@ serve(async (req) => {
     let openaiApiKey: string | null = null;
     const { data: settings } = await supabase
       .from("user_settings")
-      .select("gemini_api_key, openai_api_key")
+      .select("gemini_api_key, openai_api_key, writer_prompt")
       .eq("user_id", userId)
       .single();
+    const writerPrompt: string | null = settings?.writer_prompt || null;
 
     if (settings?.gemini_api_key) {
       const { data: decrypted } = await supabase.rpc("decrypt_credential", { enc_key: "", val: settings.gemini_api_key });
@@ -191,7 +192,7 @@ serve(async (req) => {
     // Fetch articles
     const { data: articles } = await supabase
       .from("articles")
-      .select("id, title, category, featured_image_url")
+      .select("id, title, category, featured_image_url, visual_elements")
       .eq("user_id", userId)
       .in("id", articleIds);
 
@@ -230,13 +231,13 @@ serve(async (req) => {
 
       // Cadeia: Gemini (prioridade) → OpenAI DALL-E (backup)
       if (geminiApiKey) {
-        try { imageUrl = await generateImageGemini(geminiApiKey, article.title, article.category); }
+        try { imageUrl = await generateImageGemini(geminiApiKey, article.title, (article as any).visual_elements || null, writerPrompt); }
         catch (error) { providerErrors.push(`Gemini: ${getErrorMessage(error)}`); }
       }
       
       // Se Gemini falhou ou não estava disponível, tenta OpenAI
       if (!imageUrl && openaiApiKey) {
-        try { imageUrl = await generateImageDallE(openaiApiKey, article.title, article.category); }
+        try { imageUrl = await generateImageDallE(openaiApiKey, article.title, (article as any).visual_elements || null, writerPrompt); }
         catch (error) { providerErrors.push(`OpenAI: ${getErrorMessage(error)}`); }
       }
 
