@@ -315,12 +315,12 @@ async function callWithFallback(providers: ProviderConfig[], systemPrompt: strin
 // ── Image generation ─────────────────────────────────
 
 const IMAGE_PROMPT_TEMPLATE = (title: string, category: string): string =>
-  `FOTOGRAFIA REALISTA (ESTILO AGÊNCIA DE NOTÍCIAS): Notícia real sobre "${title}" (categoria: ${category}). 
-   ESTILO VISUAL: Fotografia jornalística crua (RAW), capturada por repórter em campo. 
-   TÉCNICA: Câmera Nikon D850 ou Canon EOS-1D X Mark III, ISO alto com ruído de granulação natural sutil, lente 35mm f/2.8 ou 50mm f/1.8 com profundidade de campo óptica real. 
-   DETALHES OBRIGATÓRIOS: Textura de pele humana real com poros visíveis, suor, rugas e imperfeições naturais. Roupas com tramas de tecido nítidas. Iluminação de ambiente comum (sol direto ou luz interna fluorescente), sem tratamento de cor artístico.
-   PROIBIDO (NEGATIVO): Sem aspecto 3D, sem renderização CGI, sem filtros de "suavização de pele", sem rostos simétricos de boneco, sem cores vibrantes ou saturadas, sem iluminação de estúdio perfeita, sem retoque digital, sem visual de "arte de IA". 
-   A imagem DEVE ser gerada obrigatoriamente a partir do título: "${title}".`;
+  `FOTOGRAFIA REALISTA HIPER-DETALHADA: Cena real de fotojornalismo para "${title}" (categoria: ${category}). 
+   ESTILO: Fotografia documental autêntica, estilo Reuters/Associated Press. 
+   QUALIDADE DE IMAGEM: Captura em 8K, RAW, sem edição. Câmera Full Frame, lente prime (35mm ou 50mm). Ruído digital natural em ISO alto, sem suavização de ruído por software. 
+   REALISMO OBRIGATÓRIO: Pele com imperfeições, poros dilatados, suor, brilho oleoso natural, rugas de expressão. Iluminação natural de ambiente (luz dura do sol ou luz interna precária), sombras reais. 
+   PROIBIÇÃO TOTAL (ULTRA-CRÍTICO): ABSOLUTAMENTE NADA de estilo 3D, NADA de renderização CGI, NADA de aspecto plástico, NADA de "filtro de beleza", NADA de rostos perfeitos ou simétricos, NADA de cores vibrantes de anime ou videogame. 
+   ORDEM: A imagem DEVE ser uma fotografia real, crua e espontânea, gerada a partir do título: "${title}".`;
 
 const SENSITIVE_TERMS = /\b(fraude|lavagem|estupro|abuso|terror|atentado|guerra|propina|suborno)\b/i;
 
