@@ -243,7 +243,7 @@ const ArticlesPage = () => {
       const data = await runBackendQuery(() =>
         supabase
           .from('articles')
-          .select('id, title, category, seo_keyword, meta_description, content, featured_image_url, slug, seo_title, status')
+          .select('id, title, category, seo_keyword, meta_description, content, featured_image_url, slug, seo_title, status, visual_elements')
           .eq('id', articleId)
           .maybeSingle(),
       );
