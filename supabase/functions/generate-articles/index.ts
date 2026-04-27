@@ -78,8 +78,8 @@ async function callGeminiDirect(apiKey: string, systemPrompt: string, userPrompt
   let lastError: any = null;
 
   try {
-    // Use plain text JSON prompt for better compatibility
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    // Try v1 model for better compatibility if v1beta fails or is not available
+    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     const body = {
       contents: [{ 
         role: "user", 
@@ -102,7 +102,7 @@ async function callGeminiDirect(apiKey: string, systemPrompt: string, userPrompt
       return JSON.parse(text) as AIResponse;
     } else {
       const errText = await resp.text();
-      console.warn(`[AI] Gemini v1beta failed (${resp.status}): ${errText.substring(0, 200)}`);
+      console.warn(`[AI] Gemini v1 failed (${resp.status}): ${errText.substring(0, 200)}`);
       throw new Error(`Gemini API failed with status ${resp.status}: ${errText}`);
     }
   } catch (err) {
