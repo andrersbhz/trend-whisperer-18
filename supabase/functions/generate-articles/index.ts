@@ -123,6 +123,8 @@ async function callGeminiDirect(apiKey: string, systemPrompt: string, userPrompt
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(v1Body),
     });
+    
+    console.log(`[AI] Gemini fallback response status: ${v1Resp.status}`);
 
     if (v1Resp.ok) {
       const v1Data = await v1Resp.json();
@@ -833,7 +835,11 @@ serve(async (req) => {
           visual_elements: parsed.visual_elements,
           image_alt: parsed.image_alt,
           image_caption: parsed.image_caption,
-        }).select().single();
+        }).select();
+        
+        console.log(`[Pipeline] Supabase insert result:`, JSON.stringify(article));
+        
+        const singleArticle = Array.isArray(article) ? article[0] : article;
 
         if (insertError) {
           failureReasons.push({ status: 500, message: insertError.message });
