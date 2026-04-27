@@ -35,7 +35,7 @@ const TrendsPage = () => {
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [refreshInterval, setRefreshInterval] = useState(30); // minutos
   const [sourceFilter, setSourceFilter] = useState<string>("all");
-  const [sortBy, setSortBy] = useState<"recent" | "oldest">("recent");
+  const [sortBy, setSortBy] = useState<"recent" | "oldest" | "audience_desc" | "audience_asc">("audience_desc");
   const [timeFilter, setTimeFilter] = useState<string>("all");
 
   const sources = useMemo(() => {
@@ -54,6 +54,12 @@ const TrendsPage = () => {
     }
 
     result.sort((a, b) => {
+      if (sortBy === "audience_desc" || sortBy === "audience_asc") {
+        const volumeA = parseInt(a.search_volume?.replace(/[^0-9]/g, '') || '0');
+        const volumeB = parseInt(b.search_volume?.replace(/[^0-9]/g, '') || '0');
+        return sortBy === "audience_desc" ? volumeB - volumeA : volumeA - volumeB;
+      }
+      
       const dateA = new Date(a.fetched_at || 0).getTime();
       const dateB = new Date(b.fetched_at || 0).getTime();
       return sortBy === "recent" ? dateB - dateA : dateA - dateB;
@@ -294,6 +300,8 @@ const TrendsPage = () => {
                 <SelectValue placeholder="Ordenar" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="audience_desc">Maior audiência</SelectItem>
+                <SelectItem value="audience_asc">Menor audiência</SelectItem>
                 <SelectItem value="recent">Mais recentes</SelectItem>
                 <SelectItem value="oldest">Mais antigos</SelectItem>
               </SelectContent>
