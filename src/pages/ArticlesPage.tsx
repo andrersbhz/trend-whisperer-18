@@ -57,9 +57,6 @@ const ArticlesPage = () => {
 
     try {
       setErrorState(null);
-      
-    try {
-      setErrorState(null);
       setInitialFetchDone(true); // Mark as done to prevent infinite retry loops on error
       
       // Parallelize article fetch and total count for speed
