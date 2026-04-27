@@ -28,28 +28,40 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setLoading(false);
     };
 
+    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log('[useAuth] Auth state changed:', _event);
       finishAuthLoading(session);
     });
 
+    // Timeout safety
     const timeoutId = window.setTimeout(() => {
-      console.warn('[useAuth] Auth timeout reached, forcing loading state to false');
-      finishAuthLoading(null);
-    }, 10000);
+      if (loading) {
+        console.warn('[useAuth] Auth timeout reached, forcing loading state to false');
+        finishAuthLoading(null);
+      }
+    }, 5000);
 
     const initializeAuth = async () => {
       try {
+        // Optimized check: getSession is faster than full user load initially
         const { data, error } = await supabase.auth.getSession();
 
         if (error) {
+          console.error('[useAuth] Session error:', error);
           await supabase.auth.signOut({ scope: 'local' });
           finishAuthLoading(null);
           return;
         }
 
-        finishAuthLoading(data.session);
-      } catch {
-        await supabase.auth.signOut({ scope: 'local' });
+        if (data.session) {
+          finishAuthLoading(data.session);
+        } else {
+          // If no session found quickly, don't wait forever
+          finishAuthLoading(null);
+        }
+      } catch (err) {
+        console.error('[useAuth] Init error:', err);
         finishAuthLoading(null);
       } finally {
         window.clearTimeout(timeoutId);
