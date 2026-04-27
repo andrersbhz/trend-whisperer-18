@@ -8,11 +8,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, Clock, Calendar, Save, Bot, Trash2, CheckCircle, XCircle, Trash } from 'lucide-react';
+import { Loader2, Clock, Calendar, Save, Bot, Trash2, CheckCircle, XCircle, Trash, Eye, FileEdit } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { getErrorMessage, runBackendMutation, runBackendQuery } from '@/lib/backend';
+
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 const SchedulePage = () => {
   const { user } = useAuth();
@@ -28,6 +35,9 @@ const SchedulePage = () => {
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [batchActionLoading, setBatchActionLoading] = useState(false);
+  const [preview, setPreview] = useState<any | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -98,7 +108,6 @@ const SchedulePage = () => {
 
   const handleEdit = (article: any) => {
     setEditingId(article.id);
-    // Format to datetime-local input format
     const d = new Date(article.scheduled_at);
     setEditValue(format(d, "yyyy-MM-dd'T'HH:mm"));
   };
@@ -129,7 +138,6 @@ const SchedulePage = () => {
       );
       setArticles(prev => prev.filter(a => a.id !== articleId));
       
-      // Log action
       await supabase.from('audit_logs').insert({
         user_id: user?.id,
         action: 'delete_article',
@@ -150,7 +158,6 @@ const SchedulePage = () => {
       );
       setArticles(prev => prev.map(a => a.id === articleId ? { ...a, is_approved: newApproved } : a));
       
-      // Log action
       await supabase.from('audit_logs').insert({
         user_id: user?.id,
         action: newApproved ? 'approve_article' : 'unapprove_article',
@@ -193,7 +200,6 @@ const SchedulePage = () => {
       );
       setArticles(prev => prev.filter(a => !selectedIds.includes(a.id)));
       
-      // Log action
       await supabase.from('audit_logs').insert({
         user_id: user?.id,
         action: 'delete_multiple_articles',
@@ -219,7 +225,6 @@ const SchedulePage = () => {
       );
       setArticles(prev => prev.map(a => selectedIds.includes(a.id) ? { ...a, is_approved: newApproved } : a));
       
-      // Log action
       await supabase.from('audit_logs').insert({
         user_id: user?.id,
         action: newApproved ? 'approve_multiple_articles' : 'unapprove_multiple_articles',
@@ -232,6 +237,43 @@ const SchedulePage = () => {
       toast({ title: 'Erro ao atualizar em lote', description: getErrorMessage(error), variant: 'destructive' });
     } finally {
       setBatchActionLoading(false);
+    }
+  };
+
+  const handlePreview = async (articleId: string) => {
+    setPreviewOpen(true);
+    setPreviewLoading(true);
+
+    try {
+      const { data, error } = await supabase
+        .from('articles')
+        .select('*')
+        .eq('id', articleId)
+        .maybeSingle();
+
+      if (error) throw error;
+      setPreview(data);
+    } catch (error) {
+      setPreviewOpen(false);
+      toast({ title: 'Erro ao carregar prévia', description: getErrorMessage(error), variant: 'destructive' });
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  const handleUpdateArticle = async (articleId: string, updates: any) => {
+    try {
+      setPreviewLoading(true);
+      const { error } = await supabase.from('articles').update(updates).eq('id', articleId);
+      if (error) throw error;
+      
+      setArticles(prev => prev.map(a => a.id === articleId ? { ...a, ...updates } : a));
+      setPreview(prev => ({ ...prev, ...updates }));
+      toast({ title: 'Artigo atualizado!' });
+    } catch (error) {
+      toast({ title: 'Erro ao atualizar', description: getErrorMessage(error), variant: 'destructive' });
+    } finally {
+      setPreviewLoading(false);
     }
   };
 
@@ -250,7 +292,6 @@ const SchedulePage = () => {
         <p className="text-sm mt-1">Artigos agendados para publicação automática — clique na data para editar</p>
       </div>
 
-      {/* Robô de Publicação Automática */}
       <Card className="glass-card neon-border-pink">
         <CardHeader>
           <div className="flex items-center gap-2">
@@ -417,6 +458,16 @@ const SchedulePage = () => {
                         <Button
                           size="sm"
                           variant="ghost"
+                          className="h-8 px-2 text-primary hover:text-primary/80"
+                          onClick={() => handlePreview(article.id)}
+                          title="Visualizar e Editar Artigo"
+                        >
+                          <Eye className="h-4 w-4" />
+                          <span className="ml-1 text-[10px] hidden sm:inline">Visualizar</span>
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
                           className={`h-8 px-2 ${article.is_approved ? 'text-success hover:text-success/80' : 'text-muted-foreground hover:text-foreground'}`}
                           onClick={() => handleToggleApproval(article.id, !!article.is_approved)}
                           title={article.is_approved ? 'Clique para não postar' : 'Clique para postar'}
@@ -453,6 +504,86 @@ const SchedulePage = () => {
           </div>
         </div>
       )}
+      <Dialog
+        open={previewOpen}
+        onOpenChange={(open) => {
+          setPreviewOpen(open);
+          if (!open) setPreview(null);
+        }}
+      >
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto glass-card border-border p-0">
+          <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b p-4 flex items-center justify-between">
+            <DialogHeader className="p-0">
+              <DialogTitle className="text-lg font-bold">Editar Agendamento</DialogTitle>
+            </DialogHeader>
+            <Button 
+              onClick={() => handleUpdateArticle(preview.id, { 
+                title: preview.title, 
+                content: preview.content,
+                meta_description: preview.meta_description,
+                seo_keyword: preview.seo_keyword
+              })}
+              disabled={previewLoading}
+              className="gradient-primary"
+            >
+              {previewLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+              Salvar Alterações
+            </Button>
+          </div>
+          
+          {previewLoading && !preview ? (
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="h-10 w-10 animate-spin text-primary" />
+            </div>
+          ) : (
+            <div className="p-6 space-y-6">
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-xs font-bold uppercase text-muted-foreground mb-1 block">Título</Label>
+                  <Input 
+                    value={preview?.title || ''} 
+                    onChange={(e) => setPreview({...preview, title: e.target.value})}
+                  />
+                </div>
+                
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-xs font-bold uppercase text-muted-foreground mb-1 block">Palavra-Chave Foco</Label>
+                    <Input 
+                      value={preview?.seo_keyword || ''} 
+                      onChange={(e) => setPreview({...preview, seo_keyword: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs font-bold uppercase text-muted-foreground mb-1 block">Categoria</Label>
+                    <Badge variant="outline" className="h-10 px-4 w-full justify-start capitalize">
+                      {preview?.category}
+                    </Badge>
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-xs font-bold uppercase text-muted-foreground mb-1 block">Meta Descrição</Label>
+                  <textarea 
+                    className="w-full min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm"
+                    value={preview?.meta_description || ''} 
+                    onChange={(e) => setPreview({...preview, meta_description: e.target.value})}
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-xs font-bold uppercase text-muted-foreground mb-1 block">Conteúdo (HTML)</Label>
+                  <textarea 
+                    className="w-full min-h-[300px] rounded-md border border-input bg-background px-3 py-2 text-sm font-mono shadow-sm"
+                    value={preview?.content || ''} 
+                    onChange={(e) => setPreview({...preview, content: e.target.value})}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
