@@ -5,8 +5,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Send, Eye, Trash2, Loader2, FileText, RotateCcw, ImagePlus, Sparkles, Database, Layers } from 'lucide-react';
+import { Send, Eye, Trash2, Loader2, FileText, RotateCcw, ImagePlus, Sparkles, Database, Layers, Activity, Clock, ChevronDown, ChevronUp } from 'lucide-react';
 import { getErrorMessage, runBackendMutation, runBackendQuery } from '@/lib/backend';
+import { diagnostics } from '@/lib/diagnostics';
 import {
   Dialog,
   DialogContent,
@@ -14,6 +15,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 const ArticlesPage = () => {
   const { user } = useAuth();
@@ -34,11 +37,14 @@ const ArticlesPage = () => {
   const [userCategories, setUserCategories] = useState<string[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(false);
   const [errorState, setErrorState] = useState<string | null>(null);
+  const [diagMetrics, setDiagMetrics] = useState<any[]>(diagnostics.getMetrics());
+  const [showDiagnostics, setShowDiagnostics] = useState(false);
 
   const PAGE_SIZE = 20;
 
   const fetchArticles = async (options?: { append?: boolean }) => {
     if (!user) return;
+    const startTime = diagnostics.startTimer();
 
     const append = options?.append ?? false;
     const from = append ? articles.length : 0;
@@ -67,7 +73,9 @@ const ArticlesPage = () => {
       setHasMore((data || []).length === PAGE_SIZE);
       setArticles((current) => (append ? [...current, ...(data || [])] : data || []));
       setTotalCount(countResult.count ?? 0);
+      diagnostics.endTimer(startTime, 'Carregar Artigos', 'success', `${(data || []).length} itens`);
     } catch (error: any) {
+      diagnostics.endTimer(startTime, 'Carregar Artigos', 'error', getErrorMessage(error));
       console.error('[ArticlesPage] fetchArticles error:', error);
       setErrorState(getErrorMessage(error));
       toast({ title: 'Erro ao carregar artigos', description: getErrorMessage(error), variant: 'destructive' });
@@ -84,6 +92,12 @@ const ArticlesPage = () => {
       Promise.all([fetchArticles(), fetchCategories()]);
     }
   }, [user]);
+
+  useEffect(() => {
+    const handleUpdate = (e: any) => setDiagMetrics(e.detail);
+    window.addEventListener('diagnostics-updated', handleUpdate);
+    return () => window.removeEventListener('diagnostics-updated', handleUpdate);
+  }, []);
 
   const fetchCategories = async () => {
     if (!user) return;
@@ -147,6 +161,7 @@ const ArticlesPage = () => {
   };
 
   const handlePublish = async (articleId: string) => {
+    const startTime = diagnostics.startTimer();
     setPublishing(articleId);
     try {
       const data = await runBackendQuery(() =>
@@ -156,8 +171,10 @@ const ArticlesPage = () => {
       );
 
       toast({ title: data?.success ? 'Publicado!' : 'Atenção', description: data?.message || 'Verifique o status.', variant: data?.success ? 'default' : 'destructive' });
+      diagnostics.endTimer(startTime, 'Postar no WordPress/Social', data?.success ? 'success' : 'error', data?.message);
       fetchArticles();
     } catch (error) {
+      diagnostics.endTimer(startTime, 'Postar no WordPress/Social', 'error', getErrorMessage(error));
       toast({ title: 'Erro', description: getErrorMessage(error), variant: 'destructive' });
     } finally {
       setPublishing(null);
@@ -186,6 +203,7 @@ const ArticlesPage = () => {
 
   const handleDelete = async (articleId: string) => {
     if (!confirm('Tem certeza que deseja excluir este artigo?')) return;
+    const startTime = diagnostics.startTimer();
     
     // Optimistic update for immediate speed
     const previousArticles = [...articles];
@@ -195,8 +213,10 @@ const ArticlesPage = () => {
     try {
       const { error } = await supabase.from('articles').delete().eq('id', articleId);
       if (error) throw error;
+      diagnostics.endTimer(startTime, 'Excluir Artigo', 'success');
       toast({ title: 'Excluído', description: 'Artigo removido.' });
     } catch (error) {
+      diagnostics.endTimer(startTime, 'Excluir Artigo', 'error', getErrorMessage(error));
       // Rollback on error
       setArticles(previousArticles);
       setTotalCount(previousArticles.length);
@@ -230,6 +250,7 @@ const ArticlesPage = () => {
   const handleRegenerateImages = async () => {
     const withoutImage = articles.filter(a => !a.featured_image_url && a.status !== 'generating');
     if (!user || withoutImage.length === 0) return;
+    const startTime = diagnostics.startTimer();
     setRegeneratingImages(true);
     try {
       const data = await runBackendQuery(() =>
@@ -243,8 +264,10 @@ const ArticlesPage = () => {
         description: data?.message || `${updatedCount} imagens criadas.`,
         variant: updatedCount > 0 ? 'default' : 'destructive',
       });
+      diagnostics.endTimer(startTime, 'Gerar Imagens', 'success', `${updatedCount} imagens`);
       fetchArticles();
     } catch (error) {
+      diagnostics.endTimer(startTime, 'Gerar Imagens', 'error', getErrorMessage(error));
       toast({ title: 'Erro', description: getErrorMessage(error), variant: 'destructive' });
     } finally {
       setRegeneratingImages(false);
@@ -418,6 +441,61 @@ const ArticlesPage = () => {
 
   return (
     <div className="space-y-6">
+      {/* Diagnostics Panel */}
+      <Collapsible open={showDiagnostics} onOpenChange={setShowDiagnostics} className="w-full">
+        <div className="flex items-center justify-between mb-2">
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" size="sm" className="gap-2 text-xs text-muted-foreground hover:text-primary">
+              <Activity className="h-3 w-3" />
+              Relatório de Performance
+              {showDiagnostics ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+            </Button>
+          </CollapsibleTrigger>
+          {showDiagnostics && (
+            <Button variant="ghost" size="sm" onClick={() => diagnostics.clear()} className="h-6 text-[10px]">
+              Limpar Logs
+            </Button>
+          )}
+        </div>
+        <CollapsibleContent>
+          <Card className="glass-card mb-6 border-primary/20 bg-primary/5">
+            <CardContent className="p-4">
+              <ScrollArea className="h-[200px] w-full pr-4">
+                <div className="space-y-2">
+                  {diagMetrics.length === 0 ? (
+                    <p className="text-center text-xs text-muted-foreground py-10">
+                      Nenhuma atividade registrada. Execute uma ação para ver os tempos de resposta.
+                    </p>
+                  ) : (
+                    diagMetrics.map((metric, i) => (
+                      <div key={i} className="flex items-center justify-between text-xs border-b border-border/50 pb-2 last:border-0">
+                        <div className="flex items-center gap-3">
+                          <Clock className={`h-3 w-3 ${metric.status === 'error' ? 'text-destructive' : 'text-primary'}`} />
+                          <div>
+                            <p className="font-medium text-foreground">{metric.operation}</p>
+                            <p className="text-[10px] text-muted-foreground">
+                              {new Date(metric.timestamp).toLocaleTimeString()} {metric.details ? `• ${metric.details}` : ''}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className={`font-bold ${metric.duration > 3000 ? 'text-warning' : 'text-success'}`}>
+                            {(metric.duration / 1000).toFixed(2)}s
+                          </p>
+                          <Badge variant="outline" className={`h-4 text-[9px] uppercase font-bold py-0 ${metric.status === 'error' ? 'border-destructive text-destructive' : 'border-success text-success'}`}>
+                            {metric.status}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </CollapsibleContent>
+      </Collapsible>
+
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold neon-text-lilac">Artigos</h1>
