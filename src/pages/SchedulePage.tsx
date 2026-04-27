@@ -500,6 +500,86 @@ const SchedulePage = () => {
           </div>
         </div>
       )}
+      <Dialog
+        open={previewOpen}
+        onOpenChange={(open) => {
+          setPreviewOpen(open);
+          if (!open) setPreview(null);
+        }}
+      >
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto glass-card border-border p-0">
+          <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b p-4 flex items-center justify-between">
+            <DialogHeader className="p-0">
+              <DialogTitle className="text-lg font-bold">Editar Agendamento</DialogTitle>
+            </DialogHeader>
+            <Button 
+              onClick={() => handleUpdateArticle(preview.id, { 
+                title: preview.title, 
+                content: preview.content,
+                meta_description: preview.meta_description,
+                seo_keyword: preview.seo_keyword
+              })}
+              disabled={previewLoading}
+              className="gradient-primary"
+            >
+              {previewLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+              Salvar Alterações
+            </Button>
+          </div>
+          
+          {previewLoading && !preview ? (
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="h-10 w-10 animate-spin text-primary" />
+            </div>
+          ) : (
+            <div className="p-6 space-y-6">
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-xs font-bold uppercase text-muted-foreground mb-1 block">Título</Label>
+                  <Input 
+                    value={preview?.title || ''} 
+                    onChange={(e) => setPreview({...preview, title: e.target.value})}
+                  />
+                </div>
+                
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-xs font-bold uppercase text-muted-foreground mb-1 block">Palavra-Chave Foco</Label>
+                    <Input 
+                      value={preview?.seo_keyword || ''} 
+                      onChange={(e) => setPreview({...preview, seo_keyword: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs font-bold uppercase text-muted-foreground mb-1 block">Categoria</Label>
+                    <Badge variant="outline" className="h-10 px-4 w-full justify-start capitalize">
+                      {preview?.category}
+                    </Badge>
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-xs font-bold uppercase text-muted-foreground mb-1 block">Meta Descrição</Label>
+                  <textarea 
+                    className="w-full min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm"
+                    value={preview?.meta_description || ''} 
+                    onChange={(e) => setPreview({...preview, meta_description: e.target.value})}
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-xs font-bold uppercase text-muted-foreground mb-1 block">Conteúdo (HTML)</Label>
+                  <textarea 
+                    className="w-full min-h-[300px] rounded-md border border-input bg-background px-3 py-2 text-sm font-mono shadow-sm"
+                    value={preview?.content || ''} 
+                    onChange={(e) => setPreview({...preview, content: e.target.value})}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
