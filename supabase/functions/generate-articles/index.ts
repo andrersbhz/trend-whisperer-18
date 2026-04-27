@@ -448,7 +448,10 @@ REGRAS OBRIGATÓRIAS PARA CADA ARTIGO:
 
 5. SEO (Yoast + Jetpack): seo_keyword: cauda longa 3-5 palavras. seo_title: até 60 chars, keyword no início. meta_description: 120-155 chars, keyword na primeira metade, CTA sutil. excerpt: 2 frases (máx 160 chars). slug: keyword em formato URL.
 
-6. IMAGEM: image_alt descritivo com keyword. image_caption legenda informativa baseada em fatos.`;
+6. IMAGEM E SINCRONIA: 
+   - visual_elements: Liste 3 a 5 elementos visuais concretos (pessoas, objetos, cenário, ação).
+   - image_alt: Texto alternativo técnico descrevendo exatamente os visual_elements para acessibilidade e SEO.
+   - image_caption: Legenda jornalística que descreve a cena baseada nos visual_elements.`;
 
 function buildSystemPrompt(writerPrompt?: string | null): string {
   if (writerPrompt && writerPrompt.trim().length > 10) {
