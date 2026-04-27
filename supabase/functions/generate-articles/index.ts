@@ -830,6 +830,9 @@ serve(async (req) => {
           scheduled_at: scheduledAt.toISOString(),
           trending_topic: topic.topic,
           ai_provider: usedProvider,
+          visual_elements: parsed.visual_elements,
+          image_alt: parsed.image_alt,
+          image_caption: parsed.image_caption,
         }).select().single();
 
         if (insertError) {
