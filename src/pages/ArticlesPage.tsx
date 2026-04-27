@@ -57,7 +57,7 @@ const ArticlesPage = () => {
       const [articlesResult, countResult] = await Promise.all([
         supabase
           .from('articles')
-          .select('id, title, status, category, seo_keyword, meta_description, featured_image_url')
+          .select('id, title, status, category, seo_keyword, meta_description, featured_image_url, scheduled_at')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
           .range(from, to),
