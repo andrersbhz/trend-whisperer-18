@@ -308,7 +308,6 @@ export type Database = {
           google_analytics_property_id: string | null
           groq_api_key: string | null
           id: string
-          image_prompt_template: string | null
           instagram_account_id: string | null
           last_trends_fetch: string | null
           linkedin_access_token: string | null
@@ -338,7 +337,6 @@ export type Database = {
           google_analytics_property_id?: string | null
           groq_api_key?: string | null
           id?: string
-          image_prompt_template?: string | null
           instagram_account_id?: string | null
           last_trends_fetch?: string | null
           linkedin_access_token?: string | null
@@ -368,7 +366,6 @@ export type Database = {
           google_analytics_property_id?: string | null
           groq_api_key?: string | null
           id?: string
-          image_prompt_template?: string | null
           instagram_account_id?: string | null
           last_trends_fetch?: string | null
           linkedin_access_token?: string | null
