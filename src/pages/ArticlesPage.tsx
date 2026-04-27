@@ -708,9 +708,6 @@ const ArticlesPage = () => {
             <div className="p-6 space-y-6">
               {/* Preview Header - Main Image and SEO Highlights */}
               <div className="relative group">
-                <label className="absolute top-4 left-4 z-10 text-[10px] font-bold uppercase tracking-widest text-white drop-shadow-md bg-black/40 px-2 py-1 rounded backdrop-blur-sm border border-white/20">
-                  Imagem do Artigo (IA)
-                </label>
                 {preview?.featured_image_url ? (
                   <div className="aspect-[16/9] rounded-xl overflow-hidden border shadow-xl bg-muted relative group">
                     <img 
