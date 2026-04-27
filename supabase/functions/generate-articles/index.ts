@@ -498,7 +498,9 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { userId, topics: manualTopics, forceCategory } = await req.json();
+    const reqBody = await req.text();
+    if (!reqBody) throw new Error("Request body is empty");
+    const { userId, topics: manualTopics, forceCategory } = JSON.parse(reqBody);
     if (!userId) throw new Error("userId is required");
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
