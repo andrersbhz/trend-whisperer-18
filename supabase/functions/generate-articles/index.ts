@@ -314,8 +314,13 @@ async function callWithFallback(providers: ProviderConfig[], systemPrompt: strin
 
 // ── Image generation ─────────────────────────────────
 
-const IMAGE_PROMPT_TEMPLATE = (title: string, category: string) =>
-  `FOTOGRAFIA REALISTA EM 8K: Notícia sobre "${title}" (categoria: ${category}). ESTILO: Fotografia crua (RAW), fotojornalismo autêntico tirado com uma Nikon D850, lente 35mm f/1.8. CARACTERÍSTICAS: Ruído de sensor digital sutil, iluminação ambiente natural, sem filtros de embelezamento, texturas de pele humanas reais com poros e imperfeições, roupas com texturas de tecido visíveis, profundidade de campo óptica real. REQUISITOS: Proibido visual de arte digital, proibido visual de "IA generativa" perfeitinho, proibido rostos simétricos demais ou pele de plástico, proibido brilho excessivo ou saturação artificial, proibido textos ou logos na imagem, proporção 16:9. A imagem DEVE parecer uma foto tirada por um repórter no local, representando fielmente as pessoas reais e os times mencionados: ${title}.`;
+const IMAGE_PROMPT_TEMPLATE = (title: string, category: string): string =>
+  `FOTOGRAFIA REALISTA (ESTILO AGÊNCIA DE NOTÍCIAS): Notícia real sobre "${title}" (categoria: ${category}). 
+   ESTILO VISUAL: Fotografia jornalística crua (RAW), capturada por repórter em campo. 
+   TÉCNICA: Câmera Nikon D850 ou Canon EOS-1D X Mark III, ISO alto com ruído de granulação natural sutil, lente 35mm f/2.8 ou 50mm f/1.8 com profundidade de campo óptica real. 
+   DETALHES OBRIGATÓRIOS: Textura de pele humana real com poros visíveis, suor, rugas e imperfeições naturais. Roupas com tramas de tecido nítidas. Iluminação de ambiente comum (sol direto ou luz interna fluorescente), sem tratamento de cor artístico.
+   PROIBIDO (NEGATIVO): Sem aspecto 3D, sem renderização CGI, sem filtros de "suavização de pele", sem rostos simétricos de boneco, sem cores vibrantes ou saturadas, sem iluminação de estúdio perfeita, sem retoque digital, sem visual de "arte de IA". 
+   A imagem DEVE parecer uma foto real e espontânea para jornalismo profissional.`;
 
 const SENSITIVE_TERMS = /\b(fraude|lavagem|estupro|abuso|terror|atentado|guerra|propina|suborno)\b/i;
 
