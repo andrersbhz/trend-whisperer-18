@@ -314,16 +314,12 @@ async function callWithFallback(providers: ProviderConfig[], systemPrompt: strin
 
 // ── Image generation ─────────────────────────────────
 
-const IMAGE_PROMPT_TEMPLATE = (title: string, category: string, content: string): string => {
-  const cleanContent = content.replace(/<[^>]*>/g, "").substring(0, 500);
-  return `FOTOGRAFIA REALISTA HIPER-DETALHADA: Cena real de fotojornalismo.
-   TÍTULO: "${title}"
-   CONTEXTO: "${cleanContent}"
-   CATEGORIA: ${category}
-   ESTILO: Fotografia documental autêntica, estilo Reuters/Associated Press, tirada em campo.
-   QUALIDADE DE IMAGEM: Captura em 8K, RAW, sem edição. Câmera Full Frame, lente prime (35mm ou 50mm). Ruído digital natural em ISO alto, sem suavização de ruído por software. 
-   REALISMO OBRIGATÓRIO: Pele com imperfeições, poros dilatados, suor, brilho oleoso natural, rugas de expressão. Iluminação natural de ambiente (luz dura do sol ou luz interna precária), sombras reais. 
-   PROIBIÇÃO TOTAL (ULTRA-CRÍTICO): ABSOLUTAMENTE NADA de estilo 3D, NADA de renderização CGI, NADA de aspecto plástico, NADA de "filtro de beleza", NADA de rostos perfeitos ou simétricos, NADA de cores vibrantes de anime ou videogame.`;
+const IMAGE_PROMPT_TEMPLATE = (title: string, category: string): string => {
+  return `FOTOGRAFIA REALISTA: Foto de imprensa autêntica para o título: "${title}". 
+   ESTILO: Fotografia comum de fotojornalismo brasileiro (estilo Reuters/Associated Press). 
+   AMBIENTE: Luz natural, cena real do dia a dia, tirada em local público ou ambiente profissional.
+   REQUISITOS: Texturas humanas reais, pele com poros, iluminação natural, sem filtros, sem retoques.
+   PROIBIÇÃO: Absolutamente nada de estilo 3D, CGI, renderização digital ou aspecto plástico. Deve parecer uma foto tirada por um celular ou câmera DSLR comum.`;
 };
 
 const SENSITIVE_TERMS = /\b(fraude|lavagem|estupro|abuso|terror|atentado|guerra|propina|suborno)\b/i;
