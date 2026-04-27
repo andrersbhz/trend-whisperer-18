@@ -23,6 +23,7 @@ const ArticlesPage = () => {
   const { toast } = useToast();
   const [articles, setArticles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [initialFetchDone, setInitialFetchDone] = useState(false);
   const [publishing, setPublishing] = useState<string | null>(null);
   const [retrying, setRetrying] = useState<string | null>(null);
   const [preview, setPreview] = useState<any | null>(null);
@@ -37,7 +38,7 @@ const ArticlesPage = () => {
   const [userCategories, setUserCategories] = useState<string[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(false);
   const [errorState, setErrorState] = useState<string | null>(null);
-  const [diagMetrics, setDiagMetrics] = useState<any[]>(diagnostics.getMetrics());
+  const [diagMetrics, setDiagMetrics] = useState<any[]>([]);
   const [showDiagnostics, setShowDiagnostics] = useState(false);
 
   const PAGE_SIZE = 20;
