@@ -603,7 +603,24 @@ const ArticlesPage = () => {
           )}
         </TabsContent>
 
-        <TabsContent value="categorias">
+        <TabsContent value="agendados">
+          {articles.filter(a => a.scheduled_at && a.status !== 'published').length === 0 ? (
+            <Card className="glass-card">
+              <CardContent className="py-16 text-center">
+                <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-foreground font-medium">Nenhum artigo agendado</p>
+                <p className="text-sm text-muted-foreground mt-1">Veja a aba de Tendências para agendar novos posts</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-4">
+              {articles.filter(a => a.scheduled_at && a.status !== 'published').map((article, idx) => (
+                <ArticleCard key={article.id} article={article} idx={idx} />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {userCategories.map((category) => (
               <Card key={category} className="glass-card hover-lift">
