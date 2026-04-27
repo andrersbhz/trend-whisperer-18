@@ -325,7 +325,7 @@ const ArticlesPage = () => {
     failed: 'Falhou',
   };
 
-  if (loading) {
+  if (loading && articles.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
