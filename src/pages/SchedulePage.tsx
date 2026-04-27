@@ -464,6 +464,16 @@ const SchedulePage = () => {
                         <Button
                           size="sm"
                           variant="ghost"
+                          className="h-8 px-2 text-primary hover:text-primary/80"
+                          onClick={() => handlePreview(article.id)}
+                          title="Visualizar e Editar Artigo"
+                        >
+                          <Eye className="h-4 w-4" />
+                          <span className="ml-1 text-[10px] hidden sm:inline">Visualizar</span>
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
                           className={`h-8 px-2 ${article.is_approved ? 'text-success hover:text-success/80' : 'text-muted-foreground hover:text-foreground'}`}
                           onClick={() => handleToggleApproval(article.id, !!article.is_approved)}
                           title={article.is_approved ? 'Clique para não postar' : 'Clique para postar'}
@@ -479,53 +489,7 @@ const SchedulePage = () => {
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
-                        <Badge
-                          className={
-                            article.status === 'published'
-                              ? 'bg-success/20 text-success'
-                              : article.is_approved === false
-                                ? 'bg-muted text-muted-foreground'
-                                : 'bg-primary/20 text-primary'
-                          }
-                          variant="secondary"
-                        >
-                          {article.status === 'published' ? 'Publicado' : article.is_approved === false ? 'Pausado' : 'Agendado'}
-                        </Badge>
                       </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
-      <Dialog
-        open={previewOpen}
-        onOpenChange={(open) => {
-          setPreviewOpen(open);
-          if (!open) setPreview(null);
-        }}
-      >
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto glass-card border-border p-0">
-          <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b p-4 flex items-center justify-between">
-            <DialogHeader className="p-0">
-              <DialogTitle className="text-lg font-bold">Editar Agendamento</DialogTitle>
-            </DialogHeader>
-            <Button 
-              onClick={() => handleUpdateArticle(preview.id, { 
-                title: preview.title, 
-                content: preview.content,
-                meta_description: preview.meta_description,
-                seo_keyword: preview.seo_keyword
-              })}
-              disabled={previewLoading}
-              className="gradient-primary"
-            >
-              {previewLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-              Salvar Alterações
-            </Button>
-          </div>
           
           {previewLoading && !preview ? (
             <div className="flex items-center justify-center py-20">
