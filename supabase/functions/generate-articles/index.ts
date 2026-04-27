@@ -383,11 +383,11 @@ async function generateImageOpenAI(apiKey: string, title: string, category: stri
 }
 
 async function generateImageGemini(apiKey: string, title: string, category: string, visualElements: string): Promise<string | null> {
-  const models = ["gemini-2.0-flash-exp", "gemini-1.5-pro"]; 
+  const models = ["gemini-1.5-flash", "gemini-1.5-pro"]; 
   for (const model of models) {
     try {
       console.log(`[Image] Attempting generation with Gemini model: ${model}`);
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      const url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`;
       const body = {
         contents: [{ parts: [{ text: buildSafeImagePrompt(title, category, visualElements) }] }],
       };
