@@ -315,17 +315,17 @@ async function callWithFallback(providers: ProviderConfig[], systemPrompt: strin
 // ── Image generation ─────────────────────────────────
 
 const IMAGE_PROMPT_TEMPLATE = (title: string, category: string) =>
-  `FOTOGRAFIA REALISTA EM 8K: Notícia sobre "${title}" (categoria: ${category}). ESTILO: Fotojornalismo editorial autêntico tirado com uma Sony A7R IV, lente de 35mm, f/4.0. CARACTERÍSTICAS: Iluminação natural do dia, detalhes nítidos de textura de pele e tecido, profundidade de campo realista (bokeh suave no fundo), cores naturais e equilibradas. REQUISITOS: Proibido visual de arte digital, proibido CGI, proibido renderização 3D, proibido pessoas com pele de plástico, proibido textos ou logos na imagem, proporção 16:9. A imagem DEVE ser fiel ao texto e representar exatamente as pessoas e os detalhes mencionados no título: ${title}.`;
+  `FOTOGRAFIA REALISTA EM 8K: Notícia sobre "${title}" (categoria: ${category}). ESTILO: Fotojornalismo editorial autêntico tirado com uma Sony A7R IV, lente de 35mm, f/4.0. CARACTERÍSTICAS: Iluminação natural do dia, detalhes nítidos de textura de pele e tecido, profundidade de campo realista (bokeh suave no fundo), cores naturais e equilibradas. REQUISITOS: Proibido visual de arte digital, proibido CGI, proibido renderização 3D, proibido pessoas com pele de plástico, proibido textos ou logos na imagem, proporção 16:9. A imagem DEVE ser fiel ao texto e representar exatamente as pessoas reais, times de futebol com uniformes corretos e os detalhes mencionados no título. Se citar uma pessoa pública ou time, a imagem deve ser uma representação fotográfica fiel de como eles são na realidade: ${title}.`;
 
 const SENSITIVE_TERMS = /\b(fraude|lavagem|estupro|abuso|terror|atentado|guerra|propina|suborno)\b/i;
 
 const SAFE_CATEGORY_PROMPT: Record<string, string> = {
-  esportes: "Uma fotografia real de imprensa de um estádio de esportes moderno durante o dia, luz natural, fotografia profissional.",
-  politica: "Uma fotografia real de uma fachada de palácio governamental ou congresso nacional, céu natural, tirada com DSLR profissional.",
-  policia: "Uma fotografia real de uma viatura policial moderna em uma rua de cidade, iluminação de dia, foco nítido.",
-  saude: "Uma fotografia real de um ambiente médico limpo, iluminação hospitalar natural, atmosfera profissional.",
-  celebridades: "Uma fotografia real de uma entrada de evento de luxo, luzes de flashes ao fundo, texturas reais de tapete vermelho.",
-  financas: "Uma fotografia real de um distrito financeiro com prédios de vidro, luz da manhã, ambiente de negócios autêntico.",
+  esportes: "Uma fotografia real de imprensa de um estádio de esportes moderno durante o dia com jogadores reais em campo, uniformes de times brasileiros autênticos, luz natural, fotografia profissional.",
+  politica: "Uma fotografia real de uma fachada de palácio governamental ou congresso nacional no Brasil, céu natural, tirada com DSLR profissional.",
+  policia: "Uma fotografia real de uma viatura policial brasileira moderna em uma rua de cidade, iluminação de dia, foco nítido, atmosfera de fotojornalismo.",
+  saude: "Uma fotografia real de um ambiente médico limpo, profissionais de saúde brasileiros, iluminação hospitalar natural, atmosfera profissional.",
+  celebridades: "Uma fotografia real de uma entrada de evento de luxo no Brasil, celebridades no tapete vermelho, luzes de flashes ao fundo.",
+  financas: "Uma fotografia real de um distrito financeiro de São Paulo com prédios de vidro, luz da manhã, ambiente de negócios autêntico.",
   tecnologia: "Uma fotografia macro real de componentes tecnológicos ou escritório moderno com iluminação natural.",
   entretenimento: "Uma fotografia real de um palco de concerto com fumaça e luzes reais, cores naturais de show.",
 };
