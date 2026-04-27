@@ -753,24 +753,25 @@ serve(async (req) => {
           continue;
         }
 
-        // GERAÇÃO DE IMAGEM: ChatGPT (DALL-E 3) como principal, Gemini como fallback
+        // GERAÇÃO DE IMAGEM: a imagem segue o conteúdo do artigo + perfil do escritor (writer_prompt)
         let featuredImageUrl: string | null = null;
-        
-        // 1. ChatGPT (DALL-E 3) agora é o principal para imagens
+        const writerPromptForImage = settings?.writer_prompt || null;
+
+        // 1. ChatGPT (DALL-E 3) como principal para imagens
         if (openaiApiKey) {
-          try { 
-            featuredImageUrl = await generateImageOpenAI(openaiApiKey, parsed.title, topic.category, parsed.visual_elements); 
-          } catch (imgErr) { 
-            console.warn(`[Image] DALL-E falhou para "${parsed.title}":`, imgErr); 
+          try {
+            featuredImageUrl = await generateImageOpenAI(openaiApiKey, parsed.title, parsed.visual_elements, writerPromptForImage);
+          } catch (imgErr) {
+            console.warn(`[Image] DALL-E falhou para "${parsed.title}":`, imgErr);
           }
         }
-        
+
         // 2. Gemini como fallback para imagens
         if (!featuredImageUrl && geminiApiKey) {
-          try { 
-            featuredImageUrl = await generateImageGemini(geminiApiKey, parsed.title, topic.category, parsed.visual_elements); 
-          } catch (imgErr) { 
-            console.warn(`[Image] Gemini fallback falhou para "${parsed.title}":`, imgErr); 
+          try {
+            featuredImageUrl = await generateImageGemini(geminiApiKey, parsed.title, parsed.visual_elements, writerPromptForImage);
+          } catch (imgErr) {
+            console.warn(`[Image] Gemini fallback falhou para "${parsed.title}":`, imgErr);
           }
         }
         
