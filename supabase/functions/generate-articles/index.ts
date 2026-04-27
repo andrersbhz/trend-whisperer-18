@@ -315,8 +315,9 @@ async function callWithFallback(providers: ProviderConfig[], systemPrompt: strin
 
 // ── Image generation ─────────────────────────────────
 
-const IMAGE_PROMPT_TEMPLATE = (title: string, category: string): string => {
+const IMAGE_PROMPT_TEMPLATE = (title: string, category: string, visualElements: string): string => {
   return `FOTOGRAFIA REALISTA: Foto de imprensa autêntica para o título: "${title}". 
+   CENA E ELEMENTOS VISUAIS: ${visualElements || "Cena jornalística comum"}.
    ESTILO: Fotografia comum de fotojornalismo brasileiro (estilo Reuters/Associated Press). 
    AMBIENTE: Luz natural, cena real do dia a dia, tirada em local público ou ambiente profissional.
    REQUISITOS: Texturas humanas reais, pele com poros, iluminação natural, sem filtros, sem retoques.
