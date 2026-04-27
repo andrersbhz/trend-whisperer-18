@@ -547,19 +547,23 @@ serve(async (req) => {
 
     const providers: ProviderConfig[] = [];
     // Ordem de redundância ajustada:
-    // 1. Groq (Texto - Mais rápido)
-    if (groqApiKey) {
-      providers.push({ name: "Groq", call: (s, u) => callGroqDirect(groqApiKey!, s, u) });
-    }
+    // Ordem de execução: 1. Gemini, 2. OpenAI, 3. Groq
     
-    // 2. Gemini (Principal fallback)
+    // 1. Gemini (Agora o primeiro a ser executado)
     if (geminiApiKey) {
-      console.log(`[Pipeline] Adding Gemini provider with key ${geminiApiKey.substring(0, 8)}...`);
+      console.log(`[Pipeline] Adding Gemini provider as primary execution...`);
       providers.push({ name: "Gemini", call: (s, u) => callGeminiDirect(geminiApiKey!, s, u) });
     }
     
-    // 3. OpenAI / ChatGPT (Texto fallback)
-    if (openaiApiKey) providers.push({ name: "OpenAI", call: (s, u) => callOpenAIDirect(openaiApiKey!, s, u) });
+    // 2. OpenAI / ChatGPT (Segundo)
+    if (openaiApiKey) {
+      providers.push({ name: "OpenAI", call: (s, u) => callOpenAIDirect(openaiApiKey!, s, u) });
+    }
+    
+    // 3. Groq (Terceiro - Fallback de texto)
+    if (groqApiKey) {
+      providers.push({ name: "Groq", call: (s, u) => callGroqDirect(groqApiKey!, s, u) });
+    }
     
     // 4. Azure Copilot (Final fallback)
     if (azureApiKey && settings?.azure_openai_endpoint && settings?.azure_openai_deployment_name) {
