@@ -405,7 +405,25 @@ const ArticlesPage = () => {
                     WP: ✅ | FB: ✅ | IG: ✅
                   </Badge>
                 )}
-                <span className="text-[10px] sm:text-xs text-muted-foreground capitalize">{article.category}</span>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <span className="text-[10px] sm:text-xs text-muted-foreground capitalize cursor-pointer hover:text-primary transition-colors flex items-center gap-1">
+                      {article.category}
+                      <ChevronDown className="h-2.5 w-2.5" />
+                    </span>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="max-h-[300px] overflow-y-auto">
+                    {userCategories.map((cat) => (
+                      <DropdownMenuItem 
+                        key={cat} 
+                        onClick={() => handleUpdateCategory(article.id, cat)}
+                        className={`capitalize text-xs ${article.category === cat ? 'bg-primary/10 text-primary' : ''}`}
+                      >
+                        {cat}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
               <h3 className="font-semibold text-foreground text-sm sm:text-base line-clamp-2 sm:truncate leading-snug">{article.title}</h3>
               {article.seo_keyword && (
