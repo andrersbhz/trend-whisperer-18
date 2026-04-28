@@ -9,7 +9,12 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import type { UserSettings } from '@/pages/SettingsPage';
 import { forwardRef } from 'react';
 
-const allCategories = [
+import { useState, useMemo } from 'react';
+import { Plus, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+
+const defaultCategories = [
   { id: 'esportes', label: '⚽ Esportes' },
   { id: 'politica', label: '🏛️ Política' },
   { id: 'policia', label: '🚔 Polícia' },
@@ -24,11 +29,37 @@ interface Props {
 }
 
 const AutomationSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChange }, ref) => {
-  const toggleCategory = (cat: string) => {
-    const newCategories = settings.categories.includes(cat)
-      ? settings.categories.filter((c) => c !== cat)
-      : [...settings.categories, cat];
+  const [newCategory, setNewCategory] = useState('');
+
+  const availableCategories = useMemo(() => {
+    // Current categories in settings + default ones not in settings
+    const currentCategories = settings.categories.map(cat => {
+      const def = defaultCategories.find(d => d.id === cat);
+      return { id: cat, label: def ? def.label : cat };
+    });
+    
+    return currentCategories;
+  }, [settings.categories]);
+
+  const toggleCategory = (catId: string) => {
+    const newCategories = settings.categories.includes(catId)
+      ? settings.categories.filter((c) => c !== catId)
+      : [...settings.categories, catId];
     onChange({ categories: newCategories });
+  };
+
+  const addCustomCategory = () => {
+    const trimmed = newCategory.trim().toLowerCase();
+    if (!trimmed) return;
+    
+    if (!settings.categories.includes(trimmed)) {
+      onChange({ categories: [...settings.categories, trimmed] });
+    }
+    setNewCategory('');
+  };
+
+  const removeCategory = (catId: string) => {
+    onChange({ categories: settings.categories.filter(c => c !== catId) });
   };
 
   return (
