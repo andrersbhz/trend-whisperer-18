@@ -300,25 +300,22 @@ const ArticlesPage = () => {
   };
 
   const handleCleanupOld = async () => {
-    if (!user) return;
-    if (!confirm('Apagar TODOS os artigos com mais de 3 dias? Esta ação não pode ser desfeita.')) return;
-    setCleaningUp(true);
+    // ... keep existing code
+  };
+
+  const handleUpdateCategory = async (articleId: string, newCategory: string) => {
     try {
-      const data = await runBackendQuery(() =>
-        supabase.functions.invoke('cleanup-old-articles', {
-          body: { userId: user.id },
-        }),
-      );
-      const deleted = Number(data?.deleted ?? 0);
-      toast({
-        title: deleted > 0 ? 'Limpeza concluída' : 'Nada para apagar',
-        description: data?.message || `${deleted} artigos removidos.`,
-      });
-      fetchArticles();
+      const { error } = await supabase
+        .from('articles')
+        .update({ category: newCategory })
+        .eq('id', articleId);
+
+      if (error) throw error;
+
+      setArticles(prev => prev.map(a => a.id === articleId ? { ...a, category: newCategory } : a));
+      toast({ title: 'Categoria atualizada', description: `Artigo movido para ${newCategory}` });
     } catch (error) {
-      toast({ title: 'Erro', description: getErrorMessage(error), variant: 'destructive' });
-    } finally {
-      setCleaningUp(false);
+      toast({ title: 'Erro ao atualizar categoria', description: getErrorMessage(error), variant: 'destructive' });
     }
   };
 
