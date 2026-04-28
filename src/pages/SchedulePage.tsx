@@ -539,6 +539,17 @@ const SchedulePage = () => {
           ) : (
             <div className="p-6 space-y-6">
               <div className="space-y-4">
+                <Label className="text-xs font-bold uppercase text-muted-foreground block">Imagem de Destaque</Label>
+                <ImageUpload 
+                  articleId={preview?.id} 
+                  currentImageUrl={preview?.featured_image_url} 
+                  onUploadSuccess={(url) => {
+                    setPreview(prev => ({ ...prev, featured_image_url: url }));
+                    setArticles(prev => prev.map(a => a.id === preview.id ? { ...a, featured_image_url: url } : a));
+                  }}
+                />
+              </div>
+              <div className="space-y-4">
                 <div>
                   <Label className="text-xs font-bold uppercase text-muted-foreground mb-1 block">Título</Label>
                   <Input 
