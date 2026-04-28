@@ -374,6 +374,7 @@ const ArticlesPage = () => {
           <div className="relative w-20 sm:w-28 shrink-0 bg-secondary/40 overflow-hidden">
             {article.featured_image_url ? (
               <img
+                key={article.featured_image_url}
                 src={article.featured_image_url}
                 alt={article.title}
                 className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300 opacity-0"
