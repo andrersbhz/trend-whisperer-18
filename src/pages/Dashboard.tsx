@@ -262,6 +262,23 @@ const Dashboard = () => {
     }
   };
 
+  const handleUpdateCategory = async (articleId: string, newCategory: string) => {
+    try {
+      const { error } = await supabase
+        .from('articles')
+        .update({ category: newCategory })
+        .eq('id', articleId);
+
+      if (error) throw error;
+
+      setRecentArticles(prev => prev.map(a => a.id === articleId ? { ...a, category: newCategory } : a));
+      toast({ title: 'Categoria atualizada', description: `Artigo movido para ${newCategory}` });
+      fetchStats(); // Refresh stats to update the category counts
+    } catch (error) {
+      toast({ title: 'Erro ao atualizar categoria', description: getErrorMessage(error), variant: 'destructive' });
+    }
+  };
+
   const statusColors: Record<string, string> = {
     draft: 'bg-muted text-muted-foreground',
     generating: 'bg-warning/20 text-warning',
