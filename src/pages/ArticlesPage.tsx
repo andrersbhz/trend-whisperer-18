@@ -371,13 +371,13 @@ const ArticlesPage = () => {
     >
       <CardContent className="p-0">
         <div className="flex items-stretch min-h-[80px]">
-          <div className="relative w-20 sm:w-28 shrink-0 bg-secondary/40 overflow-hidden">
+          <div className="relative w-20 sm:w-28 shrink-0 bg-secondary/40 overflow-hidden group cursor-pointer" onClick={() => handlePreview(article.id)}>
             {article.featured_image_url ? (
               <img
                 key={article.featured_image_url}
                 src={article.featured_image_url}
                 alt={article.title}
-                className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300 opacity-0"
+                className="absolute inset-0 w-full h-full object-cover transition-all duration-300 opacity-0 group-hover:scale-110"
                 onLoad={(e) => (e.currentTarget.style.opacity = "1")}
                 loading="lazy"
               />
@@ -386,6 +386,9 @@ const ArticlesPage = () => {
                 <FileText className="h-6 w-6 text-muted-foreground/60" />
               </div>
             )}
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              <ImagePlus className="h-5 w-5 text-white" />
+            </div>
           </div>
 
           <div className="flex-1 min-w-0 p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-3">
