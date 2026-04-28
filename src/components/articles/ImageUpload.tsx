@@ -1,9 +1,19 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Upload, X, Image as ImageIcon } from 'lucide-react';
+import { Loader2, Upload, X, Image as ImageIcon, Crop } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import Cropper from 'react-easy-crop';
+import { getCroppedImg } from '@/lib/image-utils';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Slider } from '@/components/ui/slider';
 
 interface ImageUploadProps {
   articleId: string;
@@ -16,13 +26,36 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
   const { toast } = useToast();
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentImageUrl || null);
+  
+  // Cropping states
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
+  const [isCropDialogOpen, setIsCropDialogOpen] = useState(false);
 
-  const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const onCropComplete = useCallback((_croppedArea: any, croppedAreaPixels: any) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  }, []);
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files.length > 0) {
+      const file = event.target.files[0];
+      const reader = new FileReader();
+      reader.addEventListener('load', () => {
+        setSelectedImage(reader.result as string);
+        setIsCropDialogOpen(true);
+      });
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!selectedImage || !croppedAreaPixels) return;
+
     try {
       setUploading(true);
-      if (!event.target.files || event.target.files.length === 0) {
-        return;
-      }
+      setIsCropDialogOpen(false);
 
       if (!user) {
         toast({
@@ -33,17 +66,20 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
         return;
       }
 
-      const file = event.target.files[0];
-      const fileExt = file.name.split('.').pop();
+      const croppedImageBlob = await getCroppedImg(selectedImage, croppedAreaPixels);
+      if (!croppedImageBlob) throw new Error("Erro ao processar imagem");
+
+      const fileExt = 'jpg';
       const filePath = `${user.id}/${articleId}/${Math.random()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from('article-images')
-        .upload(filePath, file);
+        .upload(filePath, croppedImageBlob, {
+          contentType: 'image/jpeg',
+          upsert: true
+        });
 
-      if (uploadError) {
-        throw uploadError;
-      }
+      if (uploadError) throw uploadError;
 
       const { data: { publicUrl } } = supabase.storage
         .from('article-images')
@@ -54,12 +90,15 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
         .update({ featured_image_url: publicUrl })
         .eq('id', articleId);
 
-      if (updateError) {
-        throw updateError;
-      }
+      if (updateError) throw updateError;
 
       setPreviewUrl(publicUrl);
       onUploadSuccess(publicUrl);
+      
+      // Clear cropping states
+      setSelectedImage(null);
+      setCroppedAreaPixels(null);
+
       toast({
         title: "Sucesso",
         description: "Imagem enviada com sucesso!",
@@ -147,11 +186,66 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
             type="file"
             className="absolute inset-0 opacity-0 cursor-pointer"
             accept="image/*"
-            onChange={handleUpload}
+            onChange={handleFileSelect}
             disabled={uploading}
           />
         </Button>
       </div>
+
+      <Dialog open={isCropDialogOpen} onOpenChange={setIsCropDialogOpen}>
+        <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden bg-background border-primary/20">
+          <DialogHeader className="p-6 pb-0">
+            <DialogTitle>Ajustar Imagem (16:9)</DialogTitle>
+          </DialogHeader>
+          
+          <div className="p-6 space-y-6">
+            <div className="relative w-full aspect-video bg-black rounded-md overflow-hidden">
+              {selectedImage && (
+                <Cropper
+                  image={selectedImage}
+                  crop={crop}
+                  zoom={zoom}
+                  aspect={16 / 9}
+                  onCropChange={setCrop}
+                  onCropComplete={onCropComplete}
+                  onZoomChange={setZoom}
+                />
+              )}
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Zoom</span>
+                <span className="font-medium">{Math.round(zoom * 100)}%</span>
+              </div>
+              <Slider
+                value={[zoom]}
+                min={1}
+                max={3}
+                step={0.1}
+                onValueChange={(value) => setZoom(value[0])}
+                className="w-full"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="p-6 pt-0 flex gap-2 sm:justify-end">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsCropDialogOpen(false);
+                setSelectedImage(null);
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button onClick={handleUpload} className="gap-2">
+              <Crop className="h-4 w-4" />
+              Cortar e Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
