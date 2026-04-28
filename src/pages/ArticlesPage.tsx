@@ -419,6 +419,15 @@ const ArticlesPage = () => {
                 onClick={() => handlePreview(article.id)} 
                 className="h-8 gap-2 text-xs font-semibold border-primary/30 text-primary hover:bg-primary/10 shadow-sm"
               >
+                <ImageIcon className="h-3.5 w-3.5" />
+                <span className="hidden xs:inline">Upload</span>
+              </Button>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={() => handlePreview(article.id)} 
+                className="h-8 gap-2 text-xs font-semibold border-primary/30 text-primary hover:bg-primary/10 shadow-sm"
+              >
                 <Eye className="h-3.5 w-3.5" />
                 Revisar
               </Button>
