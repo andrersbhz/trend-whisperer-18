@@ -709,29 +709,16 @@ const ArticlesPage = () => {
           ) : (
             <div className="p-6 space-y-6">
               {/* Preview Header - Main Image and SEO Highlights */}
-              <div className="relative group">
-                {preview?.featured_image_url ? (
-                  <div className="aspect-[16/9] rounded-xl overflow-hidden border shadow-xl bg-muted relative group">
-                    <img 
-                      src={preview.featured_image_url} 
-                      alt={preview.title} 
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60" />
-                    <div className="absolute bottom-6 left-6 right-6">
-                      <h2 className="text-2xl md:text-3xl font-bold text-white leading-tight drop-shadow-lg line-clamp-2">
-                        {preview?.title}
-                      </h2>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="aspect-[16/9] rounded-xl bg-secondary/30 flex flex-col items-center justify-center border-2 border-dashed border-primary/20 gap-3">
-                    <div className="p-4 rounded-full bg-primary/10">
-                      <ImagePlus className="h-8 w-8 text-primary/60" />
-                    </div>
-                    <p className="text-sm font-medium text-muted-foreground">Imagem não gerada para este artigo</p>
-                  </div>
-                )}
+              <div className="space-y-4">
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground block">Imagem de Destaque</Label>
+                <ImageUpload 
+                  articleId={preview?.id} 
+                  currentImageUrl={preview?.featured_image_url} 
+                  onUploadSuccess={(url) => {
+                    setPreview(prev => ({ ...prev, featured_image_url: url }));
+                    setArticles(prev => prev.map(a => a.id === preview.id ? { ...a, featured_image_url: url } : a));
+                  }}
+                />
               </div>
 
               {/* SEO Summary Card */}
