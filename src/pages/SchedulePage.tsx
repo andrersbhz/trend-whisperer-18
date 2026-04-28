@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, Clock, Calendar, Save, Bot, Trash2, CheckCircle, XCircle, Trash, Eye, FileEdit, Send, Image as ImageIcon } from 'lucide-react';
+import { Loader2, Clock, Calendar, Save, Bot, Trash2, CheckCircle, XCircle, Trash, Eye, FileEdit, Send, Image as ImageIcon, ImagePlus } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
@@ -413,17 +413,23 @@ const SchedulePage = () => {
                     />
                     <div className="min-w-0 flex-1 flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3 min-w-0 flex-1">
-                        <div className="relative w-12 h-12 shrink-0 bg-secondary/40 rounded overflow-hidden hidden sm:flex items-center justify-center">
+                        <div 
+                          className="relative w-12 h-12 shrink-0 bg-secondary/40 rounded overflow-hidden hidden sm:flex items-center justify-center group cursor-pointer"
+                          onClick={() => handlePreview(article.id)}
+                        >
                           {article.featured_image_url ? (
                             <img
                               key={article.featured_image_url}
                               src={article.featured_image_url}
                               alt=""
-                              className="absolute inset-0 w-full h-full object-cover"
+                              className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-110"
                             />
                           ) : (
                             <ImageIcon className="h-4 w-4 text-muted-foreground/40" />
                           )}
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <ImagePlus className="h-4 w-4 text-white" />
+                          </div>
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="font-medium text-foreground truncate">{article.title}</p>
@@ -470,6 +476,16 @@ const SchedulePage = () => {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 px-2 text-primary hover:text-primary/80"
+                          onClick={() => handlePreview(article.id)}
+                          title="Upload de Imagem"
+                        >
+                          <ImageIcon className="h-4 w-4" />
+                          <span className="ml-1 text-[10px] hidden sm:inline">Upload</span>
+                        </Button>
                         <Button
                           size="sm"
                           variant="ghost"
