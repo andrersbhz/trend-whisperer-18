@@ -471,7 +471,25 @@ const SchedulePage = () => {
                         <div className="min-w-0 flex-1">
                           <p className="font-medium text-foreground truncate">{article.title}</p>
                           <div className="flex items-center gap-2 mt-1 flex-wrap">
-                            <Badge variant="secondary">{article.category}</Badge>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Badge variant="secondary" className="capitalize cursor-pointer hover:bg-secondary/80 transition-colors flex items-center gap-1">
+                                  {article.category}
+                                  <ChevronDown className="h-3 w-3" />
+                                </Badge>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="start" className="max-h-[300px] overflow-y-auto">
+                                {userCategories.map((cat) => (
+                                  <DropdownMenuItem 
+                                    key={cat} 
+                                    onClick={() => handleUpdateCategory(article.id, cat)}
+                                    className={`capitalize text-xs ${article.category === cat ? 'bg-primary/10 text-primary' : ''}`}
+                                  >
+                                    {cat}
+                                  </DropdownMenuItem>
+                                ))}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                             {editingId === article.id ? (
                               <div className="flex items-center gap-1.5">
                                 <Input
