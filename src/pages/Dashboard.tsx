@@ -39,6 +39,7 @@ const Dashboard = () => {
   const [promptLoaded, setPromptLoaded] = useState(false);
   const [trendingList, setTrendingList] = useState<any[]>([]);
   const [loadingTrends, setLoadingTrends] = useState(true);
+  const [userCategories, setUserCategories] = useState<string[]>([]);
 
   const fetchStats = async () => {
     if (!user) return;
