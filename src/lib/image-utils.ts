@@ -32,7 +32,8 @@ export async function getCroppedImg(
   imageSrc: string,
   pixelCrop: { x: number; y: number; width: number; height: number },
   rotation = 0,
-  flip = { horizontal: false, vertical: false }
+  flip = { horizontal: false, vertical: false },
+  targetWidth = 1200 // Default target width for high quality WordPress images
 ): Promise<Blob | null> {
   const image = await createImage(imageSrc);
   const canvas = document.createElement('canvas');
@@ -65,18 +66,20 @@ export async function getCroppedImg(
   ctx.drawImage(image, 0, 0);
 
   const croppedCanvas = document.createElement('canvas');
-
   const croppedCtx = croppedCanvas.getContext('2d');
 
   if (!croppedCtx) {
     return null;
   }
 
-  // Set the size of the cropped canvas
-  croppedCanvas.width = pixelCrop.width;
-  croppedCanvas.height = pixelCrop.height;
+  // Calculate the target height based on 16:9 ratio if we're enforcing it
+  const targetHeight = Math.round(targetWidth * (9 / 16));
 
-  // Draw the cropped image onto the new canvas
+  // Set the size of the cropped canvas to the target dimensions for better quality/standardization
+  croppedCanvas.width = targetWidth;
+  croppedCanvas.height = targetHeight;
+
+  // Draw the cropped image onto the new canvas, scaling it to target dimensions
   croppedCtx.drawImage(
     canvas,
     pixelCrop.x,
@@ -85,8 +88,8 @@ export async function getCroppedImg(
     pixelCrop.height,
     0,
     0,
-    pixelCrop.width,
-    pixelCrop.height
+    targetWidth,
+    targetHeight
   );
 
   // As a blob
@@ -97,6 +100,7 @@ export async function getCroppedImg(
       } else {
         reject(new Error('Canvas is empty'));
       }
-    }, 'image/jpeg', 0.95);
+    }, 'image/jpeg', 0.90); // 90% quality is a good balance
   });
 }
+
