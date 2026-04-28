@@ -91,7 +91,37 @@ const SchedulePage = () => {
     };
 
     fetchData();
+    fetchCategories();
   }, [toast, user]);
+
+  const fetchCategories = async () => {
+    if (!user) return;
+    try {
+      const { data } = await supabase.from('user_settings').select('categories').eq('user_id', user.id).maybeSingle();
+      setUserCategories(data?.categories || ['esportes', 'politica', 'policia', 'saude', 'celebridades', 'financas']);
+    } catch (e) {
+      console.error('Error fetching categories', e);
+    }
+  };
+
+  const handleUpdateCategory = async (articleId: string, newCategory: string) => {
+    try {
+      const { error } = await supabase
+        .from('articles')
+        .update({ category: newCategory })
+        .eq('id', articleId);
+
+      if (error) throw error;
+
+      setArticles(prev => prev.map(a => a.id === articleId ? { ...a, category: newCategory } : a));
+      if (preview?.id === articleId) {
+        setPreview(prev => ({ ...prev, category: newCategory }));
+      }
+      toast({ title: 'Categoria atualizada', description: `Artigo movido para ${newCategory}` });
+    } catch (error) {
+      toast({ title: 'Erro ao atualizar categoria', description: getErrorMessage(error), variant: 'destructive' });
+    }
+  };
 
   const handleSaveAutomation = async () => {
     if (!user) return;
