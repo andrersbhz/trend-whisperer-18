@@ -213,20 +213,81 @@ const AutomationSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChan
           </div>
 
           {/* Categorias */}
-          <div className="space-y-3">
-            <Label className="text-sm font-semibold">Categorias ativas</Label>
-            <p className="text-xs text-muted-foreground">Selecione os temas que o robô deve cobrir nas postagens</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {allCategories.map((cat) => (
-                <label key={cat.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted/50 cursor-pointer">
-                  <Checkbox
-                    checked={settings.categories.includes(cat.id)}
-                    onCheckedChange={() => toggleCategory(cat.id)}
-                  />
-                  <span className="text-sm text-foreground">{cat.label}</span>
-                </label>
-              ))}
+          <div className="space-y-4">
+            <div className="space-y-1">
+              <Label className="text-sm font-semibold">Categorias ativas</Label>
+              <p className="text-xs text-muted-foreground">O robô alternará entre estas categorias nas postagens automáticas</p>
             </div>
+
+            {/* Gerenciamento de Categorias */}
+            <div className="flex gap-2">
+              <Input
+                placeholder="Nova categoria (ex: Tecnologia)"
+                value={newCategory}
+                onChange={(e) => setNewCategory(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && addCustomCategory()}
+                className="text-sm"
+              />
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="icon"
+                onClick={addCustomCategory}
+                className="shrink-0"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <div className="flex flex-wrap gap-2 pt-2">
+              {/* Categorias Padrão */}
+              {defaultCategories.map((cat) => {
+                const isActive = settings.categories.includes(cat.id);
+                return (
+                  <Badge
+                    key={cat.id}
+                    variant={isActive ? "default" : "outline"}
+                    className={`cursor-pointer px-3 py-1 text-xs transition-all ${
+                      isActive 
+                        ? "bg-primary text-primary-foreground shadow-sm" 
+                        : "text-muted-foreground hover:bg-muted"
+                    }`}
+                    onClick={() => toggleCategory(cat.id)}
+                  >
+                    {cat.label}
+                  </Badge>
+                );
+              })}
+
+              {/* Categorias Customizadas */}
+              {settings.categories
+                .filter(cat => !defaultCategories.find(d => d.id === cat))
+                .map((cat) => (
+                  <Badge
+                    key={cat}
+                    variant="secondary"
+                    className="pl-3 pr-1 py-1 text-xs bg-accent/50 text-foreground group"
+                  >
+                    <span className="capitalize">{cat}</span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeCategory(cat);
+                      }}
+                      className="ml-1 p-0.5 rounded-full hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
+            </div>
+
+            {settings.categories.length === 0 && (
+              <p className="text-xs text-destructive bg-destructive/5 p-2 rounded-md border border-destructive/10">
+                ⚠️ Nenhuma categoria ativa. O robô não gerará postagens automáticas sem temas definidos.
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>
