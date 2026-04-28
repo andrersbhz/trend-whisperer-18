@@ -49,7 +49,7 @@ const SchedulePage = () => {
           runBackendQuery(() =>
             supabase
               .from('articles')
-              .select('id, title, category, scheduled_at, status, is_approved')
+              .select('id, title, category, scheduled_at, status, is_approved, featured_image_url')
               .eq('user_id', user.id)
               .not('scheduled_at', 'is', null)
               .order('scheduled_at', { ascending: true }),
