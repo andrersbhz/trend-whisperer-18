@@ -45,6 +45,7 @@ const SchedulePage = () => {
   const [preview, setPreview] = useState<any | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [userCategories, setUserCategories] = useState<string[]>([]);
 
   useEffect(() => {
     if (!user) return;
