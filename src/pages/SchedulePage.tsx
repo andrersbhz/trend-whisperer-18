@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, Clock, Calendar, Save, Bot, Trash2, CheckCircle, XCircle, Trash, Eye, FileEdit, Send, Image as ImageIcon, ImagePlus } from 'lucide-react';
+import { Loader2, Clock, Calendar, Save, Bot, Trash2, CheckCircle, XCircle, Trash, Eye, FileEdit, Send, Image as ImageIcon, ImagePlus, ChevronDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
@@ -19,6 +19,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ImageUpload } from '@/components/articles/ImageUpload';
 
@@ -39,6 +45,7 @@ const SchedulePage = () => {
   const [preview, setPreview] = useState<any | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [userCategories, setUserCategories] = useState<string[]>([]);
 
   useEffect(() => {
     if (!user) return;
@@ -84,7 +91,37 @@ const SchedulePage = () => {
     };
 
     fetchData();
+    fetchCategories();
   }, [toast, user]);
+
+  const fetchCategories = async () => {
+    if (!user) return;
+    try {
+      const { data } = await supabase.from('user_settings').select('categories').eq('user_id', user.id).maybeSingle();
+      setUserCategories(data?.categories || ['esportes', 'politica', 'policia', 'saude', 'celebridades', 'financas']);
+    } catch (e) {
+      console.error('Error fetching categories', e);
+    }
+  };
+
+  const handleUpdateCategory = async (articleId: string, newCategory: string) => {
+    try {
+      const { error } = await supabase
+        .from('articles')
+        .update({ category: newCategory })
+        .eq('id', articleId);
+
+      if (error) throw error;
+
+      setArticles(prev => prev.map(a => a.id === articleId ? { ...a, category: newCategory } : a));
+      if (preview?.id === articleId) {
+        setPreview(prev => ({ ...prev, category: newCategory }));
+      }
+      toast({ title: 'Categoria atualizada', description: `Artigo movido para ${newCategory}` });
+    } catch (error) {
+      toast({ title: 'Erro ao atualizar categoria', description: getErrorMessage(error), variant: 'destructive' });
+    }
+  };
 
   const handleSaveAutomation = async () => {
     if (!user) return;
@@ -434,7 +471,25 @@ const SchedulePage = () => {
                         <div className="min-w-0 flex-1">
                           <p className="font-medium text-foreground truncate">{article.title}</p>
                           <div className="flex items-center gap-2 mt-1 flex-wrap">
-                            <Badge variant="secondary">{article.category}</Badge>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Badge variant="secondary" className="capitalize cursor-pointer hover:bg-secondary/80 transition-colors flex items-center gap-1">
+                                  {article.category}
+                                  <ChevronDown className="h-3 w-3" />
+                                </Badge>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="start" className="max-h-[300px] overflow-y-auto">
+                                {userCategories.map((cat) => (
+                                  <DropdownMenuItem 
+                                    key={cat} 
+                                    onClick={() => handleUpdateCategory(article.id, cat)}
+                                    className={`capitalize text-xs ${article.category === cat ? 'bg-primary/10 text-primary' : ''}`}
+                                  >
+                                    {cat}
+                                  </DropdownMenuItem>
+                                ))}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                             {editingId === article.id ? (
                               <div className="flex items-center gap-1.5">
                                 <Input

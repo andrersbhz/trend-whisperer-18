@@ -8,10 +8,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import {
   FileText, TrendingUp, CheckCircle, Clock, Sparkles, RefreshCw, Save, Loader2,
-  PenTool,
+  PenTool, ChevronDown
 } from 'lucide-react';
 import AIProvidersPanel from '@/components/dashboard/AIProvidersPanel';
 import { useToast } from '@/hooks/use-toast';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { getErrorMessage, runBackendQuery, runBackendMutation } from '@/lib/backend';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -33,13 +39,14 @@ const Dashboard = () => {
   const [promptLoaded, setPromptLoaded] = useState(false);
   const [trendingList, setTrendingList] = useState<any[]>([]);
   const [loadingTrends, setLoadingTrends] = useState(true);
+  const [userCategories, setUserCategories] = useState<string[]>([]);
 
   const fetchStats = async () => {
     if (!user) return;
     setLoadingTrends(true);
 
     try {
-      const [articles, trendingTopics, recent, settings, errors, logs, topTrends] = await Promise.all([
+      const [articles, trendingTopics, recent, settings, errors, logs, topTrends, categoriesData] = await Promise.all([
         runBackendQuery(() => supabase.from('articles').select('id, status, category').eq('user_id', user.id)),
         runBackendQuery(() => supabase.from('trending_topics').select('id').eq('user_id', user.id).eq('used', false)),
         runBackendQuery(() =>
@@ -83,9 +90,11 @@ const Dashboard = () => {
             .order('fetched_at', { ascending: false })
             .limit(10)
         ),
+        runBackendQuery(() => supabase.from('user_settings').select('categories').eq('user_id', user.id).maybeSingle()),
       ]);
 
       setTrendingList(topTrends || []);
+      setUserCategories(categoriesData?.categories || ['esportes', 'politica', 'policia', 'saude', 'celebridades', 'financas']);
       setLoadingTrends(false);
 
       setStats({
@@ -250,6 +259,23 @@ const Dashboard = () => {
       toast({ title: 'Erro ao gerar artigos', description: await getFunctionErrorMessage(error), variant: 'destructive' });
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const handleUpdateCategory = async (articleId: string, newCategory: string) => {
+    try {
+      const { error } = await supabase
+        .from('articles')
+        .update({ category: newCategory })
+        .eq('id', articleId);
+
+      if (error) throw error;
+
+      setRecentArticles(prev => prev.map(a => a.id === articleId ? { ...a, category: newCategory } : a));
+      toast({ title: 'Categoria atualizada', description: `Artigo movido para ${newCategory}` });
+      fetchStats(); // Refresh stats to update the category counts
+    } catch (error) {
+      toast({ title: 'Erro ao atualizar categoria', description: getErrorMessage(error), variant: 'destructive' });
     }
   };
 
@@ -557,9 +583,25 @@ const Dashboard = () => {
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-foreground text-sm sm:text-base truncate">{article.title}</p>
                     <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                      <span className="text-[11px] sm:text-xs text-muted-foreground">
-                        {categoryLabels[article.category] || article.category}
-                      </span>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <span className="text-[11px] sm:text-xs text-muted-foreground cursor-pointer hover:text-primary transition-colors flex items-center gap-1">
+                            {categoryLabels[article.category] || article.category}
+                            <ChevronDown className="h-2.5 w-2.5" />
+                          </span>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="max-h-[300px] overflow-y-auto">
+                          {userCategories.map((cat) => (
+                            <DropdownMenuItem 
+                              key={cat} 
+                              onClick={() => handleUpdateCategory(article.id, cat)}
+                              className={`capitalize text-xs ${article.category === cat ? 'bg-primary/10 text-primary' : ''}`}
+                            >
+                              {categoryLabels[cat] || cat}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                       {article.seo_keyword && (
                         <span className="text-[11px] sm:text-xs text-muted-foreground truncate">• {article.seo_keyword}</span>
                       )}
