@@ -583,9 +583,25 @@ const Dashboard = () => {
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-foreground text-sm sm:text-base truncate">{article.title}</p>
                     <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                      <span className="text-[11px] sm:text-xs text-muted-foreground">
-                        {categoryLabels[article.category] || article.category}
-                      </span>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <span className="text-[11px] sm:text-xs text-muted-foreground cursor-pointer hover:text-primary transition-colors flex items-center gap-1">
+                            {categoryLabels[article.category] || article.category}
+                            <ChevronDown className="h-2.5 w-2.5" />
+                          </span>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="max-h-[300px] overflow-y-auto">
+                          {userCategories.map((cat) => (
+                            <DropdownMenuItem 
+                              key={cat} 
+                              onClick={() => handleUpdateCategory(article.id, cat)}
+                              className={`capitalize text-xs ${article.category === cat ? 'bg-primary/10 text-primary' : ''}`}
+                            >
+                              {categoryLabels[cat] || cat}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                       {article.seo_keyword && (
                         <span className="text-[11px] sm:text-xs text-muted-foreground truncate">• {article.seo_keyword}</span>
                       )}
