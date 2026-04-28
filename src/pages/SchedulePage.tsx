@@ -8,18 +8,19 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, Clock, Calendar, Save, Bot, Trash2, CheckCircle, XCircle, Trash, Eye, FileEdit } from 'lucide-react';
+import { Loader2, Clock, Calendar, Save, Bot, Trash2, CheckCircle, XCircle, Trash, Eye, FileEdit, Send, Image as ImageIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { getErrorMessage, runBackendMutation, runBackendQuery } from '@/lib/backend';
-
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ImageUpload } from '@/components/articles/ImageUpload';
 
 const SchedulePage = () => {
   const { user } = useAuth();
@@ -537,6 +538,17 @@ const SchedulePage = () => {
             </div>
           ) : (
             <div className="p-6 space-y-6">
+              <div className="space-y-4">
+                <Label className="text-xs font-bold uppercase text-muted-foreground block">Imagem de Destaque</Label>
+                <ImageUpload 
+                  articleId={preview?.id} 
+                  currentImageUrl={preview?.featured_image_url} 
+                  onUploadSuccess={(url) => {
+                    setPreview(prev => ({ ...prev, featured_image_url: url }));
+                    setArticles(prev => prev.map(a => a.id === preview.id ? { ...a, featured_image_url: url } : a));
+                  }}
+                />
+              </div>
               <div className="space-y-4">
                 <div>
                   <Label className="text-xs font-bold uppercase text-muted-foreground mb-1 block">Título</Label>
