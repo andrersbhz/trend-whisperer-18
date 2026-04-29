@@ -341,7 +341,20 @@ const TrendsPage = () => {
                 <SelectItem value="oldest">Mais antigos</SelectItem>
               </SelectContent>
             </Select>
+        {selectedTopics.length > 0 && (
+          <div className="flex items-center gap-2 px-1">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleBatchDeleteTopics}
+              className="text-xs text-destructive hover:bg-destructive/10 h-8"
+            >
+              <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+              Apagar Selecionados ({selectedTopics.length})
+            </Button>
           </div>
+        )}
+      </div>
 
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 text-muted-foreground" />
