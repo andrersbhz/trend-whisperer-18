@@ -412,15 +412,28 @@ const SchedulePage = () => {
       ) : (
         <div className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-4 bg-muted/30 p-4 rounded-lg border border-border">
-            <div className="flex items-center gap-3">
-              <Checkbox 
-                id="select-all" 
-                checked={selectedIds.length === articles.length && articles.length > 0}
-                onCheckedChange={(checked) => handleSelectAll(!!checked)}
-              />
-              <Label htmlFor="select-all" className="text-sm font-medium cursor-pointer">
-                Selecionar todos ({articles.length})
-              </Label>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
+                <Checkbox 
+                  id="select-all" 
+                  checked={selectedIds.length === articles.length && articles.length > 0}
+                  onCheckedChange={(checked) => handleSelectAll(!!checked)}
+                />
+                <Label htmlFor="select-all" className="text-sm font-medium cursor-pointer">
+                  Selecionar todos ({articles.length})
+                </Label>
+              </div>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleClearPublished}
+                className="text-xs text-muted-foreground hover:text-destructive flex items-center gap-1.5 h-7 px-2"
+                title="Apagar todos os artigos que já foram publicados"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Apagar Publicados
+              </Button>
             </div>
             
             {selectedIds.length > 0 && (
