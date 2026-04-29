@@ -276,6 +276,8 @@ const SchedulePage = () => {
     } finally {
       setBatchActionLoading(false);
     }
+  };
+
   const handleClearPublished = async () => {
     if (!window.confirm('Tem certeza que deseja excluir todos os artigos que já foram publicados?')) return;
     
