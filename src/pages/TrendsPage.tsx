@@ -13,7 +13,9 @@ import {
   Sparkles, 
   Filter, 
   ArrowUpDown,
-  Calendar
+  Calendar,
+  Trash2,
+  XCircle
 } from 'lucide-react';
 import { getErrorMessage, runBackendQuery } from '@/lib/backend';
 import {
