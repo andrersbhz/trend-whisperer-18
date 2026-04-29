@@ -346,7 +346,7 @@ const TrendsPage = () => {
       ) : (
         <div className="grid gap-3">
           {filteredAndSortedTopics.slice(0, 50).map((topic) => (
-            <Card key={topic.id} className="shadow-card">
+            <Card key={topic.id} className="shadow-card group relative">
               <CardContent className="p-4 flex items-center gap-4">
                 <Checkbox 
                   checked={selectedTopics.includes(topic.id)}
