@@ -13,7 +13,9 @@ import {
   Sparkles, 
   Filter, 
   ArrowUpDown,
-  Calendar
+  Calendar,
+  Trash2,
+  XCircle
 } from 'lucide-react';
 import { getErrorMessage, runBackendQuery } from '@/lib/backend';
 import {
@@ -230,6 +232,39 @@ const TrendsPage = () => {
     }
   };
 
+  const handleDeleteTopic = async (topicId: string) => {
+    try {
+      const { error } = await supabase
+        .from('trending_topics')
+        .update({ used: true })
+        .eq('id', topicId);
+
+      if (error) throw error;
+      setTopics(prev => prev.filter(t => t.id !== topicId));
+      toast({ title: 'Tendência removida', description: 'Assunto ignorado com sucesso.' });
+    } catch (error) {
+      toast({ title: 'Erro ao remover', description: getErrorMessage(error), variant: 'destructive' });
+    }
+  };
+
+  const handleBatchDeleteTopics = async () => {
+    if (selectedTopics.length === 0) return;
+    try {
+      const { error } = await supabase
+        .from('trending_topics')
+        .update({ used: true })
+        .in('id', selectedTopics);
+
+      if (error) throw error;
+      setTopics(prev => prev.filter(t => !selectedTopics.includes(t.id)));
+      setSelectedTopics([]);
+      toast({ title: `${selectedTopics.length} tendências removidas` });
+    } catch (error) {
+      toast({ title: 'Erro ao remover lote', description: getErrorMessage(error), variant: 'destructive' });
+    }
+  };
+
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -306,7 +341,20 @@ const TrendsPage = () => {
                 <SelectItem value="oldest">Mais antigos</SelectItem>
               </SelectContent>
             </Select>
+        {selectedTopics.length > 0 && (
+          <div className="flex items-center gap-2 px-1">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleBatchDeleteTopics}
+              className="text-xs text-destructive hover:bg-destructive/10 h-8"
+            >
+              <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+              Apagar Selecionados ({selectedTopics.length})
+            </Button>
           </div>
+        )}
+      </div>
 
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -346,7 +394,7 @@ const TrendsPage = () => {
       ) : (
         <div className="grid gap-3">
           {filteredAndSortedTopics.slice(0, 50).map((topic) => (
-            <Card key={topic.id} className="shadow-card">
+            <Card key={topic.id} className="shadow-card group relative">
               <CardContent className="p-4 flex items-center gap-4">
                 <Checkbox 
                   checked={selectedTopics.includes(topic.id)}
@@ -407,7 +455,20 @@ const TrendsPage = () => {
                       )}
                     </div>
                   </div>
-                  <div>
+                  <div className="flex items-center gap-3">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteTopic(topic.id);
+                      }}
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Remover assunto"
+                    >
+                      <XCircle className="h-4 w-4" />
+                    </Button>
+                    
                     {topic.used ? (
                       <Badge variant="outline" className="text-muted-foreground">Usado</Badge>
                     ) : (
