@@ -228,6 +228,8 @@ const TrendsPage = () => {
     } else {
       setSelectedTopics(availableTopicIds);
     }
+  };
+
   const handleDeleteTopic = async (topicId: string) => {
     try {
       const { error } = await supabase
