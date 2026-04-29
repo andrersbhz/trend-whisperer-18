@@ -276,7 +276,28 @@ const SchedulePage = () => {
     } finally {
       setBatchActionLoading(false);
     }
+  const handleClearPublished = async () => {
+    if (!window.confirm('Tem certeza que deseja excluir todos os artigos que já foram publicados?')) return;
+    
+    setBatchActionLoading(true);
+    try {
+      const { error } = await supabase
+        .from('articles')
+        .delete()
+        .eq('user_id', user?.id)
+        .eq('status', 'published');
+
+      if (error) throw error;
+      
+      setArticles(prev => prev.filter(a => a.status !== 'published'));
+      toast({ title: 'Artigos publicados removidos!' });
+    } catch (error) {
+      toast({ title: 'Erro ao remover publicados', description: getErrorMessage(error), variant: 'destructive' });
+    } finally {
+      setBatchActionLoading(false);
+    }
   };
+
 
   const handlePreview = async (articleId: string) => {
     setPreviewOpen(true);
