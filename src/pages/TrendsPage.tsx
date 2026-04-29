@@ -455,7 +455,20 @@ const TrendsPage = () => {
                       )}
                     </div>
                   </div>
-                  <div>
+                  <div className="flex items-center gap-3">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteTopic(topic.id);
+                      }}
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Remover assunto"
+                    >
+                      <XCircle className="h-4 w-4" />
+                    </Button>
+                    
                     {topic.used ? (
                       <Badge variant="outline" className="text-muted-foreground">Usado</Badge>
                     ) : (
