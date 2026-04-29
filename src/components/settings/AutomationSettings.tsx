@@ -169,14 +169,22 @@ const AutomationSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChan
       </Card>
 
       {/* Robô de Publicação */}
-      <Card className="shadow-card">
+      <Card className={`shadow-card border-2 transition-all duration-300 ${settings.auto_publish ? 'border-success/50 bg-success/5' : 'border-destructive/50 bg-destructive/5'}`}>
         <CardHeader>
-          <div className="flex items-center gap-2">
-            <Settings className="h-5 w-5 text-primary" />
-            <CardTitle className="text-lg">🤖 Robô de Publicação Automática</CardTitle>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Settings className={`h-5 w-5 ${settings.auto_publish ? 'text-success' : 'text-destructive'}`} />
+              <CardTitle className="text-lg">🤖 Robô de Publicação Automática</CardTitle>
+            </div>
+            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-background border">
+              <span className={`h-2 w-2 rounded-full animate-pulse ${settings.auto_publish ? 'bg-success' : 'bg-destructive'}`} />
+              <span className={`text-[10px] font-bold uppercase ${settings.auto_publish ? 'text-success' : 'text-destructive'}`}>
+                {settings.auto_publish ? 'Robô Ligado' : 'Robô Desligado'}
+              </span>
+            </div>
           </div>
           <CardDescription>
-            Configure quantas postagens o robô deve fazer por dia e se deve publicar automaticamente no WordPress.
+            Configure o comportamento do robô. Quando ligado, ele gera e publica conteúdo automaticamente.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
