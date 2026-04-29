@@ -228,7 +228,38 @@ const TrendsPage = () => {
     } else {
       setSelectedTopics(availableTopicIds);
     }
+  const handleDeleteTopic = async (topicId: string) => {
+    try {
+      const { error } = await supabase
+        .from('trending_topics')
+        .update({ used: true })
+        .eq('id', topicId);
+
+      if (error) throw error;
+      setTopics(prev => prev.filter(t => t.id !== topicId));
+      toast({ title: 'Tendência removida', description: 'Assunto ignorado com sucesso.' });
+    } catch (error) {
+      toast({ title: 'Erro ao remover', description: getErrorMessage(error), variant: 'destructive' });
+    }
   };
+
+  const handleBatchDeleteTopics = async () => {
+    if (selectedTopics.length === 0) return;
+    try {
+      const { error } = await supabase
+        .from('trending_topics')
+        .update({ used: true })
+        .in('id', selectedTopics);
+
+      if (error) throw error;
+      setTopics(prev => prev.filter(t => !selectedTopics.includes(t.id)));
+      setSelectedTopics([]);
+      toast({ title: `${selectedTopics.length} tendências removidas` });
+    } catch (error) {
+      toast({ title: 'Erro ao remover lote', description: getErrorMessage(error), variant: 'destructive' });
+    }
+  };
+
 
   if (loading) {
     return (
