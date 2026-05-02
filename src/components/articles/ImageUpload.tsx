@@ -125,25 +125,33 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
       if (error) throw error;
       
       if (data?.success) {
-        toast({ 
-          title: "Gerando imagem...", 
-          description: "Aguarde enquanto criamos sua imagem com IA." 
-        });
+        const generatedUrl = data.imageUrl;
         
-        // Simples poll: espera 5s e tenta pegar a URL
-        setTimeout(async () => {
-          const { data: updated } = await supabase
-            .from('articles')
-            .select('featured_image_url')
-            .eq('id', articleId)
-            .single();
-            
-          if (updated?.featured_image_url) {
-            setPreviewUrl(updated.featured_image_url);
-            onUploadSuccess(updated.featured_image_url);
-            toast({ title: "Sucesso", description: "Imagem gerada com sucesso!" });
-          }
-        }, 5000);
+        if (generatedUrl) {
+          setPreviewUrl(generatedUrl);
+          onUploadSuccess(generatedUrl);
+          toast({ title: "Sucesso", description: "Imagem gerada com sucesso!" });
+        } else {
+          toast({ 
+            title: "Gerando imagem...", 
+            description: "Aguarde enquanto criamos sua imagem com IA." 
+          });
+          
+          // Fallback polling se não veio na resposta direta
+          setTimeout(async () => {
+            const { data: updated } = await supabase
+              .from('articles')
+              .select('featured_image_url')
+              .eq('id', articleId)
+              .single();
+              
+            if (updated?.featured_image_url) {
+              setPreviewUrl(updated.featured_image_url);
+              onUploadSuccess(updated.featured_image_url);
+              toast({ title: "Sucesso", description: "Imagem gerada com sucesso!" });
+            }
+          }, 8000);
+        }
       } else {
         toast({ title: "Erro", description: data?.message || "Não foi possível gerar a imagem.", variant: "destructive" });
       }
