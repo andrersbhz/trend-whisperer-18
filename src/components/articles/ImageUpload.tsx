@@ -94,6 +94,11 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
 
       setPreviewUrl(publicUrl);
       onUploadSuccess(publicUrl);
+
+      // Dispara evento para indicar que o upload terminou
+      window.dispatchEvent(new CustomEvent('article-image-uploaded', { 
+        detail: { articleId, url: publicUrl } 
+      }));
       
       // Clear cropping states
       setSelectedImage(null);
@@ -131,6 +136,11 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
           setPreviewUrl(generatedUrl);
           onUploadSuccess(generatedUrl);
           toast({ title: "Sucesso", description: "Imagem gerada com sucesso!" });
+
+          // Dispara evento para indicar que a geração automática de imagem terminou
+          window.dispatchEvent(new CustomEvent('article-image-generated', { 
+            detail: { articleId, url: generatedUrl } 
+          }));
         } else {
           toast({ 
             title: "Gerando imagem...", 
@@ -149,6 +159,11 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
               setPreviewUrl(updated.featured_image_url);
               onUploadSuccess(updated.featured_image_url);
               toast({ title: "Sucesso", description: "Imagem gerada com sucesso!" });
+              
+              // Dispara evento para indicar que a geração automática de imagem terminou
+              window.dispatchEvent(new CustomEvent('article-image-generated', { 
+                detail: { articleId, url: updated.featured_image_url } 
+              }));
             }
           }, 8000);
         }
