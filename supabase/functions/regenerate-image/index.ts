@@ -271,7 +271,7 @@ serve(async (req) => {
       // Fallback final: Pollinations (sempre funciona se houver internet)
       if (!imageUrl) {
         try {
-          imageUrl = await generateImagePollinations(article.title, (article as any).visual_elements || null, imagePrompt);
+          imageUrl = await generateImagePollinations(article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt);
           console.log(`Fallback Pollinations used for "${article.title}"`);
         } catch (error) {
           providerErrors.push(`Pollinations: ${getErrorMessage(error)}`);
