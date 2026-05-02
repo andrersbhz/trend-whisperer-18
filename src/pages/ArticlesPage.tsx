@@ -331,21 +331,29 @@ const ArticlesPage = () => {
       if (error) throw error;
       
       if (data?.success) {
-        toast({ title: 'Sucesso', description: 'Imagem sendo gerada com o prompt configurado!' });
+        const generatedUrl = data.imageUrl;
         
-        // Wait a bit and fetch the updated article
-        setTimeout(async () => {
-          const { data: updatedArticle } = await supabase
-            .from('articles')
-            .select('featured_image_url')
-            .eq('id', articleId)
-            .single();
-            
-          if (updatedArticle?.featured_image_url) {
-            setPreview(prev => prev && prev.id === articleId ? { ...prev, featured_image_url: updatedArticle.featured_image_url } : prev);
-            setArticles(prev => prev.map(a => a.id === articleId ? { ...a, featured_image_url: updatedArticle.featured_image_url } : a));
-          }
-        }, 3000);
+        if (generatedUrl) {
+          setPreview(prev => prev && prev.id === articleId ? { ...prev, featured_image_url: generatedUrl } : prev);
+          setArticles(prev => prev.map(a => a.id === articleId ? { ...a, featured_image_url: generatedUrl } : a));
+          toast({ title: 'Sucesso', description: 'Imagem gerada com sucesso!' });
+        } else {
+          toast({ title: 'Sucesso', description: 'Imagem sendo gerada com o prompt configurado!' });
+          
+          // Wait a bit and fetch the updated article (longer poll)
+          setTimeout(async () => {
+            const { data: updatedArticle } = await supabase
+              .from('articles')
+              .select('featured_image_url')
+              .eq('id', articleId)
+              .single();
+              
+            if (updatedArticle?.featured_image_url) {
+              setPreview(prev => prev && prev.id === articleId ? { ...prev, featured_image_url: updatedArticle.featured_image_url } : prev);
+              setArticles(prev => prev.map(a => a.id === articleId ? { ...a, featured_image_url: updatedArticle.featured_image_url } : a));
+            }
+          }, 8000);
+        }
       } else {
         toast({ title: 'Atenção', description: data?.message || 'Falha ao iniciar geração', variant: 'destructive' });
       }
