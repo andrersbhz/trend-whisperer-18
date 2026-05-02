@@ -206,7 +206,7 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
 
   return (
     <div className="space-y-4">
-      <div className="relative aspect-video w-full rounded-lg border-2 border-dashed border-border overflow-hidden bg-muted/30 flex items-center justify-center">
+      <div className="relative aspect-square w-full max-w-[400px] mx-auto rounded-lg border-2 border-dashed border-border overflow-hidden bg-muted/30 flex items-center justify-center">
         {previewUrl ? (
           <>
             <img 
@@ -268,17 +268,17 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
       <Dialog open={isCropDialogOpen} onOpenChange={setIsCropDialogOpen}>
         <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden bg-background border-primary/20">
           <DialogHeader className="p-6 pb-0">
-            <DialogTitle>Ajustar Imagem (16:9)</DialogTitle>
+            <DialogTitle>Ajustar Imagem (1:1)</DialogTitle>
           </DialogHeader>
           
           <div className="p-6 space-y-6">
-            <div className="relative w-full aspect-video bg-black rounded-md overflow-hidden">
+            <div className="relative w-full aspect-square bg-black rounded-md overflow-hidden">
               {selectedImage && (
                 <Cropper
                   image={selectedImage}
                   crop={crop}
                   zoom={zoom}
-                  aspect={16 / 9}
+                  aspect={1}
                   onCropChange={setCrop}
                   onCropComplete={onCropComplete}
                   onZoomChange={setZoom}
