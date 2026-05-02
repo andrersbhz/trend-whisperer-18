@@ -346,7 +346,7 @@ async function generateImageOpenAI(apiKey: string, title: string, content: strin
   return null;
 }
 
-async function generateImageGemini(apiKey: string, title: string, visualElements: string, customImagePrompt?: string | null): Promise<string | null> {
+async function generateImageGemini(apiKey: string, title: string, content: string | null, visualElements: string, customImagePrompt?: string | null): Promise<string | null> {
   const models = ["gemini-2.0-flash-exp", "gemini-1.5-flash"];
   for (const model of models) {
     try {
