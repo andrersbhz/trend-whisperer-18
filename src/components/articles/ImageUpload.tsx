@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Upload, X, Image as ImageIcon, Crop } from 'lucide-react';
+import { Loader2, Upload, X, Image as ImageIcon, Crop, Sparkles } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import Cropper from 'react-easy-crop';
 import { getCroppedImg } from '@/lib/image-utils';
@@ -114,6 +114,46 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
     }
   };
 
+  const handleGenerateAI = async () => {
+    if (!user || !articleId) return;
+    try {
+      setUploading(true);
+      const { data, error } = await supabase.functions.invoke('regenerate-image', {
+        body: { userId: user.id, articleIds: [articleId] },
+      });
+      
+      if (error) throw error;
+      
+      if (data?.success) {
+        toast({ 
+          title: "Gerando imagem...", 
+          description: "Aguarde enquanto criamos sua imagem com IA." 
+        });
+        
+        // Simples poll: espera 5s e tenta pegar a URL
+        setTimeout(async () => {
+          const { data: updated } = await supabase
+            .from('articles')
+            .select('featured_image_url')
+            .eq('id', articleId)
+            .single();
+            
+          if (updated?.featured_image_url) {
+            setPreviewUrl(updated.featured_image_url);
+            onUploadSuccess(updated.featured_image_url);
+            toast({ title: "Sucesso", description: "Imagem gerada com sucesso!" });
+          }
+        }, 5000);
+      } else {
+        toast({ title: "Erro", description: data?.message || "Não foi possível gerar a imagem.", variant: "destructive" });
+      }
+    } catch (e: any) {
+      toast({ title: "Erro na geração", description: e.message, variant: "destructive" });
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleRemoveImage = async () => {
     try {
       setUploading(true);
@@ -173,7 +213,7 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
         )}
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="grid grid-cols-2 gap-2">
         <Button
           variant="outline"
           size="sm"
@@ -181,7 +221,7 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
           disabled={uploading}
         >
           <Upload className="h-4 w-4" />
-          {previewUrl ? 'Alterar Imagem' : 'Fazer Upload'}
+          {previewUrl ? 'Alterar' : 'Upload'}
           <input
             type="file"
             className="absolute inset-0 opacity-0 cursor-pointer"
@@ -189,6 +229,16 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
             onChange={handleFileSelect}
             disabled={uploading}
           />
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full gap-2 border-primary/30 text-primary hover:bg-primary/10"
+          onClick={handleGenerateAI}
+          disabled={uploading}
+        >
+          {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+          Gerar com IA
         </Button>
       </div>
 
