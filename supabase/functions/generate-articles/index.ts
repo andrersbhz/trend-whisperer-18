@@ -337,14 +337,16 @@ async function generateImageOpenAI(apiKey: string, title: string, visualElements
 }
 
 async function generateImageGemini(apiKey: string, title: string, visualElements: string, customImagePrompt?: string | null): Promise<string | null> {
-  const models = ["gemini-2.5-flash-image-preview", "gemini-2.0-flash-preview-image-generation"];
+  const models = ["gemini-2.0-flash-exp", "gemini-1.5-flash"];
   for (const model of models) {
     try {
       console.log(`[Image] Attempting generation with Gemini model: ${model}`);
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
       const body = {
         contents: [{ parts: [{ text: buildImagePrompt(title, visualElements, customImagePrompt) }] }],
-        generationConfig: { responseModalities: ["IMAGE", "TEXT"] },
+        generationConfig: { 
+          responseModalities: ["IMAGE"] 
+        },
       };
 
       const resp = await fetch(url, {
@@ -371,6 +373,21 @@ async function generateImageGemini(apiKey: string, title: string, visualElements
     }
   }
   return null;
+}
+
+// Fallback robusto usando Pollinations.ai
+async function generateImagePollinations(title: string, visualElements: string, customImagePrompt?: string | null): Promise<string | null> {
+  try {
+    const prompt = buildImagePrompt(title, visualElements, customImagePrompt);
+    const encodedPrompt = encodeURIComponent(prompt);
+    const seed = Math.floor(Math.random() * 1000000);
+    const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=576&nologo=true&seed=${seed}`;
+    console.log(`[Image] Using Pollinations fallback for: ${title.substring(0, 50)}...`);
+    return url;
+  } catch (err) {
+    console.error("[Image] Pollinations fallback error:", err);
+    return null;
+  }
 }
 
 
