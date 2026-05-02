@@ -43,7 +43,7 @@ const Dashboard = () => {
     setLoadingTrends(true);
 
     try {
-      const [articles, trendingTopics, recent, settings, errors, logs, topTrends, categoriesData] = await Promise.all([
+      const [articles, trendingTopics, recent, errors, logs, topTrends, categoriesData] = await Promise.all([
         runBackendQuery(() => supabase.from('articles').select('id, status, category').eq('user_id', user.id)),
         runBackendQuery(() => supabase.from('trending_topics').select('id').eq('user_id', user.id).eq('used', false)),
         runBackendQuery(() =>
