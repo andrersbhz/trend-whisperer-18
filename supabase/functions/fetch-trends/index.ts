@@ -37,13 +37,15 @@ async function fetchGoogleTrendsRSS(): Promise<string | null> {
 // ── AI Prompt ─────────────────────────────────────────────────────────────
 
 function buildRSSCategorizationPrompt(rssContent: string, categories: string[]) {
-  const systemPrompt = `Você é um analista de tendências. Abaixo está um feed RSS do Google Trends Brasil.
-Sua tarefa é extrair os tópicos e categorizá-los.
+  const systemPrompt = `Você é um analista de tendências especialista em categorização de notícias. Abaixo está um feed RSS do Google Trends Brasil.
+Sua tarefa é extrair os tópicos e classificá-los com precisão cirúrgica.
 
 REGRAS:
 1. Extraia o título do tópico (<title>), o volume de buscas (<ht:approx_traffic>), o contexto da notícia (<ht:news_item_title>), o nome da fonte (<ht:news_item_source>) e o link da fonte (<ht:news_item_url>).
-2. Atribua uma categoria: ${categories.join(", ")}.
-3. Retorne APENAS um JSON válido no formato:
+2. Atribua a categoria MAIS ADEQUADA dentre as seguintes: ${categories.join(", ")}.
+3. CLASSIFICAÇÃO RIGOROSA: Leia atentamente o título e o contexto para entender do que se trata a notícia. Não use categorias por aproximação se não houver certeza.
+4. CATEGORIA "variedades": Se o assunto não se encaixar claramente em nenhuma das categorias acima ou se você tiver qualquer dúvida sobre a classificação correta, use OBRIGATORIAMENTE a categoria "variedades".
+5. Retorne APENAS um JSON válido no formato:
 [{"topic": "nome", "search_volume": "vol", "category": "cat", "context": "título da notícia real", "source_name": "Google Trends (Portal X)", "source_url": "https://..."}]
 
 Extraia o máximo possível (até 40 tópicos).`;
@@ -132,12 +134,8 @@ function parseRSSDirectly(rss: string, categories: string[]): any[] {
       const kws = keywords[cat] || [cat];
       if (kws.some((kw) => t.includes(kw))) return cat;
     }
-    // Fallback logic if no category matches specifically:
-    // If we can't find a match in the user's categories, pick one from the general list that matches
-    for (const cat in keywords) {
-      if (keywords[cat].some((kw) => t.includes(cat === "politica" ? t.includes("política") : t.includes(cat)))) return cat;
-    }
-    return categories[0] || "geral";
+    // Fallback: use varieties if no specific match
+    return "variedades";
   };
 
   const topics: any[] = [];
