@@ -794,6 +794,15 @@ serve(async (req) => {
             }
           }
           
+          // 3. Pollinations como fallback final garantido
+          if (!featuredImageUrl) {
+            try {
+              featuredImageUrl = await generateImagePollinations(parsed.title, parsed.visual_elements, customImagePrompt);
+            } catch (imgErr) {
+              console.warn(`[Image] Pollinations fallback falhou para "${parsed.title}":`, imgErr);
+            }
+          }
+
           if (!featuredImageUrl) {
             console.warn(`[Image] Nenhum provedor gerou imagem para "${parsed.title}" — artigo criado sem imagem`);
           }
