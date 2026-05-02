@@ -264,7 +264,7 @@ serve(async (req) => {
       }
       
       if (!imageUrl && openaiApiKey) {
-        try { imageUrl = await generateImageDallE(openaiApiKey, article.title, (article as any).visual_elements || null, imagePrompt); }
+        try { imageUrl = await generateImageDallE(openaiApiKey, article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt); }
         catch (error) { providerErrors.push(`OpenAI: ${getErrorMessage(error)}`); }
       }
 
