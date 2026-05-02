@@ -105,7 +105,7 @@ async function generateImageGemini(apiKey: string, title: string, content: strin
           method: "POST",
           headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
           body: JSON.stringify({
-            contents: [{ parts: [{ text: buildImagePrompt(title, visualElements, imagePrompt) }] }],
+            contents: [{ parts: [{ text: buildImagePrompt(title, content, visualElements, imagePrompt) }] }],
             generationConfig: { 
               responseModalities: ["IMAGE"],
             },
