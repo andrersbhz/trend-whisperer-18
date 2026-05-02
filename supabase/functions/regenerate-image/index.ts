@@ -7,15 +7,25 @@ const corsHeaders = {
 };
 
 // O prompt da imagem é DERIVADO do image_prompt configurado + conteúdo do artigo.
-function buildImagePrompt(title: string, visualElements: string | null | undefined, imagePrompt: string | null | undefined): string {
+function buildImagePrompt(title: string, content: string | null, visualElements: string | null | undefined, imagePrompt: string | null | undefined): string {
   const userImageGuidance = imagePrompt && imagePrompt.trim().length > 5
     ? `ESTILO VISUAL (OBRIGATÓRIO): ${imagePrompt.trim()}\n`
     : "Estilo: Fotografia editorial realista de alta qualidade, 1:1.";
 
-  return `${userImageGuidance}
-ASSUNTO DA IMAGEM: ${title}.
-DETALHES ADICIONAIS: ${visualElements || "Cena cinematográfica coerente com o título"}.
-REQUISITOS TÉCNICOS: Proporção 1:1, sem texto, sem marcas d'água, fotorrealista, 800x800px.`;
+  const contentSnippet = content ? `\nCONTEXTO DO ARTIGO (USE PARA DETALHES): ${content.replace(/<[^>]*>/g, "").substring(0, 1000)}...` : "";
+
+  return `### INSTRUÇÕES DE HARMONIA CONTEXTUAL (CRÍTICO) ###
+1. LEITURA DO CONTEÚDO: A imagem deve estar em total harmonia com o artigo.
+2. ESPECIFICIDADE: Se o artigo citar pessoas famosas, locais específicos ou eventos reais, a imagem DEVE retratá-los fielmente.
+3. PROIBIÇÃO DE GENÉRICOS: É estritamente proibido criar imagens genéricas que não remetam diretamente ao assunto.
+4. ESTILO: ${userImageGuidance}
+
+### DADOS DO ARTIGO ###
+TÍTULO: ${title}${contentSnippet}
+ELEMENTOS VISUAIS SUGERIDOS: ${visualElements || "Cena coerente com o título e conteúdo"}.
+
+### REQUISITOS TÉCNICOS ###
+Proporção 1:1, sem texto, sem marcas d'água, fotorrealista, 800x800px.`;
 }
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -82,7 +92,7 @@ async function withRetry<T>(operation: () => Promise<T>, retries = 2, baseDelayM
   throw lastError instanceof Error ? lastError : new Error(String(lastError));
 }
 
-async function generateImageGemini(apiKey: string, title: string, visualElements: string | null, imagePrompt: string | null): Promise<string> {
+async function generateImageGemini(apiKey: string, title: string, content: string | null, visualElements: string | null, imagePrompt: string | null): Promise<string> {
   // Modelos experimentais que podem suportar geração de imagem
   const models = ["gemini-2.0-flash-exp", "gemini-1.5-flash"];
   const errors: string[] = [];
@@ -95,7 +105,7 @@ async function generateImageGemini(apiKey: string, title: string, visualElements
           method: "POST",
           headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
           body: JSON.stringify({
-            contents: [{ parts: [{ text: buildImagePrompt(title, visualElements, imagePrompt) }] }],
+            contents: [{ parts: [{ text: buildImagePrompt(title, content, visualElements, imagePrompt) }] }],
             generationConfig: { 
               responseModalities: ["IMAGE"],
             },
@@ -126,14 +136,14 @@ async function generateImageGemini(apiKey: string, title: string, visualElements
   throw new ProviderError(errors.join(" | ") || "Falha ao gerar imagem com Gemini", 500, false, errors.some((message) => isBillingIssue(0, message)));
 }
 
-async function generateImageDallE(apiKey: string, title: string, visualElements: string | null, imagePrompt: string | null): Promise<string> {
+async function generateImageDallE(apiKey: string, title: string, content: string | null, visualElements: string | null, imagePrompt: string | null): Promise<string> {
   return await withRetry(async () => {
     const resp = await fetch("https://api.openai.com/v1/images/generations", {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         model: "dall-e-3",
-        prompt: buildImagePrompt(title, visualElements, imagePrompt),
+        prompt: buildImagePrompt(title, content, visualElements, imagePrompt),
         n: 1,
         size: "1024x1024",
         quality: "standard",
@@ -156,8 +166,8 @@ async function generateImageDallE(apiKey: string, title: string, visualElements:
 }
 
 // Fallback gratuito e resiliente usando Pollinations.ai
-async function generateImagePollinations(title: string, visualElements: string | null, imagePrompt: string | null): Promise<string> {
-  const prompt = buildImagePrompt(title, visualElements, imagePrompt);
+async function generateImagePollinations(title: string, content: string | null, visualElements: string | null, imagePrompt: string | null): Promise<string> {
+  const prompt = buildImagePrompt(title, content, visualElements, imagePrompt);
   const encodedPrompt = encodeURIComponent(prompt);
   const seed = Math.floor(Math.random() * 1000000);
   const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=800&height=800&nologo=true&seed=${seed}`;
@@ -213,7 +223,7 @@ serve(async (req) => {
     // Fetch articles
     const { data: articles } = await supabase
       .from("articles")
-      .select("id, title, category, featured_image_url, visual_elements")
+      .select("id, title, category, featured_image_url, visual_elements, content")
       .eq("user_id", userId)
       .in("id", articleIds);
 
@@ -249,19 +259,19 @@ serve(async (req) => {
 
       // Cadeia: Gemini (se configurado) -> OpenAI (se configurado) -> Pollinations (fallback garantido)
       if (geminiApiKey) {
-        try { imageUrl = await generateImageGemini(geminiApiKey, article.title, (article as any).visual_elements || null, imagePrompt); }
+        try { imageUrl = await generateImageGemini(geminiApiKey, article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt); }
         catch (error) { providerErrors.push(`Gemini: ${getErrorMessage(error)}`); }
       }
       
       if (!imageUrl && openaiApiKey) {
-        try { imageUrl = await generateImageDallE(openaiApiKey, article.title, (article as any).visual_elements || null, imagePrompt); }
+        try { imageUrl = await generateImageDallE(openaiApiKey, article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt); }
         catch (error) { providerErrors.push(`OpenAI: ${getErrorMessage(error)}`); }
       }
 
       // Fallback final: Pollinations (sempre funciona se houver internet)
       if (!imageUrl) {
         try {
-          imageUrl = await generateImagePollinations(article.title, (article as any).visual_elements || null, imagePrompt);
+          imageUrl = await generateImagePollinations(article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt);
           console.log(`Fallback Pollinations used for "${article.title}"`);
         } catch (error) {
           providerErrors.push(`Pollinations: ${getErrorMessage(error)}`);

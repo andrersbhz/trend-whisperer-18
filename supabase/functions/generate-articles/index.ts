@@ -288,20 +288,30 @@ async function callWithFallback(providers: ProviderConfig[], systemPrompt: strin
 // O prompt da imagem é DERIVADO do conteúdo do artigo + perfil do escritor (writer_prompt).
 // Não há mais template fixo de imagem: a imagem segue sempre o título e os visual_elements gerados.
 
-function buildImagePrompt(title: string, visualElements: string, customImagePrompt?: string | null): string {
+function buildImagePrompt(title: string, content: string | null, visualElements: string, customImagePrompt?: string | null): string {
   const userImageGuidance = customImagePrompt && customImagePrompt.trim().length > 10
     ? `\nDIRETRIZES DO USUÁRIO (Siga fielmente esse estilo visual):\n${customImagePrompt.trim()}\n`
     : "";
 
-  return `Imagem editorial de alta qualidade para o artigo: "${title}".
+  const contentSnippet = content ? `\nCONTEXTO DO ARTIGO (USE PARA DETALHES): ${content.replace(/<[^>]*>/g, "").substring(0, 1000)}...` : "";
+
+  return `### INSTRUÇÕES DE HARMONIA CONTEXTUAL (CRÍTICO) ###
+1. LEITURA DO CONTEÚDO: A imagem deve estar em total harmonia com o artigo abaixo.
+2. ESPECIFICIDADE: Se o artigo citar pessoas famosas, locais específicos ou eventos reais, a imagem DEVE retratá-los fielmente.
+3. PROIBIÇÃO DE GENÉRICOS: É estritamente proibido criar imagens genéricas que não remetam diretamente ao assunto.
+4. ESTILO: ${userImageGuidance || "Fotografia editorial realista de alta qualidade, 1:1."}
+
+### DADOS DO ARTIGO ###
+TÍTULO: ${title}${contentSnippet}
 ELEMENTOS VISUAIS DO CONTEÚDO: ${visualElements || "Cena coerente com o título"}.
-${userImageGuidance}
-REQUISITOS OBRIGATÓRIOS: Representar fielmente o conteúdo. Sem texto, sem marcas d'água. Proporção 16:9. Estilo profissional.`;
+
+### REQUISITOS OBRIGATÓRIOS ###
+Representar fielmente o conteúdo. Sem texto, sem marcas d'água. Proporção 1:1, 800x800px. Estilo profissional.`;
 }
 
-async function generateImageOpenAI(apiKey: string, title: string, visualElements: string, customImagePrompt?: string | null): Promise<string | null> {
+async function generateImageOpenAI(apiKey: string, title: string, content: string | null, visualElements: string, customImagePrompt?: string | null): Promise<string | null> {
   try {
-    const prompt = buildImagePrompt(title, visualElements, customImagePrompt);
+    const prompt = buildImagePrompt(title, content, visualElements, customImagePrompt);
     console.log(`[Image] Calling DALL-E 3 for: ${title.substring(0, 50)}...`);
 
     const resp = await fetch("https://api.openai.com/v1/images/generations", {
@@ -314,7 +324,7 @@ async function generateImageOpenAI(apiKey: string, title: string, visualElements
         model: "dall-e-3",
         prompt: prompt,
         n: 1,
-        size: "1792x1024",
+        size: "1024x1024",
         response_format: "b64_json",
       }),
     });
@@ -336,14 +346,14 @@ async function generateImageOpenAI(apiKey: string, title: string, visualElements
   return null;
 }
 
-async function generateImageGemini(apiKey: string, title: string, visualElements: string, customImagePrompt?: string | null): Promise<string | null> {
+async function generateImageGemini(apiKey: string, title: string, content: string | null, visualElements: string, customImagePrompt?: string | null): Promise<string | null> {
   const models = ["gemini-2.0-flash-exp", "gemini-1.5-flash"];
   for (const model of models) {
     try {
       console.log(`[Image] Attempting generation with Gemini model: ${model}`);
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
       const body = {
-        contents: [{ parts: [{ text: buildImagePrompt(title, visualElements, customImagePrompt) }] }],
+        contents: [{ parts: [{ text: buildImagePrompt(title, content, visualElements, customImagePrompt) }] }],
         generationConfig: { 
           responseModalities: ["IMAGE"] 
         },
@@ -376,12 +386,12 @@ async function generateImageGemini(apiKey: string, title: string, visualElements
 }
 
 // Fallback robusto usando Pollinations.ai
-async function generateImagePollinations(title: string, visualElements: string, customImagePrompt?: string | null): Promise<string | null> {
+async function generateImagePollinations(title: string, content: string | null, visualElements: string, customImagePrompt?: string | null): Promise<string | null> {
   try {
-    const prompt = buildImagePrompt(title, visualElements, customImagePrompt);
+    const prompt = buildImagePrompt(title, content, visualElements, customImagePrompt);
     const encodedPrompt = encodeURIComponent(prompt);
     const seed = Math.floor(Math.random() * 1000000);
-    const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=576&nologo=true&seed=${seed}`;
+    const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=800&height=800&nologo=true&seed=${seed}`;
     console.log(`[Image] Using Pollinations fallback for: ${title.substring(0, 50)}...`);
     return url;
   } catch (err) {
@@ -779,7 +789,7 @@ serve(async (req) => {
           // 1. ChatGPT (DALL-E 3) como principal para imagens
           if (openaiApiKey) {
             try {
-              featuredImageUrl = await generateImageOpenAI(openaiApiKey, parsed.title, parsed.visual_elements, customImagePrompt);
+              featuredImageUrl = await generateImageOpenAI(openaiApiKey, parsed.title, parsed.content, parsed.visual_elements, customImagePrompt);
             } catch (imgErr) {
               console.warn(`[Image] DALL-E falhou para "${parsed.title}":`, imgErr);
             }
@@ -788,7 +798,7 @@ serve(async (req) => {
           // 2. Gemini como fallback para imagens
           if (!featuredImageUrl && geminiApiKey) {
             try {
-              featuredImageUrl = await generateImageGemini(geminiApiKey, parsed.title, parsed.visual_elements, customImagePrompt);
+              featuredImageUrl = await generateImageGemini(geminiApiKey, parsed.title, parsed.content, parsed.visual_elements, customImagePrompt);
             } catch (imgErr) {
               console.warn(`[Image] Gemini fallback falhou para "${parsed.title}":`, imgErr);
             }
@@ -797,7 +807,7 @@ serve(async (req) => {
           // 3. Pollinations como fallback final garantido
           if (!featuredImageUrl) {
             try {
-              featuredImageUrl = await generateImagePollinations(parsed.title, parsed.visual_elements, customImagePrompt);
+              featuredImageUrl = await generateImagePollinations(parsed.title, parsed.content, parsed.visual_elements, customImagePrompt);
             } catch (imgErr) {
               console.warn(`[Image] Pollinations fallback falhou para "${parsed.title}":`, imgErr);
             }
