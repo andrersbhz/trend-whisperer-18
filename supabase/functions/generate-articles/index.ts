@@ -798,7 +798,7 @@ serve(async (req) => {
           // 2. Gemini como fallback para imagens
           if (!featuredImageUrl && geminiApiKey) {
             try {
-              featuredImageUrl = await generateImageGemini(geminiApiKey, parsed.title, parsed.visual_elements, customImagePrompt);
+              featuredImageUrl = await generateImageGemini(geminiApiKey, parsed.title, parsed.content, parsed.visual_elements, customImagePrompt);
             } catch (imgErr) {
               console.warn(`[Image] Gemini fallback falhou para "${parsed.title}":`, imgErr);
             }
