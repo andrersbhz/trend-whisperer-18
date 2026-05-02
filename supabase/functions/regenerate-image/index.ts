@@ -166,8 +166,8 @@ async function generateImageDallE(apiKey: string, title: string, content: string
 }
 
 // Fallback gratuito e resiliente usando Pollinations.ai
-async function generateImagePollinations(title: string, visualElements: string | null, imagePrompt: string | null): Promise<string> {
-  const prompt = buildImagePrompt(title, visualElements, imagePrompt);
+async function generateImagePollinations(title: string, content: string | null, visualElements: string | null, imagePrompt: string | null): Promise<string> {
+  const prompt = buildImagePrompt(title, content, visualElements, imagePrompt);
   const encodedPrompt = encodeURIComponent(prompt);
   const seed = Math.floor(Math.random() * 1000000);
   const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=800&height=800&nologo=true&seed=${seed}`;
