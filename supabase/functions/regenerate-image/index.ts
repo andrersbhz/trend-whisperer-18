@@ -292,7 +292,15 @@ serve(async (req) => {
       : "Nenhuma imagem foi gerada. Verifique suas configurações de IA.";
 
     return new Response(
-      JSON.stringify({ success: updated > 0, message, updated, failed, skipped, details: details.slice(0, 3) }),
+      JSON.stringify({ 
+        success: updated > 0, 
+        message, 
+        updated, 
+        failed, 
+        skipped, 
+        details: details.slice(0, 5),
+        imageUrl: articleIds.length === 1 && details[0]?.imageUrl ? details[0].imageUrl : undefined
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
