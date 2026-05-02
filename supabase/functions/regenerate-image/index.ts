@@ -143,7 +143,7 @@ async function generateImageDallE(apiKey: string, title: string, content: string
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         model: "dall-e-3",
-        prompt: buildImagePrompt(title, visualElements, imagePrompt),
+        prompt: buildImagePrompt(title, content, visualElements, imagePrompt),
         n: 1,
         size: "1024x1024",
         quality: "standard",
