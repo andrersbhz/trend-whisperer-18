@@ -288,15 +288,25 @@ async function callWithFallback(providers: ProviderConfig[], systemPrompt: strin
 // O prompt da imagem é DERIVADO do conteúdo do artigo + perfil do escritor (writer_prompt).
 // Não há mais template fixo de imagem: a imagem segue sempre o título e os visual_elements gerados.
 
-function buildImagePrompt(title: string, visualElements: string, customImagePrompt?: string | null): string {
+function buildImagePrompt(title: string, content: string | null, visualElements: string, customImagePrompt?: string | null): string {
   const userImageGuidance = customImagePrompt && customImagePrompt.trim().length > 10
     ? `\nDIRETRIZES DO USUÁRIO (Siga fielmente esse estilo visual):\n${customImagePrompt.trim()}\n`
     : "";
 
-  return `Imagem editorial de alta qualidade para o artigo: "${title}".
+  const contentSnippet = content ? `\nCONTEXTO DO ARTIGO (USE PARA DETALHES): ${content.replace(/<[^>]*>/g, "").substring(0, 1000)}...` : "";
+
+  return `### INSTRUÇÕES DE HARMONIA CONTEXTUAL (CRÍTICO) ###
+1. LEITURA DO CONTEÚDO: A imagem deve estar em total harmonia com o artigo abaixo.
+2. ESPECIFICIDADE: Se o artigo citar pessoas famosas, locais específicos ou eventos reais, a imagem DEVE retratá-los fielmente.
+3. PROIBIÇÃO DE GENÉRICOS: É estritamente proibido criar imagens genéricas que não remetam diretamente ao assunto.
+4. ESTILO: ${userImageGuidance || "Fotografia editorial realista de alta qualidade, 1:1."}
+
+### DADOS DO ARTIGO ###
+TÍTULO: ${title}${contentSnippet}
 ELEMENTOS VISUAIS DO CONTEÚDO: ${visualElements || "Cena coerente com o título"}.
-${userImageGuidance}
-REQUISITOS OBRIGATÓRIOS: Representar fielmente o conteúdo. Sem texto, sem marcas d'água. Proporção 16:9. Estilo profissional.`;
+
+### REQUISITOS OBRIGATÓRIOS ###
+Representar fielmente o conteúdo. Sem texto, sem marcas d'água. Proporção 1:1, 800x800px. Estilo profissional.`;
 }
 
 async function generateImageOpenAI(apiKey: string, title: string, visualElements: string, customImagePrompt?: string | null): Promise<string | null> {
