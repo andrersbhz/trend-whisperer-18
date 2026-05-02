@@ -386,12 +386,12 @@ async function generateImageGemini(apiKey: string, title: string, content: strin
 }
 
 // Fallback robusto usando Pollinations.ai
-async function generateImagePollinations(title: string, visualElements: string, customImagePrompt?: string | null): Promise<string | null> {
+async function generateImagePollinations(title: string, content: string | null, visualElements: string, customImagePrompt?: string | null): Promise<string | null> {
   try {
-    const prompt = buildImagePrompt(title, visualElements, customImagePrompt);
+    const prompt = buildImagePrompt(title, content, visualElements, customImagePrompt);
     const encodedPrompt = encodeURIComponent(prompt);
     const seed = Math.floor(Math.random() * 1000000);
-    const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=576&nologo=true&seed=${seed}`;
+    const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=800&height=800&nologo=true&seed=${seed}`;
     console.log(`[Image] Using Pollinations fallback for: ${title.substring(0, 50)}...`);
     return url;
   } catch (err) {
