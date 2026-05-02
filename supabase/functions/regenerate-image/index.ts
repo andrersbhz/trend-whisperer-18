@@ -10,12 +10,12 @@ const corsHeaders = {
 function buildImagePrompt(title: string, visualElements: string | null | undefined, imagePrompt: string | null | undefined): string {
   const userImageGuidance = imagePrompt && imagePrompt.trim().length > 5
     ? `ESTILO VISUAL (OBRIGATÓRIO): ${imagePrompt.trim()}\n`
-    : "Estilo: Fotografia editorial realista de alta qualidade, 16:9.";
+    : "Estilo: Fotografia editorial realista de alta qualidade, 1:1.";
 
   return `${userImageGuidance}
 ASSUNTO DA IMAGEM: ${title}.
 DETALHES ADICIONAIS: ${visualElements || "Cena cinematográfica coerente com o título"}.
-REQUISITOS TÉCNICOS: Proporção 16:9, sem texto, sem marcas d'água, fotorrealista, 4k.`;
+REQUISITOS TÉCNICOS: Proporção 1:1, sem texto, sem marcas d'água, fotorrealista, 800x800px.`;
 }
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -135,7 +135,7 @@ async function generateImageDallE(apiKey: string, title: string, visualElements:
         model: "dall-e-3",
         prompt: buildImagePrompt(title, visualElements, imagePrompt),
         n: 1,
-        size: "1792x1024",
+        size: "1024x1024",
         quality: "standard",
         response_format: "b64_json",
       }),
@@ -160,7 +160,7 @@ async function generateImagePollinations(title: string, visualElements: string |
   const prompt = buildImagePrompt(title, visualElements, imagePrompt);
   const encodedPrompt = encodeURIComponent(prompt);
   const seed = Math.floor(Math.random() * 1000000);
-  const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=576&nologo=true&seed=${seed}`;
+  const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=800&height=800&nologo=true&seed=${seed}`;
   
   // Tenta validar se a URL está ok
   try {
