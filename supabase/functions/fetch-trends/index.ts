@@ -132,12 +132,8 @@ function parseRSSDirectly(rss: string, categories: string[]): any[] {
       const kws = keywords[cat] || [cat];
       if (kws.some((kw) => t.includes(kw))) return cat;
     }
-    // Fallback logic if no category matches specifically:
-    // If we can't find a match in the user's categories, pick one from the general list that matches
-    for (const cat in keywords) {
-      if (keywords[cat].some((kw) => t.includes(cat === "politica" ? t.includes("política") : t.includes(cat)))) return cat;
-    }
-    return categories[0] || "geral";
+    // Fallback: use varieties if no specific match
+    return "variedades";
   };
 
   const topics: any[] = [];
