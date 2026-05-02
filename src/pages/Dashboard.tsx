@@ -23,7 +23,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import AnalyticsPage from '@/pages/AnalyticsPage';
 
-const DEFAULT_WRITER_PROMPT = `Você é um jornalista digital brasileiro experiente. Escreva artigos informativos, com linguagem clara e acessível, otimizados para SEO. Use dados e fatos reais. Tom autoritativo mas acessível. Foque em entregar valor ao leitor com informações práticas e atualizadas.`;
+
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -34,9 +34,6 @@ const Dashboard = () => {
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [categoryStats, setCategoryStats] = useState<Array<{ category: string; total: number; published: number; pending: number; failed: number }>>([]);
   const [generating, setGenerating] = useState(false);
-  const [writerPrompt, setWriterPrompt] = useState(DEFAULT_WRITER_PROMPT);
-  const [savingPrompt, setSavingPrompt] = useState(false);
-  const [promptLoaded, setPromptLoaded] = useState(false);
   const [trendingList, setTrendingList] = useState<any[]>([]);
   const [loadingTrends, setLoadingTrends] = useState(true);
   const [userCategories, setUserCategories] = useState<string[]>([]);
@@ -56,13 +53,6 @@ const Dashboard = () => {
             .eq('user_id', user.id)
             .order('created_at', { ascending: false })
             .limit(5),
-        ),
-        runBackendQuery(() =>
-          supabase
-            .from('user_settings')
-            .select('writer_prompt')
-            .eq('user_id', user.id)
-            .maybeSingle(),
         ),
         runBackendQuery(() =>
           supabase
@@ -128,10 +118,6 @@ const Dashboard = () => {
       setRecentArticles(recent || []);
       setRecentErrors(errors || []);
       setAuditLogs(logs || []);
-      if (settings?.writer_prompt) {
-        setWriterPrompt(settings.writer_prompt);
-      }
-      setPromptLoaded(true);
     } catch (error) {
       setStats({ total: 0, published: 0, pending: 0, trending: 0, failed: 0 });
       setRecentArticles([]);
@@ -169,79 +155,6 @@ const Dashboard = () => {
     return getErrorMessage(error);
   };
 
-  const handleSavePrompt = async () => {
-    if (!user) return;
-    
-    // Validation
-    if (!writerPrompt || writerPrompt.trim().length < 50) {
-      toast({ 
-        title: 'Prompt inválido', 
-        description: 'O prompt do escritor deve ter pelo menos 50 caracteres para garantir uma boa persona.', 
-        variant: 'destructive' 
-      });
-      return;
-    }
-
-    const mandatoryKeywords = ['SEO', 'jornalista'];
-    const missingKeywords = mandatoryKeywords.filter(k => !writerPrompt.toLowerCase().includes(k.toLowerCase()));
-    if (missingKeywords.length > 0) {
-      toast({ 
-        title: 'Prompt incompleto', 
-        description: `O prompt deve conter orientações sobre: ${missingKeywords.join(', ')}.`, 
-        variant: 'destructive' 
-      });
-      return;
-    }
-
-    setSavingPrompt(true);
-    try {
-      const { data: existing } = await supabase
-        .from('user_settings')
-        .select('id')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (existing) {
-        await runBackendMutation(() =>
-          supabase
-            .from('user_settings')
-            .update({ writer_prompt: writerPrompt } as any)
-            .eq('user_id', user.id),
-        );
-      } else {
-        await runBackendMutation(() =>
-          supabase
-            .from('user_settings')
-            .insert({ user_id: user.id, writer_prompt: writerPrompt } as any),
-        );
-      }
-
-      // Log action
-      await supabase.from('audit_logs').insert({
-        user_id: user.id,
-        action: 'update_writer_prompt',
-        details: { prompt_length: writerPrompt.length }
-      });
-
-      toast({ title: 'Prompt salvo!', description: 'O perfil do escritor foi atualizado e será usado em todas as gerações.' });
-      fetchStats();
-    } catch (error) {
-      if (getErrorMessage(error).includes('duplicate key')) {
-        await runBackendMutation(() =>
-          supabase
-            .from('user_settings')
-            .update({ writer_prompt: writerPrompt } as any)
-            .eq('user_id', user.id),
-        );
-        toast({ title: 'Prompt salvo!', description: 'O perfil do escritor foi atualizado.' });
-        fetchStats();
-      } else {
-        toast({ title: 'Erro', description: getErrorMessage(error), variant: 'destructive' });
-      }
-    } finally {
-      setSavingPrompt(false);
-    }
-  };
 
   const handleGenerateArticles = async () => {
     if (!user) return;
@@ -462,40 +375,6 @@ const Dashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Writer Profile Prompt */}
-      <Card className="glass-card neon-border-lilac">
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <PenTool className="h-5 w-5 text-primary" />
-            <CardTitle className="text-lg text-foreground">Perfil do Escritor</CardTitle>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Defina como a IA deve escrever seus artigos. Este prompt será usado em toda geração automática para garantir consistência de estilo e máxima otimização SEO.
-          </p>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="writer-prompt">Prompt de estilo e SEO</Label>
-            <Textarea
-              id="writer-prompt"
-              value={writerPrompt}
-              onChange={(e) => setWriterPrompt(e.target.value)}
-              placeholder="Ex: Sou um jornalista especializado em tecnologia..."
-              className="min-h-[160px] text-sm"
-              disabled={!promptLoaded}
-            />
-          </div>
-          <Button
-            onClick={handleSavePrompt}
-            disabled={savingPrompt || !promptLoaded}
-            variant="outline"
-            className="w-full sm:w-auto"
-          >
-            {savingPrompt ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-            Salvar Perfil
-          </Button>
-        </CardContent>
-      </Card>
 
       {/* Logs de Auditoria e Erros */}
       <div id="audit-logs-section" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
