@@ -309,7 +309,7 @@ ELEMENTOS VISUAIS DO CONTEÚDO: ${visualElements || "Cena coerente com o título
 Representar fielmente o conteúdo. Sem texto, sem marcas d'água. Proporção 1:1, 800x800px. Estilo profissional.`;
 }
 
-async function generateImageOpenAI(apiKey: string, title: string, visualElements: string, customImagePrompt?: string | null): Promise<string | null> {
+async function generateImageOpenAI(apiKey: string, title: string, content: string | null, visualElements: string, customImagePrompt?: string | null): Promise<string | null> {
   try {
     const prompt = buildImagePrompt(title, visualElements, customImagePrompt);
     console.log(`[Image] Calling DALL-E 3 for: ${title.substring(0, 50)}...`);
