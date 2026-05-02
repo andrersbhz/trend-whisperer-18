@@ -111,6 +111,59 @@ const ArticlesPage = () => {
     }
   }, [user, initialFetchDone]);
 
+  // Auto-close preview logic
+  useEffect(() => {
+    const checkAndClosePreview = (articleId: string) => {
+      // Small delay to let states update
+      setTimeout(async () => {
+        const { data: article } = await supabase
+          .from('articles')
+          .select('title, content, featured_image_url, category, seo_keyword, meta_description')
+          .eq('id', articleId)
+          .single();
+
+        if (article) {
+          const isMissingInfo = 
+            !article.title || 
+            !article.content || 
+            !article.featured_image_url || 
+            !article.category || 
+            !article.seo_keyword || 
+            !article.meta_description;
+
+          if (!isMissingInfo) {
+            console.log('[ArticlesPage] Tudo preenchido, fechando prévia automaticamente...');
+            setPreviewOpen(false);
+            setPreview(null);
+            toast({ title: 'Processo finalizado', description: 'Artigo completo e salvo com sucesso.' });
+          } else {
+            console.log('[ArticlesPage] Ainda faltam informações:', {
+              title: !!article.title,
+              content: !!article.content,
+              image: !!article.featured_image_url,
+              category: !!article.category,
+              keyword: !!article.seo_keyword,
+              meta: !!article.meta_description
+            });
+          }
+        }
+      }, 1000);
+    };
+
+    const handleImageEvent = (e: any) => {
+      const { articleId } = e.detail;
+      checkAndClosePreview(articleId);
+    };
+
+    window.addEventListener('article-image-uploaded', handleImageEvent);
+    window.addEventListener('article-image-generated', handleImageEvent);
+
+    return () => {
+      window.removeEventListener('article-image-uploaded', handleImageEvent);
+      window.removeEventListener('article-image-generated', handleImageEvent);
+    };
+  }, []);
+
   useEffect(() => {
     const handleUpdate = (e: any) => setDiagMetrics(e.detail);
     const handleRefresh = () => fetchArticles();
