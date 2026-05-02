@@ -807,7 +807,7 @@ serve(async (req) => {
           // 3. Pollinations como fallback final garantido
           if (!featuredImageUrl) {
             try {
-              featuredImageUrl = await generateImagePollinations(parsed.title, parsed.visual_elements, customImagePrompt);
+              featuredImageUrl = await generateImagePollinations(parsed.title, parsed.content, parsed.visual_elements, customImagePrompt);
             } catch (imgErr) {
               console.warn(`[Image] Pollinations fallback falhou para "${parsed.title}":`, imgErr);
             }
