@@ -319,6 +319,45 @@ const ArticlesPage = () => {
     }
   };
 
+  const handleGenerateImageForArticle = async (articleId: string) => {
+    if (!user) return;
+    const startTime = diagnostics.startTimer();
+    setRegeneratingImages(true); // Using existing state to show loading if needed, or I can use a more specific one
+    try {
+      const { data, error } = await supabase.functions.invoke('regenerate-image', {
+        body: { userId: user.id, articleIds: [articleId] },
+      });
+      
+      if (error) throw error;
+      
+      if (data?.success) {
+        toast({ title: 'Sucesso', description: 'Imagem sendo gerada com o prompt configurado!' });
+        
+        // Wait a bit and fetch the updated article
+        setTimeout(async () => {
+          const { data: updatedArticle } = await supabase
+            .from('articles')
+            .select('featured_image_url')
+            .eq('id', articleId)
+            .single();
+            
+          if (updatedArticle?.featured_image_url) {
+            setPreview(prev => prev && prev.id === articleId ? { ...prev, featured_image_url: updatedArticle.featured_image_url } : prev);
+            setArticles(prev => prev.map(a => a.id === articleId ? { ...a, featured_image_url: updatedArticle.featured_image_url } : a));
+          }
+        }, 3000);
+      } else {
+        toast({ title: 'Atenção', description: data?.message || 'Falha ao iniciar geração', variant: 'destructive' });
+      }
+      diagnostics.endTimer(startTime, 'Gerar Imagem Individual', 'success');
+    } catch (error) {
+      diagnostics.endTimer(startTime, 'Gerar Imagem Individual', 'error', getErrorMessage(error));
+      toast({ title: 'Erro ao gerar imagem', description: getErrorMessage(error), variant: 'destructive' });
+    } finally {
+      setRegeneratingImages(false);
+    }
+  };
+
   const statusColors: Record<string, string> = {
     draft: 'bg-muted text-muted-foreground',
     generating: 'bg-warning/20 text-warning',
