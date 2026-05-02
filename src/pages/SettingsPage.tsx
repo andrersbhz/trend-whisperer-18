@@ -35,6 +35,7 @@ export interface UserSettings {
   writer_prompt: string;
   image_mode: 'ai' | 'manual' | 'none';
   image_prompt: string;
+  interaction_mode: string;
 }
 
 const defaultSettings: UserSettings = {
@@ -57,6 +58,7 @@ const defaultSettings: UserSettings = {
   writer_prompt: '',
   image_mode: 'ai',
   image_prompt: '',
+  interaction_mode: 'standard',
 };
 
 interface CredentialsStatus {
@@ -84,7 +86,7 @@ const SettingsPage = () => {
       try {
         const { data: userData, error: userError } = await supabase
           .from('user_settings')
-          .select('wordpress_url, wordpress_username, google_analytics_property_id, facebook_page_id, instagram_account_id, categories, articles_per_day, auto_publish, writer_prompt, azure_openai_endpoint, azure_openai_deployment_name, image_mode, image_prompt')
+          .select('wordpress_url, wordpress_username, google_analytics_property_id, facebook_page_id, instagram_account_id, categories, articles_per_day, auto_publish, writer_prompt, azure_openai_endpoint, azure_openai_deployment_name, image_mode, image_prompt, interaction_mode')
           .eq('user_id', user.id)
           .maybeSingle();
 
@@ -116,6 +118,7 @@ const SettingsPage = () => {
             writer_prompt: userData.writer_prompt || '',
             image_mode: (userData.image_mode as 'ai' | 'manual' | 'none') || 'ai',
             image_prompt: userData.image_prompt || '',
+            interaction_mode: userData.interaction_mode || 'standard',
           });
         }
 
@@ -174,6 +177,7 @@ const SettingsPage = () => {
         writer_prompt: settings.writer_prompt,
         image_mode: settings.image_mode,
         image_prompt: settings.image_prompt,
+        interaction_mode: settings.interaction_mode,
       };
 
       if (settings.wordpress_app_password) {

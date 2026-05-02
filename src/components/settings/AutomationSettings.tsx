@@ -9,10 +9,11 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import type { UserSettings } from '@/pages/SettingsPage';
 import { forwardRef } from 'react';
 
-import { useState, useMemo } from 'react';
-import { Plus, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+ import { useState, useMemo } from 'react';
+ import { Plus, X, Users, Shuffle, ShieldCheck } from 'lucide-react';
+ import { Button } from '@/components/ui/button';
+ import { Badge } from '@/components/ui/badge';
+ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const defaultCategories = [
   { id: 'esportes', label: '⚽ Esportes' },
@@ -189,7 +190,72 @@ const AutomationSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChan
         </CardContent>
       </Card>
 
-      {/* Robô de Publicação */}
+       {/* Perfil de Interação */}
+       <Card className="shadow-card">
+         <CardHeader>
+           <div className="flex items-center gap-2">
+             <Users className="h-5 w-5 text-primary" />
+             <CardTitle className="text-lg">Perfil de Interação</CardTitle>
+           </div>
+           <CardDescription>
+             Defina como o robô deve interagir. A opção randômica alterna perfis para aumentar cliques e ganhos com segurança.
+           </CardDescription>
+         </CardHeader>
+         <CardContent className="space-y-4">
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+             <div className="space-y-2">
+               <Label htmlFor="interaction-mode">Modo de Interação</Label>
+               <Select 
+                 value={settings.interaction_mode || 'standard'} 
+                 onValueChange={(val) => onChange({ interaction_mode: val })}
+               >
+                 <SelectTrigger id="interaction-mode">
+                   <SelectValue placeholder="Selecione o modo" />
+                 </SelectTrigger>
+                 <SelectContent>
+                   <SelectItem value="standard">
+                     <div className="flex items-center gap-2">
+                       <PenTool className="h-4 w-4" />
+                       <span>Padrão (Escritor)</span>
+                     </div>
+                   </SelectItem>
+                   <SelectItem value="journalist">
+                     <div className="flex items-center gap-2">
+                       <PenTool className="h-4 w-4" />
+                       <span>Jornalístico</span>
+                     </div>
+                   </SelectItem>
+                   <SelectItem value="creative">
+                     <div className="flex items-center gap-2">
+                       <PenTool className="h-4 w-4" />
+                       <span>Criativo</span>
+                     </div>
+                   </SelectItem>
+                   <SelectItem value="random">
+                     <div className="flex items-center gap-2">
+                       <Shuffle className="h-4 w-4 text-primary" />
+                       <span className="font-semibold text-primary">Randômico (Rotatividade)</span>
+                     </div>
+                   </SelectItem>
+                 </SelectContent>
+               </Select>
+             </div>
+             
+             <div className="flex items-end pb-1">
+               <div className="flex items-center gap-2 p-2 rounded-md bg-primary/5 border border-primary/20 w-full">
+                 <ShieldCheck className="h-4 w-4 text-primary shrink-0" />
+                 <span className="text-[10px] text-muted-foreground leading-tight">
+                   {settings.interaction_mode === 'random' 
+                     ? "O modo randômico está ativo para otimizar acessos com segurança máxima." 
+                     : "Perfil fixo selecionado. Suas alterações são salvas automaticamente."}
+                 </span>
+               </div>
+             </div>
+           </div>
+         </CardContent>
+       </Card>
+
+       {/* Robô de Publicação */}
       <Card className={`shadow-card border-2 transition-all duration-300 ${settings.auto_publish ? 'border-success/50 bg-success/5' : 'border-destructive/50 bg-destructive/5'}`}>
         <CardHeader>
           <div className="flex items-center justify-between">

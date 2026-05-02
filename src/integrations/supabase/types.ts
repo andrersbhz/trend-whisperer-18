@@ -321,6 +321,7 @@ export type Database = {
           image_prompt: string | null
           image_prompt_template: string | null
           instagram_account_id: string | null
+          interaction_mode: string | null
           last_trends_fetch: string | null
           linkedin_access_token: string | null
           linkedin_org_id: string | null
@@ -353,6 +354,7 @@ export type Database = {
           image_prompt?: string | null
           image_prompt_template?: string | null
           instagram_account_id?: string | null
+          interaction_mode?: string | null
           last_trends_fetch?: string | null
           linkedin_access_token?: string | null
           linkedin_org_id?: string | null
@@ -385,6 +387,7 @@ export type Database = {
           image_prompt?: string | null
           image_prompt_template?: string | null
           instagram_account_id?: string | null
+          interaction_mode?: string | null
           last_trends_fetch?: string | null
           linkedin_access_token?: string | null
           linkedin_org_id?: string | null
