@@ -92,7 +92,7 @@ async function withRetry<T>(operation: () => Promise<T>, retries = 2, baseDelayM
   throw lastError instanceof Error ? lastError : new Error(String(lastError));
 }
 
-async function generateImageGemini(apiKey: string, title: string, visualElements: string | null, imagePrompt: string | null): Promise<string> {
+async function generateImageGemini(apiKey: string, title: string, content: string | null, visualElements: string | null, imagePrompt: string | null): Promise<string> {
   // Modelos experimentais que podem suportar geração de imagem
   const models = ["gemini-2.0-flash-exp", "gemini-1.5-flash"];
   const errors: string[] = [];
