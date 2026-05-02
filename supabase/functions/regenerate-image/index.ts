@@ -223,7 +223,7 @@ serve(async (req) => {
     // Fetch articles
     const { data: articles } = await supabase
       .from("articles")
-      .select("id, title, category, featured_image_url, visual_elements")
+      .select("id, title, category, featured_image_url, visual_elements, content")
       .eq("user_id", userId)
       .in("id", articleIds);
 
