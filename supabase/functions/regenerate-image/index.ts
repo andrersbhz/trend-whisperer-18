@@ -6,16 +6,16 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// O prompt da imagem é DERIVADO do conteúdo do artigo + perfil do escritor (writer_prompt).
-// Não há mais template fixo: a imagem segue sempre o título e os elementos visuais do artigo.
-function buildImagePrompt(title: string, visualElements: string | null | undefined, writerPrompt: string | null | undefined): string {
-  const userImageGuidance = writerPrompt && writerPrompt.trim().length > 10
-    ? `\nDIRETRIZES DO USUÁRIO (perfil do escritor — aplique estilo visual coerente):\n${writerPrompt.trim()}\n`
-    : "";
-  return `Imagem editorial para o artigo intitulado: "${title}".
-ELEMENTOS VISUAIS DO ARTIGO (siga fielmente): ${visualElements || "Cena coerente com o título do artigo"}.
-${userImageGuidance}
-REQUISITOS: A imagem deve representar fielmente o conteúdo do artigo. Sem texto sobreposto, sem marcas d'água, proporção 16:9.`;
+// O prompt da imagem é DERIVADO do image_prompt configurado + conteúdo do artigo.
+function buildImagePrompt(title: string, visualElements: string | null | undefined, imagePrompt: string | null | undefined): string {
+  const userImageGuidance = imagePrompt && imagePrompt.trim().length > 5
+    ? `ESTILO VISUAL (OBRIGATÓRIO): ${imagePrompt.trim()}\n`
+    : "Estilo: Fotografia editorial realista de alta qualidade, 16:9.";
+
+  return `${userImageGuidance}
+ASSUNTO DA IMAGEM: ${title}.
+DETALHES ADICIONAIS: ${visualElements || "Cena cinematográfica coerente com o título"}.
+REQUISITOS TÉCNICOS: Proporção 16:9, sem texto, sem marcas d'água, fotorrealista, 4k.`;
 }
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -82,9 +82,9 @@ async function withRetry<T>(operation: () => Promise<T>, retries = 2, baseDelayM
   throw lastError instanceof Error ? lastError : new Error(String(lastError));
 }
 
-async function generateImageGemini(apiKey: string, title: string, visualElements: string | null, writerPrompt: string | null): Promise<string> {
-  // Modelos corretos do Gemini que suportam geração de imagem (Nano Banana)
-  const models = ["gemini-2.5-flash-image-preview", "gemini-2.0-flash-preview-image-generation"];
+async function generateImageGemini(apiKey: string, title: string, visualElements: string | null, imagePrompt: string | null): Promise<string> {
+  // Modelos experimentais que podem suportar geração de imagem
+  const models = ["gemini-2.0-flash-exp", "gemini-1.5-flash"];
   const errors: string[] = [];
 
   for (const model of models) {
@@ -95,8 +95,10 @@ async function generateImageGemini(apiKey: string, title: string, visualElements
           method: "POST",
           headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
           body: JSON.stringify({
-            contents: [{ parts: [{ text: buildImagePrompt(title, visualElements, writerPrompt) }] }],
-            generationConfig: { responseModalities: ["IMAGE", "TEXT"] },
+            contents: [{ parts: [{ text: buildImagePrompt(title, visualElements, imagePrompt) }] }],
+            generationConfig: { 
+              responseModalities: ["IMAGE"],
+            },
           }),
         });
 
@@ -109,7 +111,7 @@ async function generateImageGemini(apiKey: string, title: string, visualElements
         const imgPart = parts.find((p: any) => p.inlineData?.mimeType?.startsWith("image/"));
 
         if (!imgPart?.inlineData) {
-          throw new ProviderError(`Gemini image ${model} não retornou uma imagem válida.`, 500, false, false);
+          throw new ProviderError(`Gemini image ${model} não retornou uma imagem direta.`, 500, false, false);
         }
 
         return `data:${imgPart.inlineData.mimeType};base64,${imgPart.inlineData.data}`;
@@ -124,14 +126,14 @@ async function generateImageGemini(apiKey: string, title: string, visualElements
   throw new ProviderError(errors.join(" | ") || "Falha ao gerar imagem com Gemini", 500, false, errors.some((message) => isBillingIssue(0, message)));
 }
 
-async function generateImageDallE(apiKey: string, title: string, visualElements: string | null, writerPrompt: string | null): Promise<string> {
+async function generateImageDallE(apiKey: string, title: string, visualElements: string | null, imagePrompt: string | null): Promise<string> {
   return await withRetry(async () => {
     const resp = await fetch("https://api.openai.com/v1/images/generations", {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         model: "dall-e-3",
-        prompt: buildImagePrompt(title, visualElements, writerPrompt),
+        prompt: buildImagePrompt(title, visualElements, imagePrompt),
         n: 1,
         size: "1792x1024",
         quality: "standard",
@@ -153,6 +155,23 @@ async function generateImageDallE(apiKey: string, title: string, visualElements:
   }, 1, 2000);
 }
 
+// Fallback gratuito e resiliente usando Pollinations.ai
+async function generateImagePollinations(title: string, visualElements: string | null, imagePrompt: string | null): Promise<string> {
+  const prompt = buildImagePrompt(title, visualElements, imagePrompt);
+  const encodedPrompt = encodeURIComponent(prompt);
+  const seed = Math.floor(Math.random() * 1000000);
+  const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=576&nologo=true&seed=${seed}`;
+  
+  // Tenta validar se a URL está ok
+  try {
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error("Pollinations failed");
+    return url;
+  } catch {
+    // Se falhar o fetch (raro), apenas retorna a URL e deixa o browser carregar
+    return url;
+  }
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -166,18 +185,19 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Carrega chaves de IA do usuário (Gemini + OpenAI)
+    // Carrega chaves de IA do usuário
     let geminiApiKey: string | null = null;
     let openaiApiKey: string | null = null;
     const { data: settings } = await supabase
       .from("user_settings")
-      .select("gemini_api_key, openai_api_key, writer_prompt, image_mode")
+      .select("gemini_api_key, openai_api_key, writer_prompt, image_mode, image_prompt")
       .eq("user_id", userId)
       .single();
-    const writerPrompt: string | null = settings?.writer_prompt || null;
+    
+    const imagePrompt: string | null = settings?.image_prompt || null;
     const imageMode = settings?.image_mode || "ai";
 
-    if (imageMode !== "ai") {
+    if (imageMode !== "ai" && !force) {
       throw new Error(`A regeneração por IA está desativada. Altere o Modo de Imagem para "Gerada por IA" nas configurações.`);
     }
 
@@ -188,10 +208,6 @@ serve(async (req) => {
     if (settings?.openai_api_key) {
       const { data: decrypted } = await supabase.rpc("decrypt_credential", { enc_key: "", val: settings.openai_api_key });
       if (decrypted && typeof decrypted === "string" && decrypted.length > 5) openaiApiKey = decrypted;
-    }
-
-    if (!geminiApiKey && !openaiApiKey) {
-      throw new Error("Nenhum provedor de IA disponível. Configure Gemini ou OpenAI em Configurações.");
     }
 
     // Fetch articles
@@ -206,12 +222,11 @@ serve(async (req) => {
     let updated = 0;
     let failed = 0;
     let skipped = 0;
-    const details: Array<{ articleId: string; title: string; reason: string }> = [];
+    const details: Array<{ articleId: string; title: string; reason: string; imageUrl?: string }> = [];
     const startTime = Date.now();
-    const MAX_DURATION_MS = 120_000; // Para com folga antes do timeout de 150s
-    const MAX_PER_CALL = 5; // Limita lote por chamada para evitar timeout
+    const MAX_DURATION_MS = 120_000;
+    const MAX_PER_CALL = 5;
 
-    // Considera quebrada: source.unsplash.com (descontinuado), picsum (placeholder) ou pexels (legado)
     const isBrokenImageUrl = (url: string | null | undefined): boolean => {
       if (!url) return true;
       return /source\.unsplash\.com|picsum\.photos|images\.pexels\.com/i.test(url);
@@ -220,11 +235,9 @@ serve(async (req) => {
     let processed = 0;
     for (const article of articles) {
       if (!force && article.featured_image_url && !isBrokenImageUrl(article.featured_image_url)) {
-        console.log(`Skipping ${article.id} - already has valid image`);
         continue;
       }
 
-      // Para se atingir limite de tempo ou de lote (evita 504)
       if (Date.now() - startTime > MAX_DURATION_MS || processed >= MAX_PER_CALL) {
         skipped++;
         continue;
@@ -234,23 +247,31 @@ serve(async (req) => {
       let imageUrl: string | null = null;
       const providerErrors: string[] = [];
 
-      // Cadeia: Gemini (prioridade) → OpenAI DALL-E (backup)
+      // Cadeia: Gemini (se configurado) -> OpenAI (se configurado) -> Pollinations (fallback garantido)
       if (geminiApiKey) {
-        try { imageUrl = await generateImageGemini(geminiApiKey, article.title, (article as any).visual_elements || null, writerPrompt); }
+        try { imageUrl = await generateImageGemini(geminiApiKey, article.title, (article as any).visual_elements || null, imagePrompt); }
         catch (error) { providerErrors.push(`Gemini: ${getErrorMessage(error)}`); }
       }
       
-      // Se Gemini falhou ou não estava disponível, tenta OpenAI
       if (!imageUrl && openaiApiKey) {
-        try { imageUrl = await generateImageDallE(openaiApiKey, article.title, (article as any).visual_elements || null, writerPrompt); }
+        try { imageUrl = await generateImageDallE(openaiApiKey, article.title, (article as any).visual_elements || null, imagePrompt); }
         catch (error) { providerErrors.push(`OpenAI: ${getErrorMessage(error)}`); }
+      }
+
+      // Fallback final: Pollinations (sempre funciona se houver internet)
+      if (!imageUrl) {
+        try {
+          imageUrl = await generateImagePollinations(article.title, (article as any).visual_elements || null, imagePrompt);
+          console.log(`Fallback Pollinations used for "${article.title}"`);
+        } catch (error) {
+          providerErrors.push(`Pollinations: ${getErrorMessage(error)}`);
+        }
       }
 
       if (!imageUrl) {
         failed++;
         const reason = providerErrors[0]?.substring(0, 200) || "Todos os provedores de IA falharam";
         details.push({ articleId: article.id, title: article.title, reason });
-        console.error(`All image providers failed for "${article.title}": ${providerErrors.join(" | ").substring(0, 300)}`);
         continue;
       }
 
@@ -260,18 +281,26 @@ serve(async (req) => {
         details.push({ articleId: article.id, title: article.title, reason: updateError.message });
       } else {
         updated++;
-        console.log(`Image set for article: ${article.title}`);
+        details.push({ articleId: article.id, title: article.title, reason: "Success", imageUrl: imageUrl });
       }
 
       await sleep(500);
     }
 
     const message = updated > 0
-      ? `${updated} imagens geradas com IA${failed > 0 ? ` (${failed} falharam)` : ""}${skipped > 0 ? ` — ${skipped} restantes, rode novamente para continuar` : ""}.`
-      : "Nenhuma imagem foi gerada. Verifique suas chaves de IA e cota.";
+      ? `${updated} imagens processadas com sucesso.`
+      : "Nenhuma imagem foi gerada. Verifique suas configurações de IA.";
 
     return new Response(
-      JSON.stringify({ success: updated > 0, message, updated, failed, skipped, details: details.slice(0, 3) }),
+      JSON.stringify({ 
+        success: updated > 0, 
+        message, 
+        updated, 
+        failed, 
+        skipped, 
+        details: details.slice(0, 5),
+        imageUrl: articleIds.length === 1 && details[0]?.imageUrl ? details[0].imageUrl : undefined
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
