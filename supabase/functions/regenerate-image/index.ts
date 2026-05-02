@@ -7,15 +7,25 @@ const corsHeaders = {
 };
 
 // O prompt da imagem é DERIVADO do image_prompt configurado + conteúdo do artigo.
-function buildImagePrompt(title: string, visualElements: string | null | undefined, imagePrompt: string | null | undefined): string {
+function buildImagePrompt(title: string, content: string | null, visualElements: string | null | undefined, imagePrompt: string | null | undefined): string {
   const userImageGuidance = imagePrompt && imagePrompt.trim().length > 5
     ? `ESTILO VISUAL (OBRIGATÓRIO): ${imagePrompt.trim()}\n`
     : "Estilo: Fotografia editorial realista de alta qualidade, 1:1.";
 
-  return `${userImageGuidance}
-ASSUNTO DA IMAGEM: ${title}.
-DETALHES ADICIONAIS: ${visualElements || "Cena cinematográfica coerente com o título"}.
-REQUISITOS TÉCNICOS: Proporção 1:1, sem texto, sem marcas d'água, fotorrealista, 800x800px.`;
+  const contentSnippet = content ? `\nCONTEXTO DO ARTIGO (USE PARA DETALHES): ${content.replace(/<[^>]*>/g, "").substring(0, 1000)}...` : "";
+
+  return `### INSTRUÇÕES DE HARMONIA CONTEXTUAL (CRÍTICO) ###
+1. LEITURA DO CONTEÚDO: A imagem deve estar em total harmonia com o artigo.
+2. ESPECIFICIDADE: Se o artigo citar pessoas famosas, locais específicos ou eventos reais, a imagem DEVE retratá-los fielmente.
+3. PROIBIÇÃO DE GENÉRICOS: É estritamente proibido criar imagens genéricas que não remetam diretamente ao assunto.
+4. ESTILO: ${userImageGuidance}
+
+### DADOS DO ARTIGO ###
+TÍTULO: ${title}${contentSnippet}
+ELEMENTOS VISUAIS SUGERIDOS: ${visualElements || "Cena coerente com o título e conteúdo"}.
+
+### REQUISITOS TÉCNICOS ###
+Proporção 1:1, sem texto, sem marcas d'água, fotorrealista, 800x800px.`;
 }
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
