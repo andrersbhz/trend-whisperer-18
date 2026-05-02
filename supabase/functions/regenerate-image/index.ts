@@ -281,6 +281,7 @@ serve(async (req) => {
         details.push({ articleId: article.id, title: article.title, reason: updateError.message });
       } else {
         updated++;
+        details.push({ articleId: article.id, title: article.title, reason: "Success", imageUrl: imageUrl });
       }
 
       await sleep(500);
