@@ -140,30 +140,51 @@ const AutomationSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChan
             <CardTitle className="text-lg">Perfil do Escritor</CardTitle>
           </div>
           <CardDescription>
-            Defina como a IA deve escrever seus artigos {settings.image_mode === 'ai' && <strong>e gerar as imagens</strong>}. 
-            {settings.image_mode === 'ai' ? 
-              " Este é o ÚNICO prompt usado em toda geração — inclua aqui tanto as instruções de texto quanto as instruções visuais." :
-              " Este prompt define o estilo de escrita, tom e estrutura dos seus artigos."
-            }
+            Defina como a IA deve escrever seus artigos. 
+            Este prompt define o estilo de escrita, tom e estrutura dos seus artigos.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <Label htmlFor="writer-prompt-settings">
-            Prompt do escritor {settings.image_mode === 'ai' ? "(texto + imagem)" : "(texto)"}
+            Prompt do escritor (texto)
           </Label>
           <Textarea
             id="writer-prompt-settings"
             value={settings.writer_prompt}
             onChange={(e) => onChange({ writer_prompt: e.target.value })}
-            placeholder={settings.image_mode === 'ai' 
-              ? `Ex: Sou um jornalista especializado em tecnologia. Escreva artigos com tom informal mas informativo...\n\nIMAGEM: Fotografia editorial realista, estilo fotojornalismo brasileiro...`
-              : `Ex: Sou um jornalista especializado em tecnologia. Escreva artigos com tom informal mas informativo, use listas e subtítulos, otimize para SEO...`
-            }
+            placeholder={`Ex: Sou um jornalista especializado em tecnologia. Escreva artigos com tom informal mas informativo, use listas e subtítulos, otimize para SEO...`}
             className="min-h-[200px] text-sm"
           />
           <p className="text-xs text-muted-foreground">
             Dica: Inclua estilo de escrita, nicho, tom, público-alvo e técnicas de SEO.
-            {settings.image_mode === 'ai' && " Adicione também instruções de imagem (estilo fotográfico, iluminação, restrições)."}
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Image Prompt Profile */}
+      <Card className="shadow-card">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <ImageIcon className="h-5 w-5 text-primary" />
+            <CardTitle className="text-lg">Prompt de Imagem IA</CardTitle>
+          </div>
+          <CardDescription>
+            Defina o estilo visual das imagens destacadas geradas pelo robô.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Label htmlFor="image-prompt-settings">
+            Prompt para geração de imagens
+          </Label>
+          <Textarea
+            id="image-prompt-settings"
+            value={settings.image_prompt || ''}
+            onChange={(e) => onChange({ image_prompt: e.target.value })}
+            placeholder="Ex: Fotografia editorial realista, estilo fotojornalismo, iluminação natural, alta qualidade, 16:9..."
+            className="min-h-[120px] text-sm"
+          />
+          <p className="text-xs text-muted-foreground">
+            Este prompt será usado em conjunto com o assunto do artigo para criar a imagem destacada.
           </p>
         </CardContent>
       </Card>

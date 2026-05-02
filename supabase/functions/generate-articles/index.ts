@@ -288,20 +288,20 @@ async function callWithFallback(providers: ProviderConfig[], systemPrompt: strin
 // O prompt da imagem é DERIVADO do conteúdo do artigo + perfil do escritor (writer_prompt).
 // Não há mais template fixo de imagem: a imagem segue sempre o título e os visual_elements gerados.
 
-function buildImagePrompt(title: string, visualElements: string, writerPrompt?: string | null): string {
-  const userImageGuidance = writerPrompt && writerPrompt.trim().length > 10
-    ? `\nDIRETRIZES DO USUÁRIO (perfil do escritor — aplique estilo visual coerente):\n${writerPrompt.trim()}\n`
+function buildImagePrompt(title: string, visualElements: string, customImagePrompt?: string | null): string {
+  const userImageGuidance = customImagePrompt && customImagePrompt.trim().length > 10
+    ? `\nDIRETRIZES DO USUÁRIO (Siga fielmente esse estilo visual):\n${customImagePrompt.trim()}\n`
     : "";
 
-  return `Imagem editorial para o artigo intitulado: "${title}".
-ELEMENTOS VISUAIS DO ARTIGO (siga fielmente): ${visualElements || "Cena coerente com o título do artigo"}.
+  return `Imagem editorial de alta qualidade para o artigo: "${title}".
+ELEMENTOS VISUAIS DO CONTEÚDO: ${visualElements || "Cena coerente com o título"}.
 ${userImageGuidance}
-REQUISITOS: A imagem deve representar fielmente o conteúdo do artigo. Sem texto sobreposto, sem marcas d'água, proporção 16:9.`;
+REQUISITOS OBRIGATÓRIOS: Representar fielmente o conteúdo. Sem texto, sem marcas d'água. Proporção 16:9. Estilo profissional.`;
 }
 
-async function generateImageOpenAI(apiKey: string, title: string, visualElements: string, writerPrompt?: string | null): Promise<string | null> {
+async function generateImageOpenAI(apiKey: string, title: string, visualElements: string, customImagePrompt?: string | null): Promise<string | null> {
   try {
-    const prompt = buildImagePrompt(title, visualElements, writerPrompt);
+    const prompt = buildImagePrompt(title, visualElements, customImagePrompt);
     console.log(`[Image] Calling DALL-E 3 for: ${title.substring(0, 50)}...`);
 
     const resp = await fetch("https://api.openai.com/v1/images/generations", {
@@ -336,14 +336,14 @@ async function generateImageOpenAI(apiKey: string, title: string, visualElements
   return null;
 }
 
-async function generateImageGemini(apiKey: string, title: string, visualElements: string, writerPrompt?: string | null): Promise<string | null> {
+async function generateImageGemini(apiKey: string, title: string, visualElements: string, customImagePrompt?: string | null): Promise<string | null> {
   const models = ["gemini-2.5-flash-image-preview", "gemini-2.0-flash-preview-image-generation"];
   for (const model of models) {
     try {
       console.log(`[Image] Attempting generation with Gemini model: ${model}`);
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
       const body = {
-        contents: [{ parts: [{ text: buildImagePrompt(title, visualElements, writerPrompt) }] }],
+        contents: [{ parts: [{ text: buildImagePrompt(title, visualElements, customImagePrompt) }] }],
         generationConfig: { responseModalities: ["IMAGE", "TEXT"] },
       };
 
@@ -756,13 +756,13 @@ serve(async (req) => {
 
         // GERAÇÃO DE IMAGEM: depende do imageMode configurado
         let featuredImageUrl: string | null = null;
-        const writerPromptForImage = settings?.writer_prompt || null;
+        const customImagePrompt = settings?.image_prompt || null;
 
         if (imageMode === "ai") {
           // 1. ChatGPT (DALL-E 3) como principal para imagens
           if (openaiApiKey) {
             try {
-              featuredImageUrl = await generateImageOpenAI(openaiApiKey, parsed.title, parsed.visual_elements, writerPromptForImage);
+              featuredImageUrl = await generateImageOpenAI(openaiApiKey, parsed.title, parsed.visual_elements, customImagePrompt);
             } catch (imgErr) {
               console.warn(`[Image] DALL-E falhou para "${parsed.title}":`, imgErr);
             }
@@ -771,7 +771,7 @@ serve(async (req) => {
           // 2. Gemini como fallback para imagens
           if (!featuredImageUrl && geminiApiKey) {
             try {
-              featuredImageUrl = await generateImageGemini(geminiApiKey, parsed.title, parsed.visual_elements, writerPromptForImage);
+              featuredImageUrl = await generateImageGemini(geminiApiKey, parsed.title, parsed.visual_elements, customImagePrompt);
             } catch (imgErr) {
               console.warn(`[Image] Gemini fallback falhou para "${parsed.title}":`, imgErr);
             }

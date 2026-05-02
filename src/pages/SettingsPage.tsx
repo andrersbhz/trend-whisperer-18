@@ -34,6 +34,7 @@ export interface UserSettings {
   auto_publish: boolean;
   writer_prompt: string;
   image_mode: 'ai' | 'manual' | 'none';
+  image_prompt: string;
 }
 
 const defaultSettings: UserSettings = {
@@ -55,6 +56,7 @@ const defaultSettings: UserSettings = {
   auto_publish: false,
   writer_prompt: '',
   image_mode: 'ai',
+  image_prompt: '',
 };
 
 interface CredentialsStatus {
@@ -82,7 +84,7 @@ const SettingsPage = () => {
       try {
         const { data: userData, error: userError } = await supabase
           .from('user_settings')
-          .select('wordpress_url, wordpress_username, google_analytics_property_id, facebook_page_id, instagram_account_id, categories, articles_per_day, auto_publish, writer_prompt, azure_openai_endpoint, azure_openai_deployment_name, image_mode')
+          .select('wordpress_url, wordpress_username, google_analytics_property_id, facebook_page_id, instagram_account_id, categories, articles_per_day, auto_publish, writer_prompt, azure_openai_endpoint, azure_openai_deployment_name, image_mode, image_prompt')
           .eq('user_id', user.id)
           .maybeSingle();
 
@@ -113,6 +115,7 @@ const SettingsPage = () => {
             auto_publish: userData.auto_publish || false,
             writer_prompt: userData.writer_prompt || '',
             image_mode: (userData.image_mode as 'ai' | 'manual' | 'none') || 'ai',
+            image_prompt: userData.image_prompt || '',
           });
         }
 
@@ -170,6 +173,7 @@ const SettingsPage = () => {
         auto_publish: settings.auto_publish,
         writer_prompt: settings.writer_prompt,
         image_mode: settings.image_mode,
+        image_prompt: settings.image_prompt,
       };
 
       if (settings.wordpress_app_password) {
@@ -235,6 +239,7 @@ const SettingsPage = () => {
           auto_publish: settings.auto_publish,
           writer_prompt: settings.writer_prompt,
           image_mode: settings.image_mode,
+          image_prompt: settings.image_prompt,
         };
         await runBackendMutation(() =>
           supabase.from('user_settings').update(payload as any).eq('user_id', user.id),
