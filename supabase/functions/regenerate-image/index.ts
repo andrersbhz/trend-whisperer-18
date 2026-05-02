@@ -259,7 +259,7 @@ serve(async (req) => {
 
       // Cadeia: Gemini (se configurado) -> OpenAI (se configurado) -> Pollinations (fallback garantido)
       if (geminiApiKey) {
-        try { imageUrl = await generateImageGemini(geminiApiKey, article.title, (article as any).visual_elements || null, imagePrompt); }
+        try { imageUrl = await generateImageGemini(geminiApiKey, article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt); }
         catch (error) { providerErrors.push(`Gemini: ${getErrorMessage(error)}`); }
       }
       
