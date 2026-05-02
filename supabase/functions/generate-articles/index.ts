@@ -311,7 +311,7 @@ Representar fielmente o conteúdo. Sem texto, sem marcas d'água. Proporção 1:
 
 async function generateImageOpenAI(apiKey: string, title: string, content: string | null, visualElements: string, customImagePrompt?: string | null): Promise<string | null> {
   try {
-    const prompt = buildImagePrompt(title, visualElements, customImagePrompt);
+    const prompt = buildImagePrompt(title, content, visualElements, customImagePrompt);
     console.log(`[Image] Calling DALL-E 3 for: ${title.substring(0, 50)}...`);
 
     const resp = await fetch("https://api.openai.com/v1/images/generations", {
