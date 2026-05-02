@@ -33,7 +33,7 @@ export async function getCroppedImg(
   pixelCrop: { x: number; y: number; width: number; height: number },
   rotation = 0,
   flip = { horizontal: false, vertical: false },
-  targetWidth = 1200 // Default target width for high quality WordPress images
+  targetWidth = 800 // Default target width for 1:1 article images
 ): Promise<Blob | null> {
   const image = await createImage(imageSrc);
   const canvas = document.createElement('canvas');
@@ -72,8 +72,8 @@ export async function getCroppedImg(
     return null;
   }
 
-  // Calculate the target height based on 16:9 ratio if we're enforcing it
-  const targetHeight = Math.round(targetWidth * (9 / 16));
+  // Calculate the target height based on 1:1 ratio
+  const targetHeight = targetWidth;
 
   // Set the size of the cropped canvas to the target dimensions for better quality/standardization
   croppedCanvas.width = targetWidth;
