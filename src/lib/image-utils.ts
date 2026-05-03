@@ -26,6 +26,40 @@ export function rotateSize(width: number, height: number, rotation: number) {
 }
 
 /**
+ * Applies a basic sharpen convolution filter to a canvas context.
+ */
+function applySharpen(ctx: CanvasRenderingContext2D, width: number, height: number, amount: number = 0.15) {
+  const imageData = ctx.getImageData(0, 0, width, height);
+  const data = imageData.data;
+  const copy = new Uint8ClampedArray(data);
+  
+  // Convolution kernel for sharpening
+  // [  0, -1,  0 ]
+  // [ -1,  5, -1 ]
+  // [  0, -1,  0 ]
+  // We use a weighted version to control 'amount'
+  const mix = amount;
+  
+  for (let y = 1; y < height - 1; y++) {
+    for (let x = 1; x < width - 1; x++) {
+      const idx = (y * width + x) * 4;
+      for (let c = 0; c < 3; c++) { // RGB channels
+        const i = idx + c;
+        const val = 5 * copy[i] 
+                  - copy[i - 4] 
+                  - copy[i + 4] 
+                  - copy[i - width * 4] 
+                  - copy[i + width * 4];
+        
+        // Blend original with sharpened version based on amount
+        data[i] = copy[i] * (1 - mix) + val * mix;
+      }
+    }
+  }
+  ctx.putImageData(imageData, 0, 0);
+}
+
+/**
  * This function was adapted from the one in the react-easy-crop project.
  */
 export async function getCroppedImg(
@@ -33,7 +67,8 @@ export async function getCroppedImg(
   pixelCrop: { x: number; y: number; width: number; height: number },
   rotation = 0,
   flip = { horizontal: false, vertical: false },
-  targetWidth = 800 // Default target width for 1:1 article images
+  targetWidth = 800, // Default target width for 1:1 article images
+  sharpenAmount = 0.15 // Optional sharpen amount (0 to 1)
 ): Promise<Blob | null> {
   const image = await createImage(imageSrc);
   const canvas = document.createElement('canvas');
@@ -96,6 +131,11 @@ export async function getCroppedImg(
     targetWidth,
     targetHeight
   );
+
+  // Apply optional sharpening to enhance details after downscaling
+  if (sharpenAmount > 0) {
+    applySharpen(croppedCtx, targetWidth, targetHeight, sharpenAmount);
+  }
 
   // Export as high quality JPEG
   return new Promise((resolve, reject) => {
