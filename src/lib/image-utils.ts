@@ -66,22 +66,25 @@ export async function getCroppedImg(
   ctx.drawImage(image, 0, 0);
 
   const croppedCanvas = document.createElement('canvas');
-  const croppedCtx = croppedCanvas.getContext('2d');
+  const croppedCtx = croppedCanvas.getContext('2d', { alpha: false });
 
   if (!croppedCtx) {
     return null;
   }
 
-  // Set the size of the cropped canvas to the target dimensions
-  // If the aspect ratio is not 1:1, we still want to maintain high quality
-  // but we'll base the height on the actual crop ratio if it's not square
+  // Calculate the target height based on crop ratio
   const cropRatio = pixelCrop.width / pixelCrop.height;
   const targetHeight = targetWidth / (cropRatio || 1);
 
+  // Set the size of the cropped canvas
   croppedCanvas.width = targetWidth;
   croppedCanvas.height = targetHeight;
 
-  // Draw the cropped image onto the new canvas, scaling it to target dimensions
+  // Use high quality image smoothing
+  croppedCtx.imageSmoothingEnabled = true;
+  croppedCtx.imageSmoothingQuality = 'high';
+
+  // Draw the cropped image onto the new canvas
   croppedCtx.drawImage(
     canvas,
     pixelCrop.x,
@@ -94,7 +97,7 @@ export async function getCroppedImg(
     targetHeight
   );
 
-  // As a blob
+  // Export as high quality JPEG
   return new Promise((resolve, reject) => {
     croppedCanvas.toBlob((file) => {
       if (file) {
@@ -102,7 +105,7 @@ export async function getCroppedImg(
       } else {
         reject(new Error('Canvas is empty'));
       }
-    }, 'image/jpeg', 0.90); // 90% quality is a good balance
+    }, 'image/jpeg', 0.95); // Higher quality (95%) for maximum sharpness
   });
 }
 
