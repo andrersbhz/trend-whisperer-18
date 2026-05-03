@@ -33,6 +33,7 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
   const [isCropDialogOpen, setIsCropDialogOpen] = useState(false);
+  const [aspect, setAspect] = useState<number>(1);
 
   const onCropComplete = useCallback((_croppedArea: any, croppedAreaPixels: any) => {
     setCroppedAreaPixels(croppedAreaPixels);
