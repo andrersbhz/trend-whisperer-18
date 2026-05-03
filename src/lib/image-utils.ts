@@ -72,10 +72,12 @@ export async function getCroppedImg(
     return null;
   }
 
-  // Calculate the target height based on 1:1 ratio
-  const targetHeight = targetWidth;
+  // Set the size of the cropped canvas to the target dimensions
+  // If the aspect ratio is not 1:1, we still want to maintain high quality
+  // but we'll base the height on the actual crop ratio if it's not square
+  const cropRatio = pixelCrop.width / pixelCrop.height;
+  const targetHeight = targetWidth / (cropRatio || 1);
 
-  // Set the size of the cropped canvas to the target dimensions for better quality/standardization
   croppedCanvas.width = targetWidth;
   croppedCanvas.height = targetHeight;
 
