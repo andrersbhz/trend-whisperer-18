@@ -39,7 +39,7 @@
     --border: 260 20% 18%;
     --input: 260 20% 18%;
     --ring: 270 60% 50%;
-    --radius: 20px;
+    --radius: 0px;
 
     --sidebar-background: 260 20% 8%;
     --sidebar-foreground: 260 10% 60%;
@@ -99,7 +99,7 @@
   }
   ::-webkit-scrollbar-thumb {
     background: hsla(270, 30%, 25%, 0.6);
-    border-radius: 8px;
+    border-radius: 0px;
     border: 2px solid hsl(var(--background));
   }
   ::-webkit-scrollbar-thumb:hover {
@@ -110,7 +110,7 @@
   :focus-visible {
     outline: 2px solid hsl(var(--ring));
     outline-offset: 2px;
-    border-radius: 6px;
+    border-radius: 0px;
   }
 
   /* Mobile tap target safety */

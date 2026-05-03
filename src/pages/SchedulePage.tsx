@@ -378,7 +378,7 @@ const SchedulePage = () => {
               />
               <p className="text-xs text-muted-foreground">Quantidade de artigos gerados a cada ciclo (máx. 50)</p>
             </div>
-            <div className="flex items-center justify-between p-[25px] rounded-lg bg-muted/50 h-fit mt-auto">
+            <div className="flex items-center justify-between p-[25px] rounded-none bg-muted/50 h-fit mt-auto">
               <div>
                 <p className="text-sm font-medium text-foreground">Publicação automática</p>
                 <p className="text-xs text-muted-foreground">Publicar no WordPress automaticamente</p>
@@ -411,7 +411,7 @@ const SchedulePage = () => {
         </Card>
       ) : (
         <div className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-4 bg-muted/30 p-4 rounded-lg border border-border">
+          <div className="flex flex-wrap items-center justify-between gap-4 bg-muted/30 p-4 rounded-none border border-border">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-3">
                 <Checkbox 
@@ -428,7 +428,7 @@ const SchedulePage = () => {
                 variant="ghost"
                 size="sm"
                 onClick={handleClearPublished}
-                className="text-xs text-muted-foreground hover:text-black hover:bg-destructive flex items-center gap-1.5 h-7 px-2"
+                className="text-xs text-muted-foreground hover:text-black hover:bg-destructive flex items-center gap-1.5 h-7 px-2 rounded-none"
                 title="Apagar todos os artigos que já foram publicados"
               >
                 <Trash2 className="h-3.5 w-3.5" />
@@ -477,7 +477,7 @@ const SchedulePage = () => {
 
           <div className="grid gap-3">
             {articles.map((article) => (
-              <Card key={article.id} className={`shadow-card transition-colors ${selectedIds.includes(article.id) ? 'bg-primary/5 ring-1 ring-primary/20' : ''}`}>
+              <Card key={article.id} className={`shadow-none rounded-none border-b border-border/50 transition-colors ${selectedIds.includes(article.id) ? 'bg-primary/5 ring-0' : ''}`}>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
                     <Checkbox 
@@ -487,7 +487,7 @@ const SchedulePage = () => {
                     <div className="min-w-0 flex-1 flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3 min-w-0 flex-1">
                         <div 
-                          className="relative w-12 h-12 shrink-0 bg-secondary/40 rounded overflow-hidden hidden sm:flex items-center justify-center group cursor-pointer"
+                          className="relative w-12 h-12 shrink-0 bg-secondary/40 rounded-none overflow-hidden hidden sm:flex items-center justify-center group cursor-pointer"
                           onClick={() => handlePreview(article.id)}
                         >
                           {article.featured_image_url ? (
@@ -507,9 +507,9 @@ const SchedulePage = () => {
                         <div className="min-w-0 flex-1">
                           <p className="font-medium text-foreground truncate">{article.title}</p>
                           <div className="flex items-center gap-2 mt-1 flex-wrap">
-                            <DropdownMenu>
+                            <DropdownMenu modal={false}>
                               <DropdownMenuTrigger asChild>
-                                <Badge variant="secondary" className="capitalize cursor-pointer hover:bg-secondary/80 transition-colors flex items-center gap-1">
+                                <Badge variant="secondary" className="capitalize cursor-pointer hover:bg-secondary/80 transition-colors flex items-center gap-1 rounded-none py-1">
                                   {article.category}
                                   <ChevronDown className="h-3 w-3" />
                                 </Badge>
@@ -606,13 +606,13 @@ const SchedulePage = () => {
                           <Trash2 className="h-4 w-4" />
                         </Button>
                         <Badge
-                          className={
+                          className={`rounded-none ${
                             article.status === 'published'
                               ? 'bg-success/20 text-success'
                               : article.is_approved === false
                                 ? 'bg-muted text-muted-foreground'
                                 : 'bg-primary/20 text-primary'
-                          }
+                          }`}
                           variant="secondary"
                         >
                           {article.status === 'published' ? 'Publicado' : article.is_approved === false ? 'Pausado' : 'Agendado'}
@@ -633,7 +633,7 @@ const SchedulePage = () => {
           if (!open) setPreview(null);
         }}
       >
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto glass-card border-border p-0">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto glass-card border-border p-0 rounded-none">
           <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b p-4 flex items-center justify-between">
             <DialogHeader className="p-0">
               <DialogTitle className="text-lg font-bold">Editar Agendamento</DialogTitle>
@@ -698,7 +698,7 @@ const SchedulePage = () => {
                 <div>
                   <Label className="text-xs font-bold uppercase text-muted-foreground mb-1 block">Meta Descrição</Label>
                   <textarea 
-                    className="w-full min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm"
+                    className="w-full min-h-[80px] rounded-none border border-input bg-background px-3 py-2 text-sm shadow-none"
                     value={preview?.meta_description || ''} 
                     onChange={(e) => setPreview({...preview, meta_description: e.target.value})}
                   />
@@ -707,7 +707,7 @@ const SchedulePage = () => {
                 <div>
                   <Label className="text-xs font-bold uppercase text-muted-foreground mb-1 block">Conteúdo (HTML)</Label>
                   <textarea 
-                    className="w-full min-h-[300px] rounded-md border border-input bg-background px-3 py-2 text-sm font-mono shadow-sm"
+                    className="w-full min-h-[300px] rounded-none border border-input bg-background px-3 py-2 text-sm font-mono shadow-none"
                     value={preview?.content || ''} 
                     onChange={(e) => setPreview({...preview, content: e.target.value})}
                   />
