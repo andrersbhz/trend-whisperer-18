@@ -606,14 +606,14 @@ const SchedulePage = () => {
                           <Trash2 className="h-4 w-4" />
                         </Button>
                         <Badge
-                          className={
+                          className={`rounded-none ${
                             article.status === 'published'
                               ? 'bg-success/20 text-success'
                               : article.is_approved === false
                                 ? 'bg-muted text-muted-foreground'
                                 : 'bg-primary/20 text-primary'
-                          }
-                          variant="secondary" className="rounded-none"
+                          }`}
+                          variant="secondary"
                         >
                           {article.status === 'published' ? 'Publicado' : article.is_approved === false ? 'Pausado' : 'Agendado'}
                         </Badge>
