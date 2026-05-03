@@ -378,7 +378,7 @@ const SchedulePage = () => {
               />
               <p className="text-xs text-muted-foreground">Quantidade de artigos gerados a cada ciclo (máx. 50)</p>
             </div>
-            <div className="flex items-center justify-between p-[25px] rounded-lg bg-muted/50 h-fit mt-auto">
+            <div className="flex items-center justify-between p-[25px] rounded-none bg-muted/50 h-fit mt-auto">
               <div>
                 <p className="text-sm font-medium text-foreground">Publicação automática</p>
                 <p className="text-xs text-muted-foreground">Publicar no WordPress automaticamente</p>
@@ -411,7 +411,7 @@ const SchedulePage = () => {
         </Card>
       ) : (
         <div className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-4 bg-muted/30 p-4 rounded-lg border border-border">
+          <div className="flex flex-wrap items-center justify-between gap-4 bg-muted/30 p-4 rounded-none border border-border">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-3">
                 <Checkbox 
@@ -428,7 +428,7 @@ const SchedulePage = () => {
                 variant="ghost"
                 size="sm"
                 onClick={handleClearPublished}
-                className="text-xs text-muted-foreground hover:text-black hover:bg-destructive flex items-center gap-1.5 h-7 px-2"
+                className="text-xs text-muted-foreground hover:text-black hover:bg-destructive flex items-center gap-1.5 h-7 px-2 rounded-none"
                 title="Apagar todos os artigos que já foram publicados"
               >
                 <Trash2 className="h-3.5 w-3.5" />
@@ -477,7 +477,7 @@ const SchedulePage = () => {
 
           <div className="grid gap-3">
             {articles.map((article) => (
-              <Card key={article.id} className={`shadow-card transition-colors ${selectedIds.includes(article.id) ? 'bg-primary/5 ring-1 ring-primary/20' : ''}`}>
+              <Card key={article.id} className={`shadow-none rounded-none border-b border-border/50 transition-colors ${selectedIds.includes(article.id) ? 'bg-primary/5 ring-0' : ''}`}>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
                     <Checkbox 
@@ -487,7 +487,7 @@ const SchedulePage = () => {
                     <div className="min-w-0 flex-1 flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3 min-w-0 flex-1">
                         <div 
-                          className="relative w-12 h-12 shrink-0 bg-secondary/40 rounded overflow-hidden hidden sm:flex items-center justify-center group cursor-pointer"
+                          className="relative w-12 h-12 shrink-0 bg-secondary/40 rounded-none overflow-hidden hidden sm:flex items-center justify-center group cursor-pointer"
                           onClick={() => handlePreview(article.id)}
                         >
                           {article.featured_image_url ? (
