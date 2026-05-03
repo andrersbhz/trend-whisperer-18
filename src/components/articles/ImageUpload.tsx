@@ -267,19 +267,55 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
       </div>
 
       <Dialog open={isCropDialogOpen} onOpenChange={setIsCropDialogOpen}>
-        <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden bg-background border-primary/20">
+        <DialogContent className="sm:max-w-[700px] p-0 overflow-hidden bg-background border-primary/20">
           <DialogHeader className="p-6 pb-0">
-            <DialogTitle>Ajustar Imagem (1:1)</DialogTitle>
+            <div className="flex items-center justify-between">
+              <DialogTitle>Ajustar Imagem</DialogTitle>
+              <div className="flex gap-2 mr-6">
+                <Button 
+                  variant={aspect === 1 ? "default" : "outline"} 
+                  size="sm" 
+                  onClick={() => setAspect(1)}
+                  className="h-8 text-xs"
+                >
+                  1:1 (Padrão)
+                </Button>
+                <Button 
+                  variant={aspect === 4/3 ? "default" : "outline"} 
+                  size="sm" 
+                  onClick={() => setAspect(4/3)}
+                  className="h-8 text-xs"
+                >
+                  4:3
+                </Button>
+                <Button 
+                  variant={aspect === 16/9 ? "default" : "outline"} 
+                  size="sm" 
+                  onClick={() => setAspect(16/9)}
+                  className="h-8 text-xs"
+                >
+                  16:9
+                </Button>
+                <Button 
+                  variant={aspect === undefined ? "default" : "outline"} 
+                  size="sm" 
+                  onClick={() => setAspect(undefined as any)}
+                  className="h-8 text-xs"
+                >
+                  Livre
+                </Button>
+              </div>
+            </div>
           </DialogHeader>
           
           <div className="p-6 space-y-6">
-            <div className="relative w-full aspect-square bg-black rounded-md overflow-hidden">
+            <div className="relative w-full h-[400px] bg-black rounded-md overflow-hidden">
               {selectedImage && (
                 <Cropper
                   image={selectedImage}
                   crop={crop}
                   zoom={zoom}
-                  aspect={1}
+                  aspect={aspect}
                   onCropChange={setCrop}
                   onCropComplete={onCropComplete}
                   onZoomChange={setZoom}
