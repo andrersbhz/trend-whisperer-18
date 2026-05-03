@@ -800,14 +800,14 @@ const AnalyticsPage = () => {
   }
 
   const statCards = [
-    { icon: Eye, label: 'Pageviews', value: analytics?.pageviews?.toLocaleString() || '0', color: 'text-primary', change: '+12%', up: true },
-    { icon: Users, label: 'Usuários', value: analytics?.users?.toLocaleString() || '0', color: 'text-accent', change: '+8%', up: true },
-    { icon: MousePointerClick, label: 'Sessões', value: analytics?.sessions?.toLocaleString() || '0', color: 'text-primary', change: '+5%', up: true },
-    { icon: Percent, label: 'Taxa de Rejeição', value: `${analytics?.bounceRate || 0}%`, color: 'text-warning', change: '-3%', up: false },
-    { icon: Clock, label: 'Duração Média', value: analytics?.avgSessionDuration || '0:00', color: 'text-primary', change: '+15s', up: true },
-    { icon: ArrowUpRight, label: 'Págs/Sessão', value: analytics?.pagesPerSession?.toFixed(1) || '0', color: 'text-accent', change: '+0.3', up: true },
-    { icon: Users, label: 'Novos Usuários', value: analytics?.newUsers?.toLocaleString() || '0', color: 'text-primary', change: '+10%', up: true },
-    { icon: FileText, label: 'Artigos Publicados', value: String(articleStats.published), color: 'text-accent', change: `${articleStats.total} total`, up: true },
+    { icon: Eye, label: 'Pageviews', value: analytics?.pageviews?.toLocaleString() || '0', color: 'text-primary' },
+    { icon: Users, label: 'Usuários', value: analytics?.users?.toLocaleString() || '0', color: 'text-accent' },
+    { icon: MousePointerClick, label: 'Sessões', value: analytics?.sessions?.toLocaleString() || '0', color: 'text-primary' },
+    { icon: Percent, label: 'Taxa de Rejeição', value: `${analytics?.bounceRate || 0}%`, color: 'text-warning' },
+    { icon: Clock, label: 'Duração Média', value: analytics?.avgSessionDuration || '0:00', color: 'text-primary' },
+    { icon: ArrowUpRight, label: 'Págs/Sessão', value: analytics?.pagesPerSession?.toFixed(1) || '0', color: 'text-accent' },
+    { icon: Users, label: 'Novos Usuários', value: analytics?.newUsers?.toLocaleString() || '0', color: 'text-primary' },
+    { icon: FileText, label: 'Artigos Publicados', value: String(articleStats.published), color: 'text-accent' },
   ];
 
   return (
@@ -868,10 +868,6 @@ const AnalyticsPage = () => {
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-2">
                 <stat.icon className={`h-5 w-5 ${stat.color} opacity-80`} />
-                <span className={`text-xs flex items-center gap-0.5 ${stat.up ? 'text-primary' : 'text-destructive'}`}>
-                  {stat.up ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                  {stat.change}
-                </span>
               </div>
               <p className="text-xl font-bold text-foreground">{stat.value}</p>
               <p className="text-xs text-muted-foreground">{stat.label}</p>
