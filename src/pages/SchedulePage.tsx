@@ -507,9 +507,9 @@ const SchedulePage = () => {
                         <div className="min-w-0 flex-1">
                           <p className="font-medium text-foreground truncate">{article.title}</p>
                           <div className="flex items-center gap-2 mt-1 flex-wrap">
-                            <DropdownMenu>
+                            <DropdownMenu modal={false}>
                               <DropdownMenuTrigger asChild>
-                                <Badge variant="secondary" className="capitalize cursor-pointer hover:bg-secondary/80 transition-colors flex items-center gap-1">
+                                <Badge variant="secondary" className="capitalize cursor-pointer hover:bg-secondary/80 transition-colors flex items-center gap-1 rounded-none py-1">
                                   {article.category}
                                   <ChevronDown className="h-3 w-3" />
                                 </Badge>
@@ -613,7 +613,7 @@ const SchedulePage = () => {
                                 ? 'bg-muted text-muted-foreground'
                                 : 'bg-primary/20 text-primary'
                           }
-                          variant="secondary"
+                          variant="secondary" className="rounded-none"
                         >
                           {article.status === 'published' ? 'Publicado' : article.is_approved === false ? 'Pausado' : 'Agendado'}
                         </Badge>
@@ -633,7 +633,7 @@ const SchedulePage = () => {
           if (!open) setPreview(null);
         }}
       >
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto glass-card border-border p-0">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto glass-card border-border p-0 rounded-none">
           <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b p-4 flex items-center justify-between">
             <DialogHeader className="p-0">
               <DialogTitle className="text-lg font-bold">Editar Agendamento</DialogTitle>
@@ -698,7 +698,7 @@ const SchedulePage = () => {
                 <div>
                   <Label className="text-xs font-bold uppercase text-muted-foreground mb-1 block">Meta Descrição</Label>
                   <textarea 
-                    className="w-full min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm"
+                    className="w-full min-h-[80px] rounded-none border border-input bg-background px-3 py-2 text-sm shadow-none"
                     value={preview?.meta_description || ''} 
                     onChange={(e) => setPreview({...preview, meta_description: e.target.value})}
                   />
@@ -707,7 +707,7 @@ const SchedulePage = () => {
                 <div>
                   <Label className="text-xs font-bold uppercase text-muted-foreground mb-1 block">Conteúdo (HTML)</Label>
                   <textarea 
-                    className="w-full min-h-[300px] rounded-md border border-input bg-background px-3 py-2 text-sm font-mono shadow-sm"
+                    className="w-full min-h-[300px] rounded-none border border-input bg-background px-3 py-2 text-sm font-mono shadow-none"
                     value={preview?.content || ''} 
                     onChange={(e) => setPreview({...preview, content: e.target.value})}
                   />
