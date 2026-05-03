@@ -428,7 +428,7 @@ const SchedulePage = () => {
                 variant="ghost"
                 size="sm"
                 onClick={handleClearPublished}
-                className="text-xs text-muted-foreground hover:text-black hover:bg-destructive/10 flex items-center gap-1.5 h-7 px-2"
+                className="text-xs text-muted-foreground hover:text-black hover:bg-destructive flex items-center gap-1.5 h-7 px-2"
                 title="Apagar todos os artigos que já foram publicados"
               >
                 <Trash2 className="h-3.5 w-3.5" />
