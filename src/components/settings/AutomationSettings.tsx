@@ -198,7 +198,7 @@ const AutomationSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChan
              <CardTitle className="text-lg">Perfil de Interação</CardTitle>
            </div>
            <CardDescription>
-             Defina como o robô deve interagir. A opção randômica alterna perfis para aumentar cliques e ganhos com segurança.
+             Defina como o robô deve interagir. O perfil selecionado será mantido até que você faça uma alteração.
            </CardDescription>
          </CardHeader>
          <CardContent className="space-y-4">
@@ -231,12 +231,6 @@ const AutomationSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChan
                        <span>Criativo</span>
                      </div>
                    </SelectItem>
-                   <SelectItem value="random">
-                     <div className="flex items-center gap-2">
-                       <Shuffle className="h-4 w-4 text-primary" />
-                       <span className="font-semibold text-primary">Randômico (Rotatividade)</span>
-                     </div>
-                   </SelectItem>
                  </SelectContent>
                </Select>
              </div>
@@ -245,9 +239,7 @@ const AutomationSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChan
                <div className="flex items-center gap-2 p-2 rounded-md bg-primary/5 border border-primary/20 w-full">
                  <ShieldCheck className="h-4 w-4 text-primary shrink-0" />
                  <span className="text-[10px] text-muted-foreground leading-tight">
-                   {settings.interaction_mode === 'random' 
-                     ? "O modo randômico está ativo para otimizar acessos com segurança máxima." 
-                     : "Perfil fixo selecionado. Suas alterações são salvas automaticamente."}
+                   Perfil fixo selecionado. Suas alterações são salvas automaticamente e mantidas até a próxima alteração manual.
                  </span>
                </div>
              </div>
