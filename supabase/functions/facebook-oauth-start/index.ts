@@ -27,11 +27,9 @@ const BASIC_SCOPES = [
 ];
 const ADVANCED_SCOPES: string[] = [
   "pages_manage_posts",
-  "pages_manage_metadata",
   "pages_read_user_content",
   "instagram_basic",
   "instagram_content_publish",
-  "read_insights",
   "business_management",
 ];
 const SCOPES = [...BASIC_SCOPES, ...ADVANCED_SCOPES].join(",");
