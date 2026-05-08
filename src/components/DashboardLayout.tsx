@@ -157,7 +157,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           )}
           <Button
             variant="ghost"
-            className="w-full justify-start text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+            className="w-full justify-start text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors rounded-none text-xs uppercase tracking-widest font-bold"
             onClick={signOut}
           >
             <LogOut className="h-4 w-4 mr-3" />
