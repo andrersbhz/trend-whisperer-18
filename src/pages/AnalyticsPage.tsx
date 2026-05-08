@@ -987,8 +987,28 @@ const AnalyticsPage = ({ isModal = false, pageId }: { isModal?: boolean; pageId?
 
         {analytics?.trafficSources && analytics.trafficSources.length > 0 && (
           <Card className="glass-card">
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-lg text-foreground">Fontes de Tráfego</CardTitle>
+              <div className="flex gap-2">
+                <Button 
+                  variant={pieChartType === 'pie' ? 'secondary' : 'ghost'} 
+                  size="sm" 
+                  onClick={() => setPieChartType('pie')}
+                  className="h-8 w-8 p-0"
+                  title="Gráfico de Pizza"
+                >
+                  <PieChartIcon className="h-4 w-4" />
+                </Button>
+                <Button 
+                  variant={pieChartType === 'donut' ? 'secondary' : 'ghost'} 
+                  size="sm" 
+                  onClick={() => setPieChartType('donut')}
+                  className="h-8 w-8 p-0"
+                  title="Gráfico de Rosca"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="relative">
