@@ -257,7 +257,7 @@ const Dashboard = () => {
   return (
     <div className="space-y-6 lg:space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div className="hidden">
+        <div className="flex flex-col">
           <h1 className="text-2xl sm:text-3xl font-bold neon-text-lilac uppercase tracking-tighter">Painel</h1>
           <p className="text-muted-foreground text-sm mt-1">Visão geral, métricas e geração de conteúdo</p>
         </div>
