@@ -121,7 +121,7 @@ const AIProvidersPanel = () => {
     .sort((a, b) => new Date(b.lastUsed!).getTime() - new Date(a.lastUsed!).getTime())[0]?.name;
 
   return (
-    <Card className="glass-card neon-border-lilac">
+    <Card className="glass-card neon-border-lilac rounded-none">
       <CardHeader className="pb-3">
         <div className="flex items-center gap-2">
           <Cpu className="h-5 w-5 text-primary" />
