@@ -274,10 +274,10 @@ const AnalyticsPage = ({ isModal = false, pageId }: { isModal?: boolean; pageId?
   };
 
   const customTooltipStyle = {
-    backgroundColor: 'hsl(260, 15%, 12%)',
-    border: '1px solid hsl(260, 20%, 22%)',
-    borderRadius: '8px',
-    color: 'hsl(0, 0%, 95%)',
+    backgroundColor: 'hsl(230, 25%, 6%)',
+    border: '1px solid hsl(230, 20%, 20%)',
+    borderRadius: '0px',
+    color: 'hsl(210, 20%, 98%)',
   };
 
   if (loading) {
