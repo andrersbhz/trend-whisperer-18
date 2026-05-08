@@ -1166,6 +1166,18 @@ const AnalyticsPage = () => {
           </CardContent>
         </Card>
       )}
+
+      {selectedPageId && (
+        <div className="flex justify-center mt-6">
+          <Button 
+            onClick={() => navigate('/analytics')} 
+            variant="outline" 
+            className="neon-border-lilac text-foreground hover:bg-secondary/40"
+          >
+            Ver métricas de todas as páginas
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
