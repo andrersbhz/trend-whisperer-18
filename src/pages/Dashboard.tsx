@@ -329,20 +329,20 @@ const Dashboard = () => {
               {/* Metrics Summary */}
               <div className="grid grid-cols-2 gap-x-4 gap-y-3 mb-5 text-[10px] text-muted-foreground font-medium uppercase tracking-wider w-full px-2">
                 <div className="flex flex-col items-center">
-                  <span className="text-foreground text-sm font-bold">{(pg.facebook?.followers_count || pg.facebook?.fan_count || 0).toLocaleString()}</span>
-                  <span>Seguidores</span>
+                  <span className="text-foreground text-sm font-black tabular-nums">{(pg.facebook?.followers_count || pg.facebook?.fan_count || 0).toLocaleString()}</span>
+                  <span className="opacity-70">Seguidores</span>
                 </div>
                 <div className="flex flex-col items-center">
-                  <span className="text-foreground text-sm font-bold">{(pg.facebook?.fan_count || 0).toLocaleString()}</span>
-                  <span>Curtidas</span>
+                  <span className="text-foreground text-sm font-black tabular-nums">{(pg.facebook?.fan_count || 0).toLocaleString()}</span>
+                  <span className="opacity-70">Curtidas</span>
                 </div>
                 <div className="flex flex-col items-center">
-                  <span className="text-foreground text-sm font-bold">{(pg.facebook?.post_stats?.total_posts || 0).toLocaleString()}</span>
-                  <span>Postagens</span>
+                  <span className="text-foreground text-sm font-black tabular-nums">{(pg.facebook?.post_stats?.total_posts || 0).toLocaleString()}</span>
+                  <span className="opacity-70">Postagens</span>
                 </div>
                 <div className="flex flex-col items-center">
-                  <span className="text-foreground text-sm font-bold">{(pg.facebook?.post_stats?.avg_engagement || 0).toLocaleString()}</span>
-                  <span>Engajamento</span>
+                  <span className="text-foreground text-sm font-black tabular-nums">{(pg.facebook?.post_stats?.avg_engagement || 0).toLocaleString()}</span>
+                  <span className="opacity-70">Engajamento</span>
                 </div>
               </div>
 
