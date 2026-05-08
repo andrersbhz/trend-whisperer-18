@@ -1116,7 +1116,7 @@ const AnalyticsPage = ({ isModal = false, pageId }: { isModal?: boolean; pageId?
             <CardContent>
               <ResponsiveContainer width="100%" height={200}>
                 <BarChart data={analytics.hourlyTraffic}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(260, 20%, 18%)" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(230, 20%, 15%)" />
                   <XAxis dataKey="hour" fontSize={10} stroke="hsl(260, 10%, 45%)" />
                   <YAxis fontSize={10} stroke="hsl(260, 10%, 45%)" />
                   <Tooltip contentStyle={customTooltipStyle} />
