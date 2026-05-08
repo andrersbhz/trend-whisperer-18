@@ -433,7 +433,7 @@ const AnalyticsPage = ({ isModal = false, pageId }: { isModal?: boolean; pageId?
                   <CardContent>
                     <ResponsiveContainer width="100%" height={200}>
                       <AreaChart data={pg.facebook.insights.page_impressions.daily}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(260, 20%, 18%)" />
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(230, 20%, 15%)" />
                         <XAxis dataKey="date" fontSize={10} stroke="hsl(260, 10%, 45%)" />
                         <YAxis fontSize={10} stroke="hsl(260, 10%, 45%)" />
                         <Tooltip contentStyle={customTooltipStyle} />
