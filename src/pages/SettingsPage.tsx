@@ -311,7 +311,7 @@ const SettingsPage = () => {
 
       <GeminiSettings settings={settings} onChange={updateSettings} hasGeminiKey={credStatus.has_gemini_key} onDisconnect={() => disconnectCredential({ gemini_api_key: '' }, 'Gemini')} />
       <OpenAISettings settings={settings} onChange={updateSettings} hasOpenaiKey={credStatus.has_openai_key} onDisconnect={() => disconnectCredential({ openai_api_key: '' }, 'OpenAI')} />
-      <AzureCopilotSettings settings={settings} onChange={updateSettings} hasAzureKey={credStatus.has_azure_key} onDisconnect={() => disconnectCredential({ azure_openai_api_key: '', azure_openai_endpoint: '', azure_openai_deployment_name: '' }, 'Azure Copilot')} />
+      {/* Azure Copilot settings removed */}
       <GroqSettings settings={settings} onChange={updateSettings} hasGroqKey={credStatus.has_groq_key} onDisconnect={() => disconnectCredential({ groq_api_key: '' }, 'Groq')} />
       <WordPressSettings settings={settings} onChange={updateSettings} hasWpPassword={credStatus.has_wp_password} onDisconnect={() => disconnectCredential({ wordpress_url: '', wordpress_username: '', wordpress_app_password: '' }, 'WordPress')} />
       <JetpackSettings settings={settings} hasWpPassword={credStatus.has_wp_password} />
