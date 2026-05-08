@@ -79,8 +79,9 @@
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Inter', system-ui, sans-serif;
     background-image:
-      radial-gradient(ellipse 80% 60% at 50% -10%, hsla(270, 60%, 30%, 0.18), transparent 60%),
-      radial-gradient(ellipse 60% 50% at 100% 0%, hsla(320, 80%, 40%, 0.08), transparent 60%);
+      radial-gradient(circle at 0% 0%, hsla(210, 100%, 15%, 0.15), transparent 40%),
+      radial-gradient(circle at 100% 100%, hsla(190, 100%, 15%, 0.15), transparent 40%),
+      linear-gradient(hsla(230, 25%, 4%, 1), hsla(230, 25%, 2%, 1));
     background-attachment: fixed;
   }
 
