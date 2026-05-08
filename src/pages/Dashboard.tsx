@@ -327,12 +327,19 @@ const Dashboard = () => {
               </h3>
               
               {/* Metrics Summary */}
-              <div className="flex gap-4 mb-5 text-[11px] text-muted-foreground font-medium uppercase tracking-wider">
+              <div className="grid grid-cols-2 gap-x-4 gap-y-3 mb-5 text-[10px] text-muted-foreground font-medium uppercase tracking-wider w-full px-2">
                 <div className="flex flex-col items-center">
                   <span className="text-foreground text-sm font-bold">{(pg.facebook?.followers_count || pg.facebook?.fan_count || 0).toLocaleString()}</span>
                   <span>Seguidores</span>
                 </div>
-                <div className="w-[1px] h-4 bg-border/40 self-center" />
+                <div className="flex flex-col items-center">
+                  <span className="text-foreground text-sm font-bold">{(pg.facebook?.fan_count || 0).toLocaleString()}</span>
+                  <span>Curtidas</span>
+                </div>
+                <div className="flex flex-col items-center">
+                  <span className="text-foreground text-sm font-bold">{(pg.facebook?.post_stats?.total_posts || 0).toLocaleString()}</span>
+                  <span>Postagens</span>
+                </div>
                 <div className="flex flex-col items-center">
                   <span className="text-foreground text-sm font-bold">{(pg.facebook?.post_stats?.avg_engagement || 0).toLocaleString()}</span>
                   <span>Engajamento</span>
