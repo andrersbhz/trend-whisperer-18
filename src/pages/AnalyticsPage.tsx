@@ -16,7 +16,7 @@ import {
   LineChart, Line, PieChart, Pie, Cell, AreaChart, Area, Legend,
 } from 'recharts';
 import { getErrorMessage, runBackendQuery } from '@/lib/backend';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 interface AnalyticsData {
   pageviews: number;
@@ -92,6 +92,10 @@ const AnalyticsPage = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const selectedPageId = queryParams.get('page');
+  
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [socialMetrics, setSocialMetrics] = useState<SocialMetrics | null>(null);
   const [tips, setTips] = useState<AiTip[]>([]);
@@ -364,7 +368,9 @@ const AnalyticsPage = () => {
           <Loader2 className="h-4 w-4 animate-spin" /> Carregando métricas do Meta...
         </div>
       )}
-      {metaMetrics && metaMetrics.length > 0 && metaMetrics.map((pg: any, idx: number) => (
+      {metaMetrics && metaMetrics.length > 0 && metaMetrics
+        .filter((pg: any) => !selectedPageId || pg.page_id === selectedPageId)
+        .map((pg: any, idx: number) => (
         <div key={idx} className="space-y-3">
           <h3 className="text-md font-semibold text-foreground flex items-center gap-2">
             <Facebook className="h-4 w-4 text-accent" /> {pg.page_name || 'Página'}
