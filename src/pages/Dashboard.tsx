@@ -141,8 +141,8 @@ const Dashboard = () => {
       );
       if (data?.pages) {
         const validPages = (data.pages as any[]).filter((pg: any) => {
-          const hasFbData = pg.facebook && !pg.facebook.error && (pg.facebook.fan_count || pg.facebook.followers_count);
-          const hasIgData = pg.instagram && !pg.instagram.error && (pg.instagram.followers_count || pg.instagram.media_count);
+          const hasFbData = pg.facebook && !pg.facebook.error;
+          const hasIgData = pg.instagram && !pg.instagram.error;
           return hasFbData || hasIgData;
         });
         setMetaMetrics(validPages.length > 0 ? validPages : null);
