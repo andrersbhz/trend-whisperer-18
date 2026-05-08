@@ -9,7 +9,7 @@ import {
   BarChart3, TrendingUp, TrendingDown, Eye, MousePointerClick, Users,
   Lightbulb, RefreshCw, Loader2, Globe, Clock, ArrowUpRight, Percent,
   FileText, Smartphone, Monitor, Tablet, Facebook, Instagram, Heart, Share2,
-  Twitter, Linkedin, Send,
+  Twitter, Linkedin, Send, PieChart as PieChartIcon
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -108,7 +108,7 @@ const AnalyticsPage = ({ isModal = false, pageId }: { isModal?: boolean; pageId?
   const [jetpackStats, setJetpackStats] = useState<JetpackStats | null>(null);
   const [loadingJetpack, setLoadingJetpack] = useState(false);
   const [chartType, setChartType] = useState<'area' | 'bar'>('area');
-
+  const [pieChartType, setPieChartType] = useState<'pie' | 'donut'>('donut');
   const [dateRange, setDateRange] = useState({ from: '', to: '' });
 
   useEffect(() => {
@@ -987,8 +987,30 @@ const AnalyticsPage = ({ isModal = false, pageId }: { isModal?: boolean; pageId?
 
         {analytics?.trafficSources && analytics.trafficSources.length > 0 && (
           <Card className="glass-card">
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-lg text-foreground">Fontes de Tráfego</CardTitle>
+              <div className="flex gap-2">
+                <Button 
+                  variant={pieChartType === 'pie' ? 'secondary' : 'ghost'} 
+                  size="sm" 
+                  onClick={() => setPieChartType('pie')}
+                  className="h-8 w-8 p-0"
+                  title="Gráfico de Pizza"
+                >
+                  <PieChartIcon className="h-4 w-4" />
+                </Button>
+                <Button 
+                  variant={pieChartType === 'donut' ? 'secondary' : 'ghost'} 
+                  size="sm" 
+                  onClick={() => setPieChartType('donut')}
+                  className="h-8 w-8 p-0"
+                  title="Gráfico de Rosca"
+                >
+                  <div className="relative h-4 w-4 flex items-center justify-center">
+                    <div className="absolute inset-0 border-2 border-current rounded-full" />
+                  </div>
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="relative">
@@ -1005,7 +1027,7 @@ const AnalyticsPage = ({ isModal = false, pageId }: { isModal?: boolean; pageId?
                       data={analytics.trafficSources}
                       cx="50%"
                       cy="50%"
-                      innerRadius={60}
+                      innerRadius={pieChartType === 'donut' ? 60 : 0}
                       outerRadius={100}
                       paddingAngle={5}
                       dataKey="value"
@@ -1037,14 +1059,16 @@ const AnalyticsPage = ({ isModal = false, pageId }: { isModal?: boolean; pageId?
                   </PieChart>
                 </ResponsiveContainer>
                 {/* Central overlay for semi-3D donut effect */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[110px] h-[110px] rounded-full bg-background/20 backdrop-blur-sm border border-white/5 pointer-events-none flex items-center justify-center shadow-inner">
-                  <div className="text-center">
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Total</p>
-                    <p className="text-lg font-bold text-foreground">
-                      {analytics.trafficSources.reduce((acc, curr) => acc + curr.value, 0).toLocaleString()}
-                    </p>
+                {pieChartType === 'donut' && (
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[110px] h-[110px] rounded-full bg-background/20 backdrop-blur-sm border border-white/5 pointer-events-none flex items-center justify-center shadow-inner">
+                    <div className="text-center">
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Total</p>
+                      <p className="text-lg font-bold text-foreground">
+                        {analytics.trafficSources.reduce((acc, curr) => acc + curr.value, 0).toLocaleString()}
+                      </p>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </CardContent>
           </Card>
