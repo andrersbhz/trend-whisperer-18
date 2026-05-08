@@ -172,19 +172,8 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
     try {
       const authUrl = await requestFacebookAuthUrl(returnUrl);
       
-      // Try to open as popup first
-      const popup = window.open(authUrl, 'facebook-oauth', getPopupFeatures());
-      
-      if (!popup || popup.closed || typeof popup.closed === 'undefined') {
-        // If popup is blocked, fallback to direct redirect
-        console.warn('Popup blocked or failed, redirecting main window...');
-        window.location.href = authUrl;
-        return;
-      }
-      
-      popupRef.current = popup;
-      popup.focus();
-      watchPopupClosed(popup);
+      // We always redirect for Facebook OAuth to avoid popup blocking and CSP issues
+      window.location.href = authUrl;
     } catch (e: any) {
       setOauthLoading(false);
       toast({ title: 'Erro ao conectar', description: e.message, variant: 'destructive' });
