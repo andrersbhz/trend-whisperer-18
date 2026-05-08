@@ -107,15 +107,9 @@ serve(async (req) => {
         // Page insights (last 28 days)
         const insightsMetrics = [
           "page_impressions",
-          "page_impressions_unique",
-          "page_engaged_users",
           "page_post_engagements",
           "page_fan_adds",
-          "page_fan_removes",
           "page_views_total",
-          "page_actions_post_reactions_total",
-          "page_negative_feedback",
-          "page_fans_online",
         ].join(",");
 
         const insightsResp = await fetch(
