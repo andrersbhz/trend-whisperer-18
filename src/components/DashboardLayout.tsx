@@ -97,7 +97,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
       <aside
         className={cn(
-          'fixed lg:sticky top-0 inset-y-0 left-0 z-50 w-72 lg:w-64 h-screen glass flex flex-col transition-transform duration-300 ease-out',
+          'fixed lg:sticky top-0 inset-y-0 left-0 z-50 w-72 lg:w-64 h-screen glass flex flex-col transition-transform duration-300 ease-in-out border-r border-primary/20 shadow-[10px_0_30px_-15px_rgba(0,0,0,0.5)]',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         )}
         aria-label="Navegação principal"
