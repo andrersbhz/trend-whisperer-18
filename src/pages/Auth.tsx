@@ -43,16 +43,27 @@ const Auth = () => {
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     try {
+      console.log('[Auth] Starting Google sign in with origin:', window.location.origin);
       const result = await lovable.auth.signInWithOAuth('google', {
         redirect_uri: window.location.origin,
       });
+      
+      console.log('[Auth] Google sign in result:', result);
+      
       if (result.error) {
         toast({ title: 'Erro', description: (result.error as Error).message, variant: 'destructive' });
         return;
       }
-      if (result.redirected) return;
+      
+      if (result.redirected) {
+        console.log('[Auth] Redirecting to external provider...');
+        return;
+      }
+      
+      console.log('[Auth] Sign in successful without redirect, navigating home');
       navigate('/');
     } catch (error: any) {
+      console.error('[Auth] Google sign in exception:', error);
       toast({ title: 'Erro', description: error.message, variant: 'destructive' });
     } finally {
       setGoogleLoading(false);
