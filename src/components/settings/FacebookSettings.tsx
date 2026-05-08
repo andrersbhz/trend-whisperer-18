@@ -172,8 +172,8 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
     try {
       const authUrl = await requestFacebookAuthUrl(returnUrl);
       
-      // We always redirect for Facebook OAuth to avoid popup blocking and CSP issues
-      window.location.href = authUrl;
+      // Open in a new tab to avoid CSP/Refused connection issues while keeping the app open
+      window.open(authUrl, '_blank');
     } catch (e: any) {
       setOauthLoading(false);
       toast({ title: 'Erro ao conectar', description: e.message, variant: 'destructive' });
@@ -292,7 +292,7 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
     >
       <div className="space-y-3">
         <div className="rounded-lg border border-accent/40 bg-accent/10 p-3 text-xs text-muted-foreground">
-          O login do Facebook abre em uma janela popup. Conclua o login lá e a janela fechará automaticamente ao terminar.
+          A conexão será feita em uma nova aba para evitar bloqueios de segurança do navegador.
         </div>
 
 
