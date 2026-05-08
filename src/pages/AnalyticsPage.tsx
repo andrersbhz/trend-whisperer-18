@@ -1006,7 +1006,9 @@ const AnalyticsPage = ({ isModal = false, pageId }: { isModal?: boolean; pageId?
                   className="h-8 w-8 p-0"
                   title="Gráfico de Rosca"
                 >
-                  <RefreshCw className="h-4 w-4" />
+                  <div className="relative h-4 w-4 flex items-center justify-center">
+                    <div className="absolute inset-0 border-2 border-current rounded-full" />
+                  </div>
                 </Button>
               </div>
             </CardHeader>
