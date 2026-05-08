@@ -369,7 +369,7 @@ const AnalyticsPage = ({ isModal = false, pageId }: { isModal?: boolean; pageId?
         </div>
       )}
       {metaMetrics && metaMetrics.length > 0 && metaMetrics
-        .filter((pg: any) => !selectedPageId || pg.page_id === selectedPageId)
+        .filter((pg: any) => !selectedPageId || pg.page_id === selectedPageId || pg.instagram?.id === selectedPageId)
         .map((pg: any, idx: number) => (
         <div key={idx} className="space-y-3">
           <h3 className="text-md font-semibold text-foreground flex items-center gap-2">
