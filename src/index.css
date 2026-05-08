@@ -104,7 +104,7 @@
     border: 2px solid hsl(var(--background));
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: hsla(270, 60%, 40%, 0.8);
+    background: hsla(210, 80%, 45%, 0.8);
   }
 
   /* Better focus rings */
