@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import {
   FileText, TrendingUp, CheckCircle, Clock, Sparkles, RefreshCw, Save, Loader2,
-  PenTool, ChevronDown, Facebook, ExternalLink, BarChart3
+  PenTool, ChevronDown, Facebook, ExternalLink, BarChart3, X
 } from 'lucide-react';
 import AIProvidersPanel from '@/components/dashboard/AIProvidersPanel';
 import { useToast } from '@/hooks/use-toast';
@@ -23,6 +23,13 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import AnalyticsPage from '@/pages/AnalyticsPage';
 import { useNavigate } from 'react-router-dom';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogClose,
+} from "@/components/ui/dialog";
 
 
 
@@ -41,6 +48,8 @@ const Dashboard = () => {
   const [userCategories, setUserCategories] = useState<string[]>([]);
   const [metaMetrics, setMetaMetrics] = useState<any[] | null>(null);
   const [loadingMeta, setLoadingMeta] = useState(false);
+  const [selectedPageForMetrics, setSelectedPageForMetrics] = useState<string | null>(null);
+  const [isMetricsModalOpen, setIsMetricsModalOpen] = useState(false);
 
   const fetchStats = async () => {
     if (!user) return;
@@ -332,7 +341,10 @@ const Dashboard = () => {
 
               {/* Action Button */}
               <Button 
-                onClick={() => navigate(`/analytics?page=${pg.page_id}`)}
+                onClick={() => {
+                  setSelectedPageForMetrics(pg.page_id);
+                  setIsMetricsModalOpen(true);
+                }}
                 variant="outline" 
                 size="sm"
                 className="w-full bg-accent/5 border-accent/30 hover:bg-accent hover:text-accent-foreground rounded-none transition-all gap-2"
@@ -344,6 +356,24 @@ const Dashboard = () => {
           ))}
         </div>
       )}
+
+      {/* Metrics Modal */}
+      <Dialog open={isMetricsModalOpen} onOpenChange={setIsMetricsModalOpen}>
+        <DialogContent className="max-w-7xl h-[90vh] overflow-y-auto glass-card border-accent/30 p-0 sm:p-6">
+          <DialogHeader className="px-6 py-4 sm:px-0 sm:py-0">
+            <div className="flex items-center justify-between">
+              <DialogTitle className="text-2xl font-bold neon-text-lilac">Métricas da Página</DialogTitle>
+              <DialogClose className="opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none disabled:pointer-events-none">
+                <X className="h-6 w-6 text-muted-foreground" />
+                <span className="sr-only">Fechar</span>
+              </DialogClose>
+            </div>
+          </DialogHeader>
+          <div className="px-6 pb-6 sm:px-0 sm:pb-0">
+            <AnalyticsPage isModal={true} pageId={selectedPageForMetrics} />
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* === ANALYTICS COMPLETO (REMOVIDO A PEDIDO DO USUÁRIO) === */}
 

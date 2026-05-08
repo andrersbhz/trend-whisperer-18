@@ -88,13 +88,13 @@ const CHART_COLORS = [
   'hsl(200, 80%, 50%)',
 ];
 
-const AnalyticsPage = () => {
+const AnalyticsPage = ({ isModal = false, pageId }: { isModal?: boolean; pageId?: string | null }) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
-  const selectedPageId = queryParams.get('page');
+  const selectedPageId = pageId || queryParams.get('page');
   
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [socialMetrics, setSocialMetrics] = useState<SocialMetrics | null>(null);
