@@ -304,8 +304,8 @@ const Dashboard = () => {
               className="glass-card hover-lift relative overflow-hidden flex flex-col items-center p-6 border-primary/20 shadow-[0_0_20px_rgba(0,150,255,0.05)] group rounded-none"
             >
               {/* Neon accent line */}
-              <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-accent to-transparent opacity-70" />
-              <div className="absolute bottom-0 left-0 w-full h-[1px] bg-accent/20" />
+              <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />
+              <div className="absolute bottom-0 left-0 w-full h-[1px] bg-primary/10" />
               
               {/* Central Round Logo */}
               <div className="relative mb-4">
