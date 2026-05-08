@@ -125,7 +125,7 @@ const AIProvidersPanel = () => {
       <CardHeader className="pb-3">
         <div className="flex items-center gap-2">
           <Cpu className="h-5 w-5 text-primary" />
-          <CardTitle className="text-lg text-foreground">Provedores de IA</CardTitle>
+          <CardTitle className="text-sm text-foreground uppercase tracking-widest font-black">Provedores de IA</CardTitle>
         </div>
         <p className="text-xs text-muted-foreground">
           Ordem de fallback: Gemini → OpenAI → Groq → Lovable AI
