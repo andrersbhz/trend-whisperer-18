@@ -248,10 +248,10 @@ const Dashboard = () => {
   };
 
   const statCards = [
-    { icon: FileText, label: 'Total Artigos', value: stats.total, color: 'text-primary', accent: 'from-primary/20 to-transparent', glow: 'neon-border-lilac' },
-    { icon: CheckCircle, label: 'Publicados', value: stats.published, color: 'text-success', accent: 'from-success/20 to-transparent', glow: '' },
-    { icon: Clock, label: 'Pendentes', value: stats.pending, color: 'text-warning', accent: 'from-warning/20 to-transparent', glow: '' },
-    { icon: TrendingUp, label: 'Tendências', value: stats.trending, color: 'text-accent', accent: 'from-accent/20 to-transparent', glow: 'neon-border-pink' },
+    { icon: FileText, label: 'Total Artigos', value: stats.total, color: 'text-primary', accent: 'from-primary/10 to-transparent', glow: 'neon-border-lilac' },
+    { icon: CheckCircle, label: 'Publicados', value: stats.published, color: 'text-success', accent: 'from-success/10 to-transparent', glow: '' },
+    { icon: Clock, label: 'Pendentes', value: stats.pending, color: 'text-warning', accent: 'from-warning/10 to-transparent', glow: '' },
+    { icon: TrendingUp, label: 'Tendências', value: stats.trending, color: 'text-accent', accent: 'from-accent/10 to-transparent', glow: 'neon-border-pink' },
   ];
 
   return (
