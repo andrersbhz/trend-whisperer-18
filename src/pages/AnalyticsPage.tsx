@@ -1057,14 +1057,16 @@ const AnalyticsPage = ({ isModal = false, pageId }: { isModal?: boolean; pageId?
                   </PieChart>
                 </ResponsiveContainer>
                 {/* Central overlay for semi-3D donut effect */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[110px] h-[110px] rounded-full bg-background/20 backdrop-blur-sm border border-white/5 pointer-events-none flex items-center justify-center shadow-inner">
-                  <div className="text-center">
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Total</p>
-                    <p className="text-lg font-bold text-foreground">
-                      {analytics.trafficSources.reduce((acc, curr) => acc + curr.value, 0).toLocaleString()}
-                    </p>
+                {pieChartType === 'donut' && (
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[110px] h-[110px] rounded-full bg-background/20 backdrop-blur-sm border border-white/5 pointer-events-none flex items-center justify-center shadow-inner">
+                    <div className="text-center">
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Total</p>
+                      <p className="text-lg font-bold text-foreground">
+                        {analytics.trafficSources.reduce((acc, curr) => acc + curr.value, 0).toLocaleString()}
+                      </p>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </CardContent>
           </Card>
