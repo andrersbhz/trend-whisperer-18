@@ -1025,7 +1025,7 @@ const AnalyticsPage = ({ isModal = false, pageId }: { isModal?: boolean; pageId?
                       data={analytics.trafficSources}
                       cx="50%"
                       cy="50%"
-                      innerRadius={60}
+                      innerRadius={pieChartType === 'donut' ? 60 : 0}
                       outerRadius={100}
                       paddingAngle={5}
                       dataKey="value"
