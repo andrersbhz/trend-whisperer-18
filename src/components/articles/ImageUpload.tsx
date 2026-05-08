@@ -213,7 +213,7 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
             <img 
               src={previewUrl} 
               alt="Preview" 
-              className="w-full h-full object-cover" 
+              className="w-full h-full object-contain" 
             />
             <button
               onClick={handleRemoveImage}
