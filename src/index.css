@@ -146,32 +146,33 @@
     box-shadow: var(--shadow-neon-pink);
   }
   .glass {
-    background: hsla(260, 15%, 10%, 0.6);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid hsla(260, 20%, 25%, 0.4);
+    background: hsla(230, 25% , 6%, 0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid hsla(210, 100%, 50%, 0.15);
   }
   .glass-card {
-    background: hsla(260, 15%, 12%, 0.5);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid hsla(260, 20%, 22%, 0.5);
+    background: hsla(230, 25%, 8%, 0.6);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid hsla(210, 100%, 50%, 0.1);
+    box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.5);
   }
   .neon-border-lilac {
-    border: 1px solid hsla(270, 60%, 50%, 0.3);
-    box-shadow: 0 0 10px hsla(270, 60%, 50%, 0.1), inset 0 0 10px hsla(270, 60%, 50%, 0.03);
+    border: 1px solid hsla(210, 100%, 50%, 0.3);
+    box-shadow: 0 0 15px hsla(210, 100%, 50%, 0.1);
   }
   .neon-border-pink {
-    border: 1px solid hsla(320, 80%, 55%, 0.3);
-    box-shadow: 0 0 10px hsla(320, 80%, 55%, 0.1), inset 0 0 10px hsla(320, 80%, 55%, 0.03);
+    border: 1px solid hsla(190, 100%, 50%, 0.3);
+    box-shadow: 0 0 15px hsla(190, 100%, 50%, 0.1);
   }
   .neon-text-lilac {
-    color: hsl(270, 60%, 55%);
-    text-shadow: 0 0 10px hsla(270, 60%, 50%, 0.5);
+    color: hsl(210, 100%, 65%);
+    text-shadow: 0 0 12px hsla(210, 100%, 50%, 0.4);
   }
   .neon-text-pink {
-    color: hsl(320, 80%, 55%);
-    text-shadow: 0 0 10px hsla(320, 80%, 55%, 0.5);
+    color: hsl(190, 100%, 60%);
+    text-shadow: 0 0 12px hsla(190, 100%, 50%, 0.4);
   }
 }
 
