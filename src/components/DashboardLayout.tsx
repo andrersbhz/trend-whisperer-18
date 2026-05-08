@@ -108,7 +108,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
             <div className="gradient-primary p-2 rounded-lg shadow-neon-lilac group-hover:scale-105 transition-transform">
               <Newspaper className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="font-bold text-lg tracking-tighter neon-text-lilac uppercase italic">AutoBlog AI</span>
+            <span className="font-bold text-lg tracking-tighter neon-text-lilac uppercase italic">NEURAL VORTEX</span>
           </Link>
           <button
             onClick={() => setSidebarOpen(false)}
