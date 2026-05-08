@@ -106,7 +106,6 @@ serve(async (req) => {
 
         // Page insights (last 28 days)
         const insightsMetrics = [
-          "page_impressions",
           "page_post_engagements",
           "page_fan_adds",
           "page_views_total",
