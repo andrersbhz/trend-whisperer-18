@@ -354,7 +354,7 @@ const Dashboard = () => {
                 }}
                 variant="outline" 
                 size="sm"
-                className="w-full bg-accent/5 border-accent/30 hover:bg-accent hover:text-accent-foreground rounded-none transition-all gap-2"
+                className="w-full bg-primary/5 border-primary/30 hover:bg-primary hover:text-primary-foreground rounded-none transition-all gap-2 text-[10px] uppercase font-bold tracking-widest"
               >
                 <BarChart3 className="h-4 w-4" />
                 Ver métricas
