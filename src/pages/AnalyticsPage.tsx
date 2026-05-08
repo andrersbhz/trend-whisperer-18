@@ -88,13 +88,13 @@ const CHART_COLORS = [
   'hsl(200, 80%, 50%)',
 ];
 
-const AnalyticsPage = () => {
+const AnalyticsPage = ({ isModal = false, pageId }: { isModal?: boolean; pageId?: string | null }) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
-  const selectedPageId = queryParams.get('page');
+  const selectedPageId = pageId || queryParams.get('page');
   
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [socialMetrics, setSocialMetrics] = useState<SocialMetrics | null>(null);
@@ -786,10 +786,12 @@ const AnalyticsPage = () => {
   if (!gaConnected) {
     return (
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold neon-text-lilac">Analytics</h1>
-          <p className="text-muted-foreground text-sm mt-1">Métricas e insights do seu blog</p>
-        </div>
+        {!isModal && (
+          <div>
+            <h1 className="text-2xl font-bold neon-text-lilac">Analytics</h1>
+            <p className="text-muted-foreground text-sm mt-1">Métricas e insights do seu blog</p>
+          </div>
+        )}
         {socialSection}
         {jetpackSection}
         <Card className="glass-card">
@@ -819,10 +821,12 @@ const AnalyticsPage = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="text-2xl font-bold neon-text-lilac">Analytics</h1>
-          <p className="text-muted-foreground text-sm mt-1">Métricas completas e insights do seu blog</p>
-        </div>
+        {!isModal && (
+          <div>
+            <h1 className="text-2xl font-bold neon-text-lilac">Analytics</h1>
+            <p className="text-muted-foreground text-sm mt-1">Métricas completas e insights do seu blog</p>
+          </div>
+        )}
         
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2 bg-secondary/30 p-1 rounded-lg border border-white/5">
