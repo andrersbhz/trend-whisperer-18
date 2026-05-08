@@ -332,7 +332,7 @@ const Dashboard = () => {
 
               {/* Action Button */}
               <Button 
-                onClick={() => navigate('/analytics')}
+                onClick={() => navigate(`/analytics?page=${pg.page_id}`)}
                 variant="outline" 
                 size="sm"
                 className="w-full bg-accent/5 border-accent/30 hover:bg-accent hover:text-accent-foreground rounded-none transition-all gap-2"
