@@ -248,24 +248,24 @@ const Dashboard = () => {
   };
 
   const statCards = [
-    { icon: FileText, label: 'Total Artigos', value: stats.total, color: 'text-primary', accent: 'from-primary/20 to-transparent', glow: 'neon-border-lilac' },
-    { icon: CheckCircle, label: 'Publicados', value: stats.published, color: 'text-success', accent: 'from-success/20 to-transparent', glow: '' },
-    { icon: Clock, label: 'Pendentes', value: stats.pending, color: 'text-warning', accent: 'from-warning/20 to-transparent', glow: '' },
-    { icon: TrendingUp, label: 'Tendências', value: stats.trending, color: 'text-accent', accent: 'from-accent/20 to-transparent', glow: 'neon-border-pink' },
+    { icon: FileText, label: 'Total Artigos', value: stats.total, color: 'text-primary', accent: 'from-primary/10 to-transparent', glow: 'neon-border-lilac' },
+    { icon: CheckCircle, label: 'Publicados', value: stats.published, color: 'text-success', accent: 'from-success/10 to-transparent', glow: '' },
+    { icon: Clock, label: 'Pendentes', value: stats.pending, color: 'text-warning', accent: 'from-warning/10 to-transparent', glow: '' },
+    { icon: TrendingUp, label: 'Tendências', value: stats.trending, color: 'text-accent', accent: 'from-accent/10 to-transparent', glow: 'neon-border-pink' },
   ];
 
   return (
     <div className="space-y-6 lg:space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div className="hidden">
-          <h1 className="text-2xl sm:text-3xl font-bold neon-text-lilac">Painel</h1>
+        <div className="flex flex-col">
+          <h1 className="text-2xl sm:text-3xl font-bold neon-text-lilac uppercase tracking-tighter">Painel</h1>
           <p className="text-muted-foreground text-sm mt-1">Visão geral, métricas e geração de conteúdo</p>
         </div>
         <Button
           onClick={handleGenerateArticles}
           disabled={generating}
           size="lg"
-          className="gradient-primary text-primary-foreground shadow-neon-lilac hover:shadow-neon-lilac hover:scale-[1.02] transition-transform w-full sm:w-auto"
+          className="gradient-primary text-primary-foreground shadow-neon-lilac hover:shadow-neon-lilac hover:scale-[1.02] transition-transform w-full sm:w-auto rounded-none font-bold uppercase tracking-widest text-xs"
         >
           {generating ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
           Gerar Artigos
@@ -301,48 +301,48 @@ const Dashboard = () => {
           {metaMetrics.map((pg: any, idx: number) => (
             <div 
               key={pg.page_id || idx}
-              className="glass-card hover-lift relative overflow-hidden flex flex-col items-center p-6 border-accent/30 shadow-[0_0_15px_rgba(255,51,153,0.1)] group"
+              className="glass-card hover-lift relative overflow-hidden flex flex-col items-center p-6 border-primary/20 shadow-[0_0_20px_rgba(0,150,255,0.05)] group rounded-none"
             >
               {/* Neon accent line */}
-              <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-accent to-transparent opacity-70" />
-              <div className="absolute bottom-0 left-0 w-full h-[1px] bg-accent/20" />
+              <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />
+              <div className="absolute bottom-0 left-0 w-full h-[1px] bg-primary/10" />
               
               {/* Central Round Logo */}
               <div className="relative mb-4">
-                <div className="absolute inset-0 bg-accent/20 rounded-full blur-xl group-hover:bg-accent/30 transition-colors" />
-                <div className="relative h-20 w-20 rounded-full border-2 border-accent/50 p-1 bg-background shadow-[0_0_15px_rgba(255,51,153,0.3)] overflow-hidden">
+                <div className="absolute inset-0 bg-primary/10 rounded-full blur-xl group-hover:bg-primary/20 transition-colors" />
+                <div className="relative h-20 w-20 rounded-full border-2 border-primary/40 p-1 bg-background shadow-[0_0_15px_rgba(0,150,255,0.2)] overflow-hidden">
                   {pg.facebook?.picture?.data?.url ? (
                     <img src={pg.facebook.picture.data.url} alt={pg.page_name} className="h-full w-full rounded-full object-cover" />
                   ) : (
                     <div className="h-full w-full rounded-full bg-accent/10 flex items-center justify-center">
-                      <Facebook className="h-10 w-10 text-accent" />
+                      <Facebook className="h-10 w-10 text-primary" />
                     </div>
                   )}
                 </div>
               </div>
 
               {/* Page Name */}
-              <h3 className="text-lg font-bold text-foreground text-center line-clamp-1 mb-1 group-hover:text-accent transition-colors">
+              <h3 className="text-lg font-bold text-foreground text-center line-clamp-1 mb-1 group-hover:text-primary transition-colors uppercase tracking-tighter">
                 {pg.page_name}
               </h3>
               
               {/* Metrics Summary */}
               <div className="grid grid-cols-2 gap-x-4 gap-y-3 mb-5 text-[10px] text-muted-foreground font-medium uppercase tracking-wider w-full px-2">
                 <div className="flex flex-col items-center">
-                  <span className="text-foreground text-sm font-bold">{(pg.facebook?.followers_count || pg.facebook?.fan_count || 0).toLocaleString()}</span>
-                  <span>Seguidores</span>
+                  <span className="text-foreground text-sm font-black tabular-nums">{(pg.facebook?.followers_count || pg.facebook?.fan_count || 0).toLocaleString()}</span>
+                  <span className="opacity-70">Seguidores</span>
                 </div>
                 <div className="flex flex-col items-center">
-                  <span className="text-foreground text-sm font-bold">{(pg.facebook?.fan_count || 0).toLocaleString()}</span>
-                  <span>Curtidas</span>
+                  <span className="text-foreground text-sm font-black tabular-nums">{(pg.facebook?.fan_count || 0).toLocaleString()}</span>
+                  <span className="opacity-70">Curtidas</span>
                 </div>
                 <div className="flex flex-col items-center">
-                  <span className="text-foreground text-sm font-bold">{(pg.facebook?.post_stats?.total_posts || 0).toLocaleString()}</span>
-                  <span>Postagens</span>
+                  <span className="text-foreground text-sm font-black tabular-nums">{(pg.facebook?.post_stats?.total_posts || 0).toLocaleString()}</span>
+                  <span className="opacity-70">Postagens</span>
                 </div>
                 <div className="flex flex-col items-center">
-                  <span className="text-foreground text-sm font-bold">{(pg.facebook?.post_stats?.avg_engagement || 0).toLocaleString()}</span>
-                  <span>Engajamento</span>
+                  <span className="text-foreground text-sm font-black tabular-nums">{(pg.facebook?.post_stats?.avg_engagement || 0).toLocaleString()}</span>
+                  <span className="opacity-70">Engajamento</span>
                 </div>
               </div>
 
@@ -354,7 +354,7 @@ const Dashboard = () => {
                 }}
                 variant="outline" 
                 size="sm"
-                className="w-full bg-accent/5 border-accent/30 hover:bg-accent hover:text-accent-foreground rounded-none transition-all gap-2"
+                className="w-full bg-primary/5 border-primary/30 hover:bg-primary hover:text-primary-foreground rounded-none transition-all gap-2 text-[10px] uppercase font-bold tracking-widest"
               >
                 <BarChart3 className="h-4 w-4" />
                 Ver métricas

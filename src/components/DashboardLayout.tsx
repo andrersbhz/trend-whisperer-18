@@ -97,7 +97,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
       <aside
         className={cn(
-          'fixed lg:sticky top-0 inset-y-0 left-0 z-50 w-72 lg:w-64 h-screen glass flex flex-col transition-transform duration-300 ease-out',
+          'fixed lg:sticky top-0 inset-y-0 left-0 z-50 w-72 lg:w-64 h-screen glass flex flex-col transition-transform duration-300 ease-in-out border-r border-primary/20 shadow-[10px_0_30px_-15px_rgba(0,0,0,0.5)]',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         )}
         aria-label="Navegação principal"
@@ -108,7 +108,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
             <div className="gradient-primary p-2 rounded-lg shadow-neon-lilac group-hover:scale-105 transition-transform">
               <Newspaper className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="font-bold text-lg neon-text-lilac">AutoBlog AI</span>
+            <span className="font-bold text-lg tracking-tighter neon-text-lilac uppercase italic">AutoBlog AI</span>
           </Link>
           <button
             onClick={() => setSidebarOpen(false)}
@@ -128,9 +128,9 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                 key={item.path}
                 to={item.path}
                 className={cn(
-                  'group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200',
+                  'group flex items-center gap-3 px-3 py-2.5 rounded-none text-xs font-bold transition-all duration-300 uppercase tracking-widest',
                   active
-                    ? 'bg-primary/15 text-primary neon-border-lilac shadow-neon-lilac'
+                    ? 'bg-primary/10 text-primary border-l-2 border-primary shadow-[inset_10px_0_15px_-10px_rgba(0,150,255,0.2)]'
                     : 'text-muted-foreground hover:bg-secondary/50 hover:text-foreground hover:translate-x-0.5'
                 )}
               >
@@ -145,8 +145,8 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
         {/* User & Logout */}
         <div className="p-3 border-t border-border/40 space-y-2">
           {user && (
-            <div className="flex items-center gap-3 px-2 py-2 rounded-lg bg-secondary/30">
-              <div className="h-9 w-9 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-semibold text-sm shrink-0 shadow-neon-lilac">
+            <div className="flex items-center gap-3 px-2 py-2 rounded-none bg-secondary/20 border border-primary/10">
+              <div className="h-9 w-9 rounded-none gradient-primary flex items-center justify-center text-primary-foreground font-black text-sm shrink-0 shadow-neon-lilac">
                 {userInitial}
               </div>
               <div className="min-w-0 flex-1">
@@ -157,7 +157,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           )}
           <Button
             variant="ghost"
-            className="w-full justify-start text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+            className="w-full justify-start text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors rounded-none text-xs uppercase tracking-widest font-bold"
             onClick={signOut}
           >
             <LogOut className="h-4 w-4 mr-3" />
@@ -181,12 +181,12 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
               onClick={handleGlobalGenerate}
               disabled={generating}
               size="sm"
-              className="gradient-primary h-8 gap-2 shadow-neon-lilac hover:scale-[1.02] transition-transform text-xs font-bold px-3 sm:px-4"
+              className="gradient-primary h-8 gap-2 shadow-neon-lilac hover:scale-[1.02] transition-transform text-[10px] font-black px-3 sm:px-4 rounded-none uppercase tracking-tighter"
             >
               {generating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
               <span>{generating ? 'Gerando...' : 'Ligar Robô'}</span>
             </Button>
-            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-success/10 border border-success/20">
+            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-none bg-success/5 border border-success/30">
               <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse-dot" />
               <span className="text-[11px] font-medium text-success">Online</span>
             </div>

@@ -80,12 +80,12 @@ interface AiTip {
 }
 
 const CHART_COLORS = [
-  'hsl(145, 80%, 45%)',
-  'hsl(320, 80%, 55%)',
-  'hsl(275, 70%, 50%)',
-  'hsl(38, 92%, 50%)',
-  'hsl(0, 75%, 55%)',
-  'hsl(200, 80%, 50%)',
+  'hsl(210, 100%, 50%)',
+  'hsl(190, 100%, 50%)',
+  'hsl(220, 100%, 40%)',
+  'hsl(180, 100%, 45%)',
+  'hsl(0, 85%, 60%)',
+  'hsl(160, 85%, 55%)',
 ];
 
 const AnalyticsPage = ({ isModal = false, pageId }: { isModal?: boolean; pageId?: string | null }) => {
@@ -274,10 +274,10 @@ const AnalyticsPage = ({ isModal = false, pageId }: { isModal?: boolean; pageId?
   };
 
   const customTooltipStyle = {
-    backgroundColor: 'hsl(260, 15%, 12%)',
-    border: '1px solid hsl(260, 20%, 22%)',
-    borderRadius: '8px',
-    color: 'hsl(0, 0%, 95%)',
+    backgroundColor: 'hsl(230, 25%, 6%)',
+    border: '1px solid hsl(230, 20%, 20%)',
+    borderRadius: '0px',
+    color: 'hsl(210, 20%, 98%)',
   };
 
   if (loading) {
@@ -433,7 +433,7 @@ const AnalyticsPage = ({ isModal = false, pageId }: { isModal?: boolean; pageId?
                   <CardContent>
                     <ResponsiveContainer width="100%" height={200}>
                       <AreaChart data={pg.facebook.insights.page_impressions.daily}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(260, 20%, 18%)" />
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(230, 20%, 15%)" />
                         <XAxis dataKey="date" fontSize={10} stroke="hsl(260, 10%, 45%)" />
                         <YAxis fontSize={10} stroke="hsl(260, 10%, 45%)" />
                         <Tooltip contentStyle={customTooltipStyle} />
@@ -1116,11 +1116,11 @@ const AnalyticsPage = ({ isModal = false, pageId }: { isModal?: boolean; pageId?
             <CardContent>
               <ResponsiveContainer width="100%" height={200}>
                 <BarChart data={analytics.hourlyTraffic}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(260, 20%, 18%)" />
-                  <XAxis dataKey="hour" fontSize={10} stroke="hsl(260, 10%, 45%)" />
-                  <YAxis fontSize={10} stroke="hsl(260, 10%, 45%)" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(230, 20%, 15%)" />
+                  <XAxis dataKey="hour" fontSize={10} stroke="hsl(215, 15%, 50%)" />
+                  <YAxis fontSize={10} stroke="hsl(215, 15%, 50%)" />
                   <Tooltip contentStyle={customTooltipStyle} />
-                  <Bar dataKey="views" fill="hsl(320, 80%, 55%)" radius={[3, 3, 0, 0]} />
+                  <Bar dataKey="views" fill="hsl(190, 100%, 50%)" radius={[0, 0, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
