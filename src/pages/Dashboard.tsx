@@ -265,7 +265,7 @@ const Dashboard = () => {
           onClick={handleGenerateArticles}
           disabled={generating}
           size="lg"
-          className="gradient-primary text-primary-foreground shadow-neon-lilac hover:shadow-neon-lilac hover:scale-[1.02] transition-transform w-full sm:w-auto"
+          className="gradient-primary text-primary-foreground shadow-neon-lilac hover:shadow-neon-lilac hover:scale-[1.02] transition-transform w-full sm:w-auto rounded-none font-bold uppercase tracking-widest text-xs"
         >
           {generating ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
           Gerar Artigos
