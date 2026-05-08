@@ -105,10 +105,12 @@ serve(async (req) => {
         }
 
         // Page insights (last 28 days)
+        // Note: page_views_total is not available for all page types, keeping core engagement metrics
         const insightsMetrics = [
           "page_post_engagements",
           "page_fan_adds",
-          "page_views_total",
+          "page_impressions",
+          "page_engaged_users"
         ].join(",");
 
         const insightsResp = await fetch(
