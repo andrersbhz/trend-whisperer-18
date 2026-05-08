@@ -345,15 +345,7 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* === ANALYTICS COMPLETO (original, mantido para profundidade) === */}
-      <div className="pt-2 opacity-80 scale-[0.98] origin-top grayscale-[0.2] hover:grayscale-0 hover:opacity-100 hover:scale-100 transition-all duration-500">
-        <div className="flex items-center gap-2 mb-4 px-2">
-          <div className="h-[1px] flex-1 bg-border/40" />
-          <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-bold">Relatório Detalhado</span>
-          <div className="h-[1px] flex-1 bg-border/40" />
-        </div>
-        <AnalyticsPage />
-      </div>
+      {/* === ANALYTICS COMPLETO (REMOVIDO A PEDIDO DO USUÁRIO) === */}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
