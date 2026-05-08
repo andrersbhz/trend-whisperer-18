@@ -301,7 +301,7 @@ const Dashboard = () => {
           {metaMetrics.map((pg: any, idx: number) => (
             <div 
               key={pg.page_id || idx}
-              className="glass-card hover-lift relative overflow-hidden flex flex-col items-center p-6 border-accent/30 shadow-[0_0_15px_rgba(255,51,153,0.1)] group"
+              className="glass-card hover-lift relative overflow-hidden flex flex-col items-center p-6 border-primary/20 shadow-[0_0_20px_rgba(0,150,255,0.05)] group rounded-none"
             >
               {/* Neon accent line */}
               <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-accent to-transparent opacity-70" />
