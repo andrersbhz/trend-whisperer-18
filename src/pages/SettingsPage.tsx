@@ -9,7 +9,7 @@ import GoogleAnalyticsSettings from '@/components/settings/GoogleAnalyticsSettin
 import AutomationSettings from '@/components/settings/AutomationSettings';
 import GeminiSettings from '@/components/settings/GeminiSettings';
 import OpenAISettings from '@/components/settings/OpenAISettings';
-import AzureCopilotSettings from '@/components/settings/AzureCopilotSettings';
+// Azure Copilot settings removed
 import GroqSettings from '@/components/settings/GroqSettings';
 import JetpackSettings from '@/components/settings/JetpackSettings';
 import FacebookSettings from '@/components/settings/FacebookSettings';
@@ -306,12 +306,12 @@ const SettingsPage = () => {
       </div>
 
       <div className="p-3 rounded-lg bg-accent/20 border border-accent/40 text-xs text-muted-foreground">
-        <strong className="text-foreground">🔄 Sistema Multi-IA:</strong> O sistema tenta gerar artigos na seguinte ordem: <strong>Gemini → OpenAI → Azure Copilot → Groq → Lovable AI</strong>. Para imagens: <strong>DALL-E 3 → Lovable AI → Gemini</strong>. Se um provedor estiver sem saldo, o próximo é usado automaticamente.
+        <strong className="text-foreground">🔄 Sistema Multi-IA:</strong> O sistema tenta gerar artigos na seguinte ordem: <strong>Gemini → OpenAI → Groq → Lovable AI</strong>. Para imagens: <strong>DALL-E 3 → Lovable AI → Gemini</strong>. Se um provedor estiver sem saldo, o próximo é usado automaticamente.
       </div>
 
       <GeminiSettings settings={settings} onChange={updateSettings} hasGeminiKey={credStatus.has_gemini_key} onDisconnect={() => disconnectCredential({ gemini_api_key: '' }, 'Gemini')} />
       <OpenAISettings settings={settings} onChange={updateSettings} hasOpenaiKey={credStatus.has_openai_key} onDisconnect={() => disconnectCredential({ openai_api_key: '' }, 'OpenAI')} />
-      <AzureCopilotSettings settings={settings} onChange={updateSettings} hasAzureKey={credStatus.has_azure_key} onDisconnect={() => disconnectCredential({ azure_openai_api_key: '', azure_openai_endpoint: '', azure_openai_deployment_name: '' }, 'Azure Copilot')} />
+      {/* Azure Copilot settings removed */}
       <GroqSettings settings={settings} onChange={updateSettings} hasGroqKey={credStatus.has_groq_key} onDisconnect={() => disconnectCredential({ groq_api_key: '' }, 'Groq')} />
       <WordPressSettings settings={settings} onChange={updateSettings} hasWpPassword={credStatus.has_wp_password} onDisconnect={() => disconnectCredential({ wordpress_url: '', wordpress_username: '', wordpress_app_password: '' }, 'WordPress')} />
       <JetpackSettings settings={settings} hasWpPassword={credStatus.has_wp_password} />
