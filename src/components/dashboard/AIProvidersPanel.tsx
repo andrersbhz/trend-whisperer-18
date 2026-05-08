@@ -144,7 +144,7 @@ const AIProvidersPanel = () => {
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium text-foreground">{p.name}</span>
                 {p.name === lastUsedProvider && (
-                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-primary/20 text-primary border-0">
+                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-primary/20 text-primary border-0 rounded-none uppercase font-bold">
                     último usado
                   </Badge>
                 )}
