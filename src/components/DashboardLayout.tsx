@@ -186,7 +186,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
               {generating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
               <span>{generating ? 'Gerando...' : 'Ligar Robô'}</span>
             </Button>
-            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-success/10 border border-success/20">
+            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-none bg-success/5 border border-success/30">
               <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse-dot" />
               <span className="text-[11px] font-medium text-success">Online</span>
             </div>
