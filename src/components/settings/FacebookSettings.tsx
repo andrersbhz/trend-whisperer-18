@@ -172,8 +172,12 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
     try {
       const authUrl = await requestFacebookAuthUrl(returnUrl);
       
-      // Open in a new tab to avoid CSP/Refused connection issues while keeping the app open
-      window.open(authUrl, '_blank');
+      // Using window.top.location.href to escape any iframe/sandbox restrictions
+      if (window.top) {
+        window.top.location.href = authUrl;
+      } else {
+        window.location.href = authUrl;
+      }
     } catch (e: any) {
       setOauthLoading(false);
       toast({ title: 'Erro ao conectar', description: e.message, variant: 'destructive' });
