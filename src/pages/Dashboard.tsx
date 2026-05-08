@@ -309,8 +309,8 @@ const Dashboard = () => {
               
               {/* Central Round Logo */}
               <div className="relative mb-4">
-                <div className="absolute inset-0 bg-accent/20 rounded-full blur-xl group-hover:bg-accent/30 transition-colors" />
-                <div className="relative h-20 w-20 rounded-full border-2 border-accent/50 p-1 bg-background shadow-[0_0_15px_rgba(255,51,153,0.3)] overflow-hidden">
+                <div className="absolute inset-0 bg-primary/10 rounded-full blur-xl group-hover:bg-primary/20 transition-colors" />
+                <div className="relative h-20 w-20 rounded-full border-2 border-primary/40 p-1 bg-background shadow-[0_0_15px_rgba(0,150,255,0.2)] overflow-hidden">
                   {pg.facebook?.picture?.data?.url ? (
                     <img src={pg.facebook.picture.data.url} alt={pg.page_name} className="h-full w-full rounded-full object-cover" />
                   ) : (
