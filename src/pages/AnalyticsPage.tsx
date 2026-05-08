@@ -108,7 +108,7 @@ const AnalyticsPage = ({ isModal = false, pageId }: { isModal?: boolean; pageId?
   const [jetpackStats, setJetpackStats] = useState<JetpackStats | null>(null);
   const [loadingJetpack, setLoadingJetpack] = useState(false);
   const [chartType, setChartType] = useState<'area' | 'bar'>('area');
-
+  const [pieChartType, setPieChartType] = useState<'pie' | 'donut'>('donut');
   const [dateRange, setDateRange] = useState({ from: '', to: '' });
 
   useEffect(() => {
