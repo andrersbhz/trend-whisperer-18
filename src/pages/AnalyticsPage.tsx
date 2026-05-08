@@ -1120,7 +1120,7 @@ const AnalyticsPage = ({ isModal = false, pageId }: { isModal?: boolean; pageId?
                   <XAxis dataKey="hour" fontSize={10} stroke="hsl(215, 15%, 50%)" />
                   <YAxis fontSize={10} stroke="hsl(215, 15%, 50%)" />
                   <Tooltip contentStyle={customTooltipStyle} />
-                  <Bar dataKey="views" fill="hsl(320, 80%, 55%)" radius={[3, 3, 0, 0]} />
+                  <Bar dataKey="views" fill="hsl(190, 100%, 50%)" radius={[0, 0, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
