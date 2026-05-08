@@ -315,7 +315,7 @@ const Dashboard = () => {
                     <img src={pg.facebook.picture.data.url} alt={pg.page_name} className="h-full w-full rounded-full object-cover" />
                   ) : (
                     <div className="h-full w-full rounded-full bg-accent/10 flex items-center justify-center">
-                      <Facebook className="h-10 w-10 text-accent" />
+                      <Facebook className="h-10 w-10 text-primary" />
                     </div>
                   )}
                 </div>
