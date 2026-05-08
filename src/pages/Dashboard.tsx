@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import {
   FileText, TrendingUp, CheckCircle, Clock, Sparkles, RefreshCw, Save, Loader2,
-  PenTool, ChevronDown
+  PenTool, ChevronDown, Facebook, ExternalLink, BarChart3
 } from 'lucide-react';
 import AIProvidersPanel from '@/components/dashboard/AIProvidersPanel';
 import { useToast } from '@/hooks/use-toast';
@@ -22,12 +22,14 @@ import { getErrorMessage, runBackendQuery, runBackendMutation } from '@/lib/back
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import AnalyticsPage from '@/pages/AnalyticsPage';
+import { useNavigate } from 'react-router-dom';
 
 
 
 const Dashboard = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [stats, setStats] = useState({ total: 0, published: 0, pending: 0, trending: 0, failed: 0 });
   const [recentArticles, setRecentArticles] = useState<any[]>([]);
   const [recentErrors, setRecentErrors] = useState<any[]>([]);
@@ -37,6 +39,8 @@ const Dashboard = () => {
   const [trendingList, setTrendingList] = useState<any[]>([]);
   const [loadingTrends, setLoadingTrends] = useState(true);
   const [userCategories, setUserCategories] = useState<string[]>([]);
+  const [metaMetrics, setMetaMetrics] = useState<any[] | null>(null);
+  const [loadingMeta, setLoadingMeta] = useState(false);
 
   const fetchStats = async () => {
     if (!user) return;
@@ -126,8 +130,33 @@ const Dashboard = () => {
     }
   };
 
+  const fetchMetaMetrics = async () => {
+    if (!user) return;
+    setLoadingMeta(true);
+    try {
+      const data = await runBackendQuery(() =>
+        supabase.functions.invoke('fetch-meta-metrics', {
+          body: { userId: user.id },
+        }),
+      );
+      if (data?.pages) {
+        const validPages = (data.pages as any[]).filter((pg: any) => {
+          const hasFbData = pg.facebook && !pg.facebook.error && (pg.facebook.fan_count || pg.facebook.followers_count);
+          const hasIgData = pg.instagram && !pg.instagram.error && (pg.instagram.followers_count || pg.instagram.media_count);
+          return hasFbData || hasIgData;
+        });
+        setMetaMetrics(validPages.length > 0 ? validPages : null);
+      }
+    } catch (error) {
+      console.error('Meta metrics error:', error);
+    } finally {
+      setLoadingMeta(false);
+    }
+  };
+
   useEffect(() => {
     fetchStats();
+    fetchMetaMetrics();
   }, [user]);
 
   const getFunctionErrorMessage = async (error: unknown) => {
@@ -257,8 +286,72 @@ const Dashboard = () => {
         ))}
       </div>
 
-      {/* === ANALYTICS COMPLETO (logo abaixo dos cards) === */}
-      <div className="pt-2">
+      {/* === FACEBOOK PAGES CARDS === */}
+      {metaMetrics && metaMetrics.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-fade-in">
+          {metaMetrics.map((pg: any, idx: number) => (
+            <div 
+              key={pg.page_id || idx}
+              className="glass-card hover-lift relative overflow-hidden flex flex-col items-center p-6 border-accent/30 shadow-[0_0_15px_rgba(255,51,153,0.1)] group"
+            >
+              {/* Neon accent line */}
+              <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-accent to-transparent opacity-70" />
+              <div className="absolute bottom-0 left-0 w-full h-[1px] bg-accent/20" />
+              
+              {/* Central Round Logo */}
+              <div className="relative mb-4">
+                <div className="absolute inset-0 bg-accent/20 rounded-full blur-xl group-hover:bg-accent/30 transition-colors" />
+                <div className="relative h-20 w-20 rounded-full border-2 border-accent/50 p-1 bg-background shadow-[0_0_15px_rgba(255,51,153,0.3)] overflow-hidden">
+                  {pg.facebook?.picture?.data?.url ? (
+                    <img src={pg.facebook.picture.data.url} alt={pg.page_name} className="h-full w-full rounded-full object-cover" />
+                  ) : (
+                    <div className="h-full w-full rounded-full bg-accent/10 flex items-center justify-center">
+                      <Facebook className="h-10 w-10 text-accent" />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Page Name */}
+              <h3 className="text-lg font-bold text-foreground text-center line-clamp-1 mb-1 group-hover:text-accent transition-colors">
+                {pg.page_name}
+              </h3>
+              
+              {/* Metrics Summary */}
+              <div className="flex gap-4 mb-5 text-[11px] text-muted-foreground font-medium uppercase tracking-wider">
+                <div className="flex flex-col items-center">
+                  <span className="text-foreground text-sm font-bold">{(pg.facebook?.followers_count || pg.facebook?.fan_count || 0).toLocaleString()}</span>
+                  <span>Seguidores</span>
+                </div>
+                <div className="w-[1px] h-4 bg-border/40 self-center" />
+                <div className="flex flex-col items-center">
+                  <span className="text-foreground text-sm font-bold">{(pg.facebook?.post_stats?.avg_engagement || 0).toLocaleString()}</span>
+                  <span>Engajamento</span>
+                </div>
+              </div>
+
+              {/* Action Button */}
+              <Button 
+                onClick={() => navigate('/analytics')}
+                variant="outline" 
+                size="sm"
+                className="w-full bg-accent/5 border-accent/30 hover:bg-accent hover:text-accent-foreground rounded-none transition-all gap-2"
+              >
+                <BarChart3 className="h-4 w-4" />
+                Ver métricas
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* === ANALYTICS COMPLETO (original, mantido para profundidade) === */}
+      <div className="pt-2 opacity-80 scale-[0.98] origin-top grayscale-[0.2] hover:grayscale-0 hover:opacity-100 hover:scale-100 transition-all duration-500">
+        <div className="flex items-center gap-2 mb-4 px-2">
+          <div className="h-[1px] flex-1 bg-border/40" />
+          <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-bold">Relatório Detalhado</span>
+          <div className="h-[1px] flex-1 bg-border/40" />
+        </div>
         <AnalyticsPage />
       </div>
 
