@@ -181,7 +181,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
               onClick={handleGlobalGenerate}
               disabled={generating}
               size="sm"
-              className="gradient-primary h-8 gap-2 shadow-neon-lilac hover:scale-[1.02] transition-transform text-xs font-bold px-3 sm:px-4"
+              className="gradient-primary h-8 gap-2 shadow-neon-lilac hover:scale-[1.02] transition-transform text-[10px] font-black px-3 sm:px-4 rounded-none uppercase tracking-tighter"
             >
               {generating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
               <span>{generating ? 'Gerando...' : 'Ligar Robô'}</span>
