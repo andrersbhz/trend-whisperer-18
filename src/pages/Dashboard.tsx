@@ -375,7 +375,10 @@ const Dashboard = () => {
         </DialogContent>
       </Dialog>
 
-      {/* === ANALYTICS COMPLETO (REMOVIDO A PEDIDO DO USUÁRIO) === */}
+      {/* === ANALYTICS COMPLETO === */}
+      <div className="pt-6 border-t border-border/50">
+        <AnalyticsPage />
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
