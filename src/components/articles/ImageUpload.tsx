@@ -33,7 +33,7 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
   const [isCropDialogOpen, setIsCropDialogOpen] = useState(false);
-  const [aspect, setAspect] = useState<number>(1);
+  const [aspect, setAspect] = useState<number | undefined>(undefined);
 
   const onCropComplete = useCallback((_croppedArea: any, croppedAreaPixels: any) => {
     setCroppedAreaPixels(croppedAreaPixels);
@@ -207,7 +207,7 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
 
   return (
     <div className="space-y-4">
-      <div className="relative aspect-square w-full max-w-[400px] mx-auto rounded-lg border-2 border-dashed border-border overflow-hidden bg-muted/30 flex items-center justify-center">
+      <div className="relative aspect-video w-full max-w-[500px] mx-auto rounded-lg border-2 border-dashed border-border overflow-hidden bg-muted/30 flex items-center justify-center">
         {previewUrl ? (
           <>
             <img 
@@ -273,12 +273,20 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
               <DialogTitle>Ajustar Imagem</DialogTitle>
               <div className="flex gap-2 mr-6">
                 <Button 
+                  variant={aspect === undefined ? "default" : "outline"} 
+                  size="sm" 
+                  onClick={() => setAspect(undefined)}
+                  className="h-8 text-xs"
+                >
+                  Livre
+                </Button>
+                <Button 
                   variant={aspect === 1 ? "default" : "outline"} 
                   size="sm" 
                   onClick={() => setAspect(1)}
                   className="h-8 text-xs"
                 >
-                  1:1 (Padrão)
+                  1:1
                 </Button>
                 <Button 
                   variant={aspect === 4/3 ? "default" : "outline"} 
@@ -295,14 +303,6 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
                   className="h-8 text-xs"
                 >
                   16:9
-                </Button>
-                <Button 
-                  variant={aspect === undefined ? "default" : "outline"} 
-                  size="sm" 
-                  onClick={() => setAspect(undefined as any)}
-                  className="h-8 text-xs"
-                >
-                  Livre
                 </Button>
               </div>
             </div>
