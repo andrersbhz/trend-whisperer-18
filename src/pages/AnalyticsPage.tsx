@@ -80,12 +80,12 @@ interface AiTip {
 }
 
 const CHART_COLORS = [
-  'hsl(145, 80%, 45%)',
-  'hsl(320, 80%, 55%)',
-  'hsl(275, 70%, 50%)',
-  'hsl(38, 92%, 50%)',
-  'hsl(0, 75%, 55%)',
-  'hsl(200, 80%, 50%)',
+  'hsl(210, 100%, 50%)',
+  'hsl(190, 100%, 50%)',
+  'hsl(220, 100%, 40%)',
+  'hsl(180, 100%, 45%)',
+  'hsl(0, 85%, 60%)',
+  'hsl(160, 85%, 55%)',
 ];
 
 const AnalyticsPage = ({ isModal = false, pageId }: { isModal?: boolean; pageId?: string | null }) => {
