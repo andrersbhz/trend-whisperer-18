@@ -273,12 +273,20 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
               <DialogTitle>Ajustar Imagem</DialogTitle>
               <div className="flex gap-2 mr-6">
                 <Button 
+                  variant={aspect === undefined ? "default" : "outline"} 
+                  size="sm" 
+                  onClick={() => setAspect(undefined)}
+                  className="h-8 text-xs"
+                >
+                  Livre
+                </Button>
+                <Button 
                   variant={aspect === 1 ? "default" : "outline"} 
                   size="sm" 
                   onClick={() => setAspect(1)}
                   className="h-8 text-xs"
                 >
-                  1:1 (Padrão)
+                  1:1
                 </Button>
                 <Button 
                   variant={aspect === 4/3 ? "default" : "outline"} 
@@ -295,14 +303,6 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
                   className="h-8 text-xs"
                 >
                   16:9
-                </Button>
-                <Button 
-                  variant={aspect === undefined ? "default" : "outline"} 
-                  size="sm" 
-                  onClick={() => setAspect(undefined as any)}
-                  className="h-8 text-xs"
-                >
-                  Livre
                 </Button>
               </div>
             </div>
