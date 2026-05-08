@@ -322,7 +322,7 @@ const Dashboard = () => {
               </div>
 
               {/* Page Name */}
-              <h3 className="text-lg font-bold text-foreground text-center line-clamp-1 mb-1 group-hover:text-accent transition-colors">
+              <h3 className="text-lg font-bold text-foreground text-center line-clamp-1 mb-1 group-hover:text-primary transition-colors uppercase tracking-tighter">
                 {pg.page_name}
               </h3>
               
