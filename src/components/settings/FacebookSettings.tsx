@@ -172,12 +172,19 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
     try {
       const authUrl = await requestFacebookAuthUrl(returnUrl);
       
-      // Using window.top.location.href to escape any iframe/sandbox restrictions
-      if (window.top) {
-        window.top.location.href = authUrl;
-      } else {
+      // Try to open as popup first
+      const popup = window.open(authUrl, 'facebook-oauth', getPopupFeatures());
+      
+      if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+        // If popup is blocked, fallback to direct redirect
+        console.warn('Popup blocked or failed, redirecting main window...');
         window.location.href = authUrl;
+        return;
       }
+      
+      popupRef.current = popup;
+      popup.focus();
+      watchPopupClosed(popup);
     } catch (e: any) {
       setOauthLoading(false);
       toast({ title: 'Erro ao conectar', description: e.message, variant: 'destructive' });
@@ -296,7 +303,7 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
     >
       <div className="space-y-3">
         <div className="rounded-lg border border-accent/40 bg-accent/10 p-3 text-xs text-muted-foreground">
-          A conexão será feita em uma nova aba para evitar bloqueios de segurança do navegador.
+          O login do Facebook abre em uma janela popup. Conclua o login lá e a janela fechará automaticamente ao terminar.
         </div>
 
 

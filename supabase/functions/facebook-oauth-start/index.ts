@@ -115,8 +115,6 @@ serve(async (req) => {
     authUrl.searchParams.set("state", state);
     authUrl.searchParams.set("scope", SCOPES);
     authUrl.searchParams.set("response_type", "code");
-    // Force Facebook to show the dialog even if already authorized, helps with UI/CSP issues sometimes
-    authUrl.searchParams.set("auth_type", "rerequest");
 
     return new Response(JSON.stringify({ authUrl: authUrl.toString() }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
