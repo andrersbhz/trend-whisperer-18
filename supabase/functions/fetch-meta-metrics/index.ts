@@ -113,7 +113,7 @@ serve(async (req) => {
         ].join(",");
 
         const insightsResp = await fetch(
-          `${GRAPH_API}/${page.pageId}/insights?metric=${insightsMetrics}&period=day&date_preset=last_28d&access_token=${page.accessToken}`
+          `${GRAPH_API}/${page.pageId}/insights?metric=${insightsMetrics}&period=day&access_token=${page.accessToken}`
         );
         if (insightsResp.ok) {
           const insightsData = await insightsResp.json();
