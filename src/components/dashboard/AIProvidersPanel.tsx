@@ -135,9 +135,9 @@ const AIProvidersPanel = () => {
         {providers.map((p) => (
           <div
             key={p.name}
-            className="flex items-center gap-3 p-2.5 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors"
+            className="flex items-center gap-3 p-2.5 rounded-none bg-secondary/20 border border-primary/5 hover:bg-secondary/40 transition-colors"
           >
-            <div className={`p-1.5 rounded-md ${p.connected ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}`}>
+            <div className={`p-1.5 rounded-none ${p.connected ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}`}>
               {p.icon}
             </div>
             <div className="flex-1 min-w-0">
