@@ -50,6 +50,9 @@ const Dashboard = () => {
   const [loadingMeta, setLoadingMeta] = useState(false);
   const [selectedPageForMetrics, setSelectedPageForMetrics] = useState<string | null>(null);
   const [isMetricsModalOpen, setIsMetricsModalOpen] = useState(false);
+  const [jetpackStats, setJetpackStats] = useState<any | null>(null);
+  const [loadingJetpack, setLoadingJetpack] = useState(false);
+
 
   const fetchStats = async () => {
     if (!user) return;
@@ -163,9 +166,27 @@ const Dashboard = () => {
     }
   };
 
+  const fetchJetpackStats = async () => {
+    if (!user) return;
+    setLoadingJetpack(true);
+    try {
+      const data = await runBackendQuery(() =>
+        supabase.functions.invoke('fetch-jetpack-stats', { body: { userId: user.id } }),
+      );
+      if (data?.jetpack?.available) {
+        setJetpackStats(data.jetpack);
+      }
+    } catch (error) {
+      console.error('Jetpack stats error:', error);
+    } finally {
+      setLoadingJetpack(false);
+    }
+  };
+
   useEffect(() => {
     fetchStats();
     fetchMetaMetrics();
+    fetchJetpackStats();
   }, [user]);
 
   const getFunctionErrorMessage = async (error: unknown) => {
