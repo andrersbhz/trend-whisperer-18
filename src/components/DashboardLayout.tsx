@@ -27,6 +27,7 @@ const navItems = [
   { icon: TrendingUp, label: 'Tendências', path: '/trends' },
   { icon: Clock, label: 'Agendamentos', path: '/schedule' },
   { icon: Settings, label: 'Configurações', path: '/settings' },
+  { icon: Bot, label: 'Robô Social', path: '/robot' },
 ];
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
