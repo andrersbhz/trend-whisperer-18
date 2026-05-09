@@ -133,7 +133,9 @@ const Dashboard = () => {
         Object.entries(byCat)
           .map(([category, v]) => ({ category, ...v }))
           .sort((a, b) => b.total - a.total),
-      );
+      </div>
+    </div>
+  );
 
       setRecentArticles(recent || []);
       setRecentErrors(errors || []);
