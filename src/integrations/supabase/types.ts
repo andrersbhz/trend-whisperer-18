@@ -256,42 +256,51 @@ export type Database = {
       social_interactions: {
         Row: {
           ai_response: string | null
+          author_avatar: string | null
           author_name: string | null
           content: string
           created_at: string
           error_message: string | null
           external_id: string
           id: string
+          original_link: string | null
           page_id: string
           platform: string
+          processed_at: string | null
           status: string
           updated_at: string
           user_id: string
         }
         Insert: {
           ai_response?: string | null
+          author_avatar?: string | null
           author_name?: string | null
           content: string
           created_at?: string
           error_message?: string | null
           external_id: string
           id?: string
+          original_link?: string | null
           page_id: string
           platform: string
+          processed_at?: string | null
           status?: string
           updated_at?: string
           user_id: string
         }
         Update: {
           ai_response?: string | null
+          author_avatar?: string | null
           author_name?: string | null
           content?: string
           created_at?: string
           error_message?: string | null
           external_id?: string
           id?: string
+          original_link?: string | null
           page_id?: string
           platform?: string
+          processed_at?: string | null
           status?: string
           updated_at?: string
           user_id?: string
@@ -371,6 +380,7 @@ export type Database = {
           linkedin_access_token: string | null
           linkedin_org_id: string | null
           openai_api_key: string | null
+          social_reply_prompt: string | null
           trends_refresh_interval: number | null
           updated_at: string
           user_id: string
@@ -404,6 +414,7 @@ export type Database = {
           linkedin_access_token?: string | null
           linkedin_org_id?: string | null
           openai_api_key?: string | null
+          social_reply_prompt?: string | null
           trends_refresh_interval?: number | null
           updated_at?: string
           user_id: string
@@ -437,6 +448,7 @@ export type Database = {
           linkedin_access_token?: string | null
           linkedin_org_id?: string | null
           openai_api_key?: string | null
+          social_reply_prompt?: string | null
           trends_refresh_interval?: number | null
           updated_at?: string
           user_id?: string
