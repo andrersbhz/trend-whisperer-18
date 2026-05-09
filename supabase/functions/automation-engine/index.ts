@@ -10,9 +10,6 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const authHeader = req.headers.get("Authorization");
-    const isCron = req.headers.get("User-Agent")?.includes("Postman") || authHeader === `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`;
-
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
@@ -36,34 +33,77 @@ serve(async (req) => {
 
     console.log(`[automation-engine] Processando ${users.length} usuários...`);
 
-    const results = [];
-
     for (const user of users) {
       try {
         console.log(`[automation-engine] Executando para usuário: ${user.user_id}`);
         
+        // Log start
+        await supabase.from("automation_logs").insert({
+          user_id: user.user_id,
+          level: 'info',
+          module: 'automation',
+          message: 'Iniciando ciclo de automação 24/7'
+        });
+
         // Sincronizar interações
         const syncResp = await supabase.functions.invoke("handle-social-interactions", {
           body: { userId: user.user_id }
         });
+        
+        if (syncResp.error) {
+           await supabase.from("automation_logs").insert({
+            user_id: user.user_id,
+            level: 'error',
+            module: 'sync',
+            message: `Falha na sincronização: ${syncResp.error.message || 'Erro desconhecido'}`,
+            details: syncResp.error
+          });
+        } else {
+           await supabase.from("automation_logs").insert({
+            user_id: user.user_id,
+            level: 'info',
+            module: 'sync',
+            message: `Sincronização concluída: ${syncResp.data?.newInteractions || 0} novas interações.`,
+            details: syncResp.data
+          });
+        }
 
         // Processar respostas
         const replyResp = await supabase.functions.invoke("process-social-replies", {
           body: { userId: user.user_id }
         });
 
-        results.push({
-          userId: user.user_id,
-          sync: syncResp.data,
-          replies: replyResp.data
-        });
-      } catch (userErr) {
+        if (replyResp.error) {
+          await supabase.from("automation_logs").insert({
+            user_id: user.user_id,
+            level: 'error',
+            module: 'reply',
+            message: `Falha ao gerar respostas: ${replyResp.error.message || 'Erro desconhecido'}`,
+            details: replyResp.error
+          });
+        } else {
+          await supabase.from("automation_logs").insert({
+            user_id: user.user_id,
+            level: 'info',
+            module: 'reply',
+            message: `Respostas geradas: ${replyResp.data?.replied || 0} novas interações respondidas.`,
+            details: replyResp.data
+          });
+        }
+
+      } catch (userErr: any) {
         console.error(`[automation-engine] Erro no usuário ${user.user_id}:`, userErr);
-        results.push({ userId: user.user_id, error: userErr.message });
+        await supabase.from("automation_logs").insert({
+          user_id: user.user_id,
+          level: 'error',
+          module: 'automation',
+          message: `Erro fatal no ciclo: ${userErr.message}`,
+          details: { error: userErr.stack }
+        });
       }
     }
 
-    return new Response(JSON.stringify({ success: true, processed: users.length, results }), { 
+    return new Response(JSON.stringify({ success: true, processed: users.length }), { 
       headers: { ...corsHeaders, "Content-Type": "application/json" } 
     });
 
