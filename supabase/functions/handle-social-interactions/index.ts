@@ -31,9 +31,9 @@ serve(async (req) => {
 
     // 2. Fallback para configurações principais se não houver contas específicas
     const { data: settings } = await supabase
-      .from(\"user_settings\")
-      .select(\"facebook_page_id, facebook_access_token\")
-      .eq(\"user_id\", userId)
+      .from("user_settings")
+      .select("facebook_page_id, facebook_access_token")
+      .eq("user_id", userId)
       .single();
 
     const allPagesToAnalyze: Array<{ page_id: string; access_token: string; page_name?: string; picture_url?: string }> = [];
@@ -56,7 +56,7 @@ serve(async (req) => {
         allPagesToAnalyze.push({
           page_id: settings.facebook_page_id,
           access_token: settings.facebook_access_token,
-          page_name: \"Página Principal\",
+          page_name: "Página Principal",
           picture_url: null
         });
       }
