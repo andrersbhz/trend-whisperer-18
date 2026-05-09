@@ -18,7 +18,9 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // 1. Get all connected Facebook accounts for this user
+    console.log(`[handle-social-interactions] Iniciando sincronização para o usuário: ${userId}`);
+
+    // 1. Buscar todas as contas do Facebook conectadas
     const { data: accounts, error: accountsError } = await supabase
       .from("facebook_accounts")
       .select("*")
@@ -27,7 +29,7 @@ serve(async (req) => {
 
     if (accountsError) throw accountsError;
 
-    // 2. Fallback to main settings if no specific accounts connected
+    // 2. Fallback para configurações principais se não houver contas específicas
     const { data: settings } = await supabase
       .from("user_settings")
       .select("facebook_page_id, facebook_access_token")
@@ -53,18 +55,22 @@ serve(async (req) => {
     }
 
     if (allPagesToAnalyze.length === 0) {
+      console.log(`[handle-social-interactions] Nenhuma página conectada encontrada para o usuário ${userId}`);
       return new Response(JSON.stringify({ message: "Nenhuma página conectada encontrada", newInteractions: 0 }), { 
         headers: { ...corsHeaders, "Content-Type": "application/json" } 
       });
     }
 
+    console.log(`[handle-social-interactions] Analisando ${allPagesToAnalyze.length} páginas para o usuário ${userId}`);
+
     let totalProcessed = 0;
 
+    // 3. Processar cada página individualmente
     for (const page of allPagesToAnalyze) {
-      const { page_id: pageId, access_token: token } = page;
+      const { page_id: pageId, access_token: token, page_name: pageName } = page;
+      console.log(`[handle-social-interactions] Processando página: ${pageName || pageId} (${pageId})`);
 
-      // Decrypt token if it's using the standard encryption pattern (starts with enc:)
-      // Though usually tokens in facebook_accounts are already stored or decrypted by RPC
+      // Descriptografar token se necessário
       let finalToken = token;
       if (token.startsWith('enc:')) {
         const { data: decryptedToken } = await supabase.rpc("decrypt_credential", { enc_key: "", val: token });
@@ -72,29 +78,37 @@ serve(async (req) => {
       }
 
       try {
-        // Fetch recent posts to find comments
-        const postsResp = await fetch(`https://graph.facebook.com/v21.0/${pageId}/feed?fields=id,message,created_time,permalink_url&limit=5&access_token=${finalToken}`);
+        // Buscar o feed de posts (últimos 10 posts para garantir captura de comentários)
+        const postsResp = await fetch(`https://graph.facebook.com/v21.0/${pageId}/feed?fields=id,message,created_time,permalink_url&limit=10&access_token=${finalToken}`);
         
         if (!postsResp.ok) {
-          console.error(`Error fetching feed for page ${pageId}:`, await postsResp.text());
+          const errText = await postsResp.text();
+          console.error(`[handle-social-interactions] Erro ao buscar feed da página ${pageId}:`, errText);
           continue;
         }
 
         const posts = await postsResp.json();
+        console.log(`[handle-social-interactions] Encontrados ${posts.data?.length || 0} posts no feed da página ${pageId}`);
 
         for (const post of (posts.data || [])) {
-          // Fetch comments for each post
-          const commentsResp = await fetch(`https://graph.facebook.com/v21.0/${post.id}/comments?fields=id,message,from{name,picture},created_time,permalink_url&limit=10&access_token=${finalToken}`);
+          // Buscar comentários para cada post (aumentado para 20 comentários por post)
+          const commentsResp = await fetch(`https://graph.facebook.com/v21.0/${post.id}/comments?fields=id,message,from{name,picture},created_time,permalink_url&limit=20&access_token=${finalToken}`);
           
           if (!commentsResp.ok) {
-            console.error(`Error fetching comments for post ${post.id}:`, await commentsResp.text());
+            const errText = await commentsResp.text();
+            console.error(`[handle-social-interactions] Erro ao buscar comentários do post ${post.id}:`, errText);
             continue;
           }
 
           const comments = await commentsResp.json();
+          const commentsList = comments.data || [];
+          
+          if (commentsList.length > 0) {
+            console.log(`[handle-social-interactions] Encontrados ${commentsList.length} comentários no post ${post.id}`);
+          }
 
-          for (const comment of (comments.data || [])) {
-            // Check if already exists
+          for (const comment of commentsList) {
+            // Verificar se o comentário já foi processado anteriormente
             const { data: existing } = await supabase
               .from("social_interactions")
               .select("id")
@@ -102,32 +116,40 @@ serve(async (req) => {
               .maybeSingle();
 
             if (!existing) {
-              await supabase.from("social_interactions").insert({
+              // Inserir nova interação social
+              const { error: insertError } = await supabase.from("social_interactions").insert({
                 user_id: userId,
                 platform: "facebook",
                 external_id: comment.id,
                 page_id: pageId,
-                author_name: comment.from?.name || "Anônimo",
+                author_name: comment.from?.name || "Seguidor",
                 author_avatar: comment.from?.picture?.data?.url,
                 content: comment.message,
                 original_link: comment.permalink_url || post.permalink_url,
                 status: "pending"
               });
-              totalProcessed++;
+
+              if (insertError) {
+                console.error(`[handle-social-interactions] Erro ao inserir comentário ${comment.id}:`, insertError);
+              } else {
+                totalProcessed++;
+              }
             }
           }
         }
       } catch (pageErr) {
-        console.error(`Error processing page ${pageId}:`, pageErr);
+        console.error(`[handle-social-interactions] Exceção ao processar página ${pageId}:`, pageErr);
       }
     }
+
+    console.log(`[handle-social-interactions] Sincronização concluída. ${totalProcessed} novas interações salvas.`);
 
     return new Response(JSON.stringify({ success: true, newInteractions: totalProcessed }), { 
       headers: { ...corsHeaders, "Content-Type": "application/json" } 
     });
 
   } catch (error: any) {
-    console.error("Error fetching interactions:", error);
+    console.error("[handle-social-interactions] Erro fatal:", error);
     return new Response(JSON.stringify({ error: error.message }), { 
       status: 500, 
       headers: { ...corsHeaders, "Content-Type": "application/json" } 
