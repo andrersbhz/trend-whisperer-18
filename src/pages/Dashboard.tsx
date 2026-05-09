@@ -501,10 +501,10 @@ const Dashboard = () => {
                           </div>
                         )}
                         </div>
+                        <Badge variant="secondary" className="text-[9px] uppercase tracking-tighter shrink-0 bg-background/50">
+                          {item.status === 'replied' ? 'Respondido ✓' : 'Pendente'}
+                        </Badge>
                       </div>
-                      <Badge variant="secondary" className="text-[9px] uppercase tracking-tighter shrink-0 bg-background/50">
-                        {item.status === 'replied' ? 'Respondido ✓' : 'Pendente'}
-                      </Badge>
                     </div>
                   </div>
                 ))
