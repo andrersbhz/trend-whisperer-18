@@ -555,6 +555,7 @@ const Dashboard = () => {
             )}
           </CardContent>
         </Card>
+        </div>
       </div>
 
       {/* === ARTIGOS MAIS VISTOS === */}
