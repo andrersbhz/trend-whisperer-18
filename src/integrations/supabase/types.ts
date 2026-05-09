@@ -266,6 +266,7 @@ export type Database = {
           error_message: string | null
           external_id: string
           id: string
+          interaction_type: string | null
           original_link: string | null
           page_id: string
           platform: string
@@ -283,6 +284,7 @@ export type Database = {
           error_message?: string | null
           external_id: string
           id?: string
+          interaction_type?: string | null
           original_link?: string | null
           page_id: string
           platform: string
@@ -300,6 +302,7 @@ export type Database = {
           error_message?: string | null
           external_id?: string
           id?: string
+          interaction_type?: string | null
           original_link?: string | null
           page_id?: string
           platform?: string
