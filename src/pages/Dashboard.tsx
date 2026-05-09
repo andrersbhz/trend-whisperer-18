@@ -56,6 +56,8 @@ const Dashboard = () => {
   const [interactions, setInteractions] = useState<any[]>([]);
   const [loadingInteractions, setLoadingInteractions] = useState(false);
   const [processingInteractions, setProcessingInteractions] = useState(false);
+  const [refreshInterval, setRefreshInterval] = useState(30); // minutes
+  const [nextRefresh, setNextRefresh] = useState<Date | null>(null);
 
 
   const fetchStats = async () => {
@@ -226,7 +228,32 @@ const Dashboard = () => {
     fetchMetaMetrics();
     fetchJetpackStats();
     fetchInteractions();
+
+    // Fetch user settings for refresh interval
+    const fetchIntervalSettings = async () => {
+      if (!user) return;
+      const { data } = await supabase.from('user_settings').select('metrics_refresh_interval').eq('user_id', user.id).maybeSingle();
+      if (data?.metrics_refresh_interval) {
+        setRefreshInterval(data.metrics_refresh_interval);
+      }
+    };
+    fetchIntervalSettings();
   }, [user]);
+
+  useEffect(() => {
+    if (!user || refreshInterval <= 0) return;
+
+    const intervalMs = refreshInterval * 60 * 1000;
+    setNextRefresh(new Date(Date.now() + intervalMs));
+
+    const interval = setInterval(() => {
+      console.log('Auto-refreshing metrics...');
+      fetchMetaMetrics();
+      setNextRefresh(new Date(Date.now() + intervalMs));
+    }, intervalMs);
+
+    return () => clearInterval(interval);
+  }, [user, refreshInterval]);
 
   const getFunctionErrorMessage = async (error: unknown) => {
     const response = typeof error === 'object' && error && 'context' in error
