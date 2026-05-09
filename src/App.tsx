@@ -12,6 +12,7 @@ import TrendsPage from "@/pages/TrendsPage";
 import SchedulePage from "@/pages/SchedulePage";
 import SettingsPage from "@/pages/SettingsPage";
 import AnalyticsPage from "@/pages/AnalyticsPage";
+import SocialRobotPage from "@/pages/SocialRobotPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
