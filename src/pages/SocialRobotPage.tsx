@@ -122,6 +122,7 @@ const SocialRobotPage = () => {
   useEffect(() => {
     fetchInteractions();
     fetchSettings();
+    fetchLogs();
   }, [user]);
 
   return (
