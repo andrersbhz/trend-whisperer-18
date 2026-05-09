@@ -365,12 +365,23 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
               </div>
             )}
 
-            {/* Connected accounts */}
             {accounts.map((acc) => (
               <div key={acc.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${acc.is_active ? 'bg-success' : 'bg-destructive'}`} />
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <div className="relative shrink-0">
+                    {acc.picture_url ? (
+                      <img src={acc.picture_url} alt={acc.page_name || ''} className="h-10 w-10 rounded-full object-cover border border-primary/20 shadow-sm" />
+                    ) : (
+                      <div className="h-10 w-10 rounded-full bg-accent/10 flex items-center justify-center border border-primary/20">
+                        <Facebook className="h-5 w-5 text-primary" />
+                      </div>
+                    )}
+                    <div className={cn(
+                      "absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background",
+                      acc.is_active ? "bg-success" : "bg-destructive"
+                    )} />
+                  </div>
+                  <div className="min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">
                       {acc.page_name || `Page ${acc.page_id}`}
                     </p>
