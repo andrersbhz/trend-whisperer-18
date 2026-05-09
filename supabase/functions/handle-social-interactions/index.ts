@@ -31,13 +31,14 @@ serve(async (req) => {
 
     // 2. Fallback para configurações principais se não houver contas específicas
     const { data: settings } = await supabase
-      .from("user_settings")
-      .select("facebook_page_id, facebook_access_token")
-      .eq("user_id", userId)
+      .from(\"user_settings\")
+      .select(\"facebook_page_id, facebook_access_token\")
+      .eq(\"user_id\", userId)
       .single();
 
     const allPagesToAnalyze: Array<{ page_id: string; access_token: string; page_name?: string; picture_url?: string }> = [];
 
+    // Prioritize accounts from facebook_accounts table
     if (accounts && accounts.length > 0) {
       for (const acc of accounts) {
         allPagesToAnalyze.push({
@@ -47,13 +48,18 @@ serve(async (req) => {
           picture_url: acc.picture_url
         });
       }
-    } else if (settings?.facebook_page_id && settings?.facebook_access_token) {
-      allPagesToAnalyze.push({
-        page_id: settings.facebook_page_id,
-        access_token: settings.facebook_access_token,
-        page_name: "Página Principal",
-        picture_url: null
-      });
+    } 
+    
+    // Add main settings page only if not already present
+    if (settings?.facebook_page_id && settings?.facebook_access_token) {
+      if (!allPagesToAnalyze.some(p => p.page_id === settings.facebook_page_id)) {
+        allPagesToAnalyze.push({
+          page_id: settings.facebook_page_id,
+          access_token: settings.facebook_access_token,
+          page_name: \"Página Principal\",
+          picture_url: null
+        });
+      }
     }
 
     if (allPagesToAnalyze.length === 0) {
