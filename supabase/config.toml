@@ -2,3 +2,6 @@ project_id = "bvvhgwkjyfnjroudtbav"
 
 [functions.facebook-oauth-callback]
 verify_jwt = false
+
+[functions.automation-engine]
+verify_jwt = false

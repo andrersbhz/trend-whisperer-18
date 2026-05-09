@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, RefreshCw, MessageSquare, Bot, UserCheck, ExternalLink, History, ThumbsUp, AtSign } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Loader2, RefreshCw, MessageSquare, Bot, UserCheck, ExternalLink, History, ThumbsUp, AtSign, Power, PowerOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/lib/backend';
 import { format } from 'date-fns';
@@ -17,6 +18,47 @@ const SocialRobotPage = () => {
   const [interactions, setInteractions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
+  const [automationEnabled, setAutomationEnabled] = useState(false);
+  const [loadingSettings, setLoadingSettings] = useState(true);
+
+  const fetchSettings = async () => {
+    if (!user) return;
+    try {
+      const { data, error } = await supabase
+        .from('user_settings')
+        .select('automation_enabled')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (data) {
+        setAutomationEnabled(!!data.automation_enabled);
+      }
+    } catch (error) {
+      console.error('Error fetching settings:', error);
+    } finally {
+      setLoadingSettings(false);
+    }
+  };
+
+  const toggleAutomation = async (enabled: boolean) => {
+    if (!user) return;
+    try {
+      const { error } = await supabase
+        .from('user_settings')
+        .update({ automation_enabled: enabled })
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      
+      setAutomationEnabled(enabled);
+      toast({ 
+        title: enabled ? 'Automação Ativada' : 'Automação Desativada', 
+        description: enabled ? 'O robô agora trabalhará 24/7 para você.' : 'O robô parou de responder automaticamente.' 
+      });
+    } catch (error) {
+      toast({ title: 'Erro', description: getErrorMessage(error), variant: 'destructive' });
+    }
+  };
 
   const fetchInteractions = async () => {
     if (!user) return;
@@ -59,6 +101,7 @@ const SocialRobotPage = () => {
 
   useEffect(() => {
     fetchInteractions();
+    fetchSettings();
   }, [user]);
 
   return (
@@ -71,15 +114,42 @@ const SocialRobotPage = () => {
           </h1>
           <p className="text-muted-foreground text-sm mt-1">Interaja com seu público de forma orgânica e automática</p>
         </div>
-        <Button
-          onClick={handleProcessInteractions}
-          disabled={processing}
-          size="lg"
-          className="gradient-primary text-primary-foreground shadow-neon-lilac hover:scale-[1.02] transition-transform rounded-none font-bold uppercase tracking-widest text-xs"
-        >
-          {processing ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <UserCheck className="h-4 w-4 mr-2" />}
-          Sincronizar e Responder Agora
-        </Button>
+        <div className="flex flex-wrap gap-3">
+          <Card className={cn(
+            "flex items-center gap-4 px-4 py-2 border-2 transition-all duration-500",
+            automationEnabled ? "border-success/50 bg-success/5 shadow-neon-success" : "border-destructive/20 bg-destructive/5"
+          )}>
+            <div className="flex items-center gap-3">
+              <div className={cn(
+                "p-2 rounded-full",
+                automationEnabled ? "bg-success/20 text-success animate-pulse" : "bg-destructive/20 text-destructive"
+              )}>
+                {automationEnabled ? <Power className="h-5 w-5" /> : <PowerOff className="h-5 w-5" />}
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[10px] font-black uppercase tracking-widest opacity-70">Status 24/7</span>
+                <span className={cn("text-xs font-bold uppercase", automationEnabled ? "text-success" : "text-destructive")}>
+                  {automationEnabled ? "Ativado" : "Desativado"}
+                </span>
+              </div>
+              <Switch 
+                checked={automationEnabled} 
+                onCheckedChange={toggleAutomation}
+                className="data-[state=checked]:bg-success"
+              />
+            </div>
+          </Card>
+
+          <Button
+            onClick={handleProcessInteractions}
+            disabled={processing}
+            size="lg"
+            className="gradient-primary text-primary-foreground shadow-neon-lilac hover:scale-[1.02] transition-transform rounded-none font-bold uppercase tracking-widest text-xs h-auto py-4"
+          >
+            {processing ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <UserCheck className="h-4 w-4 mr-2" />}
+            Forçar Sincronização
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-6">
