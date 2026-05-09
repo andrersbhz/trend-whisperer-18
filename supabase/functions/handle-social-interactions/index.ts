@@ -87,7 +87,7 @@ serve(async (req) => {
 
       try {
         // 1. Buscar o feed de posts (últimos 5 posts para performance, já que estamos adicionando reações)
-        const postsResp = await fetch(`https://graph.facebook.com/v21.0/${pageId}/feed?fields=id,message,created_time,permalink_url&limit=5&access_token=${finalToken}`);
+        const postsResp = await fetch(`https://graph.facebook.com/v21.0/${pageId}/feed?fields=id,message,created_time,permalink_url&limit=15&access_token=${finalToken}`);
         
         if (!postsResp.ok) {
           const errText = await postsResp.text();
@@ -120,7 +120,7 @@ serve(async (req) => {
                   platform: "facebook",
                   external_id: comment.id,
                   page_id: pageId,
-                  page_avatar: pagePicture, // Salvando o avatar da página na interação
+                  page_avatar: pagePicture || `https://graph.facebook.com/${pageId}/picture?type=large`, // Salvando o avatar da página na interação
                   author_name: comment.from?.name || "Seguidor",
                   author_avatar: comment.from?.picture?.data?.url,
                   content: comment.message,
@@ -157,7 +157,7 @@ serve(async (req) => {
                   platform: "facebook",
                   external_id: reactionId,
                   page_id: pageId,
-                  page_avatar: pagePicture,
+                  page_avatar: pagePicture || `https://graph.facebook.com/${pageId}/picture?type=large`,
                   author_name: reaction.name,
                   author_avatar: reaction.pic_large,
                   content: `Reagiu com ${reaction.type} ao seu post`,
@@ -192,7 +192,7 @@ serve(async (req) => {
                 platform: "facebook",
                 external_id: tag.id,
                 page_id: pageId,
-                page_avatar: pagePicture,
+                page_avatar: pagePicture || `https://graph.facebook.com/${pageId}/picture?type=large`,
                 author_name: tag.from?.name || "Usuário",
                 author_avatar: tag.from?.picture?.data?.url,
                 content: tag.message || "Mencionou sua página em uma publicação",

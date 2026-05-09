@@ -123,6 +123,21 @@ const SocialRobotPage = () => {
     fetchInteractions();
     fetchSettings();
     fetchLogs();
+
+    // Real-time logs and interactions
+    const logsChannel = supabase
+      .channel('realtime-robot-data')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'automation_logs' }, () => {
+        fetchLogs();
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'social_interactions' }, () => {
+        fetchInteractions();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(logsChannel);
+    };
   }, [user]);
 
   return (
@@ -136,30 +151,26 @@ const SocialRobotPage = () => {
           <p className="text-muted-foreground text-sm mt-1">Interaja com seu público de forma orgânica e automática</p>
         </div>
         <div className="flex flex-wrap gap-3">
-          <Card className={cn(
-            "flex items-center gap-4 px-4 py-2 border-2 transition-all duration-500",
-            automationEnabled ? "border-success/50 bg-success/5 shadow-neon-success" : "border-destructive/20 bg-destructive/5"
-          )}>
-            <div className="flex items-center gap-3">
-              <div className={cn(
-                "p-2 rounded-full",
-                automationEnabled ? "bg-success/20 text-success animate-pulse" : "bg-destructive/20 text-destructive"
-              )}>
-                {automationEnabled ? <Power className="h-5 w-5" /> : <PowerOff className="h-5 w-5" />}
-              </div>
-              <div className="flex flex-col">
-                <span className="text-[10px] font-black uppercase tracking-widest opacity-70">Status 24/7</span>
-                <span className={cn("text-xs font-bold uppercase", automationEnabled ? "text-success" : "text-destructive")}>
-                  {automationEnabled ? "Ativado" : "Desativado"}
-                </span>
-              </div>
-              <Switch 
-                checked={automationEnabled} 
-                onCheckedChange={toggleAutomation}
-                className="data-[state=checked]:bg-success"
-              />
-            </div>
-          </Card>
+          <Button
+            variant="outline"
+            onClick={() => toggleAutomation(!automationEnabled)}
+            disabled={loadingSettings}
+            className={cn(
+              "font-bold uppercase tracking-widest text-[10px] h-9 px-6 rounded-none transition-all shadow-sm border-2",
+              automationEnabled 
+                ? "border-success/50 bg-success/5 text-success hover:bg-success/10 shadow-neon-success" 
+                : "border-destructive/20 bg-destructive/5 text-destructive hover:bg-destructive/10"
+            )}
+          >
+            {loadingSettings ? (
+              <Loader2 className="h-3 w-3 mr-2 animate-spin" />
+            ) : automationEnabled ? (
+              <Power className="h-3 w-3 mr-2 animate-pulse" />
+            ) : (
+              <PowerOff className="h-3 w-3 mr-2" />
+            )}
+            {automationEnabled ? "Robô Ligado" : "Robô Desligado"}
+          </Button>
 
           <Button
             onClick={handleProcessInteractions}
