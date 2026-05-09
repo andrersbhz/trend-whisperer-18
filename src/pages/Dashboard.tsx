@@ -360,9 +360,9 @@ const Dashboard = () => {
           onClick={handleGenerateArticles}
           disabled={generating}
           size="lg"
-          className="gradient-primary text-primary-foreground shadow-neon-lilac hover:shadow-neon-lilac hover:scale-[1.02] transition-transform w-full sm:w-auto rounded-none font-bold uppercase tracking-widest text-xs"
+          className="text-primary-foreground font-bold uppercase tracking-widest text-[10px] h-9 px-6 rounded-none bg-primary hover:bg-primary/90 transition-all border-none shadow-sm"
         >
-          {generating ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+          {generating ? <Loader2 className="h-3 w-3 mr-2 animate-spin" /> : <Sparkles className="h-3 w-3 mr-2" />}
           Gerar Artigos
         </Button>
       </div>
