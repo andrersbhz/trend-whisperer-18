@@ -476,13 +476,23 @@ const Dashboard = () => {
                 interactions.map((item) => (
                   <div key={item.id} className="p-4 hover:bg-white/5 transition-colors">
                     <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-[10px] font-black text-primary uppercase">{item.author_name}</span>
-                          <Badge variant="outline" className="text-[8px] h-3 px-1 border-primary/20 text-primary opacity-70">
-                            {item.platform}
-                          </Badge>
+                      <div className="flex gap-3 min-w-0">
+                        <div className="shrink-0 h-8 w-8 rounded-full border border-primary/20 bg-background overflow-hidden">
+                          {item.author_avatar ? (
+                            <img src={item.author_avatar} alt={item.author_name} className="h-full w-full object-cover" />
+                          ) : (
+                            <div className="h-full w-full flex items-center justify-center bg-primary/5 text-primary text-[10px] font-bold">
+                              {item.author_name?.substring(0, 1).toUpperCase()}
+                            </div>
+                          )}
                         </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-[10px] font-black text-primary uppercase">{item.author_name}</span>
+                            <Badge variant="outline" className="text-[8px] h-3 px-1 border-primary/20 text-primary opacity-70">
+                              {item.platform}
+                            </Badge>
+                          </div>
                         <p className="text-sm text-foreground line-clamp-1 italic">"{item.content}"</p>
                         {item.ai_response && (
                           <div className="mt-2 flex gap-2 items-start bg-primary/5 p-2 border-l-2 border-primary">
