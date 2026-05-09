@@ -36,21 +36,23 @@ serve(async (req) => {
       .eq("user_id", userId)
       .single();
 
-    const allPagesToAnalyze: Array<{ page_id: string; access_token: string; page_name?: string }> = [];
+    const allPagesToAnalyze: Array<{ page_id: string; access_token: string; page_name?: string; picture_url?: string }> = [];
 
     if (accounts && accounts.length > 0) {
       for (const acc of accounts) {
         allPagesToAnalyze.push({
           page_id: acc.page_id,
           access_token: acc.access_token,
-          page_name: acc.page_name
+          page_name: acc.page_name,
+          picture_url: acc.picture_url
         });
       }
     } else if (settings?.facebook_page_id && settings?.facebook_access_token) {
       allPagesToAnalyze.push({
         page_id: settings.facebook_page_id,
         access_token: settings.facebook_access_token,
-        page_name: "Página Principal"
+        page_name: "Página Principal",
+        picture_url: null
       });
     }
 
@@ -67,7 +69,7 @@ serve(async (req) => {
 
     // 3. Processar cada página individualmente
     for (const page of allPagesToAnalyze) {
-      const { page_id: pageId, access_token: token, page_name: pageName } = page;
+      const { page_id: pageId, access_token: token, page_name: pageName, picture_url: pagePicture } = page;
       console.log(`[handle-social-interactions] Processando página: ${pageName || pageId} (${pageId})`);
 
       // Descriptografar token se necessário
@@ -112,6 +114,7 @@ serve(async (req) => {
                   platform: "facebook",
                   external_id: comment.id,
                   page_id: pageId,
+                  page_avatar: pagePicture, // Salvando o avatar da página na interação
                   author_name: comment.from?.name || "Seguidor",
                   author_avatar: comment.from?.picture?.data?.url,
                   content: comment.message,
@@ -148,6 +151,7 @@ serve(async (req) => {
                   platform: "facebook",
                   external_id: reactionId,
                   page_id: pageId,
+                  page_avatar: pagePicture,
                   author_name: reaction.name,
                   author_avatar: reaction.pic_large,
                   content: `Reagiu com ${reaction.type} ao seu post`,
@@ -182,6 +186,7 @@ serve(async (req) => {
                 platform: "facebook",
                 external_id: tag.id,
                 page_id: pageId,
+                page_avatar: pagePicture,
                 author_name: tag.from?.name || "Usuário",
                 author_avatar: tag.from?.picture?.data?.url,
                 content: tag.message || "Mencionou sua página em uma publicação",

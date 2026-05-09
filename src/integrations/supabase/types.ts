@@ -268,6 +268,7 @@ export type Database = {
           id: string
           interaction_type: string | null
           original_link: string | null
+          page_avatar: string | null
           page_id: string
           platform: string
           processed_at: string | null
@@ -286,6 +287,7 @@ export type Database = {
           id?: string
           interaction_type?: string | null
           original_link?: string | null
+          page_avatar?: string | null
           page_id: string
           platform: string
           processed_at?: string | null
@@ -304,6 +306,7 @@ export type Database = {
           id?: string
           interaction_type?: string | null
           original_link?: string | null
+          page_avatar?: string | null
           page_id?: string
           platform?: string
           processed_at?: string | null
