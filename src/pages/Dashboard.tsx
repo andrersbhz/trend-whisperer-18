@@ -512,9 +512,6 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-
         {/* Google Trends Preview */}
         <Card className="glass-card neon-border-lilac h-full">
           <CardHeader className="pb-2">
@@ -558,7 +555,6 @@ const Dashboard = () => {
             )}
           </CardContent>
         </Card>
-      </div>
 
       {/* === ARTIGOS MAIS VISTOS === */}
       {jetpackStats?.topPosts && jetpackStats.topPosts.length > 0 && (
