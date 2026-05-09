@@ -558,7 +558,6 @@ const Dashboard = () => {
             )}
           </CardContent>
         </Card>
-      </div>
 
       {/* === ARTIGOS MAIS VISTOS === */}
       {jetpackStats?.topPosts && jetpackStats.topPosts.length > 0 && (
