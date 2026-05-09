@@ -164,11 +164,11 @@ const SocialRobotPage = () => {
           <Button
             onClick={handleProcessInteractions}
             disabled={processing}
-            size="lg"
-            className="gradient-primary text-primary-foreground shadow-neon-lilac hover:scale-[1.02] transition-transform rounded-none font-bold uppercase tracking-widest text-xs h-auto py-4"
+            size="sm"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold uppercase tracking-widest text-[10px] h-9 px-6 rounded-none transition-all shadow-sm border-none"
           >
-            {processing ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <UserCheck className="h-4 w-4 mr-2" />}
-            Forçar Sincronização
+            {processing ? <Loader2 className="h-3 w-3 mr-2 animate-spin" /> : <UserCheck className="h-3 w-3 mr-2" />}
+            Sincronizar
           </Button>
         </div>
       </div>
