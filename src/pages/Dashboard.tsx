@@ -342,11 +342,18 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="space-y-6 lg:space-y-8">
+    <div className="space-y-6 lg:space-y-8 pb-10">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex flex-col">
           <h1 className="text-2xl sm:text-3xl font-bold neon-text-lilac uppercase tracking-tighter">NEURAL VORTEX</h1>
-          <p className="text-muted-foreground text-sm mt-1">Visão geral, métricas e geração de conteúdo</p>
+          <div className="flex items-center gap-2 mt-1">
+            <p className="text-muted-foreground text-sm">Visão geral, métricas e geração de conteúdo</p>
+            {nextRefresh && (
+              <Badge variant="outline" className="text-[10px] border-primary/20 bg-primary/5 text-primary/70 animate-pulse">
+                Auto-update: {format(nextRefresh, "HH:mm")}
+              </Badge>
+            )}
+          </div>
         </div>
         <Button
           onClick={handleGenerateArticles}
@@ -357,6 +364,36 @@ const Dashboard = () => {
           {generating ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
           Gerar Artigos
         </Button>
+      </div>
+
+      {/* Intervalo de Atualização */}
+      <div className="flex justify-end">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm" className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground hover:text-primary gap-2">
+              <RefreshCw className={cn("h-3 w-3", loadingMeta && "animate-spin")} />
+              Atualizar a cada {refreshInterval} min
+              <ChevronDown className="h-3 w-3" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="glass-card">
+            {[5, 10, 15, 30, 60].map((min) => (
+              <DropdownMenuItem 
+                key={min} 
+                onClick={async () => {
+                  setRefreshInterval(min);
+                  if (user) {
+                    await supabase.from('user_settings').update({ metrics_refresh_interval: min }).eq('user_id', user.id);
+                  }
+                  toast({ title: 'Intervalo atualizado', description: `Métricas serão atualizadas a cada ${min} minutos.` });
+                }}
+                className={cn("text-xs font-bold uppercase", refreshInterval === min && "bg-primary/10 text-primary")}
+              >
+                {min} Minutos
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
