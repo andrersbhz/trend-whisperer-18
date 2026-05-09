@@ -87,11 +87,21 @@ serve(async (req) => {
 
       try {
         // 1. Buscar o feed de posts (últimos 5 posts para performance, já que estamos adicionando reações)
+        // Acesso ao feed da página. Nota: Erro code 200/API access blocked geralmente indica falta de permissão 'pages_read_engagement' ou 'pages_manage_metadata' no token.
         const postsResp = await fetch(`https://graph.facebook.com/v21.0/${pageId}/feed?fields=id,message,created_time,permalink_url&limit=15&access_token=${finalToken}`);
         
         if (!postsResp.ok) {
           const errText = await postsResp.text();
           console.error(`[handle-social-interactions] Erro ao buscar feed da página ${pageId}:`, errText);
+          
+          // Log do erro na tabela de telemetria para o usuário ver
+          await supabase.from("automation_logs").insert({
+            user_id: userId,
+            level: 'error',
+            module: 'facebook-api',
+            message: `Erro na página ${pageName || pageId}: Permissão negada pela Meta.`,
+            details: JSON.parse(errText)
+          });
           continue;
         }
 
