@@ -37,6 +37,7 @@ serve(async (req) => {
     
     const apiKey = settings?.openai_api_key || settings?.gemini_api_key;
     const provider = settings?.openai_api_key ? "openai" : "gemini";
+    const customPrompt = settings?.social_reply_prompt || `Você é um gestor de redes sociais humano e empático. Responda de forma curta, natural, empática e amigável. Use um tom humano, não pareça um robô. Responda em Português do Brasil.`;
 
     if (!apiKey) {
       return new Response(JSON.stringify({ error: "No AI API key found in settings" }), { 
@@ -48,44 +49,45 @@ serve(async (req) => {
     let totalReplied = 0;
 
     for (const item of interactions) {
-      const prompt = `Você é um gestor de redes sociais humano e empático. 
-      Comentário de ${item.author_name}: "${item.content}"
-      Responda de forma curta, natural, empática e amigável. Use um tom humano, não pareça um robô. Responda em Português do Brasil.`;
+      const prompt = `${customPrompt}
+      
+Comentário de ${item.author_name}: "${item.content}"`;
 
       let aiResponse = "";
 
-      if (provider === "openai") {
-        const resp = await fetch("https://api.openai.com/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${apiKey}`,
-          },
-          body: JSON.stringify({
-            model: "gpt-4o-mini",
-            messages: [{ role: "user", content: prompt }],
-            max_tokens: 150,
-          }),
-        });
-        const data = await resp.json();
-        aiResponse = data.choices?.[0]?.message?.content || "";
-      } else {
-        // Gemini
-        const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-          }),
-        });
-        const data = await resp.json();
-        aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      try {
+        if (provider === "openai") {
+          const resp = await fetch("https://api.openai.com/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${apiKey}`,
+            },
+            body: JSON.stringify({
+              model: "gpt-4o-mini",
+              messages: [{ role: "user", content: prompt }],
+              max_tokens: 150,
+            }),
+          });
+          const data = await resp.json();
+          aiResponse = data.choices?.[0]?.message?.content || "";
+        } else {
+          // Gemini
+          const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+            }),
+          });
+          const data = await resp.json();
+          aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+        }
+      } catch (err) {
+        console.error("AI Error:", err);
       }
 
       if (aiResponse) {
-        // Post back to Meta API if page_id and external_id are present
-        // This would require a valid access token for the page
-        // For now, we update the DB as "replied" to show in UI
         await supabase.from("social_interactions").update({
           ai_response: aiResponse.trim(),
           status: "replied",
