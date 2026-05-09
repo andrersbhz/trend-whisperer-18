@@ -263,6 +263,18 @@ serve(async (req) => {
         pageMetrics.error = err instanceof Error ? err.message : "Erro desconhecido";
       }
 
+      // Persist metrics to facebook_accounts table
+      if (!pageMetrics.error) {
+        await supabase
+          .from("facebook_accounts")
+          .update({
+            last_metrics: pageMetrics,
+            metrics_updated_at: new Date().toISOString()
+          })
+          .eq("user_id", userId)
+          .eq("page_id", page.pageId);
+      }
+
       allMetrics.push(pageMetrics);
     }
 

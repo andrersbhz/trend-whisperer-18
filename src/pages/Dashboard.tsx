@@ -10,6 +10,7 @@ import {
   FileText, TrendingUp, CheckCircle, Clock, Sparkles, RefreshCw, Save, Loader2,
   PenTool, ChevronDown, Facebook, ExternalLink, BarChart3, X, Eye, MessageSquare, Bot, UserCheck, ArrowRight
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import AIProvidersPanel from '@/components/dashboard/AIProvidersPanel';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -56,6 +57,8 @@ const Dashboard = () => {
   const [interactions, setInteractions] = useState<any[]>([]);
   const [loadingInteractions, setLoadingInteractions] = useState(false);
   const [processingInteractions, setProcessingInteractions] = useState(false);
+  const [refreshInterval, setRefreshInterval] = useState(30); // minutes
+  const [nextRefresh, setNextRefresh] = useState<Date | null>(null);
 
 
   const fetchStats = async () => {
@@ -226,7 +229,32 @@ const Dashboard = () => {
     fetchMetaMetrics();
     fetchJetpackStats();
     fetchInteractions();
+
+    // Fetch user settings for refresh interval
+    const fetchIntervalSettings = async () => {
+      if (!user) return;
+      const { data } = await supabase.from('user_settings').select('metrics_refresh_interval').eq('user_id', user.id).maybeSingle();
+      if (data?.metrics_refresh_interval) {
+        setRefreshInterval(data.metrics_refresh_interval);
+      }
+    };
+    fetchIntervalSettings();
   }, [user]);
+
+  useEffect(() => {
+    if (!user || refreshInterval <= 0) return;
+
+    const intervalMs = refreshInterval * 60 * 1000;
+    setNextRefresh(new Date(Date.now() + intervalMs));
+
+    const interval = setInterval(() => {
+      console.log('Auto-refreshing metrics...');
+      fetchMetaMetrics();
+      setNextRefresh(new Date(Date.now() + intervalMs));
+    }, intervalMs);
+
+    return () => clearInterval(interval);
+  }, [user, refreshInterval]);
 
   const getFunctionErrorMessage = async (error: unknown) => {
     const response = typeof error === 'object' && error && 'context' in error
@@ -315,11 +343,18 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="space-y-6 lg:space-y-8">
+    <div className="space-y-6 lg:space-y-8 pb-10">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex flex-col">
           <h1 className="text-2xl sm:text-3xl font-bold neon-text-lilac uppercase tracking-tighter">NEURAL VORTEX</h1>
-          <p className="text-muted-foreground text-sm mt-1">Visão geral, métricas e geração de conteúdo</p>
+          <div className="flex items-center gap-2 mt-1">
+            <p className="text-muted-foreground text-sm">Visão geral, métricas e geração de conteúdo</p>
+            {nextRefresh && (
+              <Badge variant="outline" className="text-[10px] border-primary/20 bg-primary/5 text-primary/70 animate-pulse">
+                Auto-update: {format(nextRefresh, "HH:mm")}
+              </Badge>
+            )}
+          </div>
         </div>
         <Button
           onClick={handleGenerateArticles}
@@ -330,6 +365,36 @@ const Dashboard = () => {
           {generating ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
           Gerar Artigos
         </Button>
+      </div>
+
+      {/* Intervalo de Atualização */}
+      <div className="flex justify-end">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm" className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground hover:text-primary gap-2">
+              <RefreshCw className={cn("h-3 w-3", loadingMeta && "animate-spin")} />
+              Atualizar a cada {refreshInterval} min
+              <ChevronDown className="h-3 w-3" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="glass-card">
+            {[5, 10, 15, 30, 60].map((min) => (
+              <DropdownMenuItem 
+                key={min} 
+                onClick={async () => {
+                  setRefreshInterval(min);
+                  if (user) {
+                    await supabase.from('user_settings').update({ metrics_refresh_interval: min }).eq('user_id', user.id);
+                  }
+                  toast({ title: 'Intervalo atualizado', description: `Métricas serão atualizadas a cada ${min} minutos.` });
+                }}
+                className={cn("text-xs font-bold uppercase", refreshInterval === min && "bg-primary/10 text-primary")}
+              >
+                {min} Minutos
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">

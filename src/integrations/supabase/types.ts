@@ -159,6 +159,8 @@ export type Database = {
           id: string
           instagram_account_id: string | null
           is_active: boolean | null
+          last_metrics: Json | null
+          metrics_updated_at: string | null
           page_id: string
           page_name: string | null
           picture_url: string | null
@@ -171,6 +173,8 @@ export type Database = {
           id?: string
           instagram_account_id?: string | null
           is_active?: boolean | null
+          last_metrics?: Json | null
+          metrics_updated_at?: string | null
           page_id: string
           page_name?: string | null
           picture_url?: string | null
@@ -183,6 +187,8 @@ export type Database = {
           id?: string
           instagram_account_id?: string | null
           is_active?: boolean | null
+          last_metrics?: Json | null
+          metrics_updated_at?: string | null
           page_id?: string
           page_name?: string | null
           picture_url?: string | null
@@ -389,6 +395,7 @@ export type Database = {
           last_trends_fetch: string | null
           linkedin_access_token: string | null
           linkedin_org_id: string | null
+          metrics_refresh_interval: number | null
           openai_api_key: string | null
           social_reply_prompt: string | null
           trends_refresh_interval: number | null
@@ -424,6 +431,7 @@ export type Database = {
           last_trends_fetch?: string | null
           linkedin_access_token?: string | null
           linkedin_org_id?: string | null
+          metrics_refresh_interval?: number | null
           openai_api_key?: string | null
           social_reply_prompt?: string | null
           trends_refresh_interval?: number | null
@@ -459,6 +467,7 @@ export type Database = {
           last_trends_fetch?: string | null
           linkedin_access_token?: string | null
           linkedin_org_id?: string | null
+          metrics_refresh_interval?: number | null
           openai_api_key?: string | null
           social_reply_prompt?: string | null
           trends_refresh_interval?: number | null
