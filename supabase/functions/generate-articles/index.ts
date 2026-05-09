@@ -464,7 +464,7 @@ DATA: ${new Date().toLocaleDateString("pt-BR")}
 INSTRUÇÃO: Escreva um artigo jornalístico de ALTA VERACIDADE. Use o contexto real fornecido para evitar alucinações. Se o contexto for sobre um evento específico, descreva-o com precisão.
 
 REGRAS TÉCNICAS:
-- Conteúdo HTML entre 1800-2400 chars.
+- Conteúdo HTML entre 10.000-14.000 chars (mínimo de 2.000 palavras).
 - Keyword no título, lead (primeiro parágrafo), ao menos um H2 e meta description.
 - Use técnicas avançadas de SEO: LSI keywords, otimize para featured snippets.
 - Gere todos os metadados SEO e de imagem solicitados.`;
