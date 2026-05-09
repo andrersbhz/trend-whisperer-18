@@ -506,13 +506,12 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Reusing existing column for AIProviders or similar */}
         <div className="h-full">
           <AIProvidersPanel />
         </div>
       </div>
 
-        {/* Google Trends Preview */}
+      {/* Google Trends Preview */}
         <Card className="glass-card neon-border-lilac h-full">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
