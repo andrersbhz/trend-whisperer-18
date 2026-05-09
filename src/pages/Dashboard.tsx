@@ -500,8 +500,8 @@ const Dashboard = () => {
                             <p className="text-[11px] text-muted-foreground leading-snug">{item.ai_response}</p>
                           </div>
                         )}
+                          </div>
                         </div>
-                      </div>
                       <Badge variant="secondary" className="text-[9px] uppercase tracking-tighter shrink-0 bg-background/50">
                         {item.status === 'replied' ? 'Respondido ✓' : 'Pendente'}
                       </Badge>
