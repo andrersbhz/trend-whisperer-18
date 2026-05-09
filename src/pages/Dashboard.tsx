@@ -374,8 +374,8 @@ const Dashboard = () => {
                   {pg.facebook?.picture?.data?.url ? (
                     <img src={pg.facebook.picture.data.url} alt={pg.page_name} className="h-full w-full rounded-full object-cover" />
                   ) : (
-                    <div className=\"h-full w-full rounded-full bg-accent/10 flex items-center justify-center\">
-                      <Facebook className=\"h-10 w-10 text-primary\" />
+                    <div className="h-full w-full rounded-full bg-accent/10 flex items-center justify-center">
+                      <Facebook className="h-10 w-10 text-primary" />
                     </div>
                   )}
                 </div>
@@ -407,15 +407,15 @@ const Dashboard = () => {
               </div>
 
               {/* Action Button */}
-              <Button 
+               <Button 
                 onClick={async () => {
-                  toast({ title: \"Atualizando métricas...\", description: \"Buscando dados em tempo real da Meta.\" });
+                  toast({ title: "Atualizando métricas...", description: "Buscando dados em tempo real da Meta." });
                   await fetchMetaMetrics();
                   setSelectedPageForMetrics(pg.page_id);
                   setIsMetricsModalOpen(true);
                 }}
-                variant=\"outline\" 
-                size=\"sm\"
+                variant="outline" 
+                size="sm"
                 className="w-full bg-primary/5 border-primary/30 hover:bg-primary hover:text-primary-foreground rounded-none transition-all gap-2 text-[10px] uppercase font-bold tracking-widest"
               >
                 <BarChart3 className="h-4 w-4" />
