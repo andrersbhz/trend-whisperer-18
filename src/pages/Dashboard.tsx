@@ -407,8 +407,10 @@ const Dashboard = () => {
               </div>
 
               {/* Action Button */}
-              <Button 
-                onClick={() => {
+               <Button 
+                onClick={async () => {
+                  toast({ title: "Atualizando métricas...", description: "Buscando dados em tempo real da Meta." });
+                  await fetchMetaMetrics();
                   setSelectedPageForMetrics(pg.page_id);
                   setIsMetricsModalOpen(true);
                 }}
