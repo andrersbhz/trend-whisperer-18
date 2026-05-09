@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import {
   FileText, TrendingUp, CheckCircle, Clock, Sparkles, RefreshCw, Save, Loader2,
-  PenTool, ChevronDown, Facebook, ExternalLink, BarChart3, X, Eye, MessageSquare, Bot, UserCheck
+  PenTool, ChevronDown, Facebook, ExternalLink, BarChart3, X, Eye, MessageSquare, Bot, UserCheck, ArrowRight
 } from 'lucide-react';
 import AIProvidersPanel from '@/components/dashboard/AIProvidersPanel';
 import { useToast } from '@/hooks/use-toast';
