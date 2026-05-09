@@ -62,7 +62,7 @@ interface AIResponse { title: string; content: string; excerpt: string; seo_keyw
 
 const ARTICLE_TOOL_PARAMS = {
   title: "Título H1 do artigo, máximo 60 caracteres",
-  content: "Conteúdo HTML completo (1800-2400 chars)",
+  content: "Conteúdo HTML completo (10.000-14.000 chars para atingir 2.000+ palavras)",
   excerpt: "Resumo para redes sociais (máx 160 chars)",
   seo_keyword: "Focus keyword do Yoast SEO (3-5 palavras)",
   seo_title: "Título SEO até 60 chars",
