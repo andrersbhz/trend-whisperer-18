@@ -163,6 +163,7 @@ serve(async (req) => {
       const pageName = page.name || null;
       const pageId = page.id;
       const pageToken = page.access_token;
+      const pictureUrl = page.picture?.data?.url || null;
 
       // Check if exists
       const { data: existing } = await supabase
@@ -179,6 +180,7 @@ serve(async (req) => {
             page_name: pageName,
             access_token: pageToken,
             instagram_account_id: igId,
+            picture_url: pictureUrl,
             is_active: true,
           })
           .eq("id", existing.id);
@@ -191,6 +193,7 @@ serve(async (req) => {
           page_name: pageName,
           access_token: pageToken,
           instagram_account_id: igId,
+          picture_url: pictureUrl,
           is_active: true,
         });
         if (!insErr) savedCount++;
