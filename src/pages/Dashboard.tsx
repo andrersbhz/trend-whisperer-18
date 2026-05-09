@@ -514,6 +514,19 @@ const Dashboard = () => {
                 </div>
               )}
             </div>
+            {interactions.length > 0 && (
+              <div className="p-3 border-t border-white/5">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => navigate('/robot')}
+                  className="w-full text-[10px] uppercase font-bold tracking-widest text-primary hover:text-primary hover:bg-primary/5 gap-2"
+                >
+                  Ver todas as interações
+                  <ArrowRight className="h-3 w-3" />
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
 
