@@ -62,7 +62,7 @@ interface AIResponse { title: string; content: string; excerpt: string; seo_keyw
 
 const ARTICLE_TOOL_PARAMS = {
   title: "Título H1 do artigo, máximo 60 caracteres",
-  content: "Conteúdo HTML completo (1800-2400 chars)",
+  content: "Conteúdo HTML completo (10.000-14.000 chars para atingir 2.000+ palavras)",
   excerpt: "Resumo para redes sociais (máx 160 chars)",
   seo_keyword: "Focus keyword do Yoast SEO (3-5 palavras)",
   seo_title: "Título SEO até 60 chars",
@@ -415,7 +415,7 @@ REGRAS OBRIGATÓRIAS PARA CADA ARTIGO:
 
 1. TÍTULO (H1): Máximo 60 caracteres, DEVE conter a palavra-chave principal, atrativo e clicável.
 
-2. CONTEÚDO EM HTML: MÍNIMO 1800 e MÁXIMO 2400 caracteres no HTML total. Lead jornalístico com keyword nas primeiras 100 palavras. Use <h2>/<h3> com <strong>. NUNCA use <h1>. Parágrafos curtos (<p>). <strong> para keywords. <ul>/<li> para escaneabilidade. Keyword no primeiro parágrafo, em 1+ H2, densidade 1-2%. Conclusão com CTA.
+2. CONTEÚDO EM HTML: MÍNIMO 10.000 e MÁXIMO 14.000 caracteres no HTML total para garantir a profundidade solicitada (2.000+ palavras). Lead jornalístico com keyword nas primeiras 100 palavras. Use <h2>/<h3> com <strong>. NUNCA use <h1>. Parágrafos curtos (<p>). <strong> para keywords. <ul>/<li> para escaneabilidade. Keyword no primeiro parágrafo, em 1+ H2, densidade 1-2%. Conclusão com CTA.
 
 3. SEO AVANÇADO:
    - Use LSI keywords (Latent Semantic Indexing) naturalmente no texto
@@ -464,7 +464,7 @@ DATA: ${new Date().toLocaleDateString("pt-BR")}
 INSTRUÇÃO: Escreva um artigo jornalístico de ALTA VERACIDADE. Use o contexto real fornecido para evitar alucinações. Se o contexto for sobre um evento específico, descreva-o com precisão.
 
 REGRAS TÉCNICAS:
-- Conteúdo HTML entre 1800-2400 chars.
+- Conteúdo HTML entre 10.000-14.000 chars (mínimo de 2.000 palavras).
 - Keyword no título, lead (primeiro parágrafo), ao menos um H2 e meta description.
 - Use técnicas avançadas de SEO: LSI keywords, otimize para featured snippets.
 - Gere todos os metadados SEO e de imagem solicitados.`;
