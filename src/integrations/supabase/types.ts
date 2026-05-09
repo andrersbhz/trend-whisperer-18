@@ -161,6 +161,7 @@ export type Database = {
           is_active: boolean | null
           page_id: string
           page_name: string | null
+          picture_url: string | null
           updated_at: string | null
           user_id: string
         }
@@ -172,6 +173,7 @@ export type Database = {
           is_active?: boolean | null
           page_id: string
           page_name?: string | null
+          picture_url?: string | null
           updated_at?: string | null
           user_id: string
         }
@@ -183,6 +185,7 @@ export type Database = {
           is_active?: boolean | null
           page_id?: string
           page_name?: string | null
+          picture_url?: string | null
           updated_at?: string | null
           user_id?: string
         }
