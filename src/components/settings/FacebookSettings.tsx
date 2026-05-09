@@ -17,6 +17,7 @@ interface FacebookAccount {
   page_id: string;
   access_token: string;
   instagram_account_id: string | null;
+  picture_url: string | null;
   is_active: boolean;
 }
 
