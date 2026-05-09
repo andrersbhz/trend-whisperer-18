@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import ConnectionCard from '@/components/ConnectionCard';
+import { cn } from '@/lib/utils';
 import type { UserSettings } from '@/pages/SettingsPage';
 
 interface FacebookAccount {
