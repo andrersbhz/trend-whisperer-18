@@ -253,6 +253,51 @@ export type Database = {
           },
         ]
       }
+      social_interactions: {
+        Row: {
+          ai_response: string | null
+          author_name: string | null
+          content: string
+          created_at: string
+          error_message: string | null
+          external_id: string
+          id: string
+          page_id: string
+          platform: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ai_response?: string | null
+          author_name?: string | null
+          content: string
+          created_at?: string
+          error_message?: string | null
+          external_id: string
+          id?: string
+          page_id: string
+          platform: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ai_response?: string | null
+          author_name?: string | null
+          content?: string
+          created_at?: string
+          error_message?: string | null
+          external_id?: string
+          id?: string
+          page_id?: string
+          platform?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       trending_topics: {
         Row: {
           category: string
