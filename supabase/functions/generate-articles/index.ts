@@ -415,7 +415,7 @@ REGRAS OBRIGATÓRIAS PARA CADA ARTIGO:
 
 1. TÍTULO (H1): Máximo 60 caracteres, DEVE conter a palavra-chave principal, atrativo e clicável.
 
-2. CONTEÚDO EM HTML: MÍNIMO 1800 e MÁXIMO 2400 caracteres no HTML total. Lead jornalístico com keyword nas primeiras 100 palavras. Use <h2>/<h3> com <strong>. NUNCA use <h1>. Parágrafos curtos (<p>). <strong> para keywords. <ul>/<li> para escaneabilidade. Keyword no primeiro parágrafo, em 1+ H2, densidade 1-2%. Conclusão com CTA.
+2. CONTEÚDO EM HTML: MÍNIMO 10.000 e MÁXIMO 14.000 caracteres no HTML total para garantir a profundidade solicitada (2.000+ palavras). Lead jornalístico com keyword nas primeiras 100 palavras. Use <h2>/<h3> com <strong>. NUNCA use <h1>. Parágrafos curtos (<p>). <strong> para keywords. <ul>/<li> para escaneabilidade. Keyword no primeiro parágrafo, em 1+ H2, densidade 1-2%. Conclusão com CTA.
 
 3. SEO AVANÇADO:
    - Use LSI keywords (Latent Semantic Indexing) naturalmente no texto
