@@ -360,9 +360,9 @@ const Dashboard = () => {
           onClick={handleGenerateArticles}
           disabled={generating}
           size="lg"
-          className="gradient-primary text-primary-foreground shadow-neon-lilac hover:shadow-neon-lilac hover:scale-[1.02] transition-transform w-full sm:w-auto rounded-none font-bold uppercase tracking-widest text-xs"
+          className="text-primary-foreground font-bold uppercase tracking-widest text-[10px] h-9 px-6 rounded-none bg-primary hover:bg-primary/90 transition-all border-none shadow-sm"
         >
-          {generating ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+          {generating ? <Loader2 className="h-3 w-3 mr-2 animate-spin" /> : <Sparkles className="h-3 w-3 mr-2" />}
           Gerar Artigos
         </Button>
       </div>
@@ -371,10 +371,10 @@ const Dashboard = () => {
       <div className="flex justify-end">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground hover:text-primary gap-2">
-              <RefreshCw className={cn("h-3 w-3", loadingMeta && "animate-spin")} />
+            <Button variant="ghost" size="sm" className="text-[9px] uppercase font-bold tracking-[0.2em] text-muted-foreground/60 hover:text-primary gap-2 h-7 px-2">
+              <RefreshCw className={cn("h-2.5 w-2.5", loadingMeta && "animate-spin")} />
               Atualizar a cada {refreshInterval} min
-              <ChevronDown className="h-3 w-3" />
+              <ChevronDown className="h-2.5 w-2.5 opacity-50" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="glass-card">

@@ -164,23 +164,23 @@ const SocialRobotPage = () => {
           <Button
             onClick={handleProcessInteractions}
             disabled={processing}
-            size="lg"
-            className="gradient-primary text-primary-foreground shadow-neon-lilac hover:scale-[1.02] transition-transform rounded-none font-bold uppercase tracking-widest text-xs h-auto py-4"
+            size="sm"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold uppercase tracking-widest text-[10px] h-9 px-6 rounded-none transition-all shadow-sm border-none"
           >
-            {processing ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <UserCheck className="h-4 w-4 mr-2" />}
-            Forçar Sincronização
+            {processing ? <Loader2 className="h-3 w-3 mr-2 animate-spin" /> : <UserCheck className="h-3 w-3 mr-2" />}
+            Sincronizar
           </Button>
         </div>
       </div>
 
-      <div className="flex gap-2 mb-2 p-1 bg-white/5 w-fit rounded-lg">
+      <div className="flex gap-1 mb-2 p-1 bg-white/[0.03] w-fit rounded-none border border-white/5">
         <Button 
           variant={activeTab === 'interactions' ? 'secondary' : 'ghost'} 
           size="sm" 
           onClick={() => setActiveTab('interactions')}
-          className="text-[10px] uppercase font-bold tracking-widest gap-2"
+          className="text-[9px] uppercase font-bold tracking-widest h-7 px-3 rounded-none"
         >
-          <History className="h-3 w-3" />
+          <History className="h-3 w-3 mr-1.5 opacity-70" />
           Interações
         </Button>
         <Button 
@@ -190,9 +190,9 @@ const SocialRobotPage = () => {
             setActiveTab('telemetry');
             fetchLogs();
           }}
-          className="text-[10px] uppercase font-bold tracking-widest gap-2"
+          className="text-[9px] uppercase font-bold tracking-widest h-7 px-3 rounded-none"
         >
-          <Activity className="h-3 w-3" />
+          <Activity className="h-3 w-3 mr-1.5 opacity-70" />
           Telemetria
         </Button>
       </div>
