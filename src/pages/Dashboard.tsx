@@ -555,7 +555,10 @@ const Dashboard = () => {
             )}
           </CardContent>
         </Card>
-      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          {/* Rest of items or just removing the extra div */}
+        </div>
 
       {/* === ARTIGOS MAIS VISTOS === */}
       {jetpackStats?.topPosts && jetpackStats.topPosts.length > 0 && (
