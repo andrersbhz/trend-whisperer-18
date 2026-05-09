@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import {
   FileText, TrendingUp, CheckCircle, Clock, Sparkles, RefreshCw, Save, Loader2,
-  PenTool, ChevronDown, Facebook, ExternalLink, BarChart3, X, Eye
+  PenTool, ChevronDown, Facebook, ExternalLink, BarChart3, X, Eye, MessageSquare, Bot, UserCheck
 } from 'lucide-react';
 import AIProvidersPanel from '@/components/dashboard/AIProvidersPanel';
 import { useToast } from '@/hooks/use-toast';
@@ -53,6 +53,9 @@ const Dashboard = () => {
   const [isMetricsModalOpen, setIsMetricsModalOpen] = useState(false);
   const [jetpackStats, setJetpackStats] = useState<any | null>(null);
   const [loadingJetpack, setLoadingJetpack] = useState(false);
+  const [interactions, setInteractions] = useState<any[]>([]);
+  const [loadingInteractions, setLoadingInteractions] = useState(false);
+  const [processingInteractions, setProcessingInteractions] = useState(false);
 
 
   const fetchStats = async () => {
@@ -180,10 +183,49 @@ const Dashboard = () => {
     }
   };
 
+  const fetchInteractions = async () => {
+    if (!user) return;
+    setLoadingInteractions(true);
+    try {
+      const { data } = await supabase
+        .from('social_interactions')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(5);
+      setInteractions(data || []);
+    } catch (error) {
+      console.error('Interactions error:', error);
+    } finally {
+      setLoadingInteractions(false);
+    }
+  };
+
+  const handleProcessInteractions = async () => {
+    if (!user) return;
+    setProcessingInteractions(true);
+    try {
+      // Step 1: Fetch new ones from API
+      await supabase.functions.invoke('handle-social-interactions', { body: { userId: user.id } });
+      // Step 2: Generate AI replies
+      const { data } = await supabase.functions.invoke('process-social-replies', { body: { userId: user.id } });
+      
+      toast({ 
+        title: 'Interações processadas', 
+        description: `${data?.replied || 0} novas respostas humanas geradas.` 
+      });
+      fetchInteractions();
+    } catch (error) {
+      toast({ title: 'Erro', description: getErrorMessage(error), variant: 'destructive' });
+    } finally {
+      setProcessingInteractions(false);
+    }
+  };
+
   useEffect(() => {
     fetchStats();
     fetchMetaMetrics();
     fetchJetpackStats();
+    fetchInteractions();
   }, [user]);
 
   const getFunctionErrorMessage = async (error: unknown) => {
@@ -405,11 +447,71 @@ const Dashboard = () => {
         <AnalyticsPage />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
+      {/* === SOCIAL HUMAN BOT === */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in">
+        <Card className="glass-card neon-border-lilac overflow-hidden">
+          <CardHeader className="pb-3 border-b border-white/5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Bot className="h-5 w-5 text-primary" />
+                <CardTitle className="text-lg uppercase tracking-tighter">Robô Social Humano</CardTitle>
+              </div>
+              <Button 
+                size="sm" 
+                onClick={handleProcessInteractions}
+                disabled={processingInteractions}
+                className="gradient-primary h-7 px-3 text-[10px] uppercase font-bold tracking-widest rounded-none"
+              >
+                {processingInteractions ? <RefreshCw className="h-3 w-3 mr-2 animate-spin" /> : <UserCheck className="h-3 w-3 mr-2" />}
+                Sincronizar e Responder
+              </Button>
+            </div>
+            <p className="text-[10px] text-muted-foreground uppercase mt-1">Interações recentes com comportamento humano</p>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="divide-y divide-white/5">
+              {loadingInteractions ? (
+                <div className="p-10 flex justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+              ) : interactions.length > 0 ? (
+                interactions.map((item) => (
+                  <div key={item.id} className="p-4 hover:bg-white/5 transition-colors">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-[10px] font-black text-primary uppercase">{item.author_name}</span>
+                          <Badge variant="outline" className="text-[8px] h-3 px-1 border-primary/20 text-primary opacity-70">
+                            {item.platform}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-foreground line-clamp-1 italic">"{item.content}"</p>
+                        {item.ai_response && (
+                          <div className="mt-2 flex gap-2 items-start bg-primary/5 p-2 border-l-2 border-primary">
+                            <MessageSquare className="h-3 w-3 text-primary mt-1 shrink-0" />
+                            <p className="text-[11px] text-muted-foreground leading-snug">{item.ai_response}</p>
+                          </div>
+                        )}
+                      </div>
+                      <Badge variant="secondary" className="text-[9px] uppercase tracking-tighter shrink-0 bg-background/50">
+                        {item.status === 'replied' ? 'Respondido ✓' : 'Pendente'}
+                      </Badge>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="p-10 text-center text-muted-foreground text-xs uppercase tracking-widest opacity-50">
+                  Nenhuma interação recente encontrada
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Reusing existing column for AIProviders or similar */}
+        <div className="h-full">
           <AIProvidersPanel />
         </div>
-        
+      </div>
+
         {/* Google Trends Preview */}
         <Card className="glass-card neon-border-lilac h-full">
           <CardHeader className="pb-2">
