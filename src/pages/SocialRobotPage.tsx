@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, RefreshCw, MessageSquare, Bot, UserCheck, ExternalLink, History } from 'lucide-react';
+import { Loader2, RefreshCw, MessageSquare, Bot, UserCheck, ExternalLink, History, ThumbsUp, AtSign } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/lib/backend';
 import { format } from 'date-fns';
@@ -117,9 +117,23 @@ const SocialRobotPage = () => {
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-3 mb-2 flex-wrap">
                             <span className="text-sm font-black text-primary uppercase tracking-tight">{item.author_name}</span>
-                            <Badge variant="outline" className="text-[10px] h-4 px-2 border-primary/20 text-primary bg-primary/5">
-                              {item.platform}
-                            </Badge>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline" className="text-[10px] h-4 px-2 border-primary/20 text-primary bg-primary/5">
+                                {item.platform}
+                              </Badge>
+                              <Badge variant="secondary" className={cn(
+                                "text-[9px] h-4 px-2 border-none font-bold",
+                                item.interaction_type === 'reaction' ? "bg-blue-500/20 text-blue-400" : 
+                                item.interaction_type === 'mention' ? "bg-purple-500/20 text-purple-400" : 
+                                "bg-lilac-500/20 text-lilac-400"
+                              )}>
+                                {item.interaction_type === 'reaction' ? <ThumbsUp className="h-2 w-2 mr-1" /> : 
+                                 item.interaction_type === 'mention' ? <AtSign className="h-2 w-2 mr-1" /> : 
+                                 <MessageSquare className="h-2 w-2 mr-1" />}
+                                {item.interaction_type === 'reaction' ? 'Curtida' : 
+                                 item.interaction_type === 'mention' ? 'Menção' : 'Comentário'}
+                              </Badge>
+                            </div>
                             <span className="text-[10px] text-muted-foreground font-medium uppercase">
                               {format(new Date(item.created_at), "dd/MM 'às' HH:mm", { locale: ptBR })}
                             </span>
@@ -159,10 +173,14 @@ const SocialRobotPage = () => {
                           variant="secondary" 
                           className={cn(
                             "text-[10px] uppercase font-black px-3 py-1 tracking-widest",
-                            item.status === 'replied' ? "bg-success/20 text-success border border-success/30" : "bg-warning/20 text-warning border border-warning/30"
+                            item.status === 'replied' ? "bg-success/20 text-success border border-success/30" : 
+                            item.status === 'processed' ? "bg-blue-500/20 text-blue-400 border border-blue-500/30" :
+                            "bg-warning/20 text-warning border border-warning/30"
                           )}
                         >
-                          {item.status === 'replied' ? 'Respondido ✓' : 'Pendente'}
+                          {item.status === 'replied' ? 'Respondido ✓' : 
+                           item.status === 'processed' ? 'Analisado ✓' : 
+                           'Pendente'}
                         </Badge>
                       </div>
                     </div>

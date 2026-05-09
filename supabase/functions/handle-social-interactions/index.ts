@@ -78,8 +78,8 @@ serve(async (req) => {
       }
 
       try {
-        // Buscar o feed de posts (últimos 10 posts para garantir captura de comentários)
-        const postsResp = await fetch(`https://graph.facebook.com/v21.0/${pageId}/feed?fields=id,message,created_time,permalink_url&limit=10&access_token=${finalToken}`);
+        // 1. Buscar o feed de posts (últimos 5 posts para performance, já que estamos adicionando reações)
+        const postsResp = await fetch(`https://graph.facebook.com/v21.0/${pageId}/feed?fields=id,message,created_time,permalink_url&limit=5&access_token=${finalToken}`);
         
         if (!postsResp.ok) {
           const errText = await postsResp.text();
@@ -88,55 +88,113 @@ serve(async (req) => {
         }
 
         const posts = await postsResp.json();
-        console.log(`[handle-social-interactions] Encontrados ${posts.data?.length || 0} posts no feed da página ${pageId}`);
+        const postsList = posts.data || [];
+        console.log(`[handle-social-interactions] Encontrados ${postsList.length} posts no feed da página ${pageId}`);
 
-        for (const post of (posts.data || [])) {
-          // Buscar comentários para cada post (aumentado para 20 comentários por post)
-          const commentsResp = await fetch(`https://graph.facebook.com/v21.0/${post.id}/comments?fields=id,message,from{name,picture},created_time,permalink_url&limit=20&access_token=${finalToken}`);
+        for (const post of postsList) {
+          // A. BUSCAR COMENTÁRIOS
+          const commentsResp = await fetch(`https://graph.facebook.com/v21.0/${post.id}/comments?fields=id,message,from{name,picture},created_time,permalink_url&limit=15&access_token=${finalToken}`);
           
-          if (!commentsResp.ok) {
-            const errText = await commentsResp.text();
-            console.error(`[handle-social-interactions] Erro ao buscar comentários do post ${post.id}:`, errText);
-            continue;
+          if (commentsResp.ok) {
+            const comments = await commentsResp.json();
+            const commentsList = comments.data || [];
+            
+            for (const comment of commentsList) {
+              const { data: existing } = await supabase
+                .from("social_interactions")
+                .select("id")
+                .eq("external_id", comment.id)
+                .maybeSingle();
+
+              if (!existing) {
+                const { error: insertError } = await supabase.from("social_interactions").insert({
+                  user_id: userId,
+                  platform: "facebook",
+                  external_id: comment.id,
+                  page_id: pageId,
+                  author_name: comment.from?.name || "Seguidor",
+                  author_avatar: comment.from?.picture?.data?.url,
+                  content: comment.message,
+                  original_link: comment.permalink_url || post.permalink_url,
+                  status: "pending",
+                  interaction_type: "comment"
+                });
+
+                if (!insertError) totalProcessed++;
+              }
+            }
           }
 
-          const comments = await commentsResp.json();
-          const commentsList = comments.data || [];
+          // B. BUSCAR REAÇÕES (LIKES)
+          const reactionsResp = await fetch(`https://graph.facebook.com/v21.0/${post.id}/reactions?fields=id,name,type,pic_large&limit=10&access_token=${finalToken}`);
           
-          if (commentsList.length > 0) {
-            console.log(`[handle-social-interactions] Encontrados ${commentsList.length} comentários no post ${post.id}`);
-          }
+          if (reactionsResp.ok) {
+            const reactions = await reactionsResp.json();
+            const reactionsList = reactions.data || [];
 
-          for (const comment of commentsList) {
-            // Verificar se o comentário já foi processado anteriormente
-            const { data: existing } = await supabase
-              .from("social_interactions")
-              .select("id")
-              .eq("external_id", comment.id)
-              .maybeSingle();
+            for (const reaction of reactionsList) {
+              // ID da reação no Facebook é composto por post_id + user_id
+              const reactionId = `${post.id}_${reaction.id}`;
+              
+              const { data: existing } = await supabase
+                .from("social_interactions")
+                .select("id")
+                .eq("external_id", reactionId)
+                .maybeSingle();
 
-            if (!existing) {
-              // Inserir nova interação social
-              const { error: insertError } = await supabase.from("social_interactions").insert({
-                user_id: userId,
-                platform: "facebook",
-                external_id: comment.id,
-                page_id: pageId,
-                author_name: comment.from?.name || "Seguidor",
-                author_avatar: comment.from?.picture?.data?.url,
-                content: comment.message,
-                original_link: comment.permalink_url || post.permalink_url,
-                status: "pending"
-              });
+              if (!existing) {
+                const { error: insertError } = await supabase.from("social_interactions").insert({
+                  user_id: userId,
+                  platform: "facebook",
+                  external_id: reactionId,
+                  page_id: pageId,
+                  author_name: reaction.name,
+                  author_avatar: reaction.pic_large,
+                  content: `Reagiu com ${reaction.type} ao seu post`,
+                  original_link: post.permalink_url,
+                  status: "processed", // Curtidas geralmente não precisam de resposta do robô, mas salvamos para histórico/análise
+                  interaction_type: "reaction"
+                });
 
-              if (insertError) {
-                console.error(`[handle-social-interactions] Erro ao inserir comentário ${comment.id}:`, insertError);
-              } else {
-                totalProcessed++;
+                if (!insertError) totalProcessed++;
               }
             }
           }
         }
+
+        // 2. BUSCAR MENÇÕES À PÁGINA (Tagged posts)
+        const taggedResp = await fetch(`https://graph.facebook.com/v21.0/${pageId}/tagged?fields=id,message,from{name,picture},created_time,permalink_url&limit=5&access_token=${finalToken}`);
+        
+        if (taggedResp.ok) {
+          const tagged = await taggedResp.json();
+          const taggedList = tagged.data || [];
+          
+          for (const tag of taggedList) {
+            const { data: existing } = await supabase
+              .from("social_interactions")
+              .select("id")
+              .eq("external_id", tag.id)
+              .maybeSingle();
+
+            if (!existing) {
+              const { error: insertError } = await supabase.from("social_interactions").insert({
+                user_id: userId,
+                platform: "facebook",
+                external_id: tag.id,
+                page_id: pageId,
+                author_name: tag.from?.name || "Usuário",
+                author_avatar: tag.from?.picture?.data?.url,
+                content: tag.message || "Mencionou sua página em uma publicação",
+                original_link: tag.permalink_url,
+                status: "pending",
+                interaction_type: "mention"
+              });
+
+              if (!insertError) totalProcessed++;
+            }
+          }
+        }
+
       } catch (pageErr) {
         console.error(`[handle-social-interactions] Exceção ao processar página ${pageId}:`, pageErr);
       }

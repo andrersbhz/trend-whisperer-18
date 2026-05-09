@@ -49,9 +49,10 @@ serve(async (req) => {
     let totalReplied = 0;
 
     for (const item of interactions) {
+      const typeLabel = item.interaction_type === 'mention' ? 'Menção' : 'Comentário';
       const prompt = `${customPrompt}
       
-Comentário de ${item.author_name}: "${item.content}"`;
+${typeLabel} de ${item.author_name} na plataforma ${item.platform}: "${item.content}"`;
 
       let aiResponse = "";
 
