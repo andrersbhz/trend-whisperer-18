@@ -105,12 +105,19 @@ const SocialRobotPage = () => {
                   <div key={item.id} className="p-6 hover:bg-white/5 transition-all group">
                     <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
                       <div className="flex gap-4 min-w-0 flex-1">
-                        <div className="shrink-0 h-12 w-12 rounded-none border-2 border-primary/20 bg-background overflow-hidden shadow-neon-lilac/20">
-                          {item.author_avatar ? (
-                            <img src={item.author_avatar} alt={item.author_name} className="h-full w-full object-cover" />
-                          ) : (
-                            <div className="h-full w-full flex items-center justify-center bg-primary/10 text-primary text-lg font-black">
-                              {item.author_name?.substring(0, 1).toUpperCase()}
+                        <div className="relative shrink-0">
+                          <div className="h-12 w-12 rounded-none border-2 border-primary/20 bg-background overflow-hidden shadow-neon-lilac/20">
+                            {item.author_avatar ? (
+                              <img src={item.author_avatar} alt={item.author_name} className="h-full w-full object-cover" />
+                            ) : (
+                              <div className="h-full w-full flex items-center justify-center bg-primary/10 text-primary text-lg font-black">
+                                {item.author_name?.substring(0, 1).toUpperCase()}
+                              </div>
+                            )}
+                          </div>
+                          {item.page_avatar && (
+                            <div className="absolute -top-2 -right-2 h-6 w-6 rounded-full border border-primary/40 bg-background overflow-hidden shadow-sm z-10">
+                              <img src={item.page_avatar} alt="Página" className="h-full w-full object-cover" />
                             </div>
                           )}
                         </div>
