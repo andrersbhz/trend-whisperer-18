@@ -20,6 +20,26 @@ const SocialRobotPage = () => {
   const [processing, setProcessing] = useState(false);
   const [automationEnabled, setAutomationEnabled] = useState(false);
   const [loadingSettings, setLoadingSettings] = useState(true);
+  const [logs, setLogs] = useState<any[]>([]);
+  const [loadingLogs, setLoadingLogs] = useState(false);
+  const [activeTab, setActiveTab] = useState<'interactions' | 'telemetry'>('interactions');
+
+  const fetchLogs = async () => {
+    if (!user) return;
+    setLoadingLogs(true);
+    try {
+      const { data } = await supabase
+        .from('automation_logs')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(30);
+      setLogs(data || []);
+    } catch (error) {
+      console.error('Logs error:', error);
+    } finally {
+      setLoadingLogs(false);
+    }
+  };
 
   const fetchSettings = async () => {
     if (!user) return;
