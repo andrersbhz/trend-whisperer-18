@@ -397,15 +397,15 @@ const SocialRobotPage = () => {
                   <CardContent className="p-4 space-y-4 flex-1">
                     <div className="grid grid-cols-3 gap-2">
                       <div className="bg-white/5 p-2 border border-white/5 text-center">
-                        <p className="text-[9px] text-muted-foreground uppercase font-bold">Postagens (Recentes)</p>
+                        <p className="text-[9px] text-muted-foreground uppercase font-bold">Postagens (Total)</p>
                         <p className="text-lg font-black text-primary">{page.facebook?.post_stats?.total_posts || 0}</p>
                       </div>
                       <div className="bg-white/5 p-2 border border-white/5 text-center">
-                        <p className="text-[9px] text-muted-foreground uppercase font-bold">Curtidas</p>
+                        <p className="text-[9px] text-muted-foreground uppercase font-bold">Total Curtidas</p>
                         <p className="text-lg font-black text-primary">{page.facebook?.post_stats?.total_likes || 0}</p>
                       </div>
                       <div className="bg-white/5 p-2 border border-white/5 text-center">
-                        <p className="text-[9px] text-muted-foreground uppercase font-bold">Comentários</p>
+                        <p className="text-[9px] text-muted-foreground uppercase font-bold">Total Comentários</p>
                         <p className="text-lg font-black text-primary">{page.facebook?.post_stats?.total_comments || 0}</p>
                       </div>
                     </div>
@@ -413,7 +413,7 @@ const SocialRobotPage = () => {
                     {page.instagram?.post_stats && (
                       <div className="pt-2 border-t border-white/5">
                         <p className="text-[9px] font-black text-purple-400 uppercase tracking-widest mb-2 flex items-center gap-1">
-                          <Instagram className="h-3 w-3" /> Instagram Stats (Recent)
+                          <Instagram className="h-3 w-3" /> Instagram Stats (Total Analisado)
                         </p>
                         <div className="grid grid-cols-3 gap-2">
                           <div className="bg-purple-500/5 p-2 border border-purple-500/10 text-center">

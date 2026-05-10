@@ -148,7 +148,7 @@ serve(async (req) => {
 
         // Recent posts with engagement
         const postsResp = await fetch(
-          `${GRAPH_API}/${page.pageId}/posts?fields=id,message,created_time,shares,likes.limit(0).summary(true),comments.limit(0).summary(true),reactions.limit(0).summary(true),full_picture,permalink_url,type&limit=100&access_token=${page.accessToken}`
+          `${GRAPH_API}/${page.pageId}/posts?fields=id,message,created_time,shares,likes.limit(0).summary(true),comments.limit(0).summary(true),reactions.limit(0).summary(true),full_picture,permalink_url,type&limit=250&access_token=${page.accessToken}`
         );
         if (postsResp.ok) {
           const postsData = await postsResp.json();
@@ -230,7 +230,7 @@ serve(async (req) => {
 
             // Instagram recent media
             const igMediaResp = await fetch(
-              `${GRAPH_API}/${igId}/media?fields=id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count&limit=25&access_token=${page.accessToken}`
+              `${GRAPH_API}/${igId}/media?fields=id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count&limit=250&access_token=${page.accessToken}`
             );
             if (igMediaResp.ok) {
               const igMediaData = await igMediaResp.json();
