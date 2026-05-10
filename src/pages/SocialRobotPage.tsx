@@ -250,11 +250,11 @@ const SocialRobotPage = () => {
         
         <div className="relative z-10 flex items-center gap-6 flex-1 min-w-0">
           <div className="flex items-center gap-3 shrink-0">
-            <div className="p-2 bg-[hsl(200_100%_60%)]/10 rounded-none border border-[hsl(200_100%_60%)]/30 shadow-[0_0_15px_rgba(0,210,255,0.3)] animate-glow shrink-0">
-              <Bot className="h-6 w-6 text-[hsl(200_100%_60%)] animate-pulse" />
+            <div className="p-2 bg-[hsl(200_100%_60%)]/10 rounded-none border border-[hsl(200_100%_60%)]/30 shrink-0">
+              <Bot className="h-5 w-5 text-[hsl(200_100%_60%)]" />
             </div>
             <div className="hidden sm:block">
-              <h1 className="text-xl font-black text-[hsl(200_100%_60%)] uppercase tracking-tighter whitespace-nowrap font-montserrat drop-shadow-[0_0_8px_rgba(0,210,255,0.5)]">
+              <h1 className="text-xl font-black text-[hsl(200_100%_60%)] uppercase tracking-tighter whitespace-nowrap font-montserrat">
                 Robô Social A3
               </h1>
               <p className="text-muted-foreground text-[8px] uppercase tracking-[0.2em] flex items-center gap-1.5 font-bold whitespace-nowrap">
