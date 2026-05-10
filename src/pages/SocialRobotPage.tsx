@@ -214,6 +214,21 @@ const SocialRobotPage = () => {
           </Button>
 
           <Button
+            variant="outline"
+            onClick={() => toggleFollowerGrowth(!followerGrowthMode)}
+            disabled={loadingSettings}
+            className={cn(
+              "font-bold uppercase tracking-widest text-[10px] h-9 px-6 rounded-none transition-all shadow-sm border-2",
+              followerGrowthMode 
+                ? "border-primary/50 bg-primary/5 text-primary hover:bg-primary/10 shadow-neon-lilac" 
+                : "border-white/10 bg-white/5 text-muted-foreground hover:bg-white/10"
+            )}
+          >
+            <UserCheck className={cn("h-3 w-3 mr-2", followerGrowthMode && "animate-bounce")} />
+            {followerGrowthMode ? "Modo Crescimento: ON" : "Modo Crescimento: OFF"}
+          </Button>
+
+          <Button
             onClick={handleProcessInteractions}
             disabled={processing}
             size="sm"
