@@ -760,11 +760,8 @@ const Dashboard = () => {
           )}
         </CardContent>
       </Card>
-      {widgets.audit ? (
+      {widgets.audit && (
         <div id="audit-logs-section" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <p>Debug</p>
-        </div>
-      ) : null}
 
 
         {/* Audit Logs */}
