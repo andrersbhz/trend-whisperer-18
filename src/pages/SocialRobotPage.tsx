@@ -345,94 +345,110 @@ const SocialRobotPage = () => {
 
       <div className="grid grid-cols-1 gap-6">
         {activeTab === 'interactions' ? (
-          <Card className="glass-card neon-border-lilac overflow-hidden">
-            <CardHeader className="pb-3 border-b border-white/5 flex flex-row items-center justify-between">
-              <div className="flex items-center gap-2">
-                <History className="h-5 w-5 text-primary" />
-                <CardTitle className="text-lg uppercase tracking-tighter">Histórico de Interações</CardTitle>
+          <Card className="glass-card border-primary/20 overflow-hidden shadow-elevated">
+            <CardHeader className="pb-4 border-b border-white/5 bg-white/5 flex flex-row items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary/10 border border-primary/20">
+                  <History className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl font-black uppercase tracking-tighter">Fluxo de Interações</CardTitle>
+                  <CardDescription className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Monitoramento em Tempo Real</CardDescription>
+                </div>
               </div>
-              <Badge variant="outline" className="border-primary/20 text-primary">
-                {interactions.length} Interações
+              <Badge variant="outline" className="border-primary shadow-neon-lilac text-primary font-black uppercase text-[10px] px-3">
+                {interactions.length} NODES ATIVOS
               </Badge>
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y divide-white/5">
                 {loading ? (
-                  <div className="p-20 flex flex-col items-center gap-4">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                    <p className="text-xs text-muted-foreground uppercase tracking-widest">Escaneando redes sociais...</p>
+                  <div className="p-24 flex flex-col items-center gap-6">
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl animate-pulse" />
+                      <Loader2 className="h-12 w-12 animate-spin text-primary relative z-10" />
+                    </div>
+                    <p className="text-[10px] text-muted-foreground uppercase font-black tracking-[0.3em] animate-pulse">Sincronizando com o Vortex...</p>
                   </div>
                 ) : interactions.length > 0 ? (
                   interactions.map((item) => (
-                    <div key={item.id} className="p-6 hover:bg-white/5 transition-all group">
+                    <div key={item.id} className="p-6 hover:bg-primary/[0.03] transition-all duration-300 group relative">
+                      <div className="absolute left-0 top-0 w-1 h-full bg-primary/0 group-hover:bg-primary transition-all shadow-neon-lilac" />
                       <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
-                        <div className="flex gap-4 min-w-0 flex-1">
+                        <div className="flex gap-5 min-w-0 flex-1">
                           <div className="relative shrink-0">
-                            <div className="h-12 w-12 rounded-none border-2 border-primary/20 bg-background overflow-hidden shadow-neon-lilac/20">
+                            <div className="h-14 w-14 rounded-none border-2 border-primary/30 bg-background overflow-hidden group-hover:border-primary transition-colors shadow-neon-lilac/10">
                               {item.author_avatar ? (
-                                <img src={item.author_avatar} alt={item.author_name} className="h-full w-full object-cover" />
+                                <img src={item.author_avatar} alt={item.author_name} className="h-full w-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
                               ) : (
-                                <div className="h-full w-full flex items-center justify-center bg-primary/10 text-primary text-lg font-black">
+                                <div className="h-full w-full flex items-center justify-center bg-primary/10 text-primary text-xl font-black italic">
                                   {item.author_name?.substring(0, 1).toUpperCase()}
                                 </div>
                               )}
                             </div>
                             {item.page_avatar && (
-                              <div className="absolute -top-2 -right-2 h-6 w-6 rounded-full border border-primary/40 bg-background overflow-hidden shadow-sm z-10">
+                              <div className="absolute -bottom-2 -right-2 h-7 w-7 rounded-none border-2 border-primary/40 bg-background overflow-hidden z-10 shadow-elevated">
                                 <img src={item.page_avatar} alt="Página" className="h-full w-full object-cover" />
                               </div>
                             )}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-3 mb-2 flex-wrap">
-                              <span className="text-sm font-black text-primary uppercase tracking-tight">{item.author_name}</span>
+                            <div className="flex items-center gap-3 mb-3 flex-wrap">
+                              <span className="text-base font-black text-primary uppercase tracking-tighter group-hover:neon-text-lilac transition-all">{item.author_name}</span>
                               <div className="flex items-center gap-2">
-                                <Badge variant="outline" className="text-[10px] h-4 px-2 border-primary/20 text-primary bg-primary/5">
+                                <Badge variant="outline" className="text-[9px] font-black h-5 px-2 border-primary/30 text-primary bg-primary/5 uppercase">
                                   {item.platform}
                                 </Badge>
                                 <Badge variant="secondary" className={cn(
-                                  "text-[9px] h-4 px-2 border-none font-bold",
-                                  item.interaction_type === 'reaction' ? "bg-blue-500/20 text-blue-400" : 
-                                  item.interaction_type === 'mention' ? "bg-purple-500/20 text-purple-400" : 
-                                  "bg-lilac-500/20 text-lilac-400"
+                                  "text-[9px] font-black h-5 px-2 border-none uppercase tracking-widest",
+                                  item.interaction_type === 'reaction' ? "bg-blue-500/10 text-blue-400" : 
+                                  item.interaction_type === 'mention' ? "bg-purple-500/10 text-purple-400" : 
+                                  "bg-primary/10 text-primary"
                                 )}>
-                                  {item.interaction_type === 'reaction' ? <ThumbsUp className="h-2 w-2 mr-1" /> : 
-                                   item.interaction_type === 'mention' ? <AtSign className="h-2 w-2 mr-1" /> : 
-                                   <MessageSquare className="h-2 w-2 mr-1" />}
-                                  {item.interaction_type === 'reaction' ? 'Curtida' : 
-                                   item.interaction_type === 'mention' ? 'Menção' : 'Comentário'}
+                                  {item.interaction_type === 'reaction' ? <ThumbsUp className="h-3 w-3 mr-1.5" /> : 
+                                   item.interaction_type === 'mention' ? <AtSign className="h-3 w-3 mr-1.5" /> : 
+                                   <MessageSquare className="h-3 w-3 mr-1.5" />}
+                                  {item.interaction_type === 'reaction' ? 'Reação' : 
+                                   item.interaction_type === 'mention' ? 'Menção' : 
+                                   'Comentário'}
                                 </Badge>
                               </div>
-                              <span className="text-[10px] text-muted-foreground font-medium uppercase">
-                                {format(new Date(item.created_at), "dd/MM 'às' HH:mm", { locale: ptBR })}
-                              </span>
-                              {item.original_link && (
-                                <a 
-                                  href={item.original_link} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                  className="text-[10px] text-primary hover:underline flex items-center gap-1 font-bold uppercase"
-                                >
-                                  Ver Original <ExternalLink className="h-2 w-2" />
-                                </a>
-                              )}
                             </div>
-                            <div className="bg-white/5 p-4 border-l-4 border-white/10 mb-4">
-                              <p className="text-sm text-foreground italic leading-relaxed">"{item.content}"</p>
+                            <div className="bg-white/[0.03] p-5 border-l-4 border-primary/20 group-hover:border-primary/50 transition-colors mb-4 relative">
+                              <div className="absolute top-0 right-0 p-2">
+                                <MessageSquare className="h-4 w-4 text-white/10" />
+                              </div>
+                              <p className="text-sm text-foreground italic leading-relaxed font-medium">"{item.content}"</p>
                             </div>
                             
                             {item.ai_response && (
-                              <div className="mt-4 flex gap-4 items-start bg-primary/5 p-4 border-l-4 border-primary shadow-neon-lilac/5">
-                                <MessageSquare className="h-4 w-4 text-primary mt-1 shrink-0" />
-                                <div className="space-y-1">
-                                  <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">Resposta da IA</p>
-                                  <p className="text-sm text-foreground leading-relaxed font-medium">{item.ai_response}</p>
+                              <div className="mt-4 flex gap-5 items-start bg-primary/5 p-5 border border-primary/20 shadow-neon-lilac/5 relative group/ai">
+                                <div className="absolute top-0 right-0 px-3 py-1 bg-primary text-primary-foreground text-[8px] font-black uppercase tracking-[0.2em]">IA Response</div>
+                                <div className="p-2 bg-primary/20 border border-primary/30 rounded-none">
+                                  <Bot className="h-4 w-4 text-primary animate-pulse" />
+                                </div>
+                                <div className="space-y-2 flex-1">
+                                  <p className="text-sm text-foreground leading-relaxed font-semibold italic text-primary/90">{item.ai_response}</p>
                                   {item.processed_at && (
-                                    <p className="text-[9px] text-muted-foreground italic mt-2">
-                                      Processado em {format(new Date(item.processed_at), "dd/MM HH:mm", { locale: ptBR })}
+                                    <p className="text-[9px] text-muted-foreground uppercase font-black tracking-widest flex items-center gap-2">
+                                      <Activity className="h-3 w-3" />
+                                      Processado às {format(new Date(item.processed_at), "HH:mm:ss", { locale: ptBR })}
                                     </p>
                                   )}
                                 </div>
+                              </div>
+                            )}
+                            
+                            {item.post_url && (
+                              <div className="mt-4">
+                                <a 
+                                  href={item.post_url} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="text-[10px] text-primary hover:neon-text-lilac transition-all flex items-center gap-2 font-black uppercase tracking-widest border border-primary/20 w-fit px-3 py-1.5 bg-primary/5 hover:bg-primary/10"
+                                >
+                                  Ver Postagem Original <ExternalLink className="h-3 w-3" />
+                                </a>
                               </div>
                             )}
                           </div>
@@ -441,30 +457,37 @@ const SocialRobotPage = () => {
                           <Badge 
                             variant="secondary" 
                             className={cn(
-                              "text-[10px] uppercase font-black px-3 py-1 tracking-widest",
-                              item.status === 'replied' ? "bg-success/20 text-success border border-success/30" : 
-                              item.status === 'processed' ? "bg-blue-500/20 text-blue-400 border border-blue-500/30" :
-                              "bg-warning/20 text-warning border border-warning/30"
+                              "text-[10px] uppercase font-black px-4 py-1.5 tracking-[0.15em] border-2",
+                              item.status === 'replied' ? "border-success shadow-[0_0_15px_rgba(34,197,94,0.2)] bg-success/10 text-success" : 
+                              item.status === 'processed' ? "border-primary shadow-neon-lilac/40 bg-primary/10 text-primary" :
+                              "border-warning/30 bg-warning/5 text-warning"
                             )}
                           >
-                            {item.status === 'replied' ? 'Respondido ✓' : 
-                             item.status === 'processed' ? 'Analisado ✓' : 
-                             'Pendente'}
+                            {item.status === 'replied' ? 'RESOLVIDO' : 
+                             item.status === 'processed' ? 'PROCESSADO' : 
+                             'PENDENTE'}
                           </Badge>
                         </div>
                       </div>
                     </div>
                   ))
                 ) : (
-                  <div className="p-20 text-center space-y-4">
-                    <div className="mx-auto w-16 h-16 rounded-full bg-primary/5 flex items-center justify-center border border-primary/10">
-                      <Bot className="h-8 w-8 text-primary/40" />
+                  <div className="p-32 text-center space-y-6">
+                    <div className="mx-auto w-20 h-20 rounded-none bg-primary/5 flex items-center justify-center border-2 border-dashed border-primary/20 animate-pulse">
+                      <Bot className="h-10 w-10 text-primary/40" />
                     </div>
-                    <div className="max-w-xs mx-auto">
-                      <p className="text-sm text-foreground font-bold uppercase tracking-widest">Silêncio no Vortex</p>
-                      <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-                        Nenhuma interação recente encontrada nas suas páginas conectadas. Clique em sincronizar para buscar novos comentários.
+                    <div className="max-w-xs mx-auto space-y-2">
+                      <p className="text-lg font-black text-foreground uppercase tracking-tighter">Frequência Silenciosa</p>
+                      <p className="text-xs text-muted-foreground leading-relaxed uppercase font-bold tracking-widest">
+                        Nenhuma atividade detectada nas redes conectadas.
                       </p>
+                      <Button 
+                        onClick={handleProcessInteractions} 
+                        variant="link" 
+                        className="text-primary font-black uppercase text-[10px] tracking-widest p-0 h-auto mt-4 hover:neon-text-lilac"
+                      >
+                        Forçar Varredura de Sinais _
+                      </Button>
                     </div>
                   </div>
                 )}
