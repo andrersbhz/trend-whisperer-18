@@ -338,6 +338,10 @@ const SettingsPage = () => {
       <WordPressSettings settings={settings} onChange={updateSettings} hasWpPassword={credStatus.has_wp_password} onDisconnect={() => disconnectCredential({ wordpress_url: '', wordpress_username: '', wordpress_app_password: '' }, 'WordPress')} />
       <JetpackSettings settings={settings} hasWpPassword={credStatus.has_wp_password} />
       <FacebookSettings settings={settings} onChange={updateSettings} />
+      <DashboardWidgetSettings 
+        widgets={settings.dashboard_widgets} 
+        onChange={(w) => updateSettings({ dashboard_widgets: w })} 
+      />
       <GoogleAnalyticsSettings settings={settings} onChange={updateSettings} />
       <AutomationSettings settings={settings} onChange={updateSettings} />
 
