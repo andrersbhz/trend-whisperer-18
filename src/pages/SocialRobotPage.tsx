@@ -102,6 +102,7 @@ const SocialRobotPage = () => {
     } catch (error) {
       toast({ title: 'Erro', description: getErrorMessage(error), variant: 'destructive' });
     }
+  };
 
   const fetchInteractions = async () => {
     if (!user) return;
