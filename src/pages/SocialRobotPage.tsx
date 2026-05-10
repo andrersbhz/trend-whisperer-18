@@ -457,19 +457,21 @@ const SocialRobotPage = () => {
                                 <Badge variant="outline" className="text-[9px] font-black h-5 px-2 border-primary/30 text-primary bg-primary/5 uppercase">
                                   {item.platform}
                                 </Badge>
-                                <Badge variant="secondary" className={cn(
-                                  "text-[9px] font-black h-5 px-2 border-none uppercase tracking-widest",
-                                  item.interaction_type === 'reaction' ? "bg-blue-500/10 text-blue-400" : 
-                                  item.interaction_type === 'mention' ? "bg-purple-500/10 text-purple-400" : 
-                                  "bg-primary/10 text-primary"
-                                )}>
-                                  {item.interaction_type === 'reaction' ? <ThumbsUp className="h-3 w-3 mr-1.5" /> : 
-                                   item.interaction_type === 'mention' ? <AtSign className="h-3 w-3 mr-1.5" /> : 
-                                   <MessageSquare className="h-3 w-3 mr-1.5" />}
-                                  {item.interaction_type === 'reaction' ? 'Reação' : 
-                                   item.interaction_type === 'mention' ? 'Menção' : 
-                                   'Comentário'}
-                                </Badge>
+                                 <Badge variant="secondary" className={cn(
+                                   "text-[9px] font-black h-5 px-2 border-none uppercase tracking-widest",
+                                   item.interaction_type === 'reaction' ? "bg-blue-500/10 text-blue-400" : 
+                                   item.interaction_type === 'mention' ? "bg-purple-500/10 text-purple-400" : 
+                                   "bg-[hsl(200_100%_60%)]/10 text-[hsl(200_100%_60%)]"
+                                 )}>
+                                   {item.interaction_type === 'reaction' ? <ThumbsUp className="h-3 w-3 mr-1.5" /> : 
+                                    item.interaction_type === 'mention' ? <AtSign className="h-3 w-3 mr-1.5" /> : 
+                                    <MessageSquare className="h-3 w-3 mr-1.5" />}
+                                   <span className={compactMode ? "hidden sm:inline" : ""}>
+                                     {item.interaction_type === 'reaction' ? 'Reação' : 
+                                      item.interaction_type === 'mention' ? 'Menção' : 
+                                      'Comentário'}
+                                   </span>
+                                 </Badge>
                               </div>
                             </div>
                             <div className={cn(
