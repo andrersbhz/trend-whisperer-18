@@ -21,7 +21,7 @@ const SocialRobotPage = () => {
   const [loadingMetrics, setLoadingMetrics] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [automationEnabled, setAutomationEnabled] = useState(false);
-  const [followerGrowthMode, setFollowerGrowthMode] = useState(false);
+  const [followerGrowthMode, setFollowerGrowthMode] = useState(true); // Default to true as requested
   const [loadingSettings, setLoadingSettings] = useState(true);
   const [logs, setLogs] = useState<any[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
@@ -55,7 +55,10 @@ const SocialRobotPage = () => {
       
       if (data) {
         setAutomationEnabled(!!data.automation_enabled);
-        setFollowerGrowthMode(!!data.follower_growth_mode);
+        // If it's the first time and data is null or undefined, it will keep the default 'true'
+        if (data.follower_growth_mode !== null) {
+          setFollowerGrowthMode(!!data.follower_growth_mode);
+        }
       }
     } catch (error) {
       console.error('Error fetching settings:', error);
