@@ -430,7 +430,7 @@ const SocialRobotPage = () => {
                 ) : interactions.length > 0 ? (
                   interactions.map((item) => (
                     <div key={item.id} className="hover:bg-primary/[0.03] transition-all duration-300 group relative">
-                      <div className="absolute left-0 top-0 w-0.5 h-full bg-transparent group-hover:bg-[hsl(200_100%_60%)] transition-all shadow-[0_0_10px_rgba(0,210,255,0.4)]" />
+                      <div className="absolute left-0 top-0 w-0.5 h-full bg-transparent group-hover:bg-[hsl(200_100%_60%)] transition-all" />
                       <div className={cn(
                         "flex items-start justify-between gap-4",
                         compactMode ? "p-3" : "p-6"
