@@ -16,13 +16,15 @@ const SocialRobotPage = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [interactions, setInteractions] = useState<any[]>([]);
+  const [metrics, setMetrics] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMetrics, setLoadingMetrics] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [automationEnabled, setAutomationEnabled] = useState(false);
   const [loadingSettings, setLoadingSettings] = useState(true);
   const [logs, setLogs] = useState<any[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
-  const [activeTab, setActiveTab] = useState<'interactions' | 'telemetry'>('interactions');
+  const [activeTab, setActiveTab] = useState<'interactions' | 'metrics' | 'telemetry'>('interactions');
 
   const fetchLogs = async () => {
     if (!user) return;
@@ -119,10 +121,26 @@ const SocialRobotPage = () => {
     }
   };
 
+  const fetchMetrics = async () => {
+    if (!user) return;
+    setLoadingMetrics(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('fetch-meta-metrics', {
+        body: { userId: user.id }
+      });
+      if (data?.success) setMetrics(data.pages || []);
+    } catch (error) {
+      console.error('Metrics error:', error);
+    } finally {
+      setLoadingMetrics(false);
+    }
+  };
+
   useEffect(() => {
     fetchInteractions();
     fetchSettings();
     fetchLogs();
+    fetchMetrics();
 
     // Real-time logs and interactions
     const logsChannel = supabase
@@ -195,6 +213,18 @@ const SocialRobotPage = () => {
           Interações
         </Button>
         <Button 
+          variant={activeTab === 'metrics' ? 'secondary' : 'ghost'} 
+          size="sm" 
+          onClick={() => {
+            setActiveTab('metrics');
+            fetchMetrics();
+          }}
+          className="text-[9px] uppercase font-bold tracking-widest h-7 px-3 rounded-none"
+        >
+          <Activity className="h-3 w-3 mr-1.5 opacity-70" />
+          Análise de Páginas
+        </Button>
+        <Button 
           variant={activeTab === 'telemetry' ? 'secondary' : 'ghost'} 
           size="sm" 
           onClick={() => {
@@ -203,7 +233,7 @@ const SocialRobotPage = () => {
           }}
           className="text-[9px] uppercase font-bold tracking-widest h-7 px-3 rounded-none"
         >
-          <Activity className="h-3 w-3 mr-1.5 opacity-70" />
+          <Bot className="h-3 w-3 mr-1.5 opacity-70" />
           Telemetria
         </Button>
       </div>

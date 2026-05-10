@@ -182,7 +182,7 @@ serve(async (req) => {
     const results = await Promise.all(
       allPages.map((p) =>
         processPage(supabase, userId, p).catch((err) => {
-          console.error(`[handle-social-interactions] Erro página ${p.id}:`, err);
+          console.error(`[handle-social-interactions] Erro página ${p.page_id}:`, err);
           return { processed: 0, postsScanned: 0 };
         })
       )
