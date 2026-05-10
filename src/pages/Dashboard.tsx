@@ -764,9 +764,6 @@ const Dashboard = () => {
       {/* Logs de Auditoria e Erros */}
       {widgets.audit && (
         <div id="audit-logs-section" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <p>test</p>
-        </div>
-      )}
 
 
         {/* Audit Logs */}
