@@ -698,7 +698,8 @@ const Dashboard = () => {
       */}
 
       {/* Métricas por Categoria */}
-      <Card className="glass-card neon-border-pink">
+      {widgets.categories && (
+        <Card className="glass-card neon-border-pink">
         <CardHeader>
           <div className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5 text-accent" />
