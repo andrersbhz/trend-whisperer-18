@@ -25,7 +25,13 @@ const SocialRobotPage = () => {
   const [loadingSettings, setLoadingSettings] = useState(true);
   const [logs, setLogs] = useState<any[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
-  const [activeTab, setActiveTab] = useState<'interactions' | 'metrics' | 'telemetry'>('telemetry');
+  const [activeTab, setActiveTab] = useState<'interactions' | 'metrics' | 'telemetry' | 'growth'>('telemetry');
+  const [invitedFollowers, setInvitedFollowers] = useState<any[]>([]);
+  const [loadingInvited, setLoadingInvited] = useState(false);
+  const [dateFilter, setDateFilter] = useState<{start: string, end: string}>({
+    start: format(new Date().setDate(new Date().getDate() - 7), 'yyyy-MM-dd'),
+    end: format(new Date(), 'yyyy-MM-dd')
+  });
 
   const fetchLogs = async () => {
     if (!user) return;
@@ -41,6 +47,26 @@ const SocialRobotPage = () => {
       console.error('Logs error:', error);
     } finally {
       setLoadingLogs(false);
+    }
+  };
+  
+  const fetchInvitedFollowers = async () => {
+    if (!user) return;
+    setLoadingInvited(true);
+    try {
+      // We look for logs where the message contains "IA convidou"
+      const { data } = await supabase
+        .from('automation_logs')
+        .select('*')
+        .ilike('message', '%IA convidou%')
+        .gte('created_at', `${dateFilter.start}T00:00:00`)
+        .lte('created_at', `${dateFilter.end}T23:59:59`)
+        .order('created_at', { ascending: false });
+      setInvitedFollowers(data || []);
+    } catch (error) {
+      console.error('Invited followers error:', error);
+    } finally {
+      setLoadingInvited(false);
     }
   };
 
@@ -165,6 +191,7 @@ const SocialRobotPage = () => {
     fetchSettings();
     fetchLogs();
     fetchMetrics();
+    fetchInvitedFollowers();
 
     const logsChannel = supabase
       .channel('realtime-robot-data')
@@ -277,6 +304,18 @@ const SocialRobotPage = () => {
         >
           <Activity className="h-3 w-3 mr-1.5 opacity-70" />
           Métricas
+        </Button>
+        <Button 
+          variant={activeTab === 'growth' ? 'secondary' : 'ghost'} 
+          size="sm" 
+          onClick={() => {
+            setActiveTab('growth');
+            fetchInvitedFollowers();
+          }}
+          className="text-[9px] uppercase font-bold tracking-widest h-7 px-3 rounded-none"
+        >
+          <UserCheck className="h-3 w-3 mr-1.5 opacity-70" />
+          Dashboard de Crescimento
         </Button>
       </div>
 
@@ -501,6 +540,85 @@ const SocialRobotPage = () => {
                 <Button variant="outline" size="sm" onClick={fetchMetrics} className="uppercase text-[10px] font-bold">Tentar Novamente</Button>
               </Card>
             )}
+          </div>
+        ) : activeTab === 'growth' ? (
+          <div className="space-y-6">
+            <Card className="glass-card neon-border-lilac">
+              <CardHeader className="pb-3 border-b border-white/5 bg-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-2">
+                  <UserCheck className="h-5 w-5 text-primary" />
+                  <CardTitle className="text-lg uppercase tracking-tighter">Pessoas Convidadas</CardTitle>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 bg-black/40 p-1 border border-white/5">
+                    <input 
+                      type="date" 
+                      value={dateFilter.start} 
+                      onChange={(e) => setDateFilter({...dateFilter, start: e.target.value})}
+                      className="bg-transparent text-[10px] text-white outline-none p-1"
+                    />
+                    <span className="text-[10px] text-muted-foreground">até</span>
+                    <input 
+                      type="date" 
+                      value={dateFilter.end} 
+                      onChange={(e) => setDateFilter({...dateFilter, end: e.target.value})}
+                      className="bg-transparent text-[10px] text-white outline-none p-1"
+                    />
+                    <Button size="icon" variant="ghost" className="h-6 w-6" onClick={fetchInvitedFollowers}>
+                      <RefreshCw className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="p-6 grid grid-cols-1 sm:grid-cols-3 gap-4 border-b border-white/5 bg-primary/5">
+                  <div className="text-center p-4 border border-primary/20 bg-black/40">
+                    <p className="text-[10px] text-muted-foreground uppercase font-black mb-1">Total de Convites</p>
+                    <p className="text-3xl font-black text-primary">{invitedFollowers.length}</p>
+                  </div>
+                  <div className="text-center p-4 border border-primary/20 bg-black/40">
+                    <p className="text-[10px] text-muted-foreground uppercase font-black mb-1">Média Diária</p>
+                    <p className="text-3xl font-black text-primary">
+                      {invitedFollowers.length > 0 ? (invitedFollowers.length / Math.max(1, (new Date(dateFilter.end).getTime() - new Date(dateFilter.start).getTime()) / (1000 * 60 * 60 * 24))).toFixed(1) : 0}
+                    </p>
+                  </div>
+                  <div className="text-center p-4 border border-primary/20 bg-black/40">
+                    <p className="text-[10px] text-muted-foreground uppercase font-black mb-1">Status do Robô</p>
+                    <p className={cn("text-xl font-black uppercase", followerGrowthMode ? "text-success" : "text-muted-foreground")}>
+                      {followerGrowthMode ? "Ativo 🚀" : "Inativo"}
+                    </p>
+                  </div>
+                </div>
+                <div className="divide-y divide-white/5">
+                  {loadingInvited ? (
+                    <div className="p-20 flex flex-col items-center gap-4">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                      <p className="text-xs text-muted-foreground uppercase tracking-widest">Carregando dados de crescimento...</p>
+                    </div>
+                  ) : invitedFollowers.length > 0 ? (
+                    invitedFollowers.map((log) => (
+                      <div key={log.id} className="p-4 hover:bg-white/5 transition-all flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="h-8 w-8 rounded-none border border-primary/20 bg-primary/5 flex items-center justify-center">
+                            <Bot className="h-4 w-4 text-primary" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-foreground">{log.message}</p>
+                            <p className="text-[10px] text-muted-foreground uppercase">{format(new Date(log.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</p>
+                          </div>
+                        </div>
+                        <Badge variant="outline" className="text-[8px] uppercase border-success/30 text-success bg-success/5">Sucesso</Badge>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-20 text-center space-y-4">
+                      <UserCheck className="h-12 w-12 text-muted-foreground/20 mx-auto" />
+                      <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold">Nenhum convite registrado neste período</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         ) : (
           <Card className="glass-card border-accent/20 overflow-hidden">
