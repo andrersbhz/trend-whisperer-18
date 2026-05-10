@@ -56,12 +56,17 @@ async function processPage(
   const postsList = (await postsResp.json()).data || [];
   postsScanned = postsList.length;
 
-  // Adiciona log de progresso para visibilidade do usuário
+  // Log detalhado no formato solicitado pelo usuário
   await supabase.from("automation_logs").insert({
     user_id: userId,
     level: "info",
-    module: "sync",
-    message: `Iniciando análise de ${postsScanned} postagens na página: ${pageName || pageId}`,
+    module: "robot",
+    message: `Analisando página: ${pageName || pageId}`,
+    details: {
+      curtidas: page.facebook?.fan_count || 0,
+      seguidores: page.facebook?.followers_count || 0,
+      analise: "Iniciando varredura de postagens para interação com IA"
+    }
   });
 
   const pageAvatar = pagePicture || `https://graph.facebook.com/${pageId}/picture?type=large`;

@@ -511,10 +511,15 @@ const SocialRobotPage = () => {
                           </div>
                           <p className="text-sm font-medium text-foreground">{log.message}</p>
                           {log.details && (
-                            <div className="mt-2 p-2 bg-black/40 rounded border border-white/5 overflow-hidden">
-                              <pre className="text-[10px] text-muted-foreground font-mono whitespace-pre-wrap break-all">
-                                {JSON.stringify(log.details, null, 2)}
-                              </pre>
+                            <div className="mt-2 p-3 bg-black/40 rounded border border-primary/10 overflow-hidden shadow-inner">
+                              <div className="grid grid-cols-1 gap-1">
+                                {Object.entries(log.details).map(([key, value]) => (
+                                  <div key={key} className="flex gap-2 text-[10px] border-b border-white/5 pb-1 last:border-0">
+                                    <span className="text-primary font-black uppercase w-24 shrink-0">{key.replace('_', ' ')}:</span>
+                                    <span className="text-muted-foreground break-all">{typeof value === 'object' ? JSON.stringify(value) : String(value)}</span>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                           )}
                         </div>
