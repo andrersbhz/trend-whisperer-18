@@ -316,23 +316,20 @@ const Dashboard = () => {
             <CardContent className="p-0">
               <div className="divide-y divide-white/5">
                 {interactions.length > 0 ? interactions.map(item => (
-                  <div key={item.id} className="p-4 hover:bg-white/5 transition-colors flex gap-3 min-w-0">
-                    <div className="shrink-0 h-8 w-8 rounded-full border border-primary/20 bg-background flex items-center justify-center text-primary text-[10px] font-bold overflow-hidden">
-                      {item.author_avatar ? <img src={item.author_avatar} alt="" /> : item.author_name?.[0]?.toUpperCase()}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-[10px] font-black text-primary uppercase">{item.author_name}</span>
-                        <Badge variant="outline" className="text-[8px] h-3 px-1 border-primary/20 text-primary opacity-70 uppercase">{item.platform}</Badge>
+                  <div key={item.id} className="p-3 hover:bg-white/5 transition-colors flex items-center justify-between gap-3 min-w-0">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <div className="shrink-0 h-8 w-8 rounded-full border border-[hsl(200_100%_60%)]/20 bg-background flex items-center justify-center text-[hsl(200_100%_60%)] text-[10px] font-bold overflow-hidden">
+                        {item.author_avatar ? <img src={item.author_avatar} alt="" /> : item.author_name?.[0]?.toUpperCase()}
                       </div>
-                      <p className="text-sm italic line-clamp-1">"{item.content}"</p>
-                      {item.ai_response && (
-                        <div className="mt-2 flex gap-2 items-start bg-primary/5 p-2 border-l-2 border-primary">
-                          <MessageSquare className="h-3 w-3 text-primary mt-1 shrink-0" />
-                          <p className="text-[11px] text-muted-foreground leading-snug">{item.ai_response}</p>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-black text-[hsl(200_100%_60%)] uppercase truncate max-w-[120px]">{item.author_name}</span>
+                          <Badge variant="outline" className="text-[7px] h-3 px-1 border-[hsl(200_100%_60%)]/20 text-[hsl(200_100%_60%)] opacity-70 uppercase shrink-0">{item.platform}</Badge>
                         </div>
-                      )}
+                        <p className="text-[11px] italic truncate opacity-80">"{item.content}"</p>
+                      </div>
                     </div>
+                    <Badge variant="outline" className="text-[8px] font-bold border-success/30 text-success shrink-0 px-1.5 h-5">RESOLVIDO</Badge>
                   </div>
                 )) : <div className="p-10 text-center text-muted-foreground text-xs uppercase opacity-50">Nenhuma interação</div>}
               </div>
