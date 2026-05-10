@@ -350,7 +350,7 @@ const SocialRobotPage = () => {
             )}
           >
             <UserCheck className={cn("h-3 w-3 mr-1.5", followerGrowthMode && "animate-bounce")} />
-            <span className="hidden lg:inline">MODO</span> {followerGrowthMode ? "CRESC." : "PADRÃO"}
+            <span className="hidden sm:inline">MODO</span> {followerGrowthMode ? "CRESC." : "PADRÃO"}
           </Button>
 
           <Button
