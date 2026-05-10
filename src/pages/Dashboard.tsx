@@ -409,28 +409,55 @@ const Dashboard = () => {
         </DropdownMenu>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        {statCards.map((stat, i) => (
-          <Card
-            key={stat.label}
-            className={`glass-card hover-lift ${stat.glow} relative overflow-hidden animate-float-up`}
-            style={{ animationDelay: `${i * 60}ms` }}
-          >
-            <div className={`absolute inset-0 bg-gradient-to-br ${stat.accent} pointer-events-none opacity-50`} />
-            <CardContent className="p-4 sm:p-5 relative">
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="text-[11px] sm:text-xs uppercase tracking-wider text-muted-foreground font-medium">{stat.label}</p>
-                  <p className="text-2xl sm:text-3xl font-bold text-foreground mt-1.5 tabular-nums">{stat.value}</p>
+      {widgets.stats && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          {statCards.map((stat, i) => (
+            <Card
+              key={stat.label}
+              className={`glass-card hover-lift ${stat.glow} relative overflow-hidden animate-float-up`}
+              style={{ animationDelay: `${i * 60}ms` }}
+            >
+              <div className={`absolute inset-0 bg-gradient-to-br ${stat.accent} pointer-events-none opacity-50`} />
+              <CardContent className="p-4 sm:p-5 relative">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-[11px] sm:text-xs uppercase tracking-wider text-muted-foreground font-medium">{stat.label}</p>
+                    <p className="text-2xl sm:text-3xl font-bold text-foreground mt-1.5 tabular-nums">{stat.value}</p>
+                  </div>
+                  <div className={`p-2 rounded-lg bg-background/40 ${stat.color}`}>
+                    <stat.icon className="h-5 w-5" />
+                  </div>
                 </div>
-                <div className={`p-2 rounded-lg bg-background/40 ${stat.color}`}>
-                  <stat.icon className="h-5 w-5" />
-                </div>
-              </div>
-            </CardContent>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {widgets.alternate_stats && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card className="glass-card neon-border-lilac p-6 flex items-center justify-between">
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Total de Postagens</p>
+              <h4 className="text-3xl font-black text-foreground tabular-nums">{stats.total}</h4>
+              <p className="text-[10px] text-success font-medium mt-1">✓ {stats.published} PUBLICADOS</p>
+            </div>
+            <div className="h-12 w-12 rounded-none border border-primary/30 flex items-center justify-center bg-primary/5">
+              <FileText className="h-6 w-6 text-primary" />
+            </div>
           </Card>
-        ))}
-      </div>
+          <Card className="glass-card neon-border-pink p-6 flex items-center justify-between">
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Agendamentos Ativos</p>
+              <h4 className="text-3xl font-black text-foreground tabular-nums">{stats.pending}</h4>
+              <p className="text-[10px] text-warning font-medium mt-1">🕒 AGUARDANDO PUBLICAÇÃO</p>
+            </div>
+            <div className="h-12 w-12 rounded-none border border-accent/30 flex items-center justify-center bg-accent/5">
+              <Clock className="h-6 w-6 text-accent" />
+            </div>
+          </Card>
+        </div>
+      )}
 
       {/* === FACEBOOK PAGES CARDS === */}
       {metaMetrics && metaMetrics.length > 0 && (
