@@ -554,7 +554,8 @@ const Dashboard = () => {
       </div>
 
       {/* === SOCIAL HUMAN BOT === */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in">
+      {widgets.robot && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in">
         <Card className="glass-card neon-border-lilac overflow-hidden">
           <CardHeader className="pb-3 border-b border-white/5">
             <div className="flex items-center justify-between">
