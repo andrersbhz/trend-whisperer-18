@@ -935,7 +935,7 @@ const SocialRobotPage = () => {
                     <div key={log.id} className="p-3 hover:bg-white/[0.03] transition-all relative group">
                       <div className="flex items-start gap-3">
                         <div className={cn(
-                          "mt-1 p-3 rounded-none border-2 transition-all group-hover:scale-110",
+                          "mt-0.5 p-2 rounded-none border transition-all group-hover:scale-110",
                           log.level === 'error' ? "border-destructive/30 bg-destructive/10 text-destructive shadow-[0_0_15px_rgba(239,68,68,0.2)]" :
                           log.level === 'warn' ? "border-warning/30 bg-warning/10 text-warning" :
                            "border-[hsl(200_100%_60%)]/30 bg-[hsl(200_100%_60%)]/10 text-[hsl(200_100%_60%)] shadow-[0_0_10px_rgba(0,210,255,0.1)]"
