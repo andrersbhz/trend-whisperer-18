@@ -84,6 +84,25 @@ const SocialRobotPage = () => {
     }
   };
 
+  const toggleFollowerGrowth = async (enabled: boolean) => {
+    if (!user) return;
+    try {
+      const { error } = await supabase
+        .from('user_settings')
+        .update({ follower_growth_mode: enabled })
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      
+      setFollowerGrowthMode(enabled);
+      toast({ 
+        title: enabled ? 'Modo Crescimento Ativado' : 'Modo Crescimento Desativado', 
+        description: enabled ? 'O robô agora focará em convidar novas pessoas para seguir.' : 'O robô voltou ao modo de interação padrão.' 
+      });
+    } catch (error) {
+      toast({ title: 'Erro', description: getErrorMessage(error), variant: 'destructive' });
+    }
+
   const fetchInteractions = async () => {
     if (!user) return;
     setLoading(true);
