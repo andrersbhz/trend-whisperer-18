@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Loader2, RefreshCw, MessageSquare, Bot, UserCheck, ExternalLink, History, ThumbsUp, AtSign, Power, PowerOff, Activity, AlertCircle, Info, ChevronRight, ChevronDown as ChevronDownIcon } from 'lucide-react';
+import { Loader2, RefreshCw, MessageSquare, Bot, UserCheck, ExternalLink, History, ThumbsUp, AtSign, Power, PowerOff, Activity, AlertCircle, Info, Instagram, ChevronRight, ChevronDown as ChevronDownIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/lib/backend';
 import { format } from 'date-fns';
@@ -104,9 +104,7 @@ const SocialRobotPage = () => {
     if (!user) return;
     setProcessing(true);
     try {
-      // Step 1: Fetch new ones from API
       await supabase.functions.invoke('handle-social-interactions', { body: { userId: user.id } });
-      // Step 2: Generate AI replies
       const { data } = await supabase.functions.invoke('process-social-replies', { body: { userId: user.id } });
       
       toast({ 
@@ -114,6 +112,7 @@ const SocialRobotPage = () => {
         description: `${data?.newInteractions || 0} novas interações encontradas em ${data?.postsScanned || 0} postagens.` 
       });
       fetchInteractions();
+      fetchMetrics();
     } catch (error) {
       toast({ title: 'Erro no processamento', description: getErrorMessage(error), variant: 'destructive' });
     } finally {
@@ -142,7 +141,6 @@ const SocialRobotPage = () => {
     fetchLogs();
     fetchMetrics();
 
-    // Real-time logs and interactions
     const logsChannel = supabase
       .channel('realtime-robot-data')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'automation_logs' }, () => {
@@ -366,6 +364,95 @@ const SocialRobotPage = () => {
               </div>
             </CardContent>
           </Card>
+        ) : activeTab === 'metrics' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {loadingMetrics ? (
+              <Card className="col-span-full p-20 flex flex-col items-center gap-4 glass-card neon-border-lilac">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <p className="text-xs text-muted-foreground uppercase tracking-widest">Analisando métricas das páginas...</p>
+              </Card>
+            ) : metrics.length > 0 ? (
+              metrics.map((page) => (
+                <Card key={page.page_id} className="glass-card neon-border-lilac overflow-hidden flex flex-col">
+                  <CardHeader className="pb-3 border-b border-white/5 bg-white/5">
+                    <div className="flex items-center gap-4">
+                      <div className="h-12 w-12 rounded-none border-2 border-primary/20 bg-background overflow-hidden shadow-neon-lilac/20">
+                        <img src={page.facebook?.picture?.data?.url || `https://graph.facebook.com/${page.page_id}/picture?type=large`} className="h-full w-full object-cover" alt="" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <CardTitle className="text-lg uppercase tracking-tighter truncate">{page.page_name}</CardTitle>
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          <Badge variant="outline" className="text-[9px] px-1 border-primary/20 text-primary">FB: {page.facebook?.fan_count || 0} Seguidores</Badge>
+                          {page.instagram && (
+                            <Badge variant="outline" className="text-[9px] px-1 border-purple-500/20 text-purple-400">IG: {page.instagram.followers_count || 0}</Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-4 space-y-4 flex-1">
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="bg-white/5 p-2 border border-white/5 text-center">
+                        <p className="text-[9px] text-muted-foreground uppercase font-bold">Postagens</p>
+                        <p className="text-lg font-black text-primary">{page.facebook?.post_stats?.total_posts || 0}</p>
+                      </div>
+                      <div className="bg-white/5 p-2 border border-white/5 text-center">
+                        <p className="text-[9px] text-muted-foreground uppercase font-bold">Curtidas</p>
+                        <p className="text-lg font-black text-primary">{page.facebook?.post_stats?.total_likes || 0}</p>
+                      </div>
+                      <div className="bg-white/5 p-2 border border-white/5 text-center">
+                        <p className="text-[9px] text-muted-foreground uppercase font-bold">Comentários</p>
+                        <p className="text-lg font-black text-primary">{page.facebook?.post_stats?.total_comments || 0}</p>
+                      </div>
+                    </div>
+                    
+                    {page.instagram?.post_stats && (
+                      <div className="pt-2 border-t border-white/5">
+                        <p className="text-[9px] font-black text-purple-400 uppercase tracking-widest mb-2 flex items-center gap-1">
+                          <Instagram className="h-3 w-3" /> Instagram Stats (Recent)
+                        </p>
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="bg-purple-500/5 p-2 border border-purple-500/10 text-center">
+                            <p className="text-[8px] text-muted-foreground uppercase">Posts</p>
+                            <p className="text-md font-bold text-purple-400">{page.instagram.post_stats.total_posts || 0}</p>
+                          </div>
+                          <div className="bg-purple-500/5 p-2 border border-purple-500/10 text-center">
+                            <p className="text-[8px] text-muted-foreground uppercase">Likes</p>
+                            <p className="text-md font-bold text-purple-400">{page.instagram.post_stats.total_likes || 0}</p>
+                          </div>
+                          <div className="bg-purple-500/5 p-2 border border-purple-500/10 text-center">
+                            <p className="text-[8px] text-muted-foreground uppercase">Engajamento</p>
+                            <p className="text-md font-bold text-purple-400">{page.instagram.post_stats.avg_engagement || 0}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {page.facebook?.insights?.page_impressions && (
+                      <div className="pt-2 border-t border-white/5">
+                        <div className="flex justify-between items-center mb-1">
+                          <p className="text-[9px] font-black text-success uppercase tracking-widest">Alcance (28 dias)</p>
+                          <span className="text-xs font-bold text-success">+{page.facebook.insights.page_impressions.total.toLocaleString()}</span>
+                        </div>
+                        <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-success shadow-neon-success" 
+                            style={{ width: `${Math.min(100, (page.facebook.insights.page_impressions.total / 10000) * 100)}%` }} 
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <Card className="col-span-full p-20 text-center space-y-4 glass-card neon-border-lilac">
+                <Bot className="h-12 w-12 text-primary/40 mx-auto" />
+                <p className="text-sm font-bold uppercase tracking-widest">Nenhuma métrica disponível</p>
+                <Button variant="outline" size="sm" onClick={fetchMetrics} className="uppercase text-[10px] font-bold">Tentar Novamente</Button>
+              </Card>
+            )}
+          </div>
         ) : (
           <Card className="glass-card border-accent/20 overflow-hidden">
             <CardHeader className="pb-3 border-b border-white/5 flex flex-row items-center justify-between">
@@ -398,51 +485,33 @@ const SocialRobotPage = () => {
                            log.level === 'warn' ? <AlertCircle className="h-4 w-4" /> :
                            <Info className="h-4 w-4" />}
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between gap-2 mb-1">
-                            <div className="flex items-center gap-2">
-                              <Badge variant="outline" className="text-[9px] uppercase tracking-widest px-1 h-4 border-white/10">
-                                {log.module}
-                              </Badge>
-                              <span className={cn(
-                                "text-[10px] font-black uppercase tracking-tighter",
-                                log.level === 'error' ? "text-destructive" :
-                                log.level === 'warn' ? "text-warning" :
-                                "text-primary"
-                              )}>
-                                {log.level}
-                              </span>
-                            </div>
-                            <span className="text-[10px] text-muted-foreground font-medium">
-                              {format(new Date(log.created_at), "HH:mm:ss 'em' dd/MM", { locale: ptBR })}
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                              {log.module} • {format(new Date(log.created_at), "HH:mm:ss", { locale: ptBR })}
                             </span>
+                            <Badge variant="outline" className={cn(
+                              "text-[8px] px-1 h-4",
+                              log.level === 'error' ? "border-destructive/30 text-destructive" : "border-primary/30 text-primary"
+                            )}>
+                              {log.level.toUpperCase()}
+                            </Badge>
                           </div>
                           <p className="text-sm font-medium text-foreground">{log.message}</p>
-                          {log.details && Object.keys(log.details).length > 0 && (
-                            <details className="mt-2">
-                              <summary className="text-[10px] cursor-pointer uppercase font-bold text-muted-foreground hover:text-primary transition-colors flex items-center gap-1">
-                                Detalhes Técnicos <ChevronRight className="h-2 w-2" />
-                              </summary>
-                              <pre className="mt-2 p-3 bg-black/40 rounded-lg text-[10px] text-muted-foreground overflow-x-auto border border-white/5">
+                          {log.details && (
+                            <div className="mt-2 p-2 bg-black/40 rounded border border-white/5 overflow-hidden">
+                              <pre className="text-[10px] text-muted-foreground font-mono whitespace-pre-wrap break-all">
                                 {JSON.stringify(log.details, null, 2)}
                               </pre>
-                            </details>
+                            </div>
                           )}
                         </div>
                       </div>
                     </div>
                   ))
                 ) : (
-                  <div className="p-20 text-center space-y-4">
-                    <div className="mx-auto w-16 h-16 rounded-full bg-accent/5 flex items-center justify-center border border-accent/10">
-                      <Activity className="h-8 w-8 text-accent/40" />
-                    </div>
-                    <div className="max-w-xs mx-auto">
-                      <p className="text-sm text-foreground font-bold uppercase tracking-widest">Sem Registros</p>
-                      <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-                        A telemetria começará a aparecer assim que o ciclo de automação for executado.
-                      </p>
-                    </div>
+                  <div className="p-10 text-center">
+                    <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold">Sem logs registrados</p>
                   </div>
                 )}
               </div>
