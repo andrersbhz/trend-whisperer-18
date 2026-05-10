@@ -224,8 +224,8 @@ const SocialRobotPage = () => {
 
     const logsChannel = supabase
       .channel('realtime-robot-data')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'automation_logs' }, () => {
-        fetchLogs();
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'automation_logs' }, (payload) => {
+        setLogs(prev => [payload.new, ...prev].slice(0, 30));
         fetchInvitedFollowers(); // Refresh growth data when new logs arrive
       })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'social_interactions' }, () => {
