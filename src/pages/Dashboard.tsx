@@ -646,44 +646,14 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-      {/* === ARTIGOS MAIS VISTOS === */}
+      {/* Artigos Mais Vistos (Ocultado a pedido) */}
+      {/* 
       {jetpackStats?.available && jetpackStats?.topPosts && jetpackStats.topPosts.length > 0 && (
         <Card className="glass-card neon-border-lilac overflow-hidden animate-fade-in">
-          <CardHeader className="pb-3 border-b border-white/5">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-primary" />
-              <CardTitle className="text-lg uppercase tracking-tighter">Artigos Mais Vistos</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-0 divide-y md:divide-y-0 md:divide-x divide-white/5">
-              {jetpackStats.topPosts.slice(0, 6).map((post: any, i: number) => (
-                <div 
-                  key={i} 
-                  className="flex items-start gap-4 p-5 hover:bg-white/5 transition-colors group cursor-pointer"
-                  onClick={() => post.url && window.open(post.url, '_blank')}
-                >
-                  <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-primary/10 text-primary font-black text-lg border border-primary/20">
-                    {i + 1}
-                  </div>
-                  <div className="flex flex-col gap-1 min-w-0">
-                    <h4 className="text-sm font-bold text-foreground line-clamp-2 leading-tight group-hover:text-primary transition-colors uppercase tracking-tight">
-                      {post.title}
-                    </h4>
-                    <div className="flex items-center gap-3 mt-1">
-                      <div className="flex items-center gap-1 text-[10px] text-muted-foreground font-bold uppercase tracking-widest">
-                        <Eye className="h-3 w-3 text-primary" />
-                        <span>{post.views.toLocaleString()} <span className="opacity-50 font-normal">views</span></span>
-                      </div>
-                      <ExternalLink className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
+          ...
         </Card>
-      )}
+      )} 
+      */}
 
       {/* Métricas por Categoria */}
       <Card className="glass-card neon-border-pink">
