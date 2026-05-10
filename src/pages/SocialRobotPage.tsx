@@ -29,6 +29,7 @@ const SocialRobotPage = () => {
   const [activeTab, setActiveTab] = useState<'interactions' | 'metrics' | 'telemetry' | 'growth'>('telemetry');
   const [invitedFollowers, setInvitedFollowers] = useState<any[]>([]);
   const [loadingInvited, setLoadingInvited] = useState(false);
+  const [compactMode, setCompactMode] = useState(true);
   const [dateFilter, setDateFilter] = useState<{start: string, end: string}>({
     start: format(new Date().setDate(new Date().getDate() - 7), 'yyyy-MM-dd'),
     end: format(new Date(), 'yyyy-MM-dd')
