@@ -50,6 +50,7 @@ const ArticlesPage = () => {
   const [errorState, setErrorState] = useState<string | null>(null);
   const [diagMetrics, setDiagMetrics] = useState<any[]>([]);
   const [showDiagnostics, setShowDiagnostics] = useState(false);
+  const [manualDialogOpen, setManualDialogOpen] = useState(false);
 
   const PAGE_SIZE = 20;
 
