@@ -69,6 +69,15 @@ const defaultSettings: UserSettings = {
   image_mode: 'ai',
   image_prompt: '',
   interaction_mode: 'standard',
+  dashboard_widgets: {
+    stats: true,
+    meta: true,
+    robot: true,
+    trends: true,
+    categories: true,
+    audit: true,
+    alternate_stats: true,
+  },
 };
 
 interface CredentialsStatus {
