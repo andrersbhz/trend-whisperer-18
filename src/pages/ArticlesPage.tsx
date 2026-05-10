@@ -662,6 +662,16 @@ const ArticlesPage = () => {
         </div>
         <div className="flex gap-2 flex-wrap">
           <Button
+            onClick={() => setManualDialogOpen(true)}
+            variant="outline"
+            size="sm"
+            className="gap-2 border-primary/40 text-primary hover:bg-primary/10"
+          >
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">Adicionar Manual</span>
+            <span className="sm:hidden">Manual</span>
+          </Button>
+          <Button
             onClick={handleCleanupOld}
             disabled={cleaningUp}
             variant="outline"
@@ -695,7 +705,6 @@ const ArticlesPage = () => {
             {generating ? 'Gerando...' : 'Gerar Artigos'}
           </Button>
         </div>
-      </div>
 
       <Tabs defaultValue="todos" className="w-full">
         <TabsList className="mb-6 grid w-full max-w-md grid-cols-4 bg-secondary/50 p-1">
