@@ -469,27 +469,37 @@ const SocialRobotPage = () => {
                                 </Badge>
                               </div>
                             </div>
-                            <div className="bg-white/[0.03] p-5 border-l-4 border-primary/20 group-hover:border-primary/50 transition-colors mb-4 relative">
-                              <div className="absolute top-0 right-0 p-2">
-                                <MessageSquare className="h-4 w-4 text-white/10" />
-                              </div>
-                              <p className="text-sm text-foreground italic leading-relaxed font-medium">"{item.content}"</p>
+                            <div className={cn(
+                              "bg-white/[0.03] border-l-4 border-[hsl(200_100%_60%)]/20 group-hover:border-[hsl(200_100%_60%)]/50 transition-colors relative",
+                              compactMode ? "p-2 mb-2" : "p-4 mb-4"
+                            )}>
+                              <p className={cn(
+                                "text-foreground italic font-medium leading-relaxed truncate",
+                                compactMode ? "text-[11px]" : "text-sm"
+                              )}>
+                                "{item.content}"
+                              </p>
                             </div>
                             
                             {item.ai_response && (
-                              <div className="mt-4 flex gap-4 items-start bg-[hsl(200_100%_60%)]/5 p-4 border border-[hsl(200_100%_60%)]/20 shadow-[0_0_10px_rgba(0,210,255,0.05)] relative group/ai">
+                              <div className={cn(
+                                "flex gap-3 items-start bg-[hsl(200_100%_60%)]/5 border border-[hsl(200_100%_60%)]/20 relative group/ai",
+                                compactMode ? "p-2 mt-2" : "p-4 mt-4"
+                              )}>
                                 <div className="absolute top-0 right-0 px-2 py-0.5 bg-[hsl(200_100%_60%)] text-black text-[7px] font-black uppercase tracking-[0.2em]">IA Response</div>
-                                <div className="p-1.5 bg-[hsl(200_100%_60%)]/20 border border-[hsl(200_100%_60%)]/30 rounded-none">
-                                  <Bot className="h-3.5 w-3.5 text-[hsl(200_100%_60%)] animate-pulse" />
+                                <div className={cn(
+                                  "bg-[hsl(200_100%_60%)]/20 border border-[hsl(200_100%_60%)]/30 rounded-none shrink-0",
+                                  compactMode ? "p-1" : "p-1.5"
+                                )}>
+                                  <Bot className={cn("text-[hsl(200_100%_60%)] animate-pulse", compactMode ? "h-3 w-3" : "h-3.5 w-3.5")} />
                                 </div>
-                                <div className="space-y-1.5 flex-1">
-                                  <p className="text-xs text-foreground leading-relaxed font-semibold italic text-[hsl(200_100%_60%)]/90">{item.ai_response}</p>
-                                  {item.processed_at && (
-                                    <p className="text-[8px] text-muted-foreground uppercase font-black tracking-widest flex items-center gap-1.5">
-                                      <Activity className="h-2.5 w-2.5" />
-                                      Processado às {format(new Date(item.processed_at), "HH:mm:ss", { locale: ptBR })}
-                                    </p>
-                                  )}
+                                <div className="min-w-0 flex-1">
+                                  <p className={cn(
+                                    "text-foreground font-semibold italic text-[hsl(200_100%_60%)]/90 truncate",
+                                    compactMode ? "text-[11px]" : "text-xs"
+                                  )}>
+                                    {item.ai_response}
+                                  </p>
                                 </div>
                               </div>
                             )}
