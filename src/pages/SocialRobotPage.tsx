@@ -648,16 +648,16 @@ const SocialRobotPage = () => {
         ) : activeTab === 'growth' ? (
           <div className="space-y-8">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <Card className="lg:col-span-2 glass-card border-primary/10 overflow-hidden shadow-elevated group">
-                <CardHeader className="pb-4 border-b border-white/5 bg-white/[0.02] flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative">
-                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-primary opacity-50" />
+              <Card className="lg:col-span-2 glass-card border-[hsl(200_100%_60%)]/10 overflow-hidden shadow-elevated group">
+                <CardHeader className="p-4 border-b border-white/5 bg-white/[0.02] flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative">
+                  <div className="absolute top-0 left-0 w-full h-0.5 bg-[hsl(200_100%_60%)] opacity-30" />
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 border border-primary/20">
-                      <TrendingUp className="h-5 w-5 text-primary" />
+                    <div className="p-2 bg-[hsl(200_100%_60%)]/10 border border-[hsl(200_100%_60%)]/20">
+                      <TrendingUp className="h-4 w-4 text-[hsl(200_100%_60%)]" />
                     </div>
                     <div>
-                      <CardTitle className="text-xl font-black uppercase tracking-tighter">Vetor de Expansão</CardTitle>
-                      <CardDescription className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Análise de Crescimento Neural</CardDescription>
+                      <CardTitle className="text-lg font-black uppercase tracking-tighter text-[hsl(200_100%_60%)]">Vetor de Expansão</CardTitle>
+                      <CardDescription className="text-[8px] uppercase font-bold tracking-widest text-muted-foreground">Análise de Crescimento Neural</CardDescription>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 bg-black/60 p-1.5 border border-primary/20 shadow-inner">
