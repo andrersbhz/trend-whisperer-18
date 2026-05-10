@@ -198,6 +198,7 @@ const SettingsPage = () => {
         image_mode: settings.image_mode,
         image_prompt: settings.image_prompt,
         interaction_mode: settings.interaction_mode,
+        dashboard_widgets: settings.dashboard_widgets,
       };
 
       if (settings.wordpress_app_password) {
