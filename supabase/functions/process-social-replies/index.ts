@@ -94,6 +94,18 @@ ${typeLabel} de ${item.author_name} na plataforma ${item.platform}: "${item.cont
           status: "replied",
           processed_at: new Date().toISOString()
         }).eq("id", item.id);
+
+        await supabase.from("automation_logs").insert({
+          user_id: userId,
+          level: "info",
+          module: "robot",
+          message: `IA respondeu comentário de ${item.author_name}`,
+          details: {
+            plataforma: item.platform,
+            comentario_original: item.content,
+            resposta_ia: aiResponse.trim()
+          }
+        });
         
         totalReplied++;
       }
