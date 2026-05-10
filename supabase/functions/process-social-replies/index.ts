@@ -37,7 +37,15 @@ serve(async (req) => {
     
     const apiKey = settings?.openai_api_key || settings?.gemini_api_key;
     const provider = settings?.openai_api_key ? "openai" : "gemini";
-    const customPrompt = settings?.social_reply_prompt || `Você é um gestor de redes sociais humano e empático. Responda de forma curta, natural, empática e amigável. Use um tom humano, não pareça um robô. Responda em Português do Brasil.`;
+    const followerGrowth = settings?.follower_growth_mode || false;
+    
+    let basePrompt = settings?.social_reply_prompt || `Você é um gestor de redes sociais humano e empático. Responda de forma curta, natural, empática e amigável. Use um tom humano, não pareça um robô. Responda em Português do Brasil.`;
+
+    if (followerGrowth) {
+      basePrompt += ` IMPORTANTE: Como estamos no modo de crescimento, sempre que fizer sentido, convide gentilmente a pessoa para seguir a página para acompanhar mais conteúdos como esse, mas faça isso de forma natural e não forçada.`;
+    }
+
+    const customPrompt = basePrompt;
 
     if (!apiKey) {
       return new Response(JSON.stringify({ error: "No AI API key found in settings" }), { 
