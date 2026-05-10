@@ -686,6 +686,7 @@ const Dashboard = () => {
             )}
           </CardContent>
         </Card>
+      )}
 
       {/* Artigos Mais Vistos (Ocultado a pedido) */}
       {/* 
