@@ -827,7 +827,7 @@ const Dashboard = () => {
           </CardContent>
         </Card>
         </div>
-      )}
+      ) : null}
 
 
       <Card className="glass-card">
