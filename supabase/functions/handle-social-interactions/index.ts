@@ -60,6 +60,17 @@ async function processPage(
   const { data: settings } = await supabase.from("user_settings").select("follower_growth_mode").eq("user_id", userId).single();
   const isGrowthMode = settings?.follower_growth_mode;
 
+  // Carregar métricas reais se disponíveis
+  const { data: pageRecord } = await supabase.from("facebook_accounts").select("last_metrics").eq("page_id", pageId).maybeSingle();
+  const metrics = pageRecord?.last_metrics;
+  
+  const fanCount = metrics?.facebook?.fan_count || page.facebook?.fan_count || 0;
+  const followersCount = metrics?.facebook?.followers_count || page.facebook?.followers_count || 0;
+  const totalPosts = metrics?.facebook?.post_stats?.total_posts || postsList.length;
+  const totalLikes = metrics?.facebook?.post_stats?.total_likes || 0;
+  const totalComments = metrics?.facebook?.post_stats?.total_comments || 0;
+  const totalShares = metrics?.facebook?.post_stats?.total_shares || 0;
+
   await supabase.from("automation_logs").insert({
     user_id: userId,
     level: "info",
@@ -68,8 +79,11 @@ async function processPage(
       ? `Analisando página: ${pageName || pageId} (Modo Crescimento Ativo 🚀)`
       : `Analisando página: ${pageName || pageId}`,
     details: {
-      curtidas: page.facebook?.fan_count || 0,
-      seguidores: page.facebook?.followers_count || 0,
+      curtidas: fanCount,
+      seguidores: followersCount,
+      compartilhamentos: totalShares,
+      comentarios: totalComments,
+      numero_postagens: totalPosts,
       analise: isGrowthMode 
         ? "Iniciando varredura para interagir e convidar novos seguidores"
         : "Iniciando varredura de postagens para interação com IA"
