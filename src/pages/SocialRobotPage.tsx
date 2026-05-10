@@ -495,7 +495,7 @@ const SocialRobotPage = () => {
                             
                             {item.ai_response && (
                               <div className={cn(
-                                "flex gap-3 items-start bg-[hsl(200_100%_60%)]/5 border border-[hsl(200_100%_60%)]/20 relative group/ai",
+                                "flex gap-2 items-start bg-[hsl(200_100%_60%)]/5 border border-[hsl(200_100%_60%)]/20 relative group/ai",
                                 compactMode ? "p-2 mt-2" : "p-4 mt-4"
                               )}>
                                 <div className="absolute top-0 right-0 px-2 py-0.5 bg-[hsl(200_100%_60%)] text-black text-[7px] font-black uppercase tracking-[0.2em]">IA Response</div>
