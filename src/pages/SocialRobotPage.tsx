@@ -503,7 +503,7 @@ const SocialRobotPage = () => {
                                   "bg-[hsl(200_100%_60%)]/10 border border-[hsl(200_100%_60%)]/30 rounded-none shrink-0",
                                   compactMode ? "p-1" : "p-1.5"
                                 )}>
-                                  <Bot className={cn("text-[hsl(200_100%_60%)] animate-pulse", compactMode ? "h-3 w-3" : "h-3.5 w-3.5")} />
+                                  <Bot className={cn("text-[hsl(200_100%_60%)]", compactMode ? "h-3 w-3" : "h-3.5 w-3.5")} />
                                 </div>
                                 <div className="min-w-0 flex-1">
                                   <p className={cn(
