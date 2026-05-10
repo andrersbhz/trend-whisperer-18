@@ -534,9 +534,9 @@ const SocialRobotPage = () => {
                           <Badge 
                             variant="secondary" 
                             className={cn(
-                              "text-[9px] uppercase font-black px-2 py-1 tracking-[0.1em] border-2",
-                              item.status === 'replied' ? "border-success shadow-[0_0_10px_rgba(34,197,94,0.1)] bg-success/10 text-success" : 
-                              item.status === 'processed' ? "border-[hsl(200_100%_60%)] shadow-[0_0_10px_rgba(0,210,255,0.1)] bg-[hsl(200_100%_60%)]/10 text-[hsl(200_100%_60%)]" :
+                              "text-[8px] uppercase font-black px-1.5 py-0.5 tracking-[0.05em] border",
+                              item.status === 'replied' ? "border-success bg-success/10 text-success" : 
+                              item.status === 'processed' ? "border-[hsl(200_100%_60%)] bg-[hsl(200_100%_60%)]/10 text-[hsl(200_100%_60%)]" :
                               "border-warning/30 bg-warning/5 text-warning"
                             )}
                           >
