@@ -460,7 +460,7 @@ const Dashboard = () => {
       )}
 
       {/* === FACEBOOK PAGES CARDS === */}
-      {metaMetrics && metaMetrics.length > 0 && (
+      {widgets.meta && metaMetrics && metaMetrics.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-fade-in">
           {metaMetrics.map((pg: any, idx: number) => (
             <div 
