@@ -762,7 +762,6 @@ const Dashboard = () => {
       </Card>
       {widgets.audit && (
         <div id="audit-logs-section" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div id="audit-logs-section" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
 
         {/* Audit Logs */}
