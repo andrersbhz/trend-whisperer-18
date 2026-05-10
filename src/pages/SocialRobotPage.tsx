@@ -49,12 +49,13 @@ const SocialRobotPage = () => {
     try {
       const { data, error } = await supabase
         .from('user_settings')
-        .select('automation_enabled')
+        .select('automation_enabled, follower_growth_mode')
         .eq('user_id', user.id)
         .maybeSingle();
       
       if (data) {
         setAutomationEnabled(!!data.automation_enabled);
+        setFollowerGrowthMode(!!data.follower_growth_mode);
       }
     } catch (error) {
       console.error('Error fetching settings:', error);
