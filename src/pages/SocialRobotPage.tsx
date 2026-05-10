@@ -359,8 +359,8 @@ const SocialRobotPage = () => {
             disabled={processing}
             className="bg-[hsl(200_100%_60%)] text-black font-black uppercase tracking-widest text-[9px] h-8 px-3 rounded-none transition-all shadow-[0_0_15px_rgba(0,210,255,0.4)] border-none hover:scale-105 active:scale-95 hover:bg-[hsl(200_110%_65%)]"
           >
-            {processing ? <Loader2 className="h-3 w-3 mr-1.5 animate-spin" /> : <RefreshCw className="h-3 w-3 mr-1.5" />}
-            <span className="hidden lg:inline">SINCRONIZAR</span>
+            {processing ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <RefreshCw className="h-3 w-3 mr-1" />}
+            <span className="hidden sm:inline">SINCRONIZAR</span>
           </Button>
         </div>
       </div>
