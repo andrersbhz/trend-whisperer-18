@@ -21,6 +21,7 @@ const SocialRobotPage = () => {
   const [loadingMetrics, setLoadingMetrics] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [automationEnabled, setAutomationEnabled] = useState(false);
+  const [followerGrowthMode, setFollowerGrowthMode] = useState(false);
   const [loadingSettings, setLoadingSettings] = useState(true);
   const [logs, setLogs] = useState<any[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
