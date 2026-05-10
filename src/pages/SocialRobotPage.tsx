@@ -395,7 +395,7 @@ const SocialRobotPage = () => {
                   <CardDescription className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Monitoramento em Tempo Real</CardDescription>
                 </div>
               </div>
-              <Badge variant="outline" className="border-primary shadow-neon-lilac text-primary font-black uppercase text-[10px] px-3">
+              <Badge variant="outline" className="border-[hsl(200_100%_60%)] shadow-[0_0_10px_rgba(0,210,255,0.2)] text-[hsl(200_100%_60%)] font-black uppercase text-[8px] px-2 h-6">
                 {interactions.length} NODES ATIVOS
               </Badge>
             </CardHeader>
