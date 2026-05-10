@@ -244,113 +244,117 @@ const SocialRobotPage = () => {
 
   return (
     <div className="space-y-6 lg:space-y-8 animate-float-up">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 p-6 glass-card border-primary/20 relative overflow-hidden group">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -mr-32 -mt-32 group-hover:bg-primary/10 transition-colors duration-700" />
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center gap-6 flex-1">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-primary/10 rounded-none border border-primary/30 shadow-neon-lilac animate-glow shrink-0">
-              <Bot className="h-8 w-8 text-primary animate-pulse" />
+      <div className="flex flex-row items-center justify-between gap-4 p-4 glass-card border-[hsl(200_100%_60%)]/20 relative overflow-hidden group">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-[hsl(200_100%_60%)]/5 rounded-full blur-3xl -mr-32 -mt-32 group-hover:bg-[hsl(200_100%_60%)]/10 transition-colors duration-700" />
+        
+        <div className="relative z-10 flex items-center gap-6 flex-1 min-w-0">
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="p-2 bg-[hsl(200_100%_60%)]/10 rounded-none border border-[hsl(200_100%_60%)]/30 shadow-[0_0_15px_rgba(0,210,255,0.3)] animate-glow shrink-0">
+              <Bot className="h-6 w-6 text-[hsl(200_100%_60%)] animate-pulse" />
             </div>
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-black text-gradient-primary uppercase tracking-tighter whitespace-nowrap font-montserrat">
+            <div className="hidden sm:block">
+              <h1 className="text-xl font-black text-[hsl(200_100%_60%)] uppercase tracking-tighter whitespace-nowrap font-montserrat drop-shadow-[0_0_8px_rgba(0,210,255,0.5)]">
                 Robô Social A3
               </h1>
-              <p className="text-muted-foreground text-[9px] mt-1 uppercase tracking-[0.2em] flex items-center gap-2 font-bold whitespace-nowrap">
-                <span className="flex h-2 w-2 relative">
+              <p className="text-muted-foreground text-[8px] uppercase tracking-[0.2em] flex items-center gap-1.5 font-bold whitespace-nowrap">
+                <span className="flex h-1.5 w-1.5 relative">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-success"></span>
                 </span>
                 Neural Interface
               </p>
             </div>
           </div>
           
-          <div className="hidden lg:block h-10 w-px bg-white/10 mx-2" />
+          <div className="hidden md:block h-8 w-px bg-white/10" />
           
-          <div className="flex flex-wrap items-center gap-4 md:gap-6 flex-1">
-            <div className="flex flex-col">
-              <span className="text-[8px] text-muted-foreground uppercase font-black tracking-widest mb-0.5">Status do Sistema</span>
+          <div className="flex items-center gap-6 overflow-x-auto no-scrollbar flex-1">
+            <div className="flex flex-col shrink-0">
+              <span className="text-[7px] text-muted-foreground uppercase font-black tracking-widest mb-0.5">Status</span>
               <div className={cn(
-                "flex items-center gap-2 text-[11px] font-black uppercase tracking-tighter",
-                automationEnabled ? "text-success" : "text-destructive"
+                "flex items-center gap-1.5 text-[10px] font-black uppercase tracking-tighter",
+                automationEnabled ? "text-success shadow-[0_0_10px_rgba(34,197,94,0.3)]" : "text-destructive"
               )}>
-                {automationEnabled ? <Power className="h-3 w-3" /> : <PowerOff className="h-3 w-3" />}
+                {automationEnabled ? <Power className="h-2.5 w-2.5" /> : <PowerOff className="h-2.5 w-2.5" />}
                 {automationEnabled ? "ONLINE" : "OFFLINE"}
               </div>
             </div>
             
-            <div className="flex flex-col">
-              <span className="text-[8px] text-muted-foreground uppercase font-black tracking-widest mb-0.5">Modo de Operação</span>
-              <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-tighter text-primary">
-                <UserCheck className="h-3 w-3" />
+            <div className="flex flex-col shrink-0">
+              <span className="text-[7px] text-muted-foreground uppercase font-black tracking-widest mb-0.5">Modo</span>
+              <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-tighter text-[hsl(200_100%_60%)]">
+                <UserCheck className="h-2.5 w-2.5" />
                 {followerGrowthMode ? "CRESCIMENTO" : "PADRÃO"}
               </div>
             </div>
 
-            <div className="flex flex-col">
-              <span className="text-[8px] text-muted-foreground uppercase font-black tracking-widest mb-0.5">Nodes Ativos</span>
-              <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-tighter text-foreground">
-                <Activity className="h-3 w-3 text-primary" />
-                {interactions.length} INTERAÇÕES
+            <div className="flex flex-col shrink-0">
+              <span className="text-[7px] text-muted-foreground uppercase font-black tracking-widest mb-0.5">Atividade</span>
+              <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-tighter text-foreground/90">
+                <Activity className="h-2.5 w-2.5 text-[hsl(200_100%_60%)]" />
+                {interactions.length} NODES
               </div>
             </div>
           </div>
         </div>
         
-        <div className="flex flex-wrap gap-3 relative z-10">
+        <div className="flex items-center gap-2 relative z-10 shrink-0">
           <Button
             variant="outline"
+            size="sm"
             onClick={() => toggleAutomation(!automationEnabled)}
             disabled={loadingSettings}
             className={cn(
-              "font-black uppercase tracking-widest text-[10px] h-10 px-6 rounded-none transition-all duration-300 border-2",
+              "font-black uppercase tracking-widest text-[9px] h-8 px-3 rounded-none transition-all duration-300 border-2",
               automationEnabled 
-                ? "border-success shadow-[0_0_20px_rgba(34,197,94,0.3)] bg-success/10 text-success hover:bg-success/20" 
+                ? "border-success bg-success/5 text-success hover:bg-success/10" 
                 : "border-destructive/30 bg-destructive/5 text-destructive hover:bg-destructive/10"
             )}
           >
             {loadingSettings ? (
-              <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" />
+              <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
             ) : automationEnabled ? (
-              <Power className="h-3.5 w-3.5 mr-2" />
+              <Power className="h-3 w-3 mr-1.5" />
             ) : (
-              <PowerOff className="h-3.5 w-3.5 mr-2" />
+              <PowerOff className="h-3 w-3 mr-1.5" />
             )}
-            {automationEnabled ? "AUTOMAÇÃO ATIVA" : "AUTOMAÇÃO INATIVA"}
+            <span className="hidden lg:inline">{automationEnabled ? "DESATIVAR" : "ATIVAR"}</span>
           </Button>
 
           <Button
             variant="outline"
+            size="sm"
             onClick={() => toggleFollowerGrowth(!followerGrowthMode)}
             disabled={loadingSettings}
             className={cn(
-              "font-black uppercase tracking-widest text-[10px] h-10 px-6 rounded-none transition-all duration-300 border-2",
+              "font-black uppercase tracking-widest text-[9px] h-8 px-3 rounded-none transition-all duration-300 border-2",
               followerGrowthMode 
-                ? "border-primary shadow-neon-lilac bg-primary/10 text-primary hover:bg-primary/20" 
+                ? "border-[hsl(200_100%_60%)] shadow-[0_0_10px_rgba(0,210,255,0.2)] bg-[hsl(200_100%_60%)]/10 text-[hsl(200_100%_60%)] hover:bg-[hsl(200_100%_60%)]/20" 
                 : "border-white/10 bg-white/5 text-muted-foreground hover:bg-white/10"
             )}
           >
-            <UserCheck className={cn("h-3.5 w-3.5 mr-2", followerGrowthMode && "animate-bounce")} />
-            {followerGrowthMode ? "MODO CRESCIMENTO" : "MODO PADRÃO"}
+            <UserCheck className={cn("h-3 w-3 mr-1.5", followerGrowthMode && "animate-bounce")} />
+            <span className="hidden lg:inline">MODO</span> {followerGrowthMode ? "CRESC." : "PADRÃO"}
           </Button>
 
           <Button
+            size="sm"
             onClick={handleProcessInteractions}
             disabled={processing}
-            className="gradient-primary text-primary-foreground font-black uppercase tracking-widest text-[10px] h-10 px-6 rounded-none transition-all shadow-neon-lilac border-none hover:scale-105 active:scale-95"
+            className="bg-[hsl(200_100%_60%)] text-black font-black uppercase tracking-widest text-[9px] h-8 px-3 rounded-none transition-all shadow-[0_0_15px_rgba(0,210,255,0.4)] border-none hover:scale-105 active:scale-95 hover:bg-[hsl(200_110%_65%)]"
           >
-            {processing ? <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5 mr-2" />}
-            Sincronizar Agora
+            {processing ? <Loader2 className="h-3 w-3 mr-1.5 animate-spin" /> : <RefreshCw className="h-3 w-3 mr-1.5" />}
+            <span className="hidden lg:inline">SINCRONIZAR</span>
           </Button>
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2 p-1.5 glass border-white/5 w-fit rounded-none shadow-elevated">
+      <div className="flex flex-wrap gap-2 p-1.5 glass border-white/5 w-fit rounded-none shadow-[0_0_20px_rgba(0,0,0,0.3)]">
         {[
-          { id: 'telemetry', label: 'Log de Comando', icon: Bot },
-          { id: 'interactions', label: 'Interações Ativas', icon: History },
-          { id: 'metrics', label: 'Análise de Tráfego', icon: Activity },
-          { id: 'growth', label: 'Dashboard de Expansão', icon: TrendingUp },
+          { id: 'telemetry', label: 'Comando', icon: Bot },
+          { id: 'interactions', label: 'Interações', icon: History },
+          { id: 'metrics', label: 'Análise', icon: Activity },
+          { id: 'growth', label: 'Expansão', icon: TrendingUp },
         ].map((tab) => (
           <Button 
             key={tab.id}
@@ -363,16 +367,16 @@ const SocialRobotPage = () => {
               if (tab.id === 'growth') fetchInvitedFollowers();
             }}
             className={cn(
-              "text-[10px] uppercase font-black tracking-[0.15em] h-9 px-5 rounded-none transition-all relative overflow-hidden group border border-transparent",
+              "text-[9px] uppercase font-black tracking-[0.15em] h-8 px-4 rounded-none transition-all relative overflow-hidden group border border-transparent",
               activeTab === tab.id 
-                ? "bg-primary/20 text-primary border-primary/30 shadow-neon-lilac" 
+                ? "bg-[hsl(200_100%_60%)]/20 text-[hsl(200_100%_60%)] border-[hsl(200_100%_60%)]/30 shadow-[0_0_15px_rgba(0,210,255,0.2)]" 
                 : "text-muted-foreground hover:text-foreground hover:bg-white/5"
             )}
           >
-            <tab.icon className={cn("h-3.5 w-3.5 mr-2", activeTab === tab.id && "animate-pulse")} />
+            <tab.icon className={cn("h-3 w-3 mr-2", activeTab === tab.id && "animate-pulse")} />
             {tab.label}
             {activeTab === tab.id && (
-              <span className="absolute bottom-0 left-0 w-full h-0.5 bg-primary shadow-neon-lilac" />
+              <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[hsl(200_100%_60%)] shadow-[0_0_10px_rgba(0,210,255,0.8)]" />
             )}
           </Button>
         ))}
@@ -391,7 +395,7 @@ const SocialRobotPage = () => {
                   <CardDescription className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Monitoramento em Tempo Real</CardDescription>
                 </div>
               </div>
-              <Badge variant="outline" className="border-primary shadow-neon-lilac text-primary font-black uppercase text-[10px] px-3">
+              <Badge variant="outline" className="border-[hsl(200_100%_60%)] shadow-[0_0_10px_rgba(0,210,255,0.2)] text-[hsl(200_100%_60%)] font-black uppercase text-[8px] px-2 h-6">
                 {interactions.length} NODES ATIVOS
               </Badge>
             </CardHeader>
@@ -408,28 +412,28 @@ const SocialRobotPage = () => {
                 ) : interactions.length > 0 ? (
                   interactions.map((item) => (
                     <div key={item.id} className="p-6 hover:bg-primary/[0.03] transition-all duration-300 group relative">
-                      <div className="absolute left-0 top-0 w-1 h-full bg-primary/0 group-hover:bg-primary transition-all shadow-neon-lilac" />
-                      <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
-                        <div className="flex gap-5 min-w-0 flex-1">
+                      <div className="absolute left-0 top-0 w-0.5 h-full bg-transparent group-hover:bg-[hsl(200_100%_60%)] transition-all shadow-[0_0_10px_rgba(0,210,255,0.4)]" />
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex gap-4 min-w-0 flex-1">
                           <div className="relative shrink-0">
-                            <div className="h-14 w-14 rounded-none border-2 border-primary/30 bg-background overflow-hidden group-hover:border-primary transition-colors shadow-neon-lilac/10">
+                            <div className="h-12 w-12 rounded-none border border-[hsl(200_100%_60%)]/30 bg-background overflow-hidden group-hover:border-[hsl(200_100%_60%)] transition-colors shadow-[0_0_10px_rgba(0,210,255,0.1)]">
                               {item.author_avatar ? (
                                 <img src={item.author_avatar} alt={item.author_name} className="h-full w-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
                               ) : (
-                                <div className="h-full w-full flex items-center justify-center bg-primary/10 text-primary text-xl font-black italic">
+                                <div className="h-full w-full flex items-center justify-center bg-[hsl(200_100%_60%)]/10 text-[hsl(200_100%_60%)] text-lg font-black italic">
                                   {item.author_name?.substring(0, 1).toUpperCase()}
                                 </div>
                               )}
                             </div>
                             {item.page_avatar && (
-                              <div className="absolute -bottom-2 -right-2 h-7 w-7 rounded-none border-2 border-primary/40 bg-background overflow-hidden z-10 shadow-elevated">
+                              <div className="absolute -bottom-1 -right-1 h-6 w-6 rounded-none border border-[hsl(200_100%_60%)]/40 bg-background overflow-hidden z-10">
                                 <img src={item.page_avatar} alt="Página" className="h-full w-full object-cover" />
                               </div>
                             )}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-3 mb-3 flex-wrap">
-                              <span className="text-base font-black text-primary uppercase tracking-tighter group-hover:neon-text-lilac transition-all">{item.author_name}</span>
+                            <div className="flex items-center gap-2 mb-2 flex-wrap">
+                              <span className="text-sm font-black text-[hsl(200_100%_60%)] uppercase tracking-tighter group-hover:drop-shadow-[0_0_5px_rgba(0,210,255,0.5)] transition-all">{item.author_name}</span>
                               <div className="flex items-center gap-2">
                                 <Badge variant="outline" className="text-[9px] font-black h-5 px-2 border-primary/30 text-primary bg-primary/5 uppercase">
                                   {item.platform}
@@ -457,16 +461,16 @@ const SocialRobotPage = () => {
                             </div>
                             
                             {item.ai_response && (
-                              <div className="mt-4 flex gap-5 items-start bg-primary/5 p-5 border border-primary/20 shadow-neon-lilac/5 relative group/ai">
-                                <div className="absolute top-0 right-0 px-3 py-1 bg-primary text-primary-foreground text-[8px] font-black uppercase tracking-[0.2em]">IA Response</div>
-                                <div className="p-2 bg-primary/20 border border-primary/30 rounded-none">
-                                  <Bot className="h-4 w-4 text-primary animate-pulse" />
+                              <div className="mt-4 flex gap-4 items-start bg-[hsl(200_100%_60%)]/5 p-4 border border-[hsl(200_100%_60%)]/20 shadow-[0_0_10px_rgba(0,210,255,0.05)] relative group/ai">
+                                <div className="absolute top-0 right-0 px-2 py-0.5 bg-[hsl(200_100%_60%)] text-black text-[7px] font-black uppercase tracking-[0.2em]">IA Response</div>
+                                <div className="p-1.5 bg-[hsl(200_100%_60%)]/20 border border-[hsl(200_100%_60%)]/30 rounded-none">
+                                  <Bot className="h-3.5 w-3.5 text-[hsl(200_100%_60%)] animate-pulse" />
                                 </div>
-                                <div className="space-y-2 flex-1">
-                                  <p className="text-sm text-foreground leading-relaxed font-semibold italic text-primary/90">{item.ai_response}</p>
+                                <div className="space-y-1.5 flex-1">
+                                  <p className="text-xs text-foreground leading-relaxed font-semibold italic text-[hsl(200_100%_60%)]/90">{item.ai_response}</p>
                                   {item.processed_at && (
-                                    <p className="text-[9px] text-muted-foreground uppercase font-black tracking-widest flex items-center gap-2">
-                                      <Activity className="h-3 w-3" />
+                                    <p className="text-[8px] text-muted-foreground uppercase font-black tracking-widest flex items-center gap-1.5">
+                                      <Activity className="h-2.5 w-2.5" />
                                       Processado às {format(new Date(item.processed_at), "HH:mm:ss", { locale: ptBR })}
                                     </p>
                                   )}
@@ -475,14 +479,14 @@ const SocialRobotPage = () => {
                             )}
                             
                             {item.post_url && (
-                              <div className="mt-4">
+                              <div className="mt-3">
                                 <a 
                                   href={item.post_url} 
                                   target="_blank" 
                                   rel="noopener noreferrer"
-                                  className="text-[10px] text-primary hover:neon-text-lilac transition-all flex items-center gap-2 font-black uppercase tracking-widest border border-primary/20 w-fit px-3 py-1.5 bg-primary/5 hover:bg-primary/10"
+                                  className="text-[9px] text-[hsl(200_100%_60%)] hover:drop-shadow-[0_0_5px_rgba(0,210,255,0.6)] transition-all flex items-center gap-1.5 font-black uppercase tracking-widest border border-[hsl(200_100%_60%)]/20 w-fit px-2 py-1 bg-[hsl(200_100%_60%)]/5 hover:bg-[hsl(200_100%_60%)]/10"
                                 >
-                                  Ver Postagem Original <ExternalLink className="h-3 w-3" />
+                                  Ver Postagem Original <ExternalLink className="h-2.5 w-2.5" />
                                 </a>
                               </div>
                             )}
@@ -541,23 +545,25 @@ const SocialRobotPage = () => {
               </Card>
             ) : metrics.length > 0 ? (
               metrics.map((page) => (
-                <Card key={page.page_id} className="glass-card border-primary/10 overflow-hidden flex flex-col group hover:border-primary/40 transition-all duration-500 shadow-elevated">
-                  <CardHeader className="pb-4 border-b border-white/5 bg-white/[0.02] relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-primary opacity-50" />
-                    <div className="flex items-center gap-5 relative z-10">
-                      <div className="h-16 w-16 rounded-none border-2 border-primary/30 bg-background overflow-hidden shadow-neon-lilac/20 group-hover:scale-105 transition-transform duration-500">
+                <Card key={page.page_id} className="glass-card border-[hsl(200_100%_60%)]/10 overflow-hidden flex flex-col group hover:border-[hsl(200_100%_60%)]/40 transition-all duration-500 shadow-elevated">
+                  <CardHeader className="p-4 border-b border-white/5 bg-white/[0.02] relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-0.5 bg-[hsl(200_100%_60%)] opacity-30" />
+                    <div className="flex items-center gap-4 relative z-10">
+                      <div className="h-12 w-12 rounded-none border border-[hsl(200_100%_60%)]/30 bg-background overflow-hidden shadow-[0_0_10px_rgba(0,210,255,0.1)] group-hover:scale-105 transition-transform duration-500">
                         <img src={page.facebook?.picture?.data?.url || `https://graph.facebook.com/${page.page_id}/picture?type=large`} className="h-full w-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" alt="" />
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[9px] font-black text-primary uppercase tracking-[0.2em] mb-1">Página Conectada</p>
-                        <CardTitle className="text-2xl font-black uppercase tracking-tighter truncate text-foreground group-hover:text-primary transition-colors">{page.page_name}</CardTitle>
-                        <div className="flex flex-wrap gap-2 mt-2">
-                          <Badge variant="outline" className="text-[8px] font-black px-2 py-0.5 border-primary/30 text-primary bg-primary/5 uppercase tracking-widest">
+                      <div className="min-w-0 flex-1 flex items-center justify-between gap-4">
+                        <div className="min-w-0">
+                          <p className="text-[7px] font-black text-[hsl(200_100%_60%)] uppercase tracking-[0.2em] mb-0.5">Página Ativa</p>
+                          <CardTitle className="text-lg font-black uppercase tracking-tighter truncate text-foreground group-hover:text-[hsl(200_100%_60%)] transition-colors">{page.page_name}</CardTitle>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <Badge variant="outline" className="text-[7px] font-black px-1.5 py-0 border-[hsl(200_100%_60%)]/30 text-[hsl(200_100%_60%)] bg-[hsl(200_100%_60%)]/5 uppercase tracking-widest h-5">
                             {page.facebook?.fan_count || 0} SEGUIDORES
                           </Badge>
                           {page.instagram && (
-                            <Badge variant="outline" className="text-[8px] font-black px-2 py-0.5 border-purple-500/30 text-purple-400 bg-purple-500/5 uppercase tracking-widest">
-                              {page.instagram.followers_count || 0} INSTAGRAM
+                            <Badge variant="outline" className="text-[7px] font-black px-1.5 py-0 border-purple-500/30 text-purple-400 bg-purple-500/5 uppercase tracking-widest h-5">
+                              {page.instagram.followers_count || 0} IG
                             </Badge>
                           )}
                         </div>
@@ -565,20 +571,19 @@ const SocialRobotPage = () => {
                     </div>
                   </CardHeader>
                   <CardContent className="p-6 space-y-6 flex-1 bg-gradient-to-b from-transparent to-primary/[0.02]">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-4 gap-3">
                       {[
-                        { label: 'Postagens', value: page.facebook?.post_stats?.total_posts || 0, icon: FileText },
-                        { label: 'Curtidas', value: page.facebook?.post_stats?.total_likes || 0, icon: ThumbsUp },
-                        { label: 'Feedback', value: page.facebook?.post_stats?.total_comments || 0, icon: MessageSquare },
-                        { label: 'Shared', value: page.facebook?.post_stats?.total_shares || 0, icon: ExternalLink },
+                        { label: 'Posts', value: page.facebook?.post_stats?.total_posts || 0, icon: FileText },
+                        { label: 'Likes', value: page.facebook?.post_stats?.total_likes || 0, icon: ThumbsUp },
+                        { label: 'Feedbk', value: page.facebook?.post_stats?.total_comments || 0, icon: MessageSquare },
+                        { label: 'Share', value: page.facebook?.post_stats?.total_shares || 0, icon: ExternalLink },
                       ].map((stat, idx) => (
-                        <div key={idx} className="bg-white/5 p-4 border border-white/10 relative group/stat hover:bg-white/[0.08] transition-colors overflow-hidden">
-                          <div className="absolute top-0 left-0 w-1 h-0 group-hover/stat:h-full bg-primary transition-all duration-300" />
-                          <p className="text-[9px] text-muted-foreground uppercase font-black tracking-widest mb-2 flex items-center justify-between">
+                        <div key={idx} className="bg-white/5 p-3 border border-white/10 relative group/stat hover:bg-white/[0.08] transition-colors overflow-hidden">
+                          <div className="absolute top-0 left-0 w-full h-0.5 bg-[hsl(200_100%_60%)]/0 group-hover/stat:bg-[hsl(200_100%_60%)] transition-all duration-300" />
+                          <p className="text-[7px] text-muted-foreground uppercase font-black tracking-widest mb-1 flex items-center justify-between">
                             {stat.label}
-                            <stat.icon className="h-3 w-3 text-primary/40 group-hover/stat:text-primary transition-colors" />
                           </p>
-                          <p className="text-2xl font-black text-foreground leading-none tracking-tighter">{stat.value.toLocaleString()}</p>
+                          <p className="text-lg font-black text-foreground leading-none tracking-tighter">{stat.value.toLocaleString()}</p>
                         </div>
                       ))}
                     </div>
@@ -643,16 +648,16 @@ const SocialRobotPage = () => {
         ) : activeTab === 'growth' ? (
           <div className="space-y-8">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <Card className="lg:col-span-2 glass-card border-primary/10 overflow-hidden shadow-elevated group">
-                <CardHeader className="pb-4 border-b border-white/5 bg-white/[0.02] flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative">
-                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-primary opacity-50" />
+              <Card className="lg:col-span-2 glass-card border-[hsl(200_100%_60%)]/10 overflow-hidden shadow-elevated group">
+                <CardHeader className="p-4 border-b border-white/5 bg-white/[0.02] flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative">
+                  <div className="absolute top-0 left-0 w-full h-0.5 bg-[hsl(200_100%_60%)] opacity-30" />
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 border border-primary/20">
-                      <TrendingUp className="h-5 w-5 text-primary" />
+                    <div className="p-2 bg-[hsl(200_100%_60%)]/10 border border-[hsl(200_100%_60%)]/20">
+                      <TrendingUp className="h-4 w-4 text-[hsl(200_100%_60%)]" />
                     </div>
                     <div>
-                      <CardTitle className="text-xl font-black uppercase tracking-tighter">Vetor de Expansão</CardTitle>
-                      <CardDescription className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Análise de Crescimento Neural</CardDescription>
+                      <CardTitle className="text-lg font-black uppercase tracking-tighter text-[hsl(200_100%_60%)]">Vetor de Expansão</CardTitle>
+                      <CardDescription className="text-[8px] uppercase font-bold tracking-widest text-muted-foreground">Análise de Crescimento Neural</CardDescription>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 bg-black/60 p-1.5 border border-primary/20 shadow-inner">
@@ -758,41 +763,37 @@ const SocialRobotPage = () => {
               </Card>
 
               <div className="space-y-8">
-                <Card className="glass-card border-primary/10 overflow-hidden shadow-elevated relative group">
+                <Card className="glass-card border-[hsl(200_100%_60%)]/10 overflow-hidden shadow-elevated relative group">
                   <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                    <Activity className="h-24 w-24 text-primary" />
+                    <Activity className="h-24 w-24 text-[hsl(200_100%_60%)]" />
                   </div>
-                  <CardHeader className="pb-4 border-b border-white/5 bg-white/[0.02]">
-                    <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Resumo Executivo</CardTitle>
+                  <CardHeader className="p-4 border-b border-white/5 bg-white/[0.02]">
+                    <CardTitle className="text-[9px] font-black uppercase tracking-[0.2em] text-[hsl(200_100%_60%)]">Resumo Executivo</CardTitle>
                   </CardHeader>
-                  <CardContent className="p-8 space-y-6">
-                    <div className="flex items-center justify-between p-6 bg-primary/[0.03] border-l-4 border-primary relative overflow-hidden">
-                      <div className="absolute top-0 right-0 w-16 h-16 bg-primary/5 rounded-full blur-2xl -mr-8 -mt-8" />
+                  <CardContent className="p-6 space-y-6">
+                    <div className="flex items-center justify-between p-4 bg-[hsl(200_100%_60%)]/[0.03] border-l-4 border-[hsl(200_100%_60%)] relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-16 h-16 bg-[hsl(200_100%_60%)]/5 rounded-full blur-2xl -mr-8 -mt-8" />
                       <div className="relative z-10">
-                        <p className="text-[9px] text-muted-foreground uppercase font-black tracking-widest mb-1">Total Network Invites</p>
-                        <h3 className="text-4xl font-black text-foreground tracking-tighter shadow-neon-lilac/10">{invitedFollowers.length}</h3>
+                        <p className="text-[8px] text-muted-foreground uppercase font-black tracking-widest mb-1">Total Network Invites</p>
+                        <h3 className="text-3xl font-black text-foreground tracking-tighter">{invitedFollowers.length}</h3>
                       </div>
-                      <Bot className="h-10 w-10 text-primary/20 relative z-10" />
+                      <Bot className="h-8 w-8 text-[hsl(200_100%_60%)]/20 relative z-10" />
                     </div>
-                    <div className="flex items-center justify-between p-6 bg-success/[0.03] border-l-4 border-success relative overflow-hidden">
+                    <div className="flex items-center justify-between p-4 bg-success/[0.03] border-l-4 border-success relative overflow-hidden">
                       <div className="absolute top-0 right-0 w-16 h-16 bg-success/5 rounded-full blur-2xl -mr-8 -mt-8" />
                       <div className="relative z-10">
-                        <p className="text-[9px] text-muted-foreground uppercase font-black tracking-widest mb-1">Conversion Efficiency</p>
-                        <h3 className="text-4xl font-black text-success tracking-tighter shadow-neon-success/10">15.4%</h3>
+                        <p className="text-[8px] text-muted-foreground uppercase font-black tracking-widest mb-1">Conversion Efficiency</p>
+                        <h3 className="text-3xl font-black text-success tracking-tighter">15.4%</h3>
                       </div>
-                      <TrendingUp className="h-10 w-10 text-success/20 relative z-10" />
+                      <TrendingUp className="h-8 w-8 text-success/20 relative z-10" />
                     </div>
-                    <div className="p-5 bg-white/[0.02] border border-white/5 text-center">
-                      <p className="text-[9px] text-muted-foreground uppercase font-bold leading-relaxed tracking-wider italic">
-                        * Algoritmo A3 estimando probabilidade de conversão baseada em metadados de engajamento social.
-                      </p>
-                    </div>
+...
                   </CardContent>
                 </Card>
 
-                <Card className="glass-card border-primary/10 overflow-hidden shadow-elevated relative">
-                  <CardHeader className="pb-4 border-b border-white/5 bg-white/[0.02]">
-                    <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Status Operacional</CardTitle>
+                <Card className="glass-card border-[hsl(200_100%_60%)]/10 overflow-hidden shadow-elevated relative">
+                  <CardHeader className="p-4 border-b border-white/5 bg-white/[0.02]">
+                    <CardTitle className="text-[9px] font-black uppercase tracking-[0.2em] text-[hsl(200_100%_60%)]">Status Operacional</CardTitle>
                   </CardHeader>
                   <CardContent className="p-8 flex flex-col items-center justify-center text-center space-y-6">
                     <div className="h-24 w-24 rounded-none border-4 border-primary/10 flex items-center justify-center relative p-1">
@@ -812,20 +813,20 @@ const SocialRobotPage = () => {
             </div>
 
             <Card className="glass-card border-primary/20 overflow-hidden shadow-elevated">
-              <CardHeader className="pb-4 border-b border-white/5 bg-white/[0.02] flex flex-row items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-primary/10 border border-primary/20">
-                    <History className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-xl font-black uppercase tracking-tighter">Log de Expansão Recente</CardTitle>
-                    <CardDescription className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Últimos Convites Transmitidos</CardDescription>
-                  </div>
+            <CardHeader className="p-4 border-b border-white/5 bg-white/[0.02] flex flex-row items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-[hsl(200_100%_60%)]/10 border border-[hsl(200_100%_60%)]/20">
+                  <History className="h-4 w-4 text-[hsl(200_100%_60%)]" />
                 </div>
-                <Badge variant="outline" className="border-primary shadow-neon-lilac text-primary font-black uppercase text-[10px] px-3">
-                  {invitedFollowers.length} TRANSMISSÕES
-                </Badge>
-              </CardHeader>
+                <div>
+                  <CardTitle className="text-lg font-black uppercase tracking-tighter text-[hsl(200_100%_60%)]">Log de Expansão</CardTitle>
+                  <CardDescription className="text-[8px] uppercase font-bold tracking-widest text-muted-foreground">Últimos Convites Transmitidos</CardDescription>
+                </div>
+              </div>
+              <Badge variant="outline" className="border-[hsl(200_100%_60%)] shadow-[0_0_10px_rgba(0,210,255,0.2)] text-[hsl(200_100%_60%)] font-black uppercase text-[8px] px-2 h-6">
+                {invitedFollowers.length} TRANSMISSÕES
+              </Badge>
+            </CardHeader>
               <CardContent className="p-0">
                 <div className="divide-y divide-white/5">
                   {loadingInvited ? (
@@ -863,18 +864,18 @@ const SocialRobotPage = () => {
             </Card>
           </div>
         ) : (
-          <Card className="glass-card border-primary/20 overflow-hidden shadow-elevated">
-            <CardHeader className="pb-4 border-b border-white/5 flex flex-row items-center justify-between bg-black/40 relative">
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-primary opacity-50" />
+          <Card className="glass-card border-[hsl(200_100%_60%)]/20 overflow-hidden shadow-elevated">
+            <CardHeader className="p-4 border-b border-white/5 flex flex-row items-center justify-between bg-black/40 relative">
+              <div className="absolute top-0 left-0 w-full h-0.5 bg-[hsl(200_100%_60%)] opacity-30" />
               <div className="flex items-center gap-4 relative z-10">
-                <div className="h-2.5 w-2.5 bg-success rounded-full animate-pulse-dot shadow-neon-success" />
+                <div className="h-2 w-2 bg-success rounded-full animate-pulse-dot shadow-[0_0_8px_rgba(34,197,94,0.8)]" />
                 <div>
-                  <CardTitle className="text-xl font-black uppercase tracking-tighter text-primary">Terminal de Comando</CardTitle>
-                  <CardDescription className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Kernel Operations Live-Feed</CardDescription>
+                  <CardTitle className="text-lg font-black uppercase tracking-tighter text-[hsl(200_100%_60%)]">Terminal de Comando</CardTitle>
+                  <CardDescription className="text-[8px] uppercase font-bold tracking-widest text-muted-foreground">Kernel Operations Live-Feed</CardDescription>
                 </div>
               </div>
               <div className="flex items-center gap-4 relative z-10">
-                <span className="text-[9px] text-primary/60 font-mono font-black uppercase tracking-[0.2em] animate-pulse">System Live</span>
+                <span className="text-[8px] text-[hsl(200_100%_60%)]/60 font-mono font-black uppercase tracking-[0.2em] animate-pulse">System Live</span>
                 <Button 
                   variant="ghost" 
                   size="sm" 
@@ -901,16 +902,16 @@ const SocialRobotPage = () => {
                           "mt-1 p-3 rounded-none border-2 transition-all group-hover:scale-110",
                           log.level === 'error' ? "border-destructive/30 bg-destructive/10 text-destructive shadow-[0_0_15px_rgba(239,68,68,0.2)]" :
                           log.level === 'warn' ? "border-warning/30 bg-warning/10 text-warning" :
-                          "border-primary/30 bg-primary/10 text-primary shadow-neon-lilac/10"
+                          "border-[hsl(200_100%_60%)]/30 bg-[hsl(200_100%_60%)]/10 text-[hsl(200_100%_60%)] shadow-[0_0_10px_rgba(0,210,255,0.1)]"
                         )}>
-                          {log.level === 'error' ? <AlertCircle className="h-5 w-5" /> :
-                           log.level === 'warn' ? <AlertCircle className="h-5 w-5" /> :
-                           <Bot className="h-5 w-5" />}
+                          {log.level === 'error' ? <AlertCircle className="h-4 w-4" /> :
+                           log.level === 'warn' ? <AlertCircle className="h-4 w-4" /> :
+                           <Bot className="h-4 w-4" />}
                         </div>
                         <div className="flex-1">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 group-hover:text-primary transition-colors">
-                              {log.module} <span className="text-white/20 mx-2">|</span> {format(new Date(log.created_at), "HH:mm:ss.ms", { locale: ptBR })}
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[hsl(200_100%_60%)]/60 group-hover:text-[hsl(200_100%_60%)] transition-colors">
+                              {log.module} <span className="text-white/20 mx-1.5">|</span> {format(new Date(log.created_at), "HH:mm:ss.ms", { locale: ptBR })}
                             </span>
                             <Badge variant="outline" className={cn(
                               "text-[9px] px-2 h-5 font-black uppercase tracking-widest rounded-none border-2",
@@ -924,9 +925,9 @@ const SocialRobotPage = () => {
                             <div className="mt-4 p-5 bg-black/60 border border-primary/20 shadow-inner overflow-hidden">
                               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
                                 {Object.entries(log.details).filter(([key]) => ['curtidas', 'seguidores', 'compartilhamentos', 'comentarios', 'numero_postagens'].includes(key)).map(([key, value]) => (
-                                  <div key={key} className="flex flex-col items-center p-3 bg-primary/[0.03] border border-primary/10 group-hover:border-primary/30 transition-colors">
-                                    <span className="text-[8px] text-primary/60 font-black uppercase tracking-tighter mb-1">{key.replace('_', ' ')}</span>
-                                    <span className="text-lg font-black text-white leading-none">
+                                  <div key={key} className="flex flex-col items-center p-2 bg-[hsl(200_100%_60%)]/[0.03] border border-[hsl(200_100%_60%)]/10 group-hover:border-[hsl(200_100%_60%)]/30 transition-colors">
+                                    <span className="text-[7px] text-[hsl(200_100%_60%)]/60 font-black uppercase tracking-tighter mb-0.5">{key.replace('_', ' ')}</span>
+                                    <span className="text-base font-black text-white leading-none">
                                       {typeof value === 'number' ? value.toLocaleString() : String(value)}
                                     </span>
                                   </div>
