@@ -522,9 +522,9 @@ const SocialRobotPage = () => {
                                   href={item.post_url} 
                                   target="_blank" 
                                   rel="noopener noreferrer"
-                                  className="text-[9px] text-[hsl(200_100%_60%)] hover:drop-shadow-[0_0_5px_rgba(0,210,255,0.6)] transition-all flex items-center gap-1.5 font-black uppercase tracking-widest border border-[hsl(200_100%_60%)]/20 w-fit px-2 py-1 bg-[hsl(200_100%_60%)]/5 hover:bg-[hsl(200_100%_60%)]/10"
+                                  className="text-[8px] text-[hsl(200_100%_60%)] hover:text-[hsl(200_100%_65%)] transition-all flex items-center gap-1 font-black uppercase tracking-widest border border-[hsl(200_100%_60%)]/20 w-fit px-1.5 py-0.5 bg-[hsl(200_100%_60%)]/5 hover:bg-[hsl(200_100%_60%)]/10"
                                 >
-                                  Ver Postagem Original <ExternalLink className="h-2.5 w-2.5" />
+                                  Original Post <ExternalLink className="h-2 w-2" />
                                 </a>
                               </div>
                             )}
