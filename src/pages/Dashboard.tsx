@@ -599,8 +599,7 @@ const Dashboard = () => {
                             <Badge variant="outline" className="text-[8px] h-3 px-1 border-primary/20 text-primary opacity-70">
                               {item.platform}
                             </Badge>
-        </div>
-      )}
+                          </div>
                         <p className="text-sm text-foreground line-clamp-1 italic">"{item.content}"</p>
                         {item.ai_response && (
                           <div className="mt-2 flex gap-2 items-start bg-primary/5 p-2 border-l-2 border-primary">
