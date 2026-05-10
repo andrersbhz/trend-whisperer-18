@@ -932,8 +932,8 @@ const SocialRobotPage = () => {
                   </div>
                 ) : logs.length > 0 ? (
                   logs.map((log) => (
-                    <div key={log.id} className="p-6 hover:bg-white/[0.03] transition-all relative group">
-                      <div className="flex items-start gap-6">
+                    <div key={log.id} className="p-3 hover:bg-white/[0.03] transition-all relative group">
+                      <div className="flex items-start gap-3">
                         <div className={cn(
                           "mt-1 p-3 rounded-none border-2 transition-all group-hover:scale-110",
                           log.level === 'error' ? "border-destructive/30 bg-destructive/10 text-destructive shadow-[0_0_15px_rgba(239,68,68,0.2)]" :
