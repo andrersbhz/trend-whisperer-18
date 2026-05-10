@@ -21,6 +21,7 @@ const SocialRobotPage = () => {
   const [loadingMetrics, setLoadingMetrics] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [automationEnabled, setAutomationEnabled] = useState(false);
+  const [followerGrowthMode, setFollowerGrowthMode] = useState(false);
   const [loadingSettings, setLoadingSettings] = useState(true);
   const [logs, setLogs] = useState<any[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
@@ -48,12 +49,13 @@ const SocialRobotPage = () => {
     try {
       const { data, error } = await supabase
         .from('user_settings')
-        .select('automation_enabled')
+        .select('automation_enabled, follower_growth_mode')
         .eq('user_id', user.id)
         .maybeSingle();
       
       if (data) {
         setAutomationEnabled(!!data.automation_enabled);
+        setFollowerGrowthMode(!!data.follower_growth_mode);
       }
     } catch (error) {
       console.error('Error fetching settings:', error);
@@ -76,6 +78,26 @@ const SocialRobotPage = () => {
       toast({ 
         title: enabled ? 'Automação Ativada' : 'Automação Desativada', 
         description: enabled ? 'O robô agora trabalhará 24/7 para você.' : 'O robô parou de responder automaticamente.' 
+      });
+    } catch (error) {
+      toast({ title: 'Erro', description: getErrorMessage(error), variant: 'destructive' });
+    }
+  };
+
+  const toggleFollowerGrowth = async (enabled: boolean) => {
+    if (!user) return;
+    try {
+      const { error } = await supabase
+        .from('user_settings')
+        .update({ follower_growth_mode: enabled })
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      
+      setFollowerGrowthMode(enabled);
+      toast({ 
+        title: enabled ? 'Modo Crescimento Ativado' : 'Modo Crescimento Desativado', 
+        description: enabled ? 'O robô agora focará em convidar novas pessoas para seguir.' : 'O robô voltou ao modo de interação padrão.' 
       });
     } catch (error) {
       toast({ title: 'Erro', description: getErrorMessage(error), variant: 'destructive' });
@@ -189,6 +211,21 @@ const SocialRobotPage = () => {
               <PowerOff className="h-3 w-3 mr-2" />
             )}
             {automationEnabled ? "Robô Ligado" : "Robô Desligado"}
+          </Button>
+
+          <Button
+            variant="outline"
+            onClick={() => toggleFollowerGrowth(!followerGrowthMode)}
+            disabled={loadingSettings}
+            className={cn(
+              "font-bold uppercase tracking-widest text-[10px] h-9 px-6 rounded-none transition-all shadow-sm border-2",
+              followerGrowthMode 
+                ? "border-primary/50 bg-primary/5 text-primary hover:bg-primary/10 shadow-neon-lilac" 
+                : "border-white/10 bg-white/5 text-muted-foreground hover:bg-white/10"
+            )}
+          >
+            <UserCheck className={cn("h-3 w-3 mr-2", followerGrowthMode && "animate-bounce")} />
+            {followerGrowthMode ? "Modo Crescimento: ON" : "Modo Crescimento: OFF"}
           </Button>
 
           <Button

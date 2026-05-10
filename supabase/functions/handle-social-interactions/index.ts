@@ -57,15 +57,22 @@ async function processPage(
   postsScanned = postsList.length;
 
   // Log detalhado no formato solicitado pelo usuário
+  const { data: settings } = await supabase.from("user_settings").select("follower_growth_mode").eq("user_id", userId).single();
+  const isGrowthMode = settings?.follower_growth_mode;
+
   await supabase.from("automation_logs").insert({
     user_id: userId,
     level: "info",
     module: "robot",
-    message: `Analisando página: ${pageName || pageId}`,
+    message: isGrowthMode 
+      ? `Analisando página: ${pageName || pageId} (Modo Crescimento Ativo 🚀)`
+      : `Analisando página: ${pageName || pageId}`,
     details: {
       curtidas: page.facebook?.fan_count || 0,
       seguidores: page.facebook?.followers_count || 0,
-      analise: "Iniciando varredura de postagens para interação com IA"
+      analise: isGrowthMode 
+        ? "Iniciando varredura para interagir e convidar novos seguidores"
+        : "Iniciando varredura de postagens para interação com IA"
     }
   });
 
