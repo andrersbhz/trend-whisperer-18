@@ -413,20 +413,20 @@ const SocialRobotPage = () => {
                   interactions.map((item) => (
                     <div key={item.id} className="p-6 hover:bg-primary/[0.03] transition-all duration-300 group relative">
                       <div className="absolute left-0 top-0 w-1 h-full bg-primary/0 group-hover:bg-primary transition-all shadow-neon-lilac" />
-                      <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
-                        <div className="flex gap-5 min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex gap-4 min-w-0 flex-1">
                           <div className="relative shrink-0">
-                            <div className="h-14 w-14 rounded-none border-2 border-primary/30 bg-background overflow-hidden group-hover:border-primary transition-colors shadow-neon-lilac/10">
+                            <div className="h-12 w-12 rounded-none border border-[hsl(200_100%_60%)]/30 bg-background overflow-hidden group-hover:border-[hsl(200_100%_60%)] transition-colors shadow-[0_0_10px_rgba(0,210,255,0.1)]">
                               {item.author_avatar ? (
                                 <img src={item.author_avatar} alt={item.author_name} className="h-full w-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
                               ) : (
-                                <div className="h-full w-full flex items-center justify-center bg-primary/10 text-primary text-xl font-black italic">
+                                <div className="h-full w-full flex items-center justify-center bg-[hsl(200_100%_60%)]/10 text-[hsl(200_100%_60%)] text-lg font-black italic">
                                   {item.author_name?.substring(0, 1).toUpperCase()}
                                 </div>
                               )}
                             </div>
                             {item.page_avatar && (
-                              <div className="absolute -bottom-2 -right-2 h-7 w-7 rounded-none border-2 border-primary/40 bg-background overflow-hidden z-10 shadow-elevated">
+                              <div className="absolute -bottom-1 -right-1 h-6 w-6 rounded-none border border-[hsl(200_100%_60%)]/40 bg-background overflow-hidden z-10">
                                 <img src={item.page_avatar} alt="Página" className="h-full w-full object-cover" />
                               </div>
                             )}
