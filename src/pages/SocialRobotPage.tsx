@@ -571,20 +571,19 @@ const SocialRobotPage = () => {
                     </div>
                   </CardHeader>
                   <CardContent className="p-6 space-y-6 flex-1 bg-gradient-to-b from-transparent to-primary/[0.02]">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-4 gap-3">
                       {[
-                        { label: 'Postagens', value: page.facebook?.post_stats?.total_posts || 0, icon: FileText },
-                        { label: 'Curtidas', value: page.facebook?.post_stats?.total_likes || 0, icon: ThumbsUp },
-                        { label: 'Feedback', value: page.facebook?.post_stats?.total_comments || 0, icon: MessageSquare },
-                        { label: 'Shared', value: page.facebook?.post_stats?.total_shares || 0, icon: ExternalLink },
+                        { label: 'Posts', value: page.facebook?.post_stats?.total_posts || 0, icon: FileText },
+                        { label: 'Likes', value: page.facebook?.post_stats?.total_likes || 0, icon: ThumbsUp },
+                        { label: 'Feedbk', value: page.facebook?.post_stats?.total_comments || 0, icon: MessageSquare },
+                        { label: 'Share', value: page.facebook?.post_stats?.total_shares || 0, icon: ExternalLink },
                       ].map((stat, idx) => (
-                        <div key={idx} className="bg-white/5 p-4 border border-white/10 relative group/stat hover:bg-white/[0.08] transition-colors overflow-hidden">
-                          <div className="absolute top-0 left-0 w-1 h-0 group-hover/stat:h-full bg-primary transition-all duration-300" />
-                          <p className="text-[9px] text-muted-foreground uppercase font-black tracking-widest mb-2 flex items-center justify-between">
+                        <div key={idx} className="bg-white/5 p-3 border border-white/10 relative group/stat hover:bg-white/[0.08] transition-colors overflow-hidden">
+                          <div className="absolute top-0 left-0 w-full h-0.5 bg-[hsl(200_100%_60%)]/0 group-hover/stat:bg-[hsl(200_100%_60%)] transition-all duration-300" />
+                          <p className="text-[7px] text-muted-foreground uppercase font-black tracking-widest mb-1 flex items-center justify-between">
                             {stat.label}
-                            <stat.icon className="h-3 w-3 text-primary/40 group-hover/stat:text-primary transition-colors" />
                           </p>
-                          <p className="text-2xl font-black text-foreground leading-none tracking-tighter">{stat.value.toLocaleString()}</p>
+                          <p className="text-lg font-black text-foreground leading-none tracking-tighter">{stat.value.toLocaleString()}</p>
                         </div>
                       ))}
                     </div>
