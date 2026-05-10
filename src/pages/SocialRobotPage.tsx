@@ -384,7 +384,8 @@ const SocialRobotPage = () => {
                         <img src={page.facebook?.picture?.data?.url || `https://graph.facebook.com/${page.page_id}/picture?type=large`} className="h-full w-full object-cover" alt="" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <CardTitle className="text-lg uppercase tracking-tighter truncate">{page.page_name}</CardTitle>
+                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Analisando página</p>
+                        <CardTitle className="text-xl uppercase tracking-tighter truncate text-primary">{page.page_name}</CardTitle>
                         <div className="flex flex-wrap gap-2 mt-1">
                           <Badge variant="outline" className="text-[9px] px-1 border-primary/20 text-primary">FB: {page.facebook?.fan_count || 0} Seguidores</Badge>
                           {page.instagram && (
