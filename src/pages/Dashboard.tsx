@@ -829,6 +829,8 @@ const Dashboard = () => {
         </Card>
       </div>
 
+      )}
+
       <Card className="glass-card">
         <CardHeader>
           <CardTitle className="text-lg text-foreground">Artigos Recentes</CardTitle>
