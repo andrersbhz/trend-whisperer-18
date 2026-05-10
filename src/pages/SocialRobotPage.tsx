@@ -606,186 +606,221 @@ const SocialRobotPage = () => {
             )}
           </div>
         ) : activeTab === 'growth' ? (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <Card className="lg:col-span-2 glass-card neon-border-lilac overflow-hidden">
-                <CardHeader className="pb-3 border-b border-white/5 bg-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5 text-primary" />
-                    <CardTitle className="text-lg uppercase tracking-tighter">Performance de Crescimento</CardTitle>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-2 bg-black/40 p-1 border border-white/5">
-                      <input 
-                        type="date" 
-                        value={dateFilter.start} 
-                        onChange={(e) => setDateFilter({...dateFilter, start: e.target.value})}
-                        className="bg-transparent text-[10px] text-white outline-none p-1"
-                      />
-                      <span className="text-[10px] text-muted-foreground">até</span>
-                      <input 
-                        type="date" 
-                        value={dateFilter.end} 
-                        onChange={(e) => setDateFilter({...dateFilter, end: e.target.value})}
-                        className="bg-transparent text-[10px] text-white outline-none p-1"
-                      />
+          <div className="space-y-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <Card className="lg:col-span-2 glass-card border-primary/10 overflow-hidden shadow-elevated group">
+                <CardHeader className="pb-4 border-b border-white/5 bg-white/[0.02] flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative">
+                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-primary opacity-50" />
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary/10 border border-primary/20">
+                      <TrendingUp className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-xl font-black uppercase tracking-tighter">Vetor de Expansão</CardTitle>
+                      <CardDescription className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Análise de Crescimento Neural</CardDescription>
                     </div>
                   </div>
+                  <div className="flex items-center gap-2 bg-black/60 p-1.5 border border-primary/20 shadow-inner">
+                    <input 
+                      type="date" 
+                      value={dateFilter.start} 
+                      onChange={(e) => setDateFilter({...dateFilter, start: e.target.value})}
+                      className="bg-transparent text-[10px] text-primary font-black uppercase outline-none px-2 py-1 hover:bg-primary/5 transition-colors"
+                    />
+                    <ChevronRight className="h-3 w-3 text-primary/40" />
+                    <input 
+                      type="date" 
+                      value={dateFilter.end} 
+                      onChange={(e) => setDateFilter({...dateFilter, end: e.target.value})}
+                      className="bg-transparent text-[10px] text-primary font-black uppercase outline-none px-2 py-1 hover:bg-primary/5 transition-colors"
+                    />
+                  </div>
                 </CardHeader>
-                <CardContent className="p-6">
-                  <div className="h-[300px] w-full mt-4">
+                <CardContent className="p-8">
+                  <div className="h-[350px] w-full mt-4">
                     {loadingInvited ? (
-                      <div className="h-full w-full flex flex-col items-center justify-center gap-4">
-                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                        <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold">Processando dados do gráfico...</p>
+                      <div className="h-full w-full flex flex-col items-center justify-center gap-6">
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl animate-pulse" />
+                          <Loader2 className="h-10 w-10 animate-spin text-primary relative z-10" />
+                        </div>
+                        <p className="text-[10px] text-muted-foreground uppercase font-black tracking-[0.3em] animate-pulse">Compilando Dados de Gráfico...</p>
                       </div>
                     ) : growthChartData.length > 0 ? (
                       <ResponsiveContainer width="100%" height="100%">
                         <AreaChart data={growthChartData}>
                           <defs>
                             <linearGradient id="colorInvites" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.3}/>
-                              <stop offset="95%" stopColor="var(--primary)" stopOpacity={0}/>
+                              <stop offset="5%" stopColor="hsl(210, 100%, 50%)" stopOpacity={0.4}/>
+                              <stop offset="95%" stopColor="hsl(210, 100%, 50%)" stopOpacity={0}/>
                             </linearGradient>
                             <linearGradient id="colorConversions" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                              <stop offset="5%" stopColor="#10b981" stopOpacity={0.4}/>
                               <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
                             </linearGradient>
                           </defs>
-                          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
                           <XAxis 
                             dataKey="date" 
                             axisLine={false} 
                             tickLine={false} 
-                            tick={{fill: 'rgba(255,255,255,0.4)', fontSize: 10}}
+                            tick={{fill: 'rgba(255,255,255,0.4)', fontSize: 10, fontWeight: 'bold'}}
                           />
                           <YAxis 
                             axisLine={false} 
                             tickLine={false} 
-                            tick={{fill: 'rgba(255,255,255,0.4)', fontSize: 10}}
+                            tick={{fill: 'rgba(255,255,255,0.4)', fontSize: 10, fontWeight: 'bold'}}
                           />
                           <Tooltip 
                             contentStyle={{ 
-                              backgroundColor: 'rgba(0,0,0,0.8)', 
-                              border: '1px solid rgba(255,255,255,0.1)',
+                              backgroundColor: 'rgba(0,0,0,0.9)', 
+                              border: '1px solid rgba(0, 150, 255, 0.3)',
                               borderRadius: '0px',
-                              fontSize: '12px'
+                              fontSize: '11px',
+                              fontWeight: 'black',
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.1em'
                             }}
                             itemStyle={{ color: '#fff' }}
+                            cursor={{stroke: 'rgba(0, 150, 255, 0.2)', strokeWidth: 2}}
                           />
-                          <Legend iconType="circle" />
+                          <Legend 
+                            iconType="rect" 
+                            verticalAlign="top" 
+                            align="right" 
+                            wrapperStyle={{paddingBottom: '20px', fontSize: '10px', fontWeight: 'black', textTransform: 'uppercase'}} 
+                          />
                           <Area 
                             type="monotone" 
                             dataKey="convites" 
-                            name="Convites de IA"
-                            stroke="var(--primary)" 
+                            name="Interações IA"
+                            stroke="hsl(210, 100%, 50%)" 
                             fillOpacity={1} 
                             fill="url(#colorInvites)" 
-                            strokeWidth={3}
+                            strokeWidth={4}
+                            animationDuration={2000}
                           />
                           <Area 
                             type="monotone" 
                             dataKey="conversoes" 
-                            name="Conv. Estimadas"
+                            name="Conversões"
                             stroke="#10b981" 
                             fillOpacity={1} 
                             fill="url(#colorConversions)" 
-                            strokeWidth={3}
+                            strokeWidth={4}
+                            animationDuration={2500}
                           />
                         </AreaChart>
                       </ResponsiveContainer>
                     ) : (
-                      <div className="h-full w-full flex flex-col items-center justify-center gap-4 border-2 border-dashed border-white/5 bg-white/[0.02]">
-                        <Activity className="h-10 w-10 text-muted-foreground/20" />
-                        <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold">Sem dados para o gráfico</p>
+                      <div className="h-full w-full flex flex-col items-center justify-center gap-6 border-2 border-dashed border-white/5 bg-white/[0.02] relative">
+                        <Activity className="h-12 w-12 text-muted-foreground/10" />
+                        <p className="text-[10px] text-muted-foreground uppercase font-black tracking-[0.2em]">Sem fluxo de dados para o período selecionado</p>
                       </div>
                     )}
                   </div>
                 </CardContent>
               </Card>
 
-              <div className="space-y-6">
-                <Card className="glass-card neon-border-lilac overflow-hidden">
-                  <CardHeader className="pb-3 border-b border-white/5 bg-white/5">
-                    <CardTitle className="text-sm uppercase tracking-tighter text-muted-foreground">Visão Geral</CardTitle>
+              <div className="space-y-8">
+                <Card className="glass-card border-primary/10 overflow-hidden shadow-elevated relative group">
+                  <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                    <Activity className="h-24 w-24 text-primary" />
+                  </div>
+                  <CardHeader className="pb-4 border-b border-white/5 bg-white/[0.02]">
+                    <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Resumo Executivo</CardTitle>
                   </CardHeader>
-                  <CardContent className="p-6 space-y-4">
-                    <div className="flex items-center justify-between p-4 bg-primary/5 border-l-4 border-primary">
-                      <div>
-                        <p className="text-[10px] text-muted-foreground uppercase font-black">Total Convidados</p>
-                        <h3 className="text-2xl font-black text-primary">{invitedFollowers.length}</h3>
+                  <CardContent className="p-8 space-y-6">
+                    <div className="flex items-center justify-between p-6 bg-primary/[0.03] border-l-4 border-primary relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-16 h-16 bg-primary/5 rounded-full blur-2xl -mr-8 -mt-8" />
+                      <div className="relative z-10">
+                        <p className="text-[9px] text-muted-foreground uppercase font-black tracking-widest mb-1">Total Network Invites</p>
+                        <h3 className="text-4xl font-black text-foreground tracking-tighter shadow-neon-lilac/10">{invitedFollowers.length}</h3>
                       </div>
-                      <Bot className="h-8 w-8 text-primary/30" />
+                      <Bot className="h-10 w-10 text-primary/20 relative z-10" />
                     </div>
-                    <div className="flex items-center justify-between p-4 bg-success/5 border-l-4 border-success">
-                      <div>
-                        <p className="text-[10px] text-muted-foreground uppercase font-black">Taxa de Conversão</p>
-                        <h3 className="text-2xl font-black text-success">15.4%</h3>
+                    <div className="flex items-center justify-between p-6 bg-success/[0.03] border-l-4 border-success relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-16 h-16 bg-success/5 rounded-full blur-2xl -mr-8 -mt-8" />
+                      <div className="relative z-10">
+                        <p className="text-[9px] text-muted-foreground uppercase font-black tracking-widest mb-1">Conversion Efficiency</p>
+                        <h3 className="text-4xl font-black text-success tracking-tighter shadow-neon-success/10">15.4%</h3>
                       </div>
-                      <TrendingUp className="h-8 w-8 text-success/30" />
+                      <TrendingUp className="h-10 w-10 text-success/20 relative z-10" />
                     </div>
-                    <div className="p-4 bg-white/5 border border-white/10">
-                      <p className="text-[9px] text-muted-foreground uppercase leading-tight italic">
-                        * A taxa de conversão é uma estimativa baseada no engajamento das pessoas convidadas pela IA do Vortex Robot.
+                    <div className="p-5 bg-white/[0.02] border border-white/5 text-center">
+                      <p className="text-[9px] text-muted-foreground uppercase font-bold leading-relaxed tracking-wider italic">
+                        * Algoritmo Vortex estimando probabilidade de conversão baseada em metadados de engajamento social.
                       </p>
                     </div>
                   </CardContent>
                 </Card>
 
-                <Card className="glass-card neon-border-lilac overflow-hidden">
-                  <CardHeader className="pb-3 border-b border-white/5 bg-white/5">
-                    <CardTitle className="text-sm uppercase tracking-tighter text-muted-foreground">Status do Crescimento</CardTitle>
+                <Card className="glass-card border-primary/10 overflow-hidden shadow-elevated relative">
+                  <CardHeader className="pb-4 border-b border-white/5 bg-white/[0.02]">
+                    <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Status Operacional</CardTitle>
                   </CardHeader>
-                  <CardContent className="p-6 flex flex-col items-center justify-center text-center space-y-4">
-                    <div className="h-16 w-16 rounded-full border-4 border-primary/20 flex items-center justify-center relative">
-                      <div className="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin" />
-                      <UserCheck className="h-8 w-8 text-primary" />
+                  <CardContent className="p-8 flex flex-col items-center justify-center text-center space-y-6">
+                    <div className="h-24 w-24 rounded-none border-4 border-primary/10 flex items-center justify-center relative p-1">
+                      <div className="absolute inset-0 border-2 border-primary border-t-transparent animate-spin" />
+                      <div className="absolute inset-2 border border-primary/30 border-b-transparent animate-spin [animation-direction:reverse]" />
+                      <UserCheck className="h-10 w-10 text-primary animate-pulse" />
                     </div>
-                    <div>
-                      <h4 className="font-bold text-foreground uppercase tracking-widest text-xs">Modo Agressivo Ativo</h4>
-                      <p className="text-[10px] text-muted-foreground mt-1">O robô está buscando ativamente novas interações.</p>
+                    <div className="space-y-2">
+                      <h4 className="font-black text-foreground uppercase tracking-[0.15em] text-sm">Modo de Expansão Ativo</h4>
+                      <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">
+                        O robô está injetando convites ativamente em novas interações.
+                      </p>
                     </div>
                   </CardContent>
                 </Card>
               </div>
             </div>
 
-            <Card className="glass-card neon-border-lilac overflow-hidden">
-              <CardHeader className="pb-3 border-b border-white/5 bg-white/5 flex flex-row items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <History className="h-5 w-5 text-primary" />
-                  <CardTitle className="text-lg uppercase tracking-tighter">Log de Convites Recentes</CardTitle>
+            <Card className="glass-card border-primary/20 overflow-hidden shadow-elevated">
+              <CardHeader className="pb-4 border-b border-white/5 bg-white/[0.02] flex flex-row items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 border border-primary/20">
+                    <History className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-xl font-black uppercase tracking-tighter">Log de Expansão Recente</CardTitle>
+                    <CardDescription className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Últimos Convites Transmitidos</CardDescription>
+                  </div>
                 </div>
-                <Badge variant="outline" className="border-primary/20 text-primary">
-                  {invitedFollowers.length} Convites
+                <Badge variant="outline" className="border-primary shadow-neon-lilac text-primary font-black uppercase text-[10px] px-3">
+                  {invitedFollowers.length} TRANSMISSÕES
                 </Badge>
               </CardHeader>
               <CardContent className="p-0">
                 <div className="divide-y divide-white/5">
                   {loadingInvited ? (
-                    <div className="p-20 flex flex-col items-center gap-4">
-                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                      <p className="text-xs text-muted-foreground uppercase tracking-widest">Carregando dados de crescimento...</p>
+                    <div className="p-24 flex flex-col items-center gap-6">
+                      <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                      <p className="text-[10px] text-muted-foreground uppercase font-black tracking-[0.3em] animate-pulse">Sincronizando Banco de Dados...</p>
                     </div>
                   ) : invitedFollowers.length > 0 ? (
                     invitedFollowers.map((log) => (
-                      <div key={log.id} className="p-4 hover:bg-white/5 transition-all flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="h-8 w-8 rounded-none border border-primary/20 bg-primary/5 flex items-center justify-center">
-                            <Bot className="h-4 w-4 text-primary" />
+                      <div key={log.id} className="p-5 hover:bg-primary/[0.03] transition-all flex items-center justify-between group">
+                        <div className="flex items-center gap-5">
+                          <div className="h-10 w-10 rounded-none border border-primary/30 bg-primary/5 flex items-center justify-center group-hover:border-primary transition-colors">
+                            <Bot className="h-5 w-5 text-primary group-hover:animate-pulse" />
                           </div>
                           <div>
-                            <p className="text-sm font-bold text-foreground">{log.message}</p>
-                            <p className="text-[10px] text-muted-foreground uppercase">{format(new Date(log.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</p>
+                            <p className="text-sm font-bold text-foreground group-hover:text-primary transition-colors leading-tight">{log.message}</p>
+                            <p className="text-[9px] text-muted-foreground uppercase font-black tracking-widest mt-1">
+                              {format(new Date(log.created_at), "dd MMM yyyy '::' HH:mm", { locale: ptBR })}
+                            </p>
                           </div>
                         </div>
-                        <Badge variant="outline" className="text-[8px] uppercase border-success/30 text-success bg-success/5">Sucesso</Badge>
+                        <Badge variant="outline" className="text-[8px] font-black uppercase border-success/40 text-success bg-success/10 px-2 py-1 shadow-[0_0_10px_rgba(34,197,94,0.1)]">
+                          TRANSMITIDO
+                        </Badge>
                       </div>
                     ))
                   ) : (
-                    <div className="p-20 text-center space-y-4">
-                      <UserCheck className="h-12 w-12 text-muted-foreground/20 mx-auto" />
-                      <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold">Nenhum convite registrado neste período</p>
+                    <div className="p-24 text-center space-y-6">
+                      <UserCheck className="h-14 w-14 text-muted-foreground/10 mx-auto" />
+                      <p className="text-[10px] text-muted-foreground uppercase font-black tracking-[0.2em]">Nenhuma transmissão registrada no buffer</p>
                     </div>
                   )}
                 </div>
@@ -793,70 +828,82 @@ const SocialRobotPage = () => {
             </Card>
           </div>
         ) : (
-          <Card className="glass-card border-accent/20 overflow-hidden">
-            <CardHeader className="pb-3 border-b border-white/5 flex flex-row items-center justify-between bg-black/40">
-              <div className="flex items-center gap-2">
-                <div className="h-2 w-2 bg-success rounded-full animate-ping" />
-                <CardTitle className="text-lg uppercase tracking-tighter text-primary">Terminal de Operações</CardTitle>
+          <Card className="glass-card border-primary/20 overflow-hidden shadow-elevated">
+            <CardHeader className="pb-4 border-b border-white/5 flex flex-row items-center justify-between bg-black/40 relative">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-primary opacity-50" />
+              <div className="flex items-center gap-4 relative z-10">
+                <div className="h-2.5 w-2.5 bg-success rounded-full animate-pulse-dot shadow-neon-success" />
+                <div>
+                  <CardTitle className="text-xl font-black uppercase tracking-tighter text-primary">Terminal de Comando</CardTitle>
+                  <CardDescription className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Kernel Operations Live-Feed</CardDescription>
+                </div>
               </div>
-              <div className="flex items-center gap-4">
-                <span className="text-[10px] text-muted-foreground font-mono uppercase animate-pulse">Live Feed</span>
-                <Button variant="ghost" size="sm" onClick={fetchLogs} disabled={loadingLogs} className="h-8 w-8 p-0">
-                  <RefreshCw className={cn("h-4 w-4", loadingLogs && "animate-spin")} />
+              <div className="flex items-center gap-4 relative z-10">
+                <span className="text-[9px] text-primary/60 font-mono font-black uppercase tracking-[0.2em] animate-pulse">System Live</span>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={fetchLogs} 
+                  disabled={loadingLogs} 
+                  className="h-10 w-10 p-0 text-primary hover:bg-primary/10 rounded-none border border-primary/20"
+                >
+                  <RefreshCw className={cn("h-5 w-5", loadingLogs && "animate-spin")} />
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className="p-0 bg-black/60">
+            <CardContent className="p-0 bg-black/40">
               <div className="divide-y divide-white/5 font-mono">
                 {loadingLogs ? (
-                  <div className="p-20 flex flex-col items-center gap-4">
-                    <Loader2 className="h-8 w-8 animate-spin text-accent" />
-                    <p className="text-xs text-muted-foreground uppercase tracking-widest">Acessando logs do sistema...</p>
+                  <div className="p-32 flex flex-col items-center gap-6">
+                    <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                    <p className="text-[10px] text-muted-foreground uppercase font-black tracking-[0.3em] animate-pulse">Acessando Core Logs...</p>
                   </div>
                 ) : logs.length > 0 ? (
                   logs.map((log) => (
-                    <div key={log.id} className="p-4 hover:bg-white/5 transition-all">
-                      <div className="flex items-start gap-4">
+                    <div key={log.id} className="p-6 hover:bg-white/[0.03] transition-all relative group">
+                      <div className="flex items-start gap-6">
                         <div className={cn(
-                          "mt-1 p-2 rounded-lg",
-                          log.level === 'error' ? "bg-destructive/20 text-destructive" :
-                          log.level === 'warn' ? "bg-warning/20 text-warning" :
-                          "bg-primary/20 text-primary"
+                          "mt-1 p-3 rounded-none border-2 transition-all group-hover:scale-110",
+                          log.level === 'error' ? "border-destructive/30 bg-destructive/10 text-destructive shadow-[0_0_15px_rgba(239,68,68,0.2)]" :
+                          log.level === 'warn' ? "border-warning/30 bg-warning/10 text-warning" :
+                          "border-primary/30 bg-primary/10 text-primary shadow-neon-lilac/10"
                         )}>
-                          {log.level === 'error' ? <AlertCircle className="h-4 w-4" /> :
-                           log.level === 'warn' ? <AlertCircle className="h-4 w-4" /> :
-                           <Info className="h-4 w-4" />}
+                          {log.level === 'error' ? <AlertCircle className="h-5 w-5" /> :
+                           log.level === 'warn' ? <AlertCircle className="h-5 w-5" /> :
+                           <Bot className="h-5 w-5" />}
                         </div>
                         <div className="flex-1">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                              {log.module} • {format(new Date(log.created_at), "HH:mm:ss", { locale: ptBR })}
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 group-hover:text-primary transition-colors">
+                              {log.module} <span className="text-white/20 mx-2">|</span> {format(new Date(log.created_at), "HH:mm:ss.ms", { locale: ptBR })}
                             </span>
                             <Badge variant="outline" className={cn(
-                              "text-[8px] px-1 h-4",
-                              log.level === 'error' ? "border-destructive/30 text-destructive" : "border-primary/30 text-primary"
+                              "text-[9px] px-2 h-5 font-black uppercase tracking-widest rounded-none border-2",
+                              log.level === 'error' ? "border-destructive text-destructive" : "border-primary text-primary"
                             )}>
                               {log.level.toUpperCase()}
                             </Badge>
                           </div>
-                          <p className="text-sm font-medium text-foreground">{log.message}</p>
+                          <p className="text-sm font-bold text-foreground leading-relaxed group-hover:text-primary transition-colors">{log.message}</p>
                           {log.details && (
-                            <div className="mt-2 p-3 bg-black/40 rounded border border-primary/10 overflow-hidden shadow-inner">
-                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-3">
+                            <div className="mt-4 p-5 bg-black/60 border border-primary/20 shadow-inner overflow-hidden">
+                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
                                 {Object.entries(log.details).filter(([key]) => ['curtidas', 'seguidores', 'compartilhamentos', 'comentarios', 'numero_postagens'].includes(key)).map(([key, value]) => (
-                                  <div key={key} className="flex flex-col items-center p-2 bg-white/5 border border-white/5">
-                                    <span className="text-[8px] text-primary font-black uppercase tracking-tighter mb-1">{key.replace('_', ' ')}</span>
-                                    <span className="text-sm font-black text-white leading-none">
+                                  <div key={key} className="flex flex-col items-center p-3 bg-primary/[0.03] border border-primary/10 group-hover:border-primary/30 transition-colors">
+                                    <span className="text-[8px] text-primary/60 font-black uppercase tracking-tighter mb-1">{key.replace('_', ' ')}</span>
+                                    <span className="text-lg font-black text-white leading-none">
                                       {typeof value === 'number' ? value.toLocaleString() : String(value)}
                                     </span>
                                   </div>
                                 ))}
                               </div>
-                              <div className="grid grid-cols-1 gap-1">
+                              <div className="space-y-2 opacity-80">
                                 {Object.entries(log.details).filter(([key]) => !['curtidas', 'seguidores', 'compartilhamentos', 'comentarios', 'numero_postagens'].includes(key)).map(([key, value]) => (
-                                  <div key={key} className="flex gap-2 text-[10px] border-b border-white/5 pb-1 last:border-0">
-                                    <span className="text-primary font-black uppercase w-24 shrink-0">{key.replace('_', ' ')}:</span>
-                                    <span className="text-muted-foreground break-all">{typeof value === 'object' ? JSON.stringify(value) : String(value)}</span>
+                                  <div key={key} className="flex gap-4 text-[11px] border-b border-white/5 pb-2 last:border-0 hover:bg-white/5 transition-colors px-1">
+                                    <span className="text-primary font-black uppercase w-32 shrink-0 tracking-tighter">{key.replace('_', ' ')}:</span>
+                                    <span className="text-muted-foreground break-all font-medium">
+                                      {typeof value === 'object' ? JSON.stringify(value) : String(value)}
+                                    </span>
                                   </div>
                                 ))}
                               </div>
@@ -867,8 +914,8 @@ const SocialRobotPage = () => {
                     </div>
                   ))
                 ) : (
-                  <div className="p-10 text-center">
-                    <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold">Sem logs registrados</p>
+                  <div className="p-24 text-center">
+                    <p className="text-[10px] text-muted-foreground uppercase font-black tracking-[0.3em] animate-pulse">Buffer de log vazio. Aguardando atividade...</p>
                   </div>
                 )}
               </div>
