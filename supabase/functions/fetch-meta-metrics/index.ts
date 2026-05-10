@@ -114,18 +114,22 @@ serve(async (req) => {
         ].join(",");
 
         const insightsResp = await fetch(
-          `${GRAPH_API}/${page.pageId}/insights?metric=${insightsMetrics}&period=day&access_token=${page.accessToken}`
+          `${GRAPH_API}/${page.pageId}/insights?metric=${insightsMetrics}&period=day&since=${getDateDaysAgo(28)}&until=${getDateDaysAgo(0)}&access_token=${page.accessToken}`
         );
         if (insightsResp.ok) {
           const insightsData = await insightsResp.json();
           pageMetrics.facebook.insights = {};
           for (const metric of insightsData.data || []) {
             const values = metric.values || [];
+            // For metrics like 'page_impressions', we want the sum of daily values over the period
             const total = values.reduce((sum: number, v: any) => sum + (typeof v.value === "number" ? v.value : 0), 0);
-            const latest = values[values.length - 1]?.value;
+            
+            // For latest, if it's an object (like gender/age), we use the total as a fallback or the object itself
+            const latestValue = values[values.length - 1]?.value;
+            
             pageMetrics.facebook.insights[metric.name] = {
               total,
-              latest: typeof latest === "object" ? latest : total,
+              latest: typeof latestValue === "object" ? total : (latestValue ?? total),
               daily: values.map((v: any) => ({
                 date: v.end_time?.split("T")[0],
                 value: typeof v.value === "number" ? v.value : 0,
@@ -133,16 +137,17 @@ serve(async (req) => {
             };
           }
         } else {
-          console.error(`Insights error:`, await insightsResp.text());
+          const errorText = await insightsResp.text();
+          console.error(`Facebook Insights error for ${page.pageId}:`, errorText);
         }
 
         // Recent posts with engagement
         const postsResp = await fetch(
-          `${GRAPH_API}/${page.pageId}/posts?fields=id,message,created_time,shares,likes.limit(0).summary(true),comments.limit(0).summary(true),reactions.limit(0).summary(true),full_picture,permalink_url,type&limit=25&access_token=${page.accessToken}`
+          `${GRAPH_API}/${page.pageId}/posts?fields=id,message,created_time,shares,likes.limit(0).summary(true),comments.limit(0).summary(true),reactions.limit(0).summary(true),full_picture,permalink_url,type&limit=100&access_token=${page.accessToken}`
         );
         if (postsResp.ok) {
           const postsData = await postsResp.json();
-          pageMetrics.facebook.posts = (postsData.data || []).map((p: any) => ({
+          const posts = (postsData.data || []).map((p: any) => ({
             id: p.id,
             message: p.message?.substring(0, 100),
             created_time: p.created_time,
@@ -155,8 +160,9 @@ serve(async (req) => {
             shares: p.shares?.count || 0,
           }));
 
+          pageMetrics.facebook.posts = posts;
+
           // Aggregate post stats
-          const posts = pageMetrics.facebook.posts;
           pageMetrics.facebook.post_stats = {
             total_posts: posts.length,
             total_likes: posts.reduce((s: number, p: any) => s + p.likes, 0),
