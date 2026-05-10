@@ -705,6 +705,7 @@ const ArticlesPage = () => {
             {generating ? 'Gerando...' : 'Gerar Artigos'}
           </Button>
         </div>
+      </div>
 
       <Tabs defaultValue="todos" className="w-full">
         <TabsList className="mb-6 grid w-full max-w-md grid-cols-4 bg-secondary/50 p-1">
