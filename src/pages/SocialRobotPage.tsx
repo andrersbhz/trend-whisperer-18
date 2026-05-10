@@ -368,7 +368,7 @@ const SocialRobotPage = () => {
                       <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl animate-pulse" />
                       <Loader2 className="h-12 w-12 animate-spin text-primary relative z-10" />
                     </div>
-                    <p className="text-[10px] text-muted-foreground uppercase font-black tracking-[0.3em] animate-pulse">Sincronizando com o Vortex...</p>
+                    <p className="text-[10px] text-muted-foreground uppercase font-black tracking-[0.3em] animate-pulse">Sincronizando com A3 Engine...</p>
                   </div>
                 ) : interactions.length > 0 ? (
                   interactions.map((item) => (
@@ -749,7 +749,7 @@ const SocialRobotPage = () => {
                     </div>
                     <div className="p-5 bg-white/[0.02] border border-white/5 text-center">
                       <p className="text-[9px] text-muted-foreground uppercase font-bold leading-relaxed tracking-wider italic">
-                        * Algoritmo Vortex estimando probabilidade de conversão baseada em metadados de engajamento social.
+                        * Algoritmo A3 estimando probabilidade de conversão baseada em metadados de engajamento social.
                       </p>
                     </div>
                   </CardContent>
