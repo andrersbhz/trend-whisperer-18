@@ -495,83 +495,88 @@ const SocialRobotPage = () => {
             </CardContent>
           </Card>
         ) : activeTab === 'metrics' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {loadingMetrics ? (
-              <Card className="col-span-full p-20 flex flex-col items-center gap-4 glass-card neon-border-lilac">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <p className="text-xs text-muted-foreground uppercase tracking-widest">Analisando métricas das páginas...</p>
+              <Card className="col-span-full p-32 flex flex-col items-center gap-6 glass-card border-primary/20 shadow-neon-lilac/20">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-primary/20 rounded-full blur-2xl animate-pulse" />
+                  <Loader2 className="h-12 w-12 animate-spin text-primary relative z-10" />
+                </div>
+                <p className="text-[10px] text-muted-foreground uppercase font-black tracking-[0.3em] animate-pulse">Descriptografando Data-Stream...</p>
               </Card>
             ) : metrics.length > 0 ? (
               metrics.map((page) => (
-                <Card key={page.page_id} className="glass-card neon-border-lilac overflow-hidden flex flex-col">
-                  <CardHeader className="pb-3 border-b border-white/5 bg-white/5">
-                    <div className="flex items-center gap-4">
-                      <div className="h-12 w-12 rounded-none border-2 border-primary/20 bg-background overflow-hidden shadow-neon-lilac/20">
-                        <img src={page.facebook?.picture?.data?.url || `https://graph.facebook.com/${page.page_id}/picture?type=large`} className="h-full w-full object-cover" alt="" />
+                <Card key={page.page_id} className="glass-card border-primary/10 overflow-hidden flex flex-col group hover:border-primary/40 transition-all duration-500 shadow-elevated">
+                  <CardHeader className="pb-4 border-b border-white/5 bg-white/[0.02] relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-primary opacity-50" />
+                    <div className="flex items-center gap-5 relative z-10">
+                      <div className="h-16 w-16 rounded-none border-2 border-primary/30 bg-background overflow-hidden shadow-neon-lilac/20 group-hover:scale-105 transition-transform duration-500">
+                        <img src={page.facebook?.picture?.data?.url || `https://graph.facebook.com/${page.page_id}/picture?type=large`} className="h-full w-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" alt="" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Analisando página</p>
-                        <CardTitle className="text-xl uppercase tracking-tighter truncate text-primary">{page.page_name}</CardTitle>
-                        <div className="flex flex-wrap gap-2 mt-1">
-                          <Badge variant="outline" className="text-[9px] px-1 border-primary/20 text-primary">FB: {page.facebook?.fan_count || 0} Seguidores</Badge>
+                        <p className="text-[9px] font-black text-primary uppercase tracking-[0.2em] mb-1">Página Conectada</p>
+                        <CardTitle className="text-2xl font-black uppercase tracking-tighter truncate text-foreground group-hover:text-primary transition-colors">{page.page_name}</CardTitle>
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          <Badge variant="outline" className="text-[8px] font-black px-2 py-0.5 border-primary/30 text-primary bg-primary/5 uppercase tracking-widest">
+                            {page.facebook?.fan_count || 0} SEGUIDORES
+                          </Badge>
                           {page.instagram && (
-                            <Badge variant="outline" className="text-[9px] px-1 border-purple-500/20 text-purple-400">IG: {page.instagram.followers_count || 0}</Badge>
+                            <Badge variant="outline" className="text-[8px] font-black px-2 py-0.5 border-purple-500/30 text-purple-400 bg-purple-500/5 uppercase tracking-widest">
+                              {page.instagram.followers_count || 0} INSTAGRAM
+                            </Badge>
                           )}
                         </div>
                       </div>
                     </div>
                   </CardHeader>
-                  <CardContent className="p-4 space-y-4 flex-1">
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                      <div className="bg-white/5 p-3 border border-white/5 text-center flex flex-col justify-center">
-                        <p className="text-[10px] text-muted-foreground uppercase font-black tracking-tighter mb-1">Postagens</p>
-                        <p className="text-xl font-black text-primary leading-none">{page.facebook?.post_stats?.total_posts || 0}</p>
-                      </div>
-                      <div className="bg-white/5 p-3 border border-white/5 text-center flex flex-col justify-center">
-                        <p className="text-[10px] text-muted-foreground uppercase font-black tracking-tighter mb-1">Curtidas</p>
-                        <p className="text-xl font-black text-primary leading-none">{page.facebook?.post_stats?.total_likes || 0}</p>
-                      </div>
-                      <div className="bg-white/5 p-3 border border-white/5 text-center flex flex-col justify-center">
-                        <p className="text-[10px] text-muted-foreground uppercase font-black tracking-tighter mb-1">Comentários</p>
-                        <p className="text-xl font-black text-primary leading-none">{page.facebook?.post_stats?.total_comments || 0}</p>
-                      </div>
-                      <div className="bg-white/5 p-3 border border-white/5 text-center flex flex-col justify-center">
-                        <p className="text-[10px] text-muted-foreground uppercase font-black tracking-tighter mb-1">Compartilhamentos</p>
-                        <p className="text-xl font-black text-primary leading-none">{page.facebook?.post_stats?.total_shares || 0}</p>
-                      </div>
+                  <CardContent className="p-6 space-y-6 flex-1 bg-gradient-to-b from-transparent to-primary/[0.02]">
+                    <div className="grid grid-cols-2 gap-4">
+                      {[
+                        { label: 'Postagens', value: page.facebook?.post_stats?.total_posts || 0, icon: FileText },
+                        { label: 'Curtidas', value: page.facebook?.post_stats?.total_likes || 0, icon: ThumbsUp },
+                        { label: 'Feedback', value: page.facebook?.post_stats?.total_comments || 0, icon: MessageSquare },
+                        { label: 'Shared', value: page.facebook?.post_stats?.total_shares || 0, icon: ExternalLink },
+                      ].map((stat, idx) => (
+                        <div key={idx} className="bg-white/5 p-4 border border-white/10 relative group/stat hover:bg-white/[0.08] transition-colors overflow-hidden">
+                          <div className="absolute top-0 left-0 w-1 h-0 group-hover/stat:h-full bg-primary transition-all duration-300" />
+                          <p className="text-[9px] text-muted-foreground uppercase font-black tracking-widest mb-2 flex items-center justify-between">
+                            {stat.label}
+                            <stat.icon className="h-3 w-3 text-primary/40 group-hover/stat:text-primary transition-colors" />
+                          </p>
+                          <p className="text-2xl font-black text-foreground leading-none tracking-tighter">{stat.value.toLocaleString()}</p>
+                        </div>
+                      ))}
                     </div>
                     
                     {page.instagram?.post_stats && (
-                      <div className="pt-2 border-t border-white/5">
-                        <p className="text-[9px] font-black text-purple-400 uppercase tracking-widest mb-2 flex items-center gap-1">
-                          <Instagram className="h-3 w-3" /> Instagram Stats (Total Analisado)
+                      <div className="pt-4 border-t border-white/5">
+                        <p className="text-[9px] font-black text-purple-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                          <Instagram className="h-3.5 w-3.5" /> Instagram Performance Matrix
                         </p>
-                        <div className="grid grid-cols-3 gap-2">
-                          <div className="bg-purple-500/5 p-2 border border-purple-500/10 text-center">
-                            <p className="text-[8px] text-muted-foreground uppercase">Posts</p>
-                            <p className="text-md font-bold text-purple-400">{page.instagram.post_stats.total_posts || 0}</p>
-                          </div>
-                          <div className="bg-purple-500/5 p-2 border border-purple-500/10 text-center">
-                            <p className="text-[8px] text-muted-foreground uppercase">Likes</p>
-                            <p className="text-md font-bold text-purple-400">{page.instagram.post_stats.total_likes || 0}</p>
-                          </div>
-                          <div className="bg-purple-500/5 p-2 border border-purple-500/10 text-center">
-                            <p className="text-[8px] text-muted-foreground uppercase">Engajamento</p>
-                            <p className="text-md font-bold text-purple-400">{page.instagram.post_stats.avg_engagement || 0}</p>
-                          </div>
+                        <div className="grid grid-cols-3 gap-3">
+                          {[
+                            { label: 'Posts', val: page.instagram.post_stats.total_posts || 0 },
+                            { label: 'Likes', val: page.instagram.post_stats.total_likes || 0 },
+                            { label: 'Engage', val: page.instagram.post_stats.avg_engagement || 0 },
+                          ].map((i, idx) => (
+                            <div key={idx} className="bg-purple-500/5 p-3 border border-purple-500/10 text-center hover:bg-purple-500/10 transition-colors">
+                              <p className="text-[8px] text-muted-foreground uppercase font-black mb-1">{i.label}</p>
+                              <p className="text-lg font-black text-purple-400 leading-none">{i.val}</p>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     )}
 
                     {page.facebook?.insights?.page_impressions && (
-                      <div className="pt-2 border-t border-white/5">
-                        <div className="flex justify-between items-center mb-1">
-                          <p className="text-[9px] font-black text-success uppercase tracking-widest">Alcance (28 dias)</p>
-                          <span className="text-xs font-bold text-success">+{page.facebook.insights.page_impressions.total.toLocaleString()}</span>
+                      <div className="pt-4 border-t border-white/5">
+                        <div className="flex justify-between items-center mb-2">
+                          <p className="text-[9px] font-black text-success uppercase tracking-[0.2em]">Data reach (28 days)</p>
+                          <span className="text-xs font-black text-success shadow-neon-success">+{page.facebook.insights.page_impressions.total.toLocaleString()}</span>
                         </div>
-                        <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                        <div className="h-2 bg-white/5 rounded-none overflow-hidden border border-white/10">
                           <div 
-                            className="h-full bg-success shadow-neon-success" 
+                            className="h-full bg-gradient-to-r from-success/50 to-success shadow-neon-success animate-glow" 
                             style={{ width: `${Math.min(100, (page.facebook.insights.page_impressions.total / 10000) * 100)}%` }} 
                           />
                         </div>
@@ -581,10 +586,22 @@ const SocialRobotPage = () => {
                 </Card>
               ))
             ) : (
-              <Card className="col-span-full p-20 text-center space-y-4 glass-card neon-border-lilac">
-                <Bot className="h-12 w-12 text-primary/40 mx-auto" />
-                <p className="text-sm font-bold uppercase tracking-widest">Nenhuma métrica disponível</p>
-                <Button variant="outline" size="sm" onClick={fetchMetrics} className="uppercase text-[10px] font-bold">Tentar Novamente</Button>
+              <Card className="col-span-full p-24 text-center space-y-6 glass-card border-primary/20">
+                <div className="mx-auto w-16 h-16 rounded-none bg-primary/5 flex items-center justify-center border-2 border-dashed border-primary/20">
+                  <Activity className="h-8 w-8 text-primary/40" />
+                </div>
+                <div className="space-y-2">
+                  <p className="text-lg font-black text-foreground uppercase tracking-tighter">Nenhum Sinal de Telemetria</p>
+                  <p className="text-xs text-muted-foreground uppercase font-bold tracking-widest">Aguardando conexão com as APIs sociais.</p>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={fetchMetrics} 
+                  className="uppercase text-[10px] font-black tracking-widest h-10 px-8 border-primary/40 hover:bg-primary/10 text-primary border-2 rounded-none"
+                >
+                  Reiniciar Link de Dados
+                </Button>
               </Card>
             )}
           </div>
