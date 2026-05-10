@@ -349,6 +349,7 @@ const SocialRobotPage = () => {
                 ? "border-[hsl(200_100%_60%)] shadow-[0_0_10px_rgba(0,210,255,0.2)] bg-[hsl(200_100%_60%)]/10 text-[hsl(200_100%_60%)] hover:bg-[hsl(200_100%_60%)]/20" 
                 : "border-white/10 bg-white/5 text-muted-foreground hover:bg-white/10"
             )}
+            title={followerGrowthMode ? "Mudar para Modo Padrão" : "Mudar para Modo Crescimento"}
           >
             <UserCheck className={cn("h-3 w-3 mr-1.5", followerGrowthMode && "animate-bounce")} />
             <span className="hidden sm:inline">MODO</span> {followerGrowthMode ? "CRESC." : "PADRÃO"}
