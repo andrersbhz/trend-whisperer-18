@@ -827,7 +827,7 @@ const Dashboard = () => {
           </CardContent>
         </Card>
         </div>
-      ) : null}
+      )}
       {/* End of Audit section */}
 
 
