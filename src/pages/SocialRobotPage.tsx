@@ -244,103 +244,107 @@ const SocialRobotPage = () => {
 
   return (
     <div className="space-y-6 lg:space-y-8 animate-float-up">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 p-6 glass-card border-primary/20 relative overflow-hidden group">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -mr-32 -mt-32 group-hover:bg-primary/10 transition-colors duration-700" />
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center gap-6 flex-1">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-primary/10 rounded-none border border-primary/30 shadow-neon-lilac animate-glow shrink-0">
-              <Bot className="h-8 w-8 text-primary animate-pulse" />
+      <div className="flex flex-row items-center justify-between gap-4 p-4 glass-card border-[hsl(200_100%_60%)]/20 relative overflow-hidden group">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-[hsl(200_100%_60%)]/5 rounded-full blur-3xl -mr-32 -mt-32 group-hover:bg-[hsl(200_100%_60%)]/10 transition-colors duration-700" />
+        
+        <div className="relative z-10 flex items-center gap-6 flex-1 min-w-0">
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="p-2 bg-[hsl(200_100%_60%)]/10 rounded-none border border-[hsl(200_100%_60%)]/30 shadow-[0_0_15px_rgba(0,210,255,0.3)] animate-glow shrink-0">
+              <Bot className="h-6 w-6 text-[hsl(200_100%_60%)] animate-pulse" />
             </div>
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-black text-gradient-primary uppercase tracking-tighter whitespace-nowrap font-montserrat">
+            <div className="hidden sm:block">
+              <h1 className="text-xl font-black text-[hsl(200_100%_60%)] uppercase tracking-tighter whitespace-nowrap font-montserrat drop-shadow-[0_0_8px_rgba(0,210,255,0.5)]">
                 Robô Social A3
               </h1>
-              <p className="text-muted-foreground text-[9px] mt-1 uppercase tracking-[0.2em] flex items-center gap-2 font-bold whitespace-nowrap">
-                <span className="flex h-2 w-2 relative">
+              <p className="text-muted-foreground text-[8px] uppercase tracking-[0.2em] flex items-center gap-1.5 font-bold whitespace-nowrap">
+                <span className="flex h-1.5 w-1.5 relative">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-success"></span>
                 </span>
                 Neural Interface
               </p>
             </div>
           </div>
           
-          <div className="hidden lg:block h-10 w-px bg-white/10 mx-2" />
+          <div className="hidden md:block h-8 w-px bg-white/10" />
           
-          <div className="flex flex-wrap items-center gap-4 md:gap-6 flex-1">
-            <div className="flex flex-col">
-              <span className="text-[8px] text-muted-foreground uppercase font-black tracking-widest mb-0.5">Status do Sistema</span>
+          <div className="flex items-center gap-6 overflow-x-auto no-scrollbar flex-1">
+            <div className="flex flex-col shrink-0">
+              <span className="text-[7px] text-muted-foreground uppercase font-black tracking-widest mb-0.5">Status</span>
               <div className={cn(
-                "flex items-center gap-2 text-[11px] font-black uppercase tracking-tighter",
-                automationEnabled ? "text-success" : "text-destructive"
+                "flex items-center gap-1.5 text-[10px] font-black uppercase tracking-tighter",
+                automationEnabled ? "text-success shadow-[0_0_10px_rgba(34,197,94,0.3)]" : "text-destructive"
               )}>
-                {automationEnabled ? <Power className="h-3 w-3" /> : <PowerOff className="h-3 w-3" />}
+                {automationEnabled ? <Power className="h-2.5 w-2.5" /> : <PowerOff className="h-2.5 w-2.5" />}
                 {automationEnabled ? "ONLINE" : "OFFLINE"}
               </div>
             </div>
             
-            <div className="flex flex-col">
-              <span className="text-[8px] text-muted-foreground uppercase font-black tracking-widest mb-0.5">Modo de Operação</span>
-              <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-tighter text-primary">
-                <UserCheck className="h-3 w-3" />
+            <div className="flex flex-col shrink-0">
+              <span className="text-[7px] text-muted-foreground uppercase font-black tracking-widest mb-0.5">Modo</span>
+              <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-tighter text-[hsl(200_100%_60%)]">
+                <UserCheck className="h-2.5 w-2.5" />
                 {followerGrowthMode ? "CRESCIMENTO" : "PADRÃO"}
               </div>
             </div>
 
-            <div className="flex flex-col">
-              <span className="text-[8px] text-muted-foreground uppercase font-black tracking-widest mb-0.5">Nodes Ativos</span>
-              <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-tighter text-foreground">
-                <Activity className="h-3 w-3 text-primary" />
-                {interactions.length} INTERAÇÕES
+            <div className="flex flex-col shrink-0">
+              <span className="text-[7px] text-muted-foreground uppercase font-black tracking-widest mb-0.5">Atividade</span>
+              <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-tighter text-foreground/90">
+                <Activity className="h-2.5 w-2.5 text-[hsl(200_100%_60%)]" />
+                {interactions.length} NODES
               </div>
             </div>
           </div>
         </div>
         
-        <div className="flex flex-wrap gap-3 relative z-10">
+        <div className="flex items-center gap-2 relative z-10 shrink-0">
           <Button
             variant="outline"
+            size="sm"
             onClick={() => toggleAutomation(!automationEnabled)}
             disabled={loadingSettings}
             className={cn(
-              "font-black uppercase tracking-widest text-[10px] h-10 px-6 rounded-none transition-all duration-300 border-2",
+              "font-black uppercase tracking-widest text-[9px] h-8 px-3 rounded-none transition-all duration-300 border-2",
               automationEnabled 
-                ? "border-success shadow-[0_0_20px_rgba(34,197,94,0.3)] bg-success/10 text-success hover:bg-success/20" 
+                ? "border-success bg-success/5 text-success hover:bg-success/10" 
                 : "border-destructive/30 bg-destructive/5 text-destructive hover:bg-destructive/10"
             )}
           >
             {loadingSettings ? (
-              <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" />
+              <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
             ) : automationEnabled ? (
-              <Power className="h-3.5 w-3.5 mr-2" />
+              <Power className="h-3 w-3 mr-1.5" />
             ) : (
-              <PowerOff className="h-3.5 w-3.5 mr-2" />
+              <PowerOff className="h-3 w-3 mr-1.5" />
             )}
-            {automationEnabled ? "AUTOMAÇÃO ATIVA" : "AUTOMAÇÃO INATIVA"}
+            <span className="hidden lg:inline">{automationEnabled ? "DESATIVAR" : "ATIVAR"}</span>
           </Button>
 
           <Button
             variant="outline"
+            size="sm"
             onClick={() => toggleFollowerGrowth(!followerGrowthMode)}
             disabled={loadingSettings}
             className={cn(
-              "font-black uppercase tracking-widest text-[10px] h-10 px-6 rounded-none transition-all duration-300 border-2",
+              "font-black uppercase tracking-widest text-[9px] h-8 px-3 rounded-none transition-all duration-300 border-2",
               followerGrowthMode 
-                ? "border-primary shadow-neon-lilac bg-primary/10 text-primary hover:bg-primary/20" 
+                ? "border-[hsl(200_100%_60%)] shadow-[0_0_10px_rgba(0,210,255,0.2)] bg-[hsl(200_100%_60%)]/10 text-[hsl(200_100%_60%)] hover:bg-[hsl(200_100%_60%)]/20" 
                 : "border-white/10 bg-white/5 text-muted-foreground hover:bg-white/10"
             )}
           >
-            <UserCheck className={cn("h-3.5 w-3.5 mr-2", followerGrowthMode && "animate-bounce")} />
-            {followerGrowthMode ? "MODO CRESCIMENTO" : "MODO PADRÃO"}
+            <UserCheck className={cn("h-3 w-3 mr-1.5", followerGrowthMode && "animate-bounce")} />
+            <span className="hidden lg:inline">MODO</span> {followerGrowthMode ? "CRESC." : "PADRÃO"}
           </Button>
 
           <Button
+            size="sm"
             onClick={handleProcessInteractions}
             disabled={processing}
-            className="gradient-primary text-primary-foreground font-black uppercase tracking-widest text-[10px] h-10 px-6 rounded-none transition-all shadow-neon-lilac border-none hover:scale-105 active:scale-95"
+            className="bg-[hsl(200_100%_60%)] text-black font-black uppercase tracking-widest text-[9px] h-8 px-3 rounded-none transition-all shadow-[0_0_15px_rgba(0,210,255,0.4)] border-none hover:scale-105 active:scale-95 hover:bg-[hsl(200_110%_65%)]"
           >
-            {processing ? <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5 mr-2" />}
-            Sincronizar Agora
+            {processing ? <Loader2 className="h-3 w-3 mr-1.5 animate-spin" /> : <RefreshCw className="h-3 w-3 mr-1.5" />}
+            <span className="hidden lg:inline">SINCRONIZAR</span>
           </Button>
         </div>
       </div>
