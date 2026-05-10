@@ -109,7 +109,7 @@ const SocialRobotPage = () => {
       
       toast({ 
         title: 'Sucesso', 
-        description: `${data?.replied || 0} novas respostas humanas geradas.` 
+        description: `${data?.newInteractions || 0} novas interações encontradas em ${data?.postsScanned || 0} postagens.` 
       });
       fetchInteractions();
     } catch (error) {
