@@ -462,8 +462,8 @@ const SocialRobotPage = () => {
                                 <Badge variant="outline" className="text-[8px] font-black h-4 px-1.5 border-[hsl(200_100%_60%)]/30 text-[hsl(200_100%_60%)] bg-[hsl(200_100%_60%)]/5 uppercase">
                                   {item.platform}
                                 </Badge>
-                                 <Badge variant="secondary" className={cn(
-                                   "text-[9px] font-black h-5 px-2 border-none uppercase tracking-widest",
+                                <Badge variant="secondary" className={cn(
+                                  "text-[8px] font-black h-4 px-1.5 border-none uppercase tracking-widest",
                                    item.interaction_type === 'reaction' ? "bg-blue-500/10 text-blue-400" : 
                                    item.interaction_type === 'mention' ? "bg-purple-500/10 text-purple-400" : 
                                    "bg-[hsl(200_100%_60%)]/10 text-[hsl(200_100%_60%)]"
