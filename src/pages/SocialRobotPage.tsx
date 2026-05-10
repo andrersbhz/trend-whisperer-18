@@ -452,7 +452,12 @@ const SocialRobotPage = () => {
                           </div>
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2 mb-2 flex-wrap">
-                              <span className="text-sm font-black text-[hsl(200_100%_60%)] uppercase tracking-tighter group-hover:drop-shadow-[0_0_5px_rgba(0,210,255,0.5)] transition-all">{item.author_name}</span>
+                              <span className={cn(
+                                "font-black uppercase tracking-tighter group-hover:drop-shadow-[0_0_5px_rgba(0,210,255,0.5)] transition-all",
+                                compactMode ? "text-xs" : "text-sm"
+                              )}>
+                                {item.author_name}
+                              </span>
                               <div className="flex items-center gap-2">
                                 <Badge variant="outline" className="text-[9px] font-black h-5 px-2 border-primary/30 text-primary bg-primary/5 uppercase">
                                   {item.platform}
