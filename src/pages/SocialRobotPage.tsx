@@ -429,8 +429,10 @@ const SocialRobotPage = () => {
                   interactions.map((item) => (
                     <div key={item.id} className="p-6 hover:bg-primary/[0.03] transition-all duration-300 group relative">
                       <div className="absolute left-0 top-0 w-0.5 h-full bg-transparent group-hover:bg-[hsl(200_100%_60%)] transition-all shadow-[0_0_10px_rgba(0,210,255,0.4)]" />
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex gap-4 min-w-0 flex-1">
+                      <div className={cn(
+                        "flex items-start justify-between gap-4",
+                        compactMode ? "p-3" : "p-6"
+                      )}>
                           <div className="relative shrink-0">
                             <div className="h-12 w-12 rounded-none border border-[hsl(200_100%_60%)]/30 bg-background overflow-hidden group-hover:border-[hsl(200_100%_60%)] transition-colors shadow-[0_0_10px_rgba(0,210,255,0.1)]">
                               {item.author_avatar ? (
