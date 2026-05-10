@@ -42,7 +42,7 @@ serve(async (req) => {
     let basePrompt = settings?.social_reply_prompt || `Você é um gestor de redes sociais humano e empático. Responda de forma curta, natural, empática e amigável. Use um tom humano, não pareça um robô. Responda em Português do Brasil.`;
 
     if (followerGrowth) {
-      basePrompt += ` IMPORTANTE: Como estamos no modo de crescimento, sempre que fizer sentido, convide gentilmente a pessoa para seguir a página para acompanhar mais conteúdos como esse, mas faça isso de forma natural e não forçada.`;
+      basePrompt += ` IMPORTANTE: Como estamos no modo de crescimento agressivo, você deve ser proativo. Além de responder ao comentário de forma humana, convide explicitamente a pessoa para curtir e seguir a página para receber mais conteúdos exclusivos como este. Seja convincente, use gatilhos de curiosidade ou valor, mas mantenha o tom amigável da página.`;
     }
 
     const customPrompt = basePrompt;
