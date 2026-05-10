@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Loader2, RefreshCw, MessageSquare, Bot, UserCheck, ExternalLink, History, ThumbsUp, AtSign, Power, PowerOff, Activity, AlertCircle, Info, Instagram, ChevronRight, ChevronDown as ChevronDownIcon, TrendingUp } from 'lucide-react';
+import { Loader2, RefreshCw, MessageSquare, Bot, UserCheck, ExternalLink, History, ThumbsUp, AtSign, Power, PowerOff, Activity, AlertCircle, Info, Instagram, ChevronRight, ChevronDown as ChevronDownIcon, TrendingUp, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/lib/backend';
 import { format, parseISO, startOfDay, eachDayOfInterval } from 'date-fns';
@@ -243,38 +243,45 @@ const SocialRobotPage = () => {
   }, [dateFilter]);
 
   return (
-    <div className="space-y-6 lg:space-y-8">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold neon-text-lilac uppercase tracking-tighter flex items-center gap-3">
-            <Bot className="h-8 w-8 text-primary animate-pulse" />
-            Vortex Robot Log
+    <div className="space-y-6 lg:space-y-8 animate-float-up">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 p-6 glass-card border-primary/20 relative overflow-hidden group">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -mr-32 -mt-32 group-hover:bg-primary/10 transition-colors duration-700" />
+        <div className="relative z-10">
+          <h1 className="text-3xl sm:text-4xl font-black text-gradient-primary uppercase tracking-tighter flex items-center gap-4">
+            <div className="p-3 bg-primary/10 rounded-none border border-primary/30 shadow-neon-lilac animate-glow">
+              <Bot className="h-8 w-8 text-primary animate-pulse" />
+            </div>
+            <span>Robô Social A3</span>
           </h1>
-          <p className="text-muted-foreground text-xs mt-1 uppercase tracking-widest flex items-center gap-2">
-            <Activity className="h-3 w-3 text-success animate-pulse" />
-            Sistema em Operação Real-Time
+          <p className="text-muted-foreground text-[10px] mt-2 uppercase tracking-[0.2em] flex items-center gap-2 font-bold">
+            <span className="flex h-2 w-2 relative">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
+            </span>
+            Neural Management Interface
           </p>
         </div>
-        <div className="flex flex-wrap gap-3">
+        
+        <div className="flex flex-wrap gap-3 relative z-10">
           <Button
             variant="outline"
             onClick={() => toggleAutomation(!automationEnabled)}
             disabled={loadingSettings}
             className={cn(
-              "font-bold uppercase tracking-widest text-[10px] h-9 px-6 rounded-none transition-all shadow-sm border-2",
+              "font-black uppercase tracking-widest text-[10px] h-10 px-6 rounded-none transition-all duration-300 border-2",
               automationEnabled 
-                ? "border-success/50 bg-success/5 text-success hover:bg-success/10 shadow-neon-success" 
-                : "border-destructive/20 bg-destructive/5 text-destructive hover:bg-destructive/10"
+                ? "border-success shadow-[0_0_20px_rgba(34,197,94,0.3)] bg-success/10 text-success hover:bg-success/20" 
+                : "border-destructive/30 bg-destructive/5 text-destructive hover:bg-destructive/10"
             )}
           >
             {loadingSettings ? (
-              <Loader2 className="h-3 w-3 mr-2 animate-spin" />
+              <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" />
             ) : automationEnabled ? (
-              <Power className="h-3 w-3 mr-2 animate-pulse" />
+              <Power className="h-3.5 w-3.5 mr-2" />
             ) : (
-              <PowerOff className="h-3 w-3 mr-2" />
+              <PowerOff className="h-3.5 w-3.5 mr-2" />
             )}
-            {automationEnabled ? "Robô Ligado" : "Robô Desligado"}
+            {automationEnabled ? "AUTOMAÇÃO ATIVA" : "AUTOMAÇÃO INATIVA"}
           </Button>
 
           <Button
@@ -282,167 +289,166 @@ const SocialRobotPage = () => {
             onClick={() => toggleFollowerGrowth(!followerGrowthMode)}
             disabled={loadingSettings}
             className={cn(
-              "font-bold uppercase tracking-widest text-[10px] h-9 px-6 rounded-none transition-all shadow-sm border-2",
+              "font-black uppercase tracking-widest text-[10px] h-10 px-6 rounded-none transition-all duration-300 border-2",
               followerGrowthMode 
-                ? "border-primary/50 bg-primary/5 text-primary hover:bg-primary/10 shadow-neon-lilac" 
+                ? "border-primary shadow-neon-lilac bg-primary/10 text-primary hover:bg-primary/20" 
                 : "border-white/10 bg-white/5 text-muted-foreground hover:bg-white/10"
             )}
           >
-            <UserCheck className={cn("h-3 w-3 mr-2", followerGrowthMode && "animate-bounce")} />
-            {followerGrowthMode ? "Modo Crescimento: ON" : "Modo Crescimento: OFF"}
+            <UserCheck className={cn("h-3.5 w-3.5 mr-2", followerGrowthMode && "animate-bounce")} />
+            {followerGrowthMode ? "MODO CRESCIMENTO" : "MODO PADRÃO"}
           </Button>
 
           <Button
             onClick={handleProcessInteractions}
             disabled={processing}
-            size="sm"
-            className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold uppercase tracking-widest text-[10px] h-9 px-6 rounded-none transition-all shadow-sm border-none"
+            className="gradient-primary text-primary-foreground font-black uppercase tracking-widest text-[10px] h-10 px-6 rounded-none transition-all shadow-neon-lilac border-none hover:scale-105 active:scale-95"
           >
-            {processing ? <Loader2 className="h-3 w-3 mr-2 animate-spin" /> : <UserCheck className="h-3 w-3 mr-2" />}
-            Sincronizar
+            {processing ? <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5 mr-2" />}
+            Sincronizar Agora
           </Button>
         </div>
       </div>
 
-      <div className="flex gap-1 mb-2 p-1 bg-white/[0.03] w-fit rounded-none border border-white/5">
-        <Button 
-          variant={activeTab === 'telemetry' ? 'secondary' : 'ghost'} 
-          size="sm" 
-          onClick={() => {
-            setActiveTab('telemetry');
-            fetchLogs();
-          }}
-          className="text-[9px] uppercase font-bold tracking-widest h-7 px-3 rounded-none relative overflow-hidden group"
-        >
-          {activeTab === 'telemetry' && <div className="absolute inset-0 bg-primary/10 animate-pulse" />}
-          <Bot className={cn("h-3 w-3 mr-1.5 opacity-70 z-10", activeTab === 'telemetry' && "animate-pulse")} />
-          <span className="z-10 text-primary">Log do Robô</span>
-        </Button>
-        <Button 
-          variant={activeTab === 'interactions' ? 'secondary' : 'ghost'} 
-          size="sm" 
-          onClick={() => setActiveTab('interactions')}
-          className="text-[9px] uppercase font-bold tracking-widest h-7 px-3 rounded-none"
-        >
-          <History className="h-3 w-3 mr-1.5 opacity-70" />
-          Interações
-        </Button>
-        <Button 
-          variant={activeTab === 'metrics' ? 'secondary' : 'ghost'} 
-          size="sm" 
-          onClick={() => {
-            setActiveTab('metrics');
-            fetchMetrics();
-          }}
-          className="text-[9px] uppercase font-bold tracking-widest h-7 px-3 rounded-none"
-        >
-          <Activity className="h-3 w-3 mr-1.5 opacity-70" />
-          Métricas
-        </Button>
-        <Button 
-          variant={activeTab === 'growth' ? 'secondary' : 'ghost'} 
-          size="sm" 
-          onClick={() => {
-            setActiveTab('growth');
-            fetchInvitedFollowers();
-          }}
-          className="text-[9px] uppercase font-bold tracking-widest h-7 px-3 rounded-none"
-        >
-          <UserCheck className="h-3 w-3 mr-1.5 opacity-70" />
-          Dashboard de Crescimento
-        </Button>
+      <div className="flex flex-wrap gap-2 p-1.5 glass border-white/5 w-fit rounded-none shadow-elevated">
+        {[
+          { id: 'telemetry', label: 'Log de Comando', icon: Bot },
+          { id: 'interactions', label: 'Interações Ativas', icon: History },
+          { id: 'metrics', label: 'Análise de Tráfego', icon: Activity },
+          { id: 'growth', label: 'Dashboard de Expansão', icon: TrendingUp },
+        ].map((tab) => (
+          <Button 
+            key={tab.id}
+            variant={activeTab === tab.id ? 'secondary' : 'ghost'} 
+            size="sm" 
+            onClick={() => {
+              setActiveTab(tab.id as any);
+              if (tab.id === 'telemetry') fetchLogs();
+              if (tab.id === 'metrics') fetchMetrics();
+              if (tab.id === 'growth') fetchInvitedFollowers();
+            }}
+            className={cn(
+              "text-[10px] uppercase font-black tracking-[0.15em] h-9 px-5 rounded-none transition-all relative overflow-hidden group border border-transparent",
+              activeTab === tab.id 
+                ? "bg-primary/20 text-primary border-primary/30 shadow-neon-lilac" 
+                : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+            )}
+          >
+            <tab.icon className={cn("h-3.5 w-3.5 mr-2", activeTab === tab.id && "animate-pulse")} />
+            {tab.label}
+            {activeTab === tab.id && (
+              <span className="absolute bottom-0 left-0 w-full h-0.5 bg-primary shadow-neon-lilac" />
+            )}
+          </Button>
+        ))}
       </div>
 
       <div className="grid grid-cols-1 gap-6">
         {activeTab === 'interactions' ? (
-          <Card className="glass-card neon-border-lilac overflow-hidden">
-            <CardHeader className="pb-3 border-b border-white/5 flex flex-row items-center justify-between">
-              <div className="flex items-center gap-2">
-                <History className="h-5 w-5 text-primary" />
-                <CardTitle className="text-lg uppercase tracking-tighter">Histórico de Interações</CardTitle>
+          <Card className="glass-card border-primary/20 overflow-hidden shadow-elevated">
+            <CardHeader className="pb-4 border-b border-white/5 bg-white/5 flex flex-row items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary/10 border border-primary/20">
+                  <History className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl font-black uppercase tracking-tighter">Fluxo de Interações</CardTitle>
+                  <CardDescription className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Monitoramento em Tempo Real</CardDescription>
+                </div>
               </div>
-              <Badge variant="outline" className="border-primary/20 text-primary">
-                {interactions.length} Interações
+              <Badge variant="outline" className="border-primary shadow-neon-lilac text-primary font-black uppercase text-[10px] px-3">
+                {interactions.length} NODES ATIVOS
               </Badge>
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y divide-white/5">
                 {loading ? (
-                  <div className="p-20 flex flex-col items-center gap-4">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                    <p className="text-xs text-muted-foreground uppercase tracking-widest">Escaneando redes sociais...</p>
+                  <div className="p-24 flex flex-col items-center gap-6">
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl animate-pulse" />
+                      <Loader2 className="h-12 w-12 animate-spin text-primary relative z-10" />
+                    </div>
+                    <p className="text-[10px] text-muted-foreground uppercase font-black tracking-[0.3em] animate-pulse">Sincronizando com A3 Engine...</p>
                   </div>
                 ) : interactions.length > 0 ? (
                   interactions.map((item) => (
-                    <div key={item.id} className="p-6 hover:bg-white/5 transition-all group">
+                    <div key={item.id} className="p-6 hover:bg-primary/[0.03] transition-all duration-300 group relative">
+                      <div className="absolute left-0 top-0 w-1 h-full bg-primary/0 group-hover:bg-primary transition-all shadow-neon-lilac" />
                       <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
-                        <div className="flex gap-4 min-w-0 flex-1">
+                        <div className="flex gap-5 min-w-0 flex-1">
                           <div className="relative shrink-0">
-                            <div className="h-12 w-12 rounded-none border-2 border-primary/20 bg-background overflow-hidden shadow-neon-lilac/20">
+                            <div className="h-14 w-14 rounded-none border-2 border-primary/30 bg-background overflow-hidden group-hover:border-primary transition-colors shadow-neon-lilac/10">
                               {item.author_avatar ? (
-                                <img src={item.author_avatar} alt={item.author_name} className="h-full w-full object-cover" />
+                                <img src={item.author_avatar} alt={item.author_name} className="h-full w-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
                               ) : (
-                                <div className="h-full w-full flex items-center justify-center bg-primary/10 text-primary text-lg font-black">
+                                <div className="h-full w-full flex items-center justify-center bg-primary/10 text-primary text-xl font-black italic">
                                   {item.author_name?.substring(0, 1).toUpperCase()}
                                 </div>
                               )}
                             </div>
                             {item.page_avatar && (
-                              <div className="absolute -top-2 -right-2 h-6 w-6 rounded-full border border-primary/40 bg-background overflow-hidden shadow-sm z-10">
+                              <div className="absolute -bottom-2 -right-2 h-7 w-7 rounded-none border-2 border-primary/40 bg-background overflow-hidden z-10 shadow-elevated">
                                 <img src={item.page_avatar} alt="Página" className="h-full w-full object-cover" />
                               </div>
                             )}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-3 mb-2 flex-wrap">
-                              <span className="text-sm font-black text-primary uppercase tracking-tight">{item.author_name}</span>
+                            <div className="flex items-center gap-3 mb-3 flex-wrap">
+                              <span className="text-base font-black text-primary uppercase tracking-tighter group-hover:neon-text-lilac transition-all">{item.author_name}</span>
                               <div className="flex items-center gap-2">
-                                <Badge variant="outline" className="text-[10px] h-4 px-2 border-primary/20 text-primary bg-primary/5">
+                                <Badge variant="outline" className="text-[9px] font-black h-5 px-2 border-primary/30 text-primary bg-primary/5 uppercase">
                                   {item.platform}
                                 </Badge>
                                 <Badge variant="secondary" className={cn(
-                                  "text-[9px] h-4 px-2 border-none font-bold",
-                                  item.interaction_type === 'reaction' ? "bg-blue-500/20 text-blue-400" : 
-                                  item.interaction_type === 'mention' ? "bg-purple-500/20 text-purple-400" : 
-                                  "bg-lilac-500/20 text-lilac-400"
+                                  "text-[9px] font-black h-5 px-2 border-none uppercase tracking-widest",
+                                  item.interaction_type === 'reaction' ? "bg-blue-500/10 text-blue-400" : 
+                                  item.interaction_type === 'mention' ? "bg-purple-500/10 text-purple-400" : 
+                                  "bg-primary/10 text-primary"
                                 )}>
-                                  {item.interaction_type === 'reaction' ? <ThumbsUp className="h-2 w-2 mr-1" /> : 
-                                   item.interaction_type === 'mention' ? <AtSign className="h-2 w-2 mr-1" /> : 
-                                   <MessageSquare className="h-2 w-2 mr-1" />}
-                                  {item.interaction_type === 'reaction' ? 'Curtida' : 
-                                   item.interaction_type === 'mention' ? 'Menção' : 'Comentário'}
+                                  {item.interaction_type === 'reaction' ? <ThumbsUp className="h-3 w-3 mr-1.5" /> : 
+                                   item.interaction_type === 'mention' ? <AtSign className="h-3 w-3 mr-1.5" /> : 
+                                   <MessageSquare className="h-3 w-3 mr-1.5" />}
+                                  {item.interaction_type === 'reaction' ? 'Reação' : 
+                                   item.interaction_type === 'mention' ? 'Menção' : 
+                                   'Comentário'}
                                 </Badge>
                               </div>
-                              <span className="text-[10px] text-muted-foreground font-medium uppercase">
-                                {format(new Date(item.created_at), "dd/MM 'às' HH:mm", { locale: ptBR })}
-                              </span>
-                              {item.original_link && (
-                                <a 
-                                  href={item.original_link} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                  className="text-[10px] text-primary hover:underline flex items-center gap-1 font-bold uppercase"
-                                >
-                                  Ver Original <ExternalLink className="h-2 w-2" />
-                                </a>
-                              )}
                             </div>
-                            <div className="bg-white/5 p-4 border-l-4 border-white/10 mb-4">
-                              <p className="text-sm text-foreground italic leading-relaxed">"{item.content}"</p>
+                            <div className="bg-white/[0.03] p-5 border-l-4 border-primary/20 group-hover:border-primary/50 transition-colors mb-4 relative">
+                              <div className="absolute top-0 right-0 p-2">
+                                <MessageSquare className="h-4 w-4 text-white/10" />
+                              </div>
+                              <p className="text-sm text-foreground italic leading-relaxed font-medium">"{item.content}"</p>
                             </div>
                             
                             {item.ai_response && (
-                              <div className="mt-4 flex gap-4 items-start bg-primary/5 p-4 border-l-4 border-primary shadow-neon-lilac/5">
-                                <MessageSquare className="h-4 w-4 text-primary mt-1 shrink-0" />
-                                <div className="space-y-1">
-                                  <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">Resposta da IA</p>
-                                  <p className="text-sm text-foreground leading-relaxed font-medium">{item.ai_response}</p>
+                              <div className="mt-4 flex gap-5 items-start bg-primary/5 p-5 border border-primary/20 shadow-neon-lilac/5 relative group/ai">
+                                <div className="absolute top-0 right-0 px-3 py-1 bg-primary text-primary-foreground text-[8px] font-black uppercase tracking-[0.2em]">IA Response</div>
+                                <div className="p-2 bg-primary/20 border border-primary/30 rounded-none">
+                                  <Bot className="h-4 w-4 text-primary animate-pulse" />
+                                </div>
+                                <div className="space-y-2 flex-1">
+                                  <p className="text-sm text-foreground leading-relaxed font-semibold italic text-primary/90">{item.ai_response}</p>
                                   {item.processed_at && (
-                                    <p className="text-[9px] text-muted-foreground italic mt-2">
-                                      Processado em {format(new Date(item.processed_at), "dd/MM HH:mm", { locale: ptBR })}
+                                    <p className="text-[9px] text-muted-foreground uppercase font-black tracking-widest flex items-center gap-2">
+                                      <Activity className="h-3 w-3" />
+                                      Processado às {format(new Date(item.processed_at), "HH:mm:ss", { locale: ptBR })}
                                     </p>
                                   )}
                                 </div>
+                              </div>
+                            )}
+                            
+                            {item.post_url && (
+                              <div className="mt-4">
+                                <a 
+                                  href={item.post_url} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="text-[10px] text-primary hover:neon-text-lilac transition-all flex items-center gap-2 font-black uppercase tracking-widest border border-primary/20 w-fit px-3 py-1.5 bg-primary/5 hover:bg-primary/10"
+                                >
+                                  Ver Postagem Original <ExternalLink className="h-3 w-3" />
+                                </a>
                               </div>
                             )}
                           </div>
@@ -451,30 +457,37 @@ const SocialRobotPage = () => {
                           <Badge 
                             variant="secondary" 
                             className={cn(
-                              "text-[10px] uppercase font-black px-3 py-1 tracking-widest",
-                              item.status === 'replied' ? "bg-success/20 text-success border border-success/30" : 
-                              item.status === 'processed' ? "bg-blue-500/20 text-blue-400 border border-blue-500/30" :
-                              "bg-warning/20 text-warning border border-warning/30"
+                              "text-[10px] uppercase font-black px-4 py-1.5 tracking-[0.15em] border-2",
+                              item.status === 'replied' ? "border-success shadow-[0_0_15px_rgba(34,197,94,0.2)] bg-success/10 text-success" : 
+                              item.status === 'processed' ? "border-primary shadow-neon-lilac/40 bg-primary/10 text-primary" :
+                              "border-warning/30 bg-warning/5 text-warning"
                             )}
                           >
-                            {item.status === 'replied' ? 'Respondido ✓' : 
-                             item.status === 'processed' ? 'Analisado ✓' : 
-                             'Pendente'}
+                            {item.status === 'replied' ? 'RESOLVIDO' : 
+                             item.status === 'processed' ? 'PROCESSADO' : 
+                             'PENDENTE'}
                           </Badge>
                         </div>
                       </div>
                     </div>
                   ))
                 ) : (
-                  <div className="p-20 text-center space-y-4">
-                    <div className="mx-auto w-16 h-16 rounded-full bg-primary/5 flex items-center justify-center border border-primary/10">
-                      <Bot className="h-8 w-8 text-primary/40" />
+                  <div className="p-32 text-center space-y-6">
+                    <div className="mx-auto w-20 h-20 rounded-none bg-primary/5 flex items-center justify-center border-2 border-dashed border-primary/20 animate-pulse">
+                      <Bot className="h-10 w-10 text-primary/40" />
                     </div>
-                    <div className="max-w-xs mx-auto">
-                      <p className="text-sm text-foreground font-bold uppercase tracking-widest">Silêncio no Vortex</p>
-                      <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-                        Nenhuma interação recente encontrada nas suas páginas conectadas. Clique em sincronizar para buscar novos comentários.
+                    <div className="max-w-xs mx-auto space-y-2">
+                      <p className="text-lg font-black text-foreground uppercase tracking-tighter">Frequência Silenciosa</p>
+                      <p className="text-xs text-muted-foreground leading-relaxed uppercase font-bold tracking-widest">
+                        Nenhuma atividade detectada nas redes conectadas.
                       </p>
+                      <Button 
+                        onClick={handleProcessInteractions} 
+                        variant="link" 
+                        className="text-primary font-black uppercase text-[10px] tracking-widest p-0 h-auto mt-4 hover:neon-text-lilac"
+                      >
+                        Forçar Varredura de Sinais _
+                      </Button>
                     </div>
                   </div>
                 )}
@@ -482,83 +495,88 @@ const SocialRobotPage = () => {
             </CardContent>
           </Card>
         ) : activeTab === 'metrics' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {loadingMetrics ? (
-              <Card className="col-span-full p-20 flex flex-col items-center gap-4 glass-card neon-border-lilac">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <p className="text-xs text-muted-foreground uppercase tracking-widest">Analisando métricas das páginas...</p>
+              <Card className="col-span-full p-32 flex flex-col items-center gap-6 glass-card border-primary/20 shadow-neon-lilac/20">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-primary/20 rounded-full blur-2xl animate-pulse" />
+                  <Loader2 className="h-12 w-12 animate-spin text-primary relative z-10" />
+                </div>
+                <p className="text-[10px] text-muted-foreground uppercase font-black tracking-[0.3em] animate-pulse">Descriptografando Data-Stream...</p>
               </Card>
             ) : metrics.length > 0 ? (
               metrics.map((page) => (
-                <Card key={page.page_id} className="glass-card neon-border-lilac overflow-hidden flex flex-col">
-                  <CardHeader className="pb-3 border-b border-white/5 bg-white/5">
-                    <div className="flex items-center gap-4">
-                      <div className="h-12 w-12 rounded-none border-2 border-primary/20 bg-background overflow-hidden shadow-neon-lilac/20">
-                        <img src={page.facebook?.picture?.data?.url || `https://graph.facebook.com/${page.page_id}/picture?type=large`} className="h-full w-full object-cover" alt="" />
+                <Card key={page.page_id} className="glass-card border-primary/10 overflow-hidden flex flex-col group hover:border-primary/40 transition-all duration-500 shadow-elevated">
+                  <CardHeader className="pb-4 border-b border-white/5 bg-white/[0.02] relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-primary opacity-50" />
+                    <div className="flex items-center gap-5 relative z-10">
+                      <div className="h-16 w-16 rounded-none border-2 border-primary/30 bg-background overflow-hidden shadow-neon-lilac/20 group-hover:scale-105 transition-transform duration-500">
+                        <img src={page.facebook?.picture?.data?.url || `https://graph.facebook.com/${page.page_id}/picture?type=large`} className="h-full w-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" alt="" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Analisando página</p>
-                        <CardTitle className="text-xl uppercase tracking-tighter truncate text-primary">{page.page_name}</CardTitle>
-                        <div className="flex flex-wrap gap-2 mt-1">
-                          <Badge variant="outline" className="text-[9px] px-1 border-primary/20 text-primary">FB: {page.facebook?.fan_count || 0} Seguidores</Badge>
+                        <p className="text-[9px] font-black text-primary uppercase tracking-[0.2em] mb-1">Página Conectada</p>
+                        <CardTitle className="text-2xl font-black uppercase tracking-tighter truncate text-foreground group-hover:text-primary transition-colors">{page.page_name}</CardTitle>
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          <Badge variant="outline" className="text-[8px] font-black px-2 py-0.5 border-primary/30 text-primary bg-primary/5 uppercase tracking-widest">
+                            {page.facebook?.fan_count || 0} SEGUIDORES
+                          </Badge>
                           {page.instagram && (
-                            <Badge variant="outline" className="text-[9px] px-1 border-purple-500/20 text-purple-400">IG: {page.instagram.followers_count || 0}</Badge>
+                            <Badge variant="outline" className="text-[8px] font-black px-2 py-0.5 border-purple-500/30 text-purple-400 bg-purple-500/5 uppercase tracking-widest">
+                              {page.instagram.followers_count || 0} INSTAGRAM
+                            </Badge>
                           )}
                         </div>
                       </div>
                     </div>
                   </CardHeader>
-                  <CardContent className="p-4 space-y-4 flex-1">
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                      <div className="bg-white/5 p-3 border border-white/5 text-center flex flex-col justify-center">
-                        <p className="text-[10px] text-muted-foreground uppercase font-black tracking-tighter mb-1">Postagens</p>
-                        <p className="text-xl font-black text-primary leading-none">{page.facebook?.post_stats?.total_posts || 0}</p>
-                      </div>
-                      <div className="bg-white/5 p-3 border border-white/5 text-center flex flex-col justify-center">
-                        <p className="text-[10px] text-muted-foreground uppercase font-black tracking-tighter mb-1">Curtidas</p>
-                        <p className="text-xl font-black text-primary leading-none">{page.facebook?.post_stats?.total_likes || 0}</p>
-                      </div>
-                      <div className="bg-white/5 p-3 border border-white/5 text-center flex flex-col justify-center">
-                        <p className="text-[10px] text-muted-foreground uppercase font-black tracking-tighter mb-1">Comentários</p>
-                        <p className="text-xl font-black text-primary leading-none">{page.facebook?.post_stats?.total_comments || 0}</p>
-                      </div>
-                      <div className="bg-white/5 p-3 border border-white/5 text-center flex flex-col justify-center">
-                        <p className="text-[10px] text-muted-foreground uppercase font-black tracking-tighter mb-1">Compartilhamentos</p>
-                        <p className="text-xl font-black text-primary leading-none">{page.facebook?.post_stats?.total_shares || 0}</p>
-                      </div>
+                  <CardContent className="p-6 space-y-6 flex-1 bg-gradient-to-b from-transparent to-primary/[0.02]">
+                    <div className="grid grid-cols-2 gap-4">
+                      {[
+                        { label: 'Postagens', value: page.facebook?.post_stats?.total_posts || 0, icon: FileText },
+                        { label: 'Curtidas', value: page.facebook?.post_stats?.total_likes || 0, icon: ThumbsUp },
+                        { label: 'Feedback', value: page.facebook?.post_stats?.total_comments || 0, icon: MessageSquare },
+                        { label: 'Shared', value: page.facebook?.post_stats?.total_shares || 0, icon: ExternalLink },
+                      ].map((stat, idx) => (
+                        <div key={idx} className="bg-white/5 p-4 border border-white/10 relative group/stat hover:bg-white/[0.08] transition-colors overflow-hidden">
+                          <div className="absolute top-0 left-0 w-1 h-0 group-hover/stat:h-full bg-primary transition-all duration-300" />
+                          <p className="text-[9px] text-muted-foreground uppercase font-black tracking-widest mb-2 flex items-center justify-between">
+                            {stat.label}
+                            <stat.icon className="h-3 w-3 text-primary/40 group-hover/stat:text-primary transition-colors" />
+                          </p>
+                          <p className="text-2xl font-black text-foreground leading-none tracking-tighter">{stat.value.toLocaleString()}</p>
+                        </div>
+                      ))}
                     </div>
                     
                     {page.instagram?.post_stats && (
-                      <div className="pt-2 border-t border-white/5">
-                        <p className="text-[9px] font-black text-purple-400 uppercase tracking-widest mb-2 flex items-center gap-1">
-                          <Instagram className="h-3 w-3" /> Instagram Stats (Total Analisado)
+                      <div className="pt-4 border-t border-white/5">
+                        <p className="text-[9px] font-black text-purple-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                          <Instagram className="h-3.5 w-3.5" /> Instagram Performance Matrix
                         </p>
-                        <div className="grid grid-cols-3 gap-2">
-                          <div className="bg-purple-500/5 p-2 border border-purple-500/10 text-center">
-                            <p className="text-[8px] text-muted-foreground uppercase">Posts</p>
-                            <p className="text-md font-bold text-purple-400">{page.instagram.post_stats.total_posts || 0}</p>
-                          </div>
-                          <div className="bg-purple-500/5 p-2 border border-purple-500/10 text-center">
-                            <p className="text-[8px] text-muted-foreground uppercase">Likes</p>
-                            <p className="text-md font-bold text-purple-400">{page.instagram.post_stats.total_likes || 0}</p>
-                          </div>
-                          <div className="bg-purple-500/5 p-2 border border-purple-500/10 text-center">
-                            <p className="text-[8px] text-muted-foreground uppercase">Engajamento</p>
-                            <p className="text-md font-bold text-purple-400">{page.instagram.post_stats.avg_engagement || 0}</p>
-                          </div>
+                        <div className="grid grid-cols-3 gap-3">
+                          {[
+                            { label: 'Posts', val: page.instagram.post_stats.total_posts || 0 },
+                            { label: 'Likes', val: page.instagram.post_stats.total_likes || 0 },
+                            { label: 'Engage', val: page.instagram.post_stats.avg_engagement || 0 },
+                          ].map((i, idx) => (
+                            <div key={idx} className="bg-purple-500/5 p-3 border border-purple-500/10 text-center hover:bg-purple-500/10 transition-colors">
+                              <p className="text-[8px] text-muted-foreground uppercase font-black mb-1">{i.label}</p>
+                              <p className="text-lg font-black text-purple-400 leading-none">{i.val}</p>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     )}
 
                     {page.facebook?.insights?.page_impressions && (
-                      <div className="pt-2 border-t border-white/5">
-                        <div className="flex justify-between items-center mb-1">
-                          <p className="text-[9px] font-black text-success uppercase tracking-widest">Alcance (28 dias)</p>
-                          <span className="text-xs font-bold text-success">+{page.facebook.insights.page_impressions.total.toLocaleString()}</span>
+                      <div className="pt-4 border-t border-white/5">
+                        <div className="flex justify-between items-center mb-2">
+                          <p className="text-[9px] font-black text-success uppercase tracking-[0.2em]">Data reach (28 days)</p>
+                          <span className="text-xs font-black text-success shadow-neon-success">+{page.facebook.insights.page_impressions.total.toLocaleString()}</span>
                         </div>
-                        <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                        <div className="h-2 bg-white/5 rounded-none overflow-hidden border border-white/10">
                           <div 
-                            className="h-full bg-success shadow-neon-success" 
+                            className="h-full bg-gradient-to-r from-success/50 to-success shadow-neon-success animate-glow" 
                             style={{ width: `${Math.min(100, (page.facebook.insights.page_impressions.total / 10000) * 100)}%` }} 
                           />
                         </div>
@@ -568,194 +586,241 @@ const SocialRobotPage = () => {
                 </Card>
               ))
             ) : (
-              <Card className="col-span-full p-20 text-center space-y-4 glass-card neon-border-lilac">
-                <Bot className="h-12 w-12 text-primary/40 mx-auto" />
-                <p className="text-sm font-bold uppercase tracking-widest">Nenhuma métrica disponível</p>
-                <Button variant="outline" size="sm" onClick={fetchMetrics} className="uppercase text-[10px] font-bold">Tentar Novamente</Button>
+              <Card className="col-span-full p-24 text-center space-y-6 glass-card border-primary/20">
+                <div className="mx-auto w-16 h-16 rounded-none bg-primary/5 flex items-center justify-center border-2 border-dashed border-primary/20">
+                  <Activity className="h-8 w-8 text-primary/40" />
+                </div>
+                <div className="space-y-2">
+                  <p className="text-lg font-black text-foreground uppercase tracking-tighter">Nenhum Sinal de Telemetria</p>
+                  <p className="text-xs text-muted-foreground uppercase font-bold tracking-widest">Aguardando conexão com as APIs sociais.</p>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={fetchMetrics} 
+                  className="uppercase text-[10px] font-black tracking-widest h-10 px-8 border-primary/40 hover:bg-primary/10 text-primary border-2 rounded-none"
+                >
+                  Reiniciar Link de Dados
+                </Button>
               </Card>
             )}
           </div>
         ) : activeTab === 'growth' ? (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <Card className="lg:col-span-2 glass-card neon-border-lilac overflow-hidden">
-                <CardHeader className="pb-3 border-b border-white/5 bg-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5 text-primary" />
-                    <CardTitle className="text-lg uppercase tracking-tighter">Performance de Crescimento</CardTitle>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-2 bg-black/40 p-1 border border-white/5">
-                      <input 
-                        type="date" 
-                        value={dateFilter.start} 
-                        onChange={(e) => setDateFilter({...dateFilter, start: e.target.value})}
-                        className="bg-transparent text-[10px] text-white outline-none p-1"
-                      />
-                      <span className="text-[10px] text-muted-foreground">até</span>
-                      <input 
-                        type="date" 
-                        value={dateFilter.end} 
-                        onChange={(e) => setDateFilter({...dateFilter, end: e.target.value})}
-                        className="bg-transparent text-[10px] text-white outline-none p-1"
-                      />
+          <div className="space-y-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <Card className="lg:col-span-2 glass-card border-primary/10 overflow-hidden shadow-elevated group">
+                <CardHeader className="pb-4 border-b border-white/5 bg-white/[0.02] flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative">
+                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-primary opacity-50" />
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary/10 border border-primary/20">
+                      <TrendingUp className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-xl font-black uppercase tracking-tighter">Vetor de Expansão</CardTitle>
+                      <CardDescription className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Análise de Crescimento Neural</CardDescription>
                     </div>
                   </div>
+                  <div className="flex items-center gap-2 bg-black/60 p-1.5 border border-primary/20 shadow-inner">
+                    <input 
+                      type="date" 
+                      value={dateFilter.start} 
+                      onChange={(e) => setDateFilter({...dateFilter, start: e.target.value})}
+                      className="bg-transparent text-[10px] text-primary font-black uppercase outline-none px-2 py-1 hover:bg-primary/5 transition-colors"
+                    />
+                    <ChevronRight className="h-3 w-3 text-primary/40" />
+                    <input 
+                      type="date" 
+                      value={dateFilter.end} 
+                      onChange={(e) => setDateFilter({...dateFilter, end: e.target.value})}
+                      className="bg-transparent text-[10px] text-primary font-black uppercase outline-none px-2 py-1 hover:bg-primary/5 transition-colors"
+                    />
+                  </div>
                 </CardHeader>
-                <CardContent className="p-6">
-                  <div className="h-[300px] w-full mt-4">
+                <CardContent className="p-8">
+                  <div className="h-[350px] w-full mt-4">
                     {loadingInvited ? (
-                      <div className="h-full w-full flex flex-col items-center justify-center gap-4">
-                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                        <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold">Processando dados do gráfico...</p>
+                      <div className="h-full w-full flex flex-col items-center justify-center gap-6">
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl animate-pulse" />
+                          <Loader2 className="h-10 w-10 animate-spin text-primary relative z-10" />
+                        </div>
+                        <p className="text-[10px] text-muted-foreground uppercase font-black tracking-[0.3em] animate-pulse">Compilando Dados de Gráfico...</p>
                       </div>
                     ) : growthChartData.length > 0 ? (
                       <ResponsiveContainer width="100%" height="100%">
                         <AreaChart data={growthChartData}>
                           <defs>
                             <linearGradient id="colorInvites" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.3}/>
-                              <stop offset="95%" stopColor="var(--primary)" stopOpacity={0}/>
+                              <stop offset="5%" stopColor="hsl(210, 100%, 50%)" stopOpacity={0.4}/>
+                              <stop offset="95%" stopColor="hsl(210, 100%, 50%)" stopOpacity={0}/>
                             </linearGradient>
                             <linearGradient id="colorConversions" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                              <stop offset="5%" stopColor="#10b981" stopOpacity={0.4}/>
                               <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
                             </linearGradient>
                           </defs>
-                          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
                           <XAxis 
                             dataKey="date" 
                             axisLine={false} 
                             tickLine={false} 
-                            tick={{fill: 'rgba(255,255,255,0.4)', fontSize: 10}}
+                            tick={{fill: 'rgba(255,255,255,0.4)', fontSize: 10, fontWeight: 'bold'}}
                           />
                           <YAxis 
                             axisLine={false} 
                             tickLine={false} 
-                            tick={{fill: 'rgba(255,255,255,0.4)', fontSize: 10}}
+                            tick={{fill: 'rgba(255,255,255,0.4)', fontSize: 10, fontWeight: 'bold'}}
                           />
                           <Tooltip 
                             contentStyle={{ 
-                              backgroundColor: 'rgba(0,0,0,0.8)', 
-                              border: '1px solid rgba(255,255,255,0.1)',
+                              backgroundColor: 'rgba(0,0,0,0.9)', 
+                              border: '1px solid rgba(0, 150, 255, 0.3)',
                               borderRadius: '0px',
-                              fontSize: '12px'
+                              fontSize: '11px',
+                              fontWeight: 'black',
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.1em'
                             }}
                             itemStyle={{ color: '#fff' }}
+                            cursor={{stroke: 'rgba(0, 150, 255, 0.2)', strokeWidth: 2}}
                           />
-                          <Legend iconType="circle" />
+                          <Legend 
+                            iconType="rect" 
+                            verticalAlign="top" 
+                            align="right" 
+                            wrapperStyle={{paddingBottom: '20px', fontSize: '10px', fontWeight: 'black', textTransform: 'uppercase'}} 
+                          />
                           <Area 
                             type="monotone" 
                             dataKey="convites" 
-                            name="Convites de IA"
-                            stroke="var(--primary)" 
+                            name="Interações IA"
+                            stroke="hsl(210, 100%, 50%)" 
                             fillOpacity={1} 
                             fill="url(#colorInvites)" 
-                            strokeWidth={3}
+                            strokeWidth={4}
+                            animationDuration={2000}
                           />
                           <Area 
                             type="monotone" 
                             dataKey="conversoes" 
-                            name="Conv. Estimadas"
+                            name="Conversões"
                             stroke="#10b981" 
                             fillOpacity={1} 
                             fill="url(#colorConversions)" 
-                            strokeWidth={3}
+                            strokeWidth={4}
+                            animationDuration={2500}
                           />
                         </AreaChart>
                       </ResponsiveContainer>
                     ) : (
-                      <div className="h-full w-full flex flex-col items-center justify-center gap-4 border-2 border-dashed border-white/5 bg-white/[0.02]">
-                        <Activity className="h-10 w-10 text-muted-foreground/20" />
-                        <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold">Sem dados para o gráfico</p>
+                      <div className="h-full w-full flex flex-col items-center justify-center gap-6 border-2 border-dashed border-white/5 bg-white/[0.02] relative">
+                        <Activity className="h-12 w-12 text-muted-foreground/10" />
+                        <p className="text-[10px] text-muted-foreground uppercase font-black tracking-[0.2em]">Sem fluxo de dados para o período selecionado</p>
                       </div>
                     )}
                   </div>
                 </CardContent>
               </Card>
 
-              <div className="space-y-6">
-                <Card className="glass-card neon-border-lilac overflow-hidden">
-                  <CardHeader className="pb-3 border-b border-white/5 bg-white/5">
-                    <CardTitle className="text-sm uppercase tracking-tighter text-muted-foreground">Visão Geral</CardTitle>
+              <div className="space-y-8">
+                <Card className="glass-card border-primary/10 overflow-hidden shadow-elevated relative group">
+                  <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                    <Activity className="h-24 w-24 text-primary" />
+                  </div>
+                  <CardHeader className="pb-4 border-b border-white/5 bg-white/[0.02]">
+                    <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Resumo Executivo</CardTitle>
                   </CardHeader>
-                  <CardContent className="p-6 space-y-4">
-                    <div className="flex items-center justify-between p-4 bg-primary/5 border-l-4 border-primary">
-                      <div>
-                        <p className="text-[10px] text-muted-foreground uppercase font-black">Total Convidados</p>
-                        <h3 className="text-2xl font-black text-primary">{invitedFollowers.length}</h3>
+                  <CardContent className="p-8 space-y-6">
+                    <div className="flex items-center justify-between p-6 bg-primary/[0.03] border-l-4 border-primary relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-16 h-16 bg-primary/5 rounded-full blur-2xl -mr-8 -mt-8" />
+                      <div className="relative z-10">
+                        <p className="text-[9px] text-muted-foreground uppercase font-black tracking-widest mb-1">Total Network Invites</p>
+                        <h3 className="text-4xl font-black text-foreground tracking-tighter shadow-neon-lilac/10">{invitedFollowers.length}</h3>
                       </div>
-                      <Bot className="h-8 w-8 text-primary/30" />
+                      <Bot className="h-10 w-10 text-primary/20 relative z-10" />
                     </div>
-                    <div className="flex items-center justify-between p-4 bg-success/5 border-l-4 border-success">
-                      <div>
-                        <p className="text-[10px] text-muted-foreground uppercase font-black">Taxa de Conversão</p>
-                        <h3 className="text-2xl font-black text-success">15.4%</h3>
+                    <div className="flex items-center justify-between p-6 bg-success/[0.03] border-l-4 border-success relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-16 h-16 bg-success/5 rounded-full blur-2xl -mr-8 -mt-8" />
+                      <div className="relative z-10">
+                        <p className="text-[9px] text-muted-foreground uppercase font-black tracking-widest mb-1">Conversion Efficiency</p>
+                        <h3 className="text-4xl font-black text-success tracking-tighter shadow-neon-success/10">15.4%</h3>
                       </div>
-                      <TrendingUp className="h-8 w-8 text-success/30" />
+                      <TrendingUp className="h-10 w-10 text-success/20 relative z-10" />
                     </div>
-                    <div className="p-4 bg-white/5 border border-white/10">
-                      <p className="text-[9px] text-muted-foreground uppercase leading-tight italic">
-                        * A taxa de conversão é uma estimativa baseada no engajamento das pessoas convidadas pela IA do Vortex Robot.
+                    <div className="p-5 bg-white/[0.02] border border-white/5 text-center">
+                      <p className="text-[9px] text-muted-foreground uppercase font-bold leading-relaxed tracking-wider italic">
+                        * Algoritmo A3 estimando probabilidade de conversão baseada em metadados de engajamento social.
                       </p>
                     </div>
                   </CardContent>
                 </Card>
 
-                <Card className="glass-card neon-border-lilac overflow-hidden">
-                  <CardHeader className="pb-3 border-b border-white/5 bg-white/5">
-                    <CardTitle className="text-sm uppercase tracking-tighter text-muted-foreground">Status do Crescimento</CardTitle>
+                <Card className="glass-card border-primary/10 overflow-hidden shadow-elevated relative">
+                  <CardHeader className="pb-4 border-b border-white/5 bg-white/[0.02]">
+                    <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Status Operacional</CardTitle>
                   </CardHeader>
-                  <CardContent className="p-6 flex flex-col items-center justify-center text-center space-y-4">
-                    <div className="h-16 w-16 rounded-full border-4 border-primary/20 flex items-center justify-center relative">
-                      <div className="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin" />
-                      <UserCheck className="h-8 w-8 text-primary" />
+                  <CardContent className="p-8 flex flex-col items-center justify-center text-center space-y-6">
+                    <div className="h-24 w-24 rounded-none border-4 border-primary/10 flex items-center justify-center relative p-1">
+                      <div className="absolute inset-0 border-2 border-primary border-t-transparent animate-spin" />
+                      <div className="absolute inset-2 border border-primary/30 border-b-transparent animate-spin [animation-direction:reverse]" />
+                      <UserCheck className="h-10 w-10 text-primary animate-pulse" />
                     </div>
-                    <div>
-                      <h4 className="font-bold text-foreground uppercase tracking-widest text-xs">Modo Agressivo Ativo</h4>
-                      <p className="text-[10px] text-muted-foreground mt-1">O robô está buscando ativamente novas interações.</p>
+                    <div className="space-y-2">
+                      <h4 className="font-black text-foreground uppercase tracking-[0.15em] text-sm">Modo de Expansão Ativo</h4>
+                      <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">
+                        O robô está injetando convites ativamente em novas interações.
+                      </p>
                     </div>
                   </CardContent>
                 </Card>
               </div>
             </div>
 
-            <Card className="glass-card neon-border-lilac overflow-hidden">
-              <CardHeader className="pb-3 border-b border-white/5 bg-white/5 flex flex-row items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <History className="h-5 w-5 text-primary" />
-                  <CardTitle className="text-lg uppercase tracking-tighter">Log de Convites Recentes</CardTitle>
+            <Card className="glass-card border-primary/20 overflow-hidden shadow-elevated">
+              <CardHeader className="pb-4 border-b border-white/5 bg-white/[0.02] flex flex-row items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 border border-primary/20">
+                    <History className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-xl font-black uppercase tracking-tighter">Log de Expansão Recente</CardTitle>
+                    <CardDescription className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Últimos Convites Transmitidos</CardDescription>
+                  </div>
                 </div>
-                <Badge variant="outline" className="border-primary/20 text-primary">
-                  {invitedFollowers.length} Convites
+                <Badge variant="outline" className="border-primary shadow-neon-lilac text-primary font-black uppercase text-[10px] px-3">
+                  {invitedFollowers.length} TRANSMISSÕES
                 </Badge>
               </CardHeader>
               <CardContent className="p-0">
                 <div className="divide-y divide-white/5">
                   {loadingInvited ? (
-                    <div className="p-20 flex flex-col items-center gap-4">
-                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                      <p className="text-xs text-muted-foreground uppercase tracking-widest">Carregando dados de crescimento...</p>
+                    <div className="p-24 flex flex-col items-center gap-6">
+                      <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                      <p className="text-[10px] text-muted-foreground uppercase font-black tracking-[0.3em] animate-pulse">Sincronizando Banco de Dados...</p>
                     </div>
                   ) : invitedFollowers.length > 0 ? (
                     invitedFollowers.map((log) => (
-                      <div key={log.id} className="p-4 hover:bg-white/5 transition-all flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="h-8 w-8 rounded-none border border-primary/20 bg-primary/5 flex items-center justify-center">
-                            <Bot className="h-4 w-4 text-primary" />
+                      <div key={log.id} className="p-5 hover:bg-primary/[0.03] transition-all flex items-center justify-between group">
+                        <div className="flex items-center gap-5">
+                          <div className="h-10 w-10 rounded-none border border-primary/30 bg-primary/5 flex items-center justify-center group-hover:border-primary transition-colors">
+                            <Bot className="h-5 w-5 text-primary group-hover:animate-pulse" />
                           </div>
                           <div>
-                            <p className="text-sm font-bold text-foreground">{log.message}</p>
-                            <p className="text-[10px] text-muted-foreground uppercase">{format(new Date(log.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</p>
+                            <p className="text-sm font-bold text-foreground group-hover:text-primary transition-colors leading-tight">{log.message}</p>
+                            <p className="text-[9px] text-muted-foreground uppercase font-black tracking-widest mt-1">
+                              {format(new Date(log.created_at), "dd MMM yyyy '::' HH:mm", { locale: ptBR })}
+                            </p>
                           </div>
                         </div>
-                        <Badge variant="outline" className="text-[8px] uppercase border-success/30 text-success bg-success/5">Sucesso</Badge>
+                        <Badge variant="outline" className="text-[8px] font-black uppercase border-success/40 text-success bg-success/10 px-2 py-1 shadow-[0_0_10px_rgba(34,197,94,0.1)]">
+                          TRANSMITIDO
+                        </Badge>
                       </div>
                     ))
                   ) : (
-                    <div className="p-20 text-center space-y-4">
-                      <UserCheck className="h-12 w-12 text-muted-foreground/20 mx-auto" />
-                      <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold">Nenhum convite registrado neste período</p>
+                    <div className="p-24 text-center space-y-6">
+                      <UserCheck className="h-14 w-14 text-muted-foreground/10 mx-auto" />
+                      <p className="text-[10px] text-muted-foreground uppercase font-black tracking-[0.2em]">Nenhuma transmissão registrada no buffer</p>
                     </div>
                   )}
                 </div>
@@ -763,70 +828,82 @@ const SocialRobotPage = () => {
             </Card>
           </div>
         ) : (
-          <Card className="glass-card border-accent/20 overflow-hidden">
-            <CardHeader className="pb-3 border-b border-white/5 flex flex-row items-center justify-between bg-black/40">
-              <div className="flex items-center gap-2">
-                <div className="h-2 w-2 bg-success rounded-full animate-ping" />
-                <CardTitle className="text-lg uppercase tracking-tighter text-primary">Terminal de Operações</CardTitle>
+          <Card className="glass-card border-primary/20 overflow-hidden shadow-elevated">
+            <CardHeader className="pb-4 border-b border-white/5 flex flex-row items-center justify-between bg-black/40 relative">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-primary opacity-50" />
+              <div className="flex items-center gap-4 relative z-10">
+                <div className="h-2.5 w-2.5 bg-success rounded-full animate-pulse-dot shadow-neon-success" />
+                <div>
+                  <CardTitle className="text-xl font-black uppercase tracking-tighter text-primary">Terminal de Comando</CardTitle>
+                  <CardDescription className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Kernel Operations Live-Feed</CardDescription>
+                </div>
               </div>
-              <div className="flex items-center gap-4">
-                <span className="text-[10px] text-muted-foreground font-mono uppercase animate-pulse">Live Feed</span>
-                <Button variant="ghost" size="sm" onClick={fetchLogs} disabled={loadingLogs} className="h-8 w-8 p-0">
-                  <RefreshCw className={cn("h-4 w-4", loadingLogs && "animate-spin")} />
+              <div className="flex items-center gap-4 relative z-10">
+                <span className="text-[9px] text-primary/60 font-mono font-black uppercase tracking-[0.2em] animate-pulse">System Live</span>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={fetchLogs} 
+                  disabled={loadingLogs} 
+                  className="h-10 w-10 p-0 text-primary hover:bg-primary/10 rounded-none border border-primary/20"
+                >
+                  <RefreshCw className={cn("h-5 w-5", loadingLogs && "animate-spin")} />
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className="p-0 bg-black/60">
+            <CardContent className="p-0 bg-black/40">
               <div className="divide-y divide-white/5 font-mono">
                 {loadingLogs ? (
-                  <div className="p-20 flex flex-col items-center gap-4">
-                    <Loader2 className="h-8 w-8 animate-spin text-accent" />
-                    <p className="text-xs text-muted-foreground uppercase tracking-widest">Acessando logs do sistema...</p>
+                  <div className="p-32 flex flex-col items-center gap-6">
+                    <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                    <p className="text-[10px] text-muted-foreground uppercase font-black tracking-[0.3em] animate-pulse">Acessando Core Logs...</p>
                   </div>
                 ) : logs.length > 0 ? (
                   logs.map((log) => (
-                    <div key={log.id} className="p-4 hover:bg-white/5 transition-all">
-                      <div className="flex items-start gap-4">
+                    <div key={log.id} className="p-6 hover:bg-white/[0.03] transition-all relative group">
+                      <div className="flex items-start gap-6">
                         <div className={cn(
-                          "mt-1 p-2 rounded-lg",
-                          log.level === 'error' ? "bg-destructive/20 text-destructive" :
-                          log.level === 'warn' ? "bg-warning/20 text-warning" :
-                          "bg-primary/20 text-primary"
+                          "mt-1 p-3 rounded-none border-2 transition-all group-hover:scale-110",
+                          log.level === 'error' ? "border-destructive/30 bg-destructive/10 text-destructive shadow-[0_0_15px_rgba(239,68,68,0.2)]" :
+                          log.level === 'warn' ? "border-warning/30 bg-warning/10 text-warning" :
+                          "border-primary/30 bg-primary/10 text-primary shadow-neon-lilac/10"
                         )}>
-                          {log.level === 'error' ? <AlertCircle className="h-4 w-4" /> :
-                           log.level === 'warn' ? <AlertCircle className="h-4 w-4" /> :
-                           <Info className="h-4 w-4" />}
+                          {log.level === 'error' ? <AlertCircle className="h-5 w-5" /> :
+                           log.level === 'warn' ? <AlertCircle className="h-5 w-5" /> :
+                           <Bot className="h-5 w-5" />}
                         </div>
                         <div className="flex-1">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                              {log.module} • {format(new Date(log.created_at), "HH:mm:ss", { locale: ptBR })}
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 group-hover:text-primary transition-colors">
+                              {log.module} <span className="text-white/20 mx-2">|</span> {format(new Date(log.created_at), "HH:mm:ss.ms", { locale: ptBR })}
                             </span>
                             <Badge variant="outline" className={cn(
-                              "text-[8px] px-1 h-4",
-                              log.level === 'error' ? "border-destructive/30 text-destructive" : "border-primary/30 text-primary"
+                              "text-[9px] px-2 h-5 font-black uppercase tracking-widest rounded-none border-2",
+                              log.level === 'error' ? "border-destructive text-destructive" : "border-primary text-primary"
                             )}>
                               {log.level.toUpperCase()}
                             </Badge>
                           </div>
-                          <p className="text-sm font-medium text-foreground">{log.message}</p>
+                          <p className="text-sm font-bold text-foreground leading-relaxed group-hover:text-primary transition-colors">{log.message}</p>
                           {log.details && (
-                            <div className="mt-2 p-3 bg-black/40 rounded border border-primary/10 overflow-hidden shadow-inner">
-                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-3">
+                            <div className="mt-4 p-5 bg-black/60 border border-primary/20 shadow-inner overflow-hidden">
+                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
                                 {Object.entries(log.details).filter(([key]) => ['curtidas', 'seguidores', 'compartilhamentos', 'comentarios', 'numero_postagens'].includes(key)).map(([key, value]) => (
-                                  <div key={key} className="flex flex-col items-center p-2 bg-white/5 border border-white/5">
-                                    <span className="text-[8px] text-primary font-black uppercase tracking-tighter mb-1">{key.replace('_', ' ')}</span>
-                                    <span className="text-sm font-black text-white leading-none">
+                                  <div key={key} className="flex flex-col items-center p-3 bg-primary/[0.03] border border-primary/10 group-hover:border-primary/30 transition-colors">
+                                    <span className="text-[8px] text-primary/60 font-black uppercase tracking-tighter mb-1">{key.replace('_', ' ')}</span>
+                                    <span className="text-lg font-black text-white leading-none">
                                       {typeof value === 'number' ? value.toLocaleString() : String(value)}
                                     </span>
                                   </div>
                                 ))}
                               </div>
-                              <div className="grid grid-cols-1 gap-1">
+                              <div className="space-y-2 opacity-80">
                                 {Object.entries(log.details).filter(([key]) => !['curtidas', 'seguidores', 'compartilhamentos', 'comentarios', 'numero_postagens'].includes(key)).map(([key, value]) => (
-                                  <div key={key} className="flex gap-2 text-[10px] border-b border-white/5 pb-1 last:border-0">
-                                    <span className="text-primary font-black uppercase w-24 shrink-0">{key.replace('_', ' ')}:</span>
-                                    <span className="text-muted-foreground break-all">{typeof value === 'object' ? JSON.stringify(value) : String(value)}</span>
+                                  <div key={key} className="flex gap-4 text-[11px] border-b border-white/5 pb-2 last:border-0 hover:bg-white/5 transition-colors px-1">
+                                    <span className="text-primary font-black uppercase w-32 shrink-0 tracking-tighter">{key.replace('_', ' ')}:</span>
+                                    <span className="text-muted-foreground break-all font-medium">
+                                      {typeof value === 'object' ? JSON.stringify(value) : String(value)}
+                                    </span>
                                   </div>
                                 ))}
                               </div>
@@ -837,8 +914,8 @@ const SocialRobotPage = () => {
                     </div>
                   ))
                 ) : (
-                  <div className="p-10 text-center">
-                    <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold">Sem logs registrados</p>
+                  <div className="p-24 text-center">
+                    <p className="text-[10px] text-muted-foreground uppercase font-black tracking-[0.3em] animate-pulse">Buffer de log vazio. Aguardando atividade...</p>
                   </div>
                 )}
               </div>
