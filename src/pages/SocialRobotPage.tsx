@@ -455,8 +455,8 @@ const SocialRobotPage = () => {
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2 mb-2 flex-wrap">
                               <span className={cn(
-                                "font-black uppercase tracking-tighter group-hover:drop-shadow-[0_0_5px_rgba(0,210,255,0.5)] transition-all",
-                                compactMode ? "text-xs" : "text-sm"
+                                "font-black uppercase tracking-tighter group-hover:text-[hsl(200_100%_60%)] transition-all",
+                                compactMode ? "text-[11px]" : "text-sm"
                               )}>
                                 {item.author_name}
                               </span>
