@@ -950,13 +950,13 @@ const SocialRobotPage = () => {
                               {log.module} <span className="text-white/20 mx-1">|</span> {format(new Date(log.created_at), "HH:mm", { locale: ptBR })}
                             </span>
                             <Badge variant="outline" className={cn(
-                              "text-[9px] px-2 h-5 font-black uppercase tracking-widest rounded-none border-2",
-                              log.level === 'error' ? "border-destructive text-destructive" : "border-primary text-primary"
+                              "text-[8px] px-1.5 h-4 font-black uppercase tracking-widest rounded-none border",
+                              log.level === 'error' ? "border-destructive text-destructive" : "border-[hsl(200_100%_60%)] text-[hsl(200_100%_60%)]"
                             )}>
                               {log.level.toUpperCase()}
                             </Badge>
                           </div>
-                          <p className="text-sm font-bold text-foreground leading-relaxed group-hover:text-primary transition-colors">{log.message}</p>
+                          <p className="text-xs font-bold text-foreground leading-tight group-hover:text-[hsl(200_100%_60%)] transition-colors truncate">{log.message}</p>
                           {log.details && (
                             <div className="mt-4 p-5 bg-black/60 border border-primary/20 shadow-inner overflow-hidden">
                               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
