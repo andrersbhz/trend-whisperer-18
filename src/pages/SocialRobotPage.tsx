@@ -523,13 +523,13 @@ const SocialRobotPage = () => {
                             )}
                           </div>
                         </div>
-                        <div className="flex flex-row md:flex-col items-center md:items-end gap-3">
+                        <div className="flex flex-row md:flex-col items-center md:items-end gap-2 shrink-0">
                           <Badge 
                             variant="secondary" 
                             className={cn(
-                              "text-[10px] uppercase font-black px-4 py-1.5 tracking-[0.15em] border-2",
-                              item.status === 'replied' ? "border-success shadow-[0_0_15px_rgba(34,197,94,0.2)] bg-success/10 text-success" : 
-                              item.status === 'processed' ? "border-primary shadow-neon-lilac/40 bg-primary/10 text-primary" :
+                              "text-[9px] uppercase font-black px-2 py-1 tracking-[0.1em] border-2",
+                              item.status === 'replied' ? "border-success shadow-[0_0_10px_rgba(34,197,94,0.1)] bg-success/10 text-success" : 
+                              item.status === 'processed' ? "border-[hsl(200_100%_60%)] shadow-[0_0_10px_rgba(0,210,255,0.1)] bg-[hsl(200_100%_60%)]/10 text-[hsl(200_100%_60%)]" :
                               "border-warning/30 bg-warning/5 text-warning"
                             )}
                           >
