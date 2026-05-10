@@ -441,7 +441,7 @@ const SocialRobotPage = () => {
                               {item.author_avatar ? (
                                 <img src={item.author_avatar} alt={item.author_name} className="h-full w-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
                               ) : (
-                                <div className="h-full w-full flex items-center justify-center bg-[hsl(200_100%_60%)]/10 text-[hsl(200_100%_60%)] text-lg font-black italic">
+                                <div className="h-full w-full flex items-center justify-center bg-[hsl(200_100%_60%)]/10 text-[hsl(200_100%_60%)] text-base font-black italic">
                                   {item.author_name?.substring(0, 1).toUpperCase()}
                                 </div>
                               )}
