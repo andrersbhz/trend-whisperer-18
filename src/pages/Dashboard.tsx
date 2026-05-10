@@ -641,7 +641,7 @@ const Dashboard = () => {
           <AIProvidersPanel />
         </div>
       </div>
-
+      )}
       {/* Google Trends Preview */}
         <Card className="glass-card neon-border-lilac h-full">
           <CardHeader className="pb-2">
