@@ -473,7 +473,7 @@ const SocialRobotPage = () => {
                                    {item.interaction_type === 'reaction' ? <ThumbsUp className="h-3 w-3 mr-1.5" /> : 
                                     item.interaction_type === 'mention' ? <AtSign className="h-3 w-3 mr-1.5" /> : 
                                     <MessageSquare className="h-3 w-3 mr-1.5" />}
-                                   <span className={compactMode ? "hidden sm:inline" : ""}>
+                                   <span className={compactMode ? "hidden" : ""}>
                                      {item.interaction_type === 'reaction' ? 'Reação' : 
                                       item.interaction_type === 'mention' ? 'Menção' : 
                                       'Comentário'}
