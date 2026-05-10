@@ -545,23 +545,25 @@ const SocialRobotPage = () => {
               </Card>
             ) : metrics.length > 0 ? (
               metrics.map((page) => (
-                <Card key={page.page_id} className="glass-card border-primary/10 overflow-hidden flex flex-col group hover:border-primary/40 transition-all duration-500 shadow-elevated">
-                  <CardHeader className="pb-4 border-b border-white/5 bg-white/[0.02] relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-primary opacity-50" />
-                    <div className="flex items-center gap-5 relative z-10">
-                      <div className="h-16 w-16 rounded-none border-2 border-primary/30 bg-background overflow-hidden shadow-neon-lilac/20 group-hover:scale-105 transition-transform duration-500">
+                <Card key={page.page_id} className="glass-card border-[hsl(200_100%_60%)]/10 overflow-hidden flex flex-col group hover:border-[hsl(200_100%_60%)]/40 transition-all duration-500 shadow-elevated">
+                  <CardHeader className="p-4 border-b border-white/5 bg-white/[0.02] relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-0.5 bg-[hsl(200_100%_60%)] opacity-30" />
+                    <div className="flex items-center gap-4 relative z-10">
+                      <div className="h-12 w-12 rounded-none border border-[hsl(200_100%_60%)]/30 bg-background overflow-hidden shadow-[0_0_10px_rgba(0,210,255,0.1)] group-hover:scale-105 transition-transform duration-500">
                         <img src={page.facebook?.picture?.data?.url || `https://graph.facebook.com/${page.page_id}/picture?type=large`} className="h-full w-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" alt="" />
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[9px] font-black text-primary uppercase tracking-[0.2em] mb-1">Página Conectada</p>
-                        <CardTitle className="text-2xl font-black uppercase tracking-tighter truncate text-foreground group-hover:text-primary transition-colors">{page.page_name}</CardTitle>
-                        <div className="flex flex-wrap gap-2 mt-2">
-                          <Badge variant="outline" className="text-[8px] font-black px-2 py-0.5 border-primary/30 text-primary bg-primary/5 uppercase tracking-widest">
+                      <div className="min-w-0 flex-1 flex items-center justify-between gap-4">
+                        <div className="min-w-0">
+                          <p className="text-[7px] font-black text-[hsl(200_100%_60%)] uppercase tracking-[0.2em] mb-0.5">Página Ativa</p>
+                          <CardTitle className="text-lg font-black uppercase tracking-tighter truncate text-foreground group-hover:text-[hsl(200_100%_60%)] transition-colors">{page.page_name}</CardTitle>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <Badge variant="outline" className="text-[7px] font-black px-1.5 py-0 border-[hsl(200_100%_60%)]/30 text-[hsl(200_100%_60%)] bg-[hsl(200_100%_60%)]/5 uppercase tracking-widest h-5">
                             {page.facebook?.fan_count || 0} SEGUIDORES
                           </Badge>
                           {page.instagram && (
-                            <Badge variant="outline" className="text-[8px] font-black px-2 py-0.5 border-purple-500/30 text-purple-400 bg-purple-500/5 uppercase tracking-widest">
-                              {page.instagram.followers_count || 0} INSTAGRAM
+                            <Badge variant="outline" className="text-[7px] font-black px-1.5 py-0 border-purple-500/30 text-purple-400 bg-purple-500/5 uppercase tracking-widest h-5">
+                              {page.instagram.followers_count || 0} IG
                             </Badge>
                           )}
                         </div>
