@@ -107,11 +107,14 @@ ${typeLabel} de ${item.author_name} na plataforma ${item.platform}: "${item.cont
           user_id: userId,
           level: "info",
           module: "robot",
-          message: `IA respondeu comentário de ${item.author_name}`,
+          message: followerGrowth 
+            ? `IA convidou ${item.author_name} para seguir a página` 
+            : `IA respondeu comentário de ${item.author_name}`,
           details: {
             plataforma: item.platform,
             comentario_original: item.content,
-            resposta_ia: aiResponse.trim()
+            resposta_ia: aiResponse.trim(),
+            convite_enviado: followerGrowth
           }
         });
         
