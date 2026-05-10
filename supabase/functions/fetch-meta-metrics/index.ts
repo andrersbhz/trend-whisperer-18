@@ -105,40 +105,45 @@ serve(async (req) => {
         }
 
         // Page insights (last 28 days)
-        // Note: page_views_total is not available for all page types, keeping core engagement metrics
+        // Fetch metrics individually to avoid (#100) error if one is not supported
         const insightsMetrics = [
           "page_post_engagements",
-          "page_fan_adds",
           "page_impressions",
-          "page_engaged_users"
-        ].join(",");
+          "page_engaged_users",
+          "page_fan_adds"
+        ];
 
-        const insightsResp = await fetch(
-          `${GRAPH_API}/${page.pageId}/insights?metric=${insightsMetrics}&period=day&since=${getDateDaysAgo(28)}&until=${getDateDaysAgo(0)}&access_token=${page.accessToken}`
-        );
-        if (insightsResp.ok) {
-          const insightsData = await insightsResp.json();
-          pageMetrics.facebook.insights = {};
-          for (const metric of insightsData.data || []) {
-            const values = metric.values || [];
-            // For metrics like 'page_impressions', we want the sum of daily values over the period
-            const total = values.reduce((sum: number, v: any) => sum + (typeof v.value === "number" ? v.value : 0), 0);
+        pageMetrics.facebook.insights = {};
+        for (const metricName of insightsMetrics) {
+          try {
+            const insightsResp = await fetch(
+              `${GRAPH_API}/${page.pageId}/insights?metric=${metricName}&period=day&since=${getDateDaysAgo(28)}&until=${getDateDaysAgo(0)}&access_token=${page.accessToken}`
+            );
             
-            // For latest, if it's an object (like gender/age), we use the total as a fallback or the object itself
-            const latestValue = values[values.length - 1]?.value;
-            
-            pageMetrics.facebook.insights[metric.name] = {
-              total,
-              latest: typeof latestValue === "object" ? total : (latestValue ?? total),
-              daily: values.map((v: any) => ({
-                date: v.end_time?.split("T")[0],
-                value: typeof v.value === "number" ? v.value : 0,
-              })),
-            };
+            if (insightsResp.ok) {
+              const insightsData = await insightsResp.json();
+              const metric = insightsData.data?.[0];
+              if (metric) {
+                const values = metric.values || [];
+                const total = values.reduce((sum: number, v: any) => sum + (typeof v.value === "number" ? v.value : 0), 0);
+                const latestValue = values[values.length - 1]?.value;
+                
+                pageMetrics.facebook.insights[metricName] = {
+                  total,
+                  latest: typeof latestValue === "object" ? total : (latestValue ?? total),
+                  daily: values.map((v: any) => ({
+                    date: v.end_time?.split("T")[0],
+                    value: typeof v.value === "number" ? v.value : 0,
+                  })),
+                };
+              }
+            } else {
+              const err = await insightsResp.json();
+              console.warn(`Metric ${metricName} not available for ${page.pageId}:`, err.error?.message);
+            }
+          } catch (e) {
+            console.error(`Error fetching ${metricName}:`, e);
           }
-        } else {
-          const errorText = await insightsResp.text();
-          console.error(`Facebook Insights error for ${page.pageId}:`, errorText);
         }
 
         // Recent posts with engagement

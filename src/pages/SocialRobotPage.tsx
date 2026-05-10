@@ -393,7 +393,7 @@ const SocialRobotPage = () => {
                   <CardContent className="p-4 space-y-4 flex-1">
                     <div className="grid grid-cols-3 gap-2">
                       <div className="bg-white/5 p-2 border border-white/5 text-center">
-                        <p className="text-[9px] text-muted-foreground uppercase font-bold">Postagens</p>
+                        <p className="text-[9px] text-muted-foreground uppercase font-bold">Postagens (Recentes)</p>
                         <p className="text-lg font-black text-primary">{page.facebook?.post_stats?.total_posts || 0}</p>
                       </div>
                       <div className="bg-white/5 p-2 border border-white/5 text-center">
