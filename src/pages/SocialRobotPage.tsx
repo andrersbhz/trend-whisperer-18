@@ -326,6 +326,7 @@ const SocialRobotPage = () => {
                 ? "border-success bg-success/5 text-success hover:bg-success/10" 
                 : "border-destructive/30 bg-destructive/5 text-destructive hover:bg-destructive/10"
             )}
+            title={automationEnabled ? "Desativar Automação" : "Ativar Automação"}
           >
             {loadingSettings ? (
               <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
