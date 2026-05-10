@@ -763,41 +763,37 @@ const SocialRobotPage = () => {
               </Card>
 
               <div className="space-y-8">
-                <Card className="glass-card border-primary/10 overflow-hidden shadow-elevated relative group">
+                <Card className="glass-card border-[hsl(200_100%_60%)]/10 overflow-hidden shadow-elevated relative group">
                   <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                    <Activity className="h-24 w-24 text-primary" />
+                    <Activity className="h-24 w-24 text-[hsl(200_100%_60%)]" />
                   </div>
-                  <CardHeader className="pb-4 border-b border-white/5 bg-white/[0.02]">
-                    <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Resumo Executivo</CardTitle>
+                  <CardHeader className="p-4 border-b border-white/5 bg-white/[0.02]">
+                    <CardTitle className="text-[9px] font-black uppercase tracking-[0.2em] text-[hsl(200_100%_60%)]">Resumo Executivo</CardTitle>
                   </CardHeader>
-                  <CardContent className="p-8 space-y-6">
-                    <div className="flex items-center justify-between p-6 bg-primary/[0.03] border-l-4 border-primary relative overflow-hidden">
-                      <div className="absolute top-0 right-0 w-16 h-16 bg-primary/5 rounded-full blur-2xl -mr-8 -mt-8" />
+                  <CardContent className="p-6 space-y-6">
+                    <div className="flex items-center justify-between p-4 bg-[hsl(200_100%_60%)]/[0.03] border-l-4 border-[hsl(200_100%_60%)] relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-16 h-16 bg-[hsl(200_100%_60%)]/5 rounded-full blur-2xl -mr-8 -mt-8" />
                       <div className="relative z-10">
-                        <p className="text-[9px] text-muted-foreground uppercase font-black tracking-widest mb-1">Total Network Invites</p>
-                        <h3 className="text-4xl font-black text-foreground tracking-tighter shadow-neon-lilac/10">{invitedFollowers.length}</h3>
+                        <p className="text-[8px] text-muted-foreground uppercase font-black tracking-widest mb-1">Total Network Invites</p>
+                        <h3 className="text-3xl font-black text-foreground tracking-tighter">{invitedFollowers.length}</h3>
                       </div>
-                      <Bot className="h-10 w-10 text-primary/20 relative z-10" />
+                      <Bot className="h-8 w-8 text-[hsl(200_100%_60%)]/20 relative z-10" />
                     </div>
-                    <div className="flex items-center justify-between p-6 bg-success/[0.03] border-l-4 border-success relative overflow-hidden">
+                    <div className="flex items-center justify-between p-4 bg-success/[0.03] border-l-4 border-success relative overflow-hidden">
                       <div className="absolute top-0 right-0 w-16 h-16 bg-success/5 rounded-full blur-2xl -mr-8 -mt-8" />
                       <div className="relative z-10">
-                        <p className="text-[9px] text-muted-foreground uppercase font-black tracking-widest mb-1">Conversion Efficiency</p>
-                        <h3 className="text-4xl font-black text-success tracking-tighter shadow-neon-success/10">15.4%</h3>
+                        <p className="text-[8px] text-muted-foreground uppercase font-black tracking-widest mb-1">Conversion Efficiency</p>
+                        <h3 className="text-3xl font-black text-success tracking-tighter">15.4%</h3>
                       </div>
-                      <TrendingUp className="h-10 w-10 text-success/20 relative z-10" />
+                      <TrendingUp className="h-8 w-8 text-success/20 relative z-10" />
                     </div>
-                    <div className="p-5 bg-white/[0.02] border border-white/5 text-center">
-                      <p className="text-[9px] text-muted-foreground uppercase font-bold leading-relaxed tracking-wider italic">
-                        * Algoritmo A3 estimando probabilidade de conversão baseada em metadados de engajamento social.
-                      </p>
-                    </div>
+...
                   </CardContent>
                 </Card>
 
-                <Card className="glass-card border-primary/10 overflow-hidden shadow-elevated relative">
-                  <CardHeader className="pb-4 border-b border-white/5 bg-white/[0.02]">
-                    <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Status Operacional</CardTitle>
+                <Card className="glass-card border-[hsl(200_100%_60%)]/10 overflow-hidden shadow-elevated relative">
+                  <CardHeader className="p-4 border-b border-white/5 bg-white/[0.02]">
+                    <CardTitle className="text-[9px] font-black uppercase tracking-[0.2em] text-[hsl(200_100%_60%)]">Status Operacional</CardTitle>
                   </CardHeader>
                   <CardContent className="p-8 flex flex-col items-center justify-center text-center space-y-6">
                     <div className="h-24 w-24 rounded-none border-4 border-primary/10 flex items-center justify-center relative p-1">
