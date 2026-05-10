@@ -117,6 +117,9 @@ const Dashboard = () => {
 
       setTrendingList(topTrends || []);
       setUserCategories(categoriesData?.categories || ['esportes', 'politica', 'policia', 'saude', 'celebridades', 'financas']);
+      if (categoriesData?.dashboard_widgets) {
+        setWidgets(categoriesData.dashboard_widgets);
+      }
       setLoadingTrends(false);
 
       setStats({
