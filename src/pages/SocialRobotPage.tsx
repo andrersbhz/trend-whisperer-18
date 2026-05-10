@@ -459,7 +459,7 @@ const SocialRobotPage = () => {
                                 {item.author_name}
                               </span>
                               <div className="flex items-center gap-2">
-                                <Badge variant="outline" className="text-[9px] font-black h-5 px-2 border-primary/30 text-primary bg-primary/5 uppercase">
+                                <Badge variant="outline" className="text-[8px] font-black h-4 px-1.5 border-[hsl(200_100%_60%)]/30 text-[hsl(200_100%_60%)] bg-[hsl(200_100%_60%)]/5 uppercase">
                                   {item.platform}
                                 </Badge>
                                  <Badge variant="secondary" className={cn(
