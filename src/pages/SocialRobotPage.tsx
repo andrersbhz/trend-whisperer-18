@@ -925,9 +925,9 @@ const SocialRobotPage = () => {
                             <div className="mt-4 p-5 bg-black/60 border border-primary/20 shadow-inner overflow-hidden">
                               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
                                 {Object.entries(log.details).filter(([key]) => ['curtidas', 'seguidores', 'compartilhamentos', 'comentarios', 'numero_postagens'].includes(key)).map(([key, value]) => (
-                                  <div key={key} className="flex flex-col items-center p-3 bg-primary/[0.03] border border-primary/10 group-hover:border-primary/30 transition-colors">
-                                    <span className="text-[8px] text-primary/60 font-black uppercase tracking-tighter mb-1">{key.replace('_', ' ')}</span>
-                                    <span className="text-lg font-black text-white leading-none">
+                                  <div key={key} className="flex flex-col items-center p-2 bg-[hsl(200_100%_60%)]/[0.03] border border-[hsl(200_100%_60%)]/10 group-hover:border-[hsl(200_100%_60%)]/30 transition-colors">
+                                    <span className="text-[7px] text-[hsl(200_100%_60%)]/60 font-black uppercase tracking-tighter mb-0.5">{key.replace('_', ' ')}</span>
+                                    <span className="text-base font-black text-white leading-none">
                                       {typeof value === 'number' ? value.toLocaleString() : String(value)}
                                     </span>
                                   </div>
