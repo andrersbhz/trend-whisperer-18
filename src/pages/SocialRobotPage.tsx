@@ -224,8 +224,8 @@ const SocialRobotPage = () => {
 
     const logsChannel = supabase
       .channel('realtime-robot-data')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'automation_logs' }, () => {
-        fetchLogs();
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'automation_logs' }, (payload) => {
+        setLogs(prev => [payload.new, ...prev].slice(0, 30));
         fetchInvitedFollowers(); // Refresh growth data when new logs arrive
       })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'social_interactions' }, () => {
@@ -812,8 +812,18 @@ const SocialRobotPage = () => {
                           <p className="text-sm font-medium text-foreground">{log.message}</p>
                           {log.details && (
                             <div className="mt-2 p-3 bg-black/40 rounded border border-primary/10 overflow-hidden shadow-inner">
+                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-3">
+                                {Object.entries(log.details).filter(([key]) => ['curtidas', 'seguidores', 'compartilhamentos', 'comentarios', 'numero_postagens'].includes(key)).map(([key, value]) => (
+                                  <div key={key} className="flex flex-col items-center p-2 bg-white/5 border border-white/5">
+                                    <span className="text-[8px] text-primary font-black uppercase tracking-tighter mb-1">{key.replace('_', ' ')}</span>
+                                    <span className="text-sm font-black text-white leading-none">
+                                      {typeof value === 'number' ? value.toLocaleString() : String(value)}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
                               <div className="grid grid-cols-1 gap-1">
-                                {Object.entries(log.details).map(([key, value]) => (
+                                {Object.entries(log.details).filter(([key]) => !['curtidas', 'seguidores', 'compartilhamentos', 'comentarios', 'numero_postagens'].includes(key)).map(([key, value]) => (
                                   <div key={key} className="flex gap-2 text-[10px] border-b border-white/5 pb-1 last:border-0">
                                     <span className="text-primary font-black uppercase w-24 shrink-0">{key.replace('_', ' ')}:</span>
                                     <span className="text-muted-foreground break-all">{typeof value === 'object' ? JSON.stringify(value) : String(value)}</span>
