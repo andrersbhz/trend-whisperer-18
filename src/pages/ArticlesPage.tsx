@@ -25,6 +25,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ImageUpload } from '@/components/articles/ImageUpload';
 import { Label } from '@/components/ui/label';
+import { ManualArticleDialog } from '@/components/articles/ManualArticleDialog';
+import { Plus } from 'lucide-react';
 
 const ArticlesPage = () => {
   const { user } = useAuth();
@@ -48,6 +50,7 @@ const ArticlesPage = () => {
   const [errorState, setErrorState] = useState<string | null>(null);
   const [diagMetrics, setDiagMetrics] = useState<any[]>([]);
   const [showDiagnostics, setShowDiagnostics] = useState(false);
+  const [manualDialogOpen, setManualDialogOpen] = useState(false);
 
   const PAGE_SIZE = 20;
 
@@ -659,6 +662,16 @@ const ArticlesPage = () => {
         </div>
         <div className="flex gap-2 flex-wrap">
           <Button
+            onClick={() => setManualDialogOpen(true)}
+            variant="outline"
+            size="sm"
+            className="gap-2 border-primary/40 text-primary hover:bg-primary/10"
+          >
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">Adicionar Manual</span>
+            <span className="sm:hidden">Manual</span>
+          </Button>
+          <Button
             onClick={handleCleanupOld}
             disabled={cleaningUp}
             variant="outline"
@@ -932,6 +945,13 @@ const ArticlesPage = () => {
           )}
         </DialogContent>
       </Dialog>
+      
+      <ManualArticleDialog 
+        open={manualDialogOpen} 
+        onOpenChange={setManualDialogOpen} 
+        categories={userCategories}
+        onSuccess={fetchArticles}
+      />
     </div>
   );
 };
