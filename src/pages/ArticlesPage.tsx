@@ -25,6 +25,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ImageUpload } from '@/components/articles/ImageUpload';
 import { Label } from '@/components/ui/label';
+import { ManualArticleDialog } from '@/components/articles/ManualArticleDialog';
+import { Plus } from 'lucide-react';
 
 const ArticlesPage = () => {
   const { user } = useAuth();
