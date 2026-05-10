@@ -433,6 +433,7 @@ const SocialRobotPage = () => {
                         "flex items-start justify-between gap-4",
                         compactMode ? "p-3" : "p-6"
                       )}>
+                        <div className="flex gap-4 min-w-0 flex-1">
                           <div className="relative shrink-0">
                             <div className="h-12 w-12 rounded-none border border-[hsl(200_100%_60%)]/30 bg-background overflow-hidden group-hover:border-[hsl(200_100%_60%)] transition-colors shadow-[0_0_10px_rgba(0,210,255,0.1)]">
                               {item.author_avatar ? (
