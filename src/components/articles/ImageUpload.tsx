@@ -125,7 +125,7 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
     try {
       setUploading(true);
       const { data, error } = await supabase.functions.invoke('regenerate-image', {
-        body: { userId: user.id, articleIds: [articleId] },
+        body: { userId: user.id, articleIds: [articleId], force: true },
       });
       
       if (error) throw error;
