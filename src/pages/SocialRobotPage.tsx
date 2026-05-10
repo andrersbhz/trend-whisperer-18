@@ -310,53 +310,37 @@ const SocialRobotPage = () => {
         </div>
       </div>
 
-      <div className="flex gap-1 mb-2 p-1 bg-white/[0.03] w-fit rounded-none border border-white/5">
-        <Button 
-          variant={activeTab === 'telemetry' ? 'secondary' : 'ghost'} 
-          size="sm" 
-          onClick={() => {
-            setActiveTab('telemetry');
-            fetchLogs();
-          }}
-          className="text-[9px] uppercase font-bold tracking-widest h-7 px-3 rounded-none relative overflow-hidden group"
-        >
-          {activeTab === 'telemetry' && <div className="absolute inset-0 bg-primary/10 animate-pulse" />}
-          <Bot className={cn("h-3 w-3 mr-1.5 opacity-70 z-10", activeTab === 'telemetry' && "animate-pulse")} />
-          <span className="z-10 text-primary">Log do Robô</span>
-        </Button>
-        <Button 
-          variant={activeTab === 'interactions' ? 'secondary' : 'ghost'} 
-          size="sm" 
-          onClick={() => setActiveTab('interactions')}
-          className="text-[9px] uppercase font-bold tracking-widest h-7 px-3 rounded-none"
-        >
-          <History className="h-3 w-3 mr-1.5 opacity-70" />
-          Interações
-        </Button>
-        <Button 
-          variant={activeTab === 'metrics' ? 'secondary' : 'ghost'} 
-          size="sm" 
-          onClick={() => {
-            setActiveTab('metrics');
-            fetchMetrics();
-          }}
-          className="text-[9px] uppercase font-bold tracking-widest h-7 px-3 rounded-none"
-        >
-          <Activity className="h-3 w-3 mr-1.5 opacity-70" />
-          Métricas
-        </Button>
-        <Button 
-          variant={activeTab === 'growth' ? 'secondary' : 'ghost'} 
-          size="sm" 
-          onClick={() => {
-            setActiveTab('growth');
-            fetchInvitedFollowers();
-          }}
-          className="text-[9px] uppercase font-bold tracking-widest h-7 px-3 rounded-none"
-        >
-          <UserCheck className="h-3 w-3 mr-1.5 opacity-70" />
-          Dashboard de Crescimento
-        </Button>
+      <div className="flex flex-wrap gap-2 p-1.5 glass border-white/5 w-fit rounded-none shadow-elevated">
+        {[
+          { id: 'telemetry', label: 'Log de Comando', icon: Bot },
+          { id: 'interactions', label: 'Interações Ativas', icon: History },
+          { id: 'metrics', label: 'Análise de Tráfego', icon: Activity },
+          { id: 'growth', label: 'Dashboard de Expansão', icon: TrendingUp },
+        ].map((tab) => (
+          <Button 
+            key={tab.id}
+            variant={activeTab === tab.id ? 'secondary' : 'ghost'} 
+            size="sm" 
+            onClick={() => {
+              setActiveTab(tab.id as any);
+              if (tab.id === 'telemetry') fetchLogs();
+              if (tab.id === 'metrics') fetchMetrics();
+              if (tab.id === 'growth') fetchInvitedFollowers();
+            }}
+            className={cn(
+              "text-[10px] uppercase font-black tracking-[0.15em] h-9 px-5 rounded-none transition-all relative overflow-hidden group border border-transparent",
+              activeTab === tab.id 
+                ? "bg-primary/20 text-primary border-primary/30 shadow-neon-lilac" 
+                : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+            )}
+          >
+            <tab.icon className={cn("h-3.5 w-3.5 mr-2", activeTab === tab.id && "animate-pulse")} />
+            {tab.label}
+            {activeTab === tab.id && (
+              <span className="absolute bottom-0 left-0 w-full h-0.5 bg-primary shadow-neon-lilac" />
+            )}
+          </Button>
+        ))}
       </div>
 
       <div className="grid grid-cols-1 gap-6">
