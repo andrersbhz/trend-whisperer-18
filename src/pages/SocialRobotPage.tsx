@@ -29,6 +29,7 @@ const SocialRobotPage = () => {
   const [activeTab, setActiveTab] = useState<'interactions' | 'metrics' | 'telemetry' | 'growth'>('telemetry');
   const [invitedFollowers, setInvitedFollowers] = useState<any[]>([]);
   const [loadingInvited, setLoadingInvited] = useState(false);
+  const [compactMode, setCompactMode] = useState(true);
   const [dateFilter, setDateFilter] = useState<{start: string, end: string}>({
     start: format(new Date().setDate(new Date().getDate() - 7), 'yyyy-MM-dd'),
     end: format(new Date(), 'yyyy-MM-dd')
@@ -249,11 +250,11 @@ const SocialRobotPage = () => {
         
         <div className="relative z-10 flex items-center gap-6 flex-1 min-w-0">
           <div className="flex items-center gap-3 shrink-0">
-            <div className="p-2 bg-[hsl(200_100%_60%)]/10 rounded-none border border-[hsl(200_100%_60%)]/30 shadow-[0_0_15px_rgba(0,210,255,0.3)] animate-glow shrink-0">
-              <Bot className="h-6 w-6 text-[hsl(200_100%_60%)] animate-pulse" />
+            <div className="p-2 bg-[hsl(200_100%_60%)]/10 rounded-none border border-[hsl(200_100%_60%)]/30 shrink-0">
+              <Bot className="h-5 w-5 text-[hsl(200_100%_60%)]" />
             </div>
             <div className="hidden sm:block">
-              <h1 className="text-xl font-black text-[hsl(200_100%_60%)] uppercase tracking-tighter whitespace-nowrap font-montserrat drop-shadow-[0_0_8px_rgba(0,210,255,0.5)]">
+              <h1 className="text-xl font-black text-[hsl(200_100%_60%)] uppercase tracking-tighter whitespace-nowrap font-montserrat">
                 Robô Social A3
               </h1>
               <p className="text-muted-foreground text-[8px] uppercase tracking-[0.2em] flex items-center gap-1.5 font-bold whitespace-nowrap">
@@ -302,6 +303,21 @@ const SocialRobotPage = () => {
           <Button
             variant="outline"
             size="sm"
+            onClick={() => setCompactMode(!compactMode)}
+            className={cn(
+              "font-black uppercase tracking-widest text-[9px] h-8 px-2 rounded-none transition-all duration-300 border-2",
+              compactMode 
+                ? "border-warning bg-warning/5 text-warning" 
+                : "border-white/10 bg-white/5 text-muted-foreground hover:bg-white/10"
+            )}
+            title={compactMode ? "Desativar Modo Compacto" : "Ativar Modo Compacto"}
+          >
+            {compactMode ? "COMPACTO" : "NORMAL"}
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => toggleAutomation(!automationEnabled)}
             disabled={loadingSettings}
             className={cn(
@@ -310,6 +326,7 @@ const SocialRobotPage = () => {
                 ? "border-success bg-success/5 text-success hover:bg-success/10" 
                 : "border-destructive/30 bg-destructive/5 text-destructive hover:bg-destructive/10"
             )}
+            title={automationEnabled ? "Desativar Automação" : "Ativar Automação"}
           >
             {loadingSettings ? (
               <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
@@ -318,7 +335,7 @@ const SocialRobotPage = () => {
             ) : (
               <PowerOff className="h-3 w-3 mr-1.5" />
             )}
-            <span className="hidden lg:inline">{automationEnabled ? "DESATIVAR" : "ATIVAR"}</span>
+            <span className="hidden sm:inline">{automationEnabled ? "DESATIVAR" : "ATIVAR"}</span>
           </Button>
 
           <Button
@@ -332,9 +349,10 @@ const SocialRobotPage = () => {
                 ? "border-[hsl(200_100%_60%)] shadow-[0_0_10px_rgba(0,210,255,0.2)] bg-[hsl(200_100%_60%)]/10 text-[hsl(200_100%_60%)] hover:bg-[hsl(200_100%_60%)]/20" 
                 : "border-white/10 bg-white/5 text-muted-foreground hover:bg-white/10"
             )}
+            title={followerGrowthMode ? "Mudar para Modo Padrão" : "Mudar para Modo Crescimento"}
           >
             <UserCheck className={cn("h-3 w-3 mr-1.5", followerGrowthMode && "animate-bounce")} />
-            <span className="hidden lg:inline">MODO</span> {followerGrowthMode ? "CRESC." : "PADRÃO"}
+            <span className="hidden sm:inline">MODO</span> {followerGrowthMode ? "CRESC." : "PADRÃO"}
           </Button>
 
           <Button
@@ -343,13 +361,13 @@ const SocialRobotPage = () => {
             disabled={processing}
             className="bg-[hsl(200_100%_60%)] text-black font-black uppercase tracking-widest text-[9px] h-8 px-3 rounded-none transition-all shadow-[0_0_15px_rgba(0,210,255,0.4)] border-none hover:scale-105 active:scale-95 hover:bg-[hsl(200_110%_65%)]"
           >
-            {processing ? <Loader2 className="h-3 w-3 mr-1.5 animate-spin" /> : <RefreshCw className="h-3 w-3 mr-1.5" />}
-            <span className="hidden lg:inline">SINCRONIZAR</span>
+            {processing ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <RefreshCw className="h-3 w-3 mr-1" />}
+            <span className="hidden sm:inline">SINCRONIZAR</span>
           </Button>
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2 p-1.5 glass border-white/5 w-fit rounded-none shadow-[0_0_20px_rgba(0,0,0,0.3)]">
+      <div className="flex flex-wrap gap-2 p-1 glass border-white/5 w-fit rounded-none shadow-[0_0_20px_rgba(0,0,0,0.3)]">
         {[
           { id: 'telemetry', label: 'Comando', icon: Bot },
           { id: 'interactions', label: 'Interações', icon: History },
@@ -367,13 +385,13 @@ const SocialRobotPage = () => {
               if (tab.id === 'growth') fetchInvitedFollowers();
             }}
             className={cn(
-              "text-[9px] uppercase font-black tracking-[0.15em] h-8 px-4 rounded-none transition-all relative overflow-hidden group border border-transparent",
+              "text-[9px] uppercase font-black tracking-[0.1em] h-7 px-3 rounded-none transition-all relative overflow-hidden group border border-transparent",
               activeTab === tab.id 
                 ? "bg-[hsl(200_100%_60%)]/20 text-[hsl(200_100%_60%)] border-[hsl(200_100%_60%)]/30 shadow-[0_0_15px_rgba(0,210,255,0.2)]" 
                 : "text-muted-foreground hover:text-foreground hover:bg-white/5"
             )}
           >
-            <tab.icon className={cn("h-3 w-3 mr-2", activeTab === tab.id && "animate-pulse")} />
+            <tab.icon className={cn("h-3 w-3 mr-1.5", activeTab === tab.id && "animate-pulse")} />
             {tab.label}
             {activeTab === tab.id && (
               <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[hsl(200_100%_60%)] shadow-[0_0_10px_rgba(0,210,255,0.8)]" />
@@ -411,69 +429,89 @@ const SocialRobotPage = () => {
                   </div>
                 ) : interactions.length > 0 ? (
                   interactions.map((item) => (
-                    <div key={item.id} className="p-6 hover:bg-primary/[0.03] transition-all duration-300 group relative">
-                      <div className="absolute left-0 top-0 w-0.5 h-full bg-transparent group-hover:bg-[hsl(200_100%_60%)] transition-all shadow-[0_0_10px_rgba(0,210,255,0.4)]" />
-                      <div className="flex items-start justify-between gap-4">
+                    <div key={item.id} className="hover:bg-primary/[0.03] transition-all duration-300 group relative">
+                      <div className="absolute left-0 top-0 w-0.5 h-full bg-transparent group-hover:bg-[hsl(200_100%_60%)] transition-all" />
+                      <div className={cn(
+                        "flex items-start justify-between gap-4",
+                        compactMode ? "p-3" : "p-6"
+                      )}>
                         <div className="flex gap-4 min-w-0 flex-1">
                           <div className="relative shrink-0">
-                            <div className="h-12 w-12 rounded-none border border-[hsl(200_100%_60%)]/30 bg-background overflow-hidden group-hover:border-[hsl(200_100%_60%)] transition-colors shadow-[0_0_10px_rgba(0,210,255,0.1)]">
+                            <div className="h-10 w-10 rounded-none border border-[hsl(200_100%_60%)]/30 bg-background overflow-hidden group-hover:border-[hsl(200_100%_60%)] transition-colors">
                               {item.author_avatar ? (
                                 <img src={item.author_avatar} alt={item.author_name} className="h-full w-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
                               ) : (
-                                <div className="h-full w-full flex items-center justify-center bg-[hsl(200_100%_60%)]/10 text-[hsl(200_100%_60%)] text-lg font-black italic">
+                                <div className="h-full w-full flex items-center justify-center bg-[hsl(200_100%_60%)]/10 text-[hsl(200_100%_60%)] text-base font-black italic">
                                   {item.author_name?.substring(0, 1).toUpperCase()}
                                 </div>
                               )}
                             </div>
                             {item.page_avatar && (
-                              <div className="absolute -bottom-1 -right-1 h-6 w-6 rounded-none border border-[hsl(200_100%_60%)]/40 bg-background overflow-hidden z-10">
+                              <div className="absolute -bottom-0.5 -right-0.5 h-5 w-5 rounded-none border border-[hsl(200_100%_60%)]/40 bg-background overflow-hidden z-10">
                                 <img src={item.page_avatar} alt="Página" className="h-full w-full object-cover" />
                               </div>
                             )}
                           </div>
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2 mb-2 flex-wrap">
-                              <span className="text-sm font-black text-[hsl(200_100%_60%)] uppercase tracking-tighter group-hover:drop-shadow-[0_0_5px_rgba(0,210,255,0.5)] transition-all">{item.author_name}</span>
+                              <span className={cn(
+                                "font-black uppercase tracking-tighter group-hover:text-[hsl(200_100%_60%)] transition-all",
+                                compactMode ? "text-[11px]" : "text-sm"
+                              )}>
+                                {item.author_name}
+                              </span>
                               <div className="flex items-center gap-2">
-                                <Badge variant="outline" className="text-[9px] font-black h-5 px-2 border-primary/30 text-primary bg-primary/5 uppercase">
+                                <Badge variant="outline" className="text-[8px] font-black h-4 px-1 border-[hsl(200_100%_60%)]/30 text-[hsl(200_100%_60%)] bg-[hsl(200_100%_60%)]/5 uppercase">
                                   {item.platform}
                                 </Badge>
                                 <Badge variant="secondary" className={cn(
-                                  "text-[9px] font-black h-5 px-2 border-none uppercase tracking-widest",
-                                  item.interaction_type === 'reaction' ? "bg-blue-500/10 text-blue-400" : 
-                                  item.interaction_type === 'mention' ? "bg-purple-500/10 text-purple-400" : 
-                                  "bg-primary/10 text-primary"
-                                )}>
-                                  {item.interaction_type === 'reaction' ? <ThumbsUp className="h-3 w-3 mr-1.5" /> : 
-                                   item.interaction_type === 'mention' ? <AtSign className="h-3 w-3 mr-1.5" /> : 
-                                   <MessageSquare className="h-3 w-3 mr-1.5" />}
-                                  {item.interaction_type === 'reaction' ? 'Reação' : 
-                                   item.interaction_type === 'mention' ? 'Menção' : 
-                                   'Comentário'}
-                                </Badge>
+                                  "text-[8px] font-black h-4 px-1 border-none uppercase tracking-widest",
+                                   item.interaction_type === 'reaction' ? "bg-blue-500/10 text-blue-400" : 
+                                   item.interaction_type === 'mention' ? "bg-purple-500/10 text-purple-400" : 
+                                   "bg-[hsl(200_100%_60%)]/5 text-[hsl(200_100%_60%)]"
+                                 )}>
+                                   {item.interaction_type === 'reaction' ? <ThumbsUp className="h-3 w-3 mr-1.5" /> : 
+                                    item.interaction_type === 'mention' ? <AtSign className="h-3 w-3 mr-1.5" /> : 
+                                    <MessageSquare className="h-3 w-3 mr-1.5" />}
+                                   <span className={compactMode ? "hidden" : ""}>
+                                     {item.interaction_type === 'reaction' ? 'Reação' : 
+                                      item.interaction_type === 'mention' ? 'Menção' : 
+                                      'Comentário'}
+                                   </span>
+                                 </Badge>
                               </div>
                             </div>
-                            <div className="bg-white/[0.03] p-5 border-l-4 border-primary/20 group-hover:border-primary/50 transition-colors mb-4 relative">
-                              <div className="absolute top-0 right-0 p-2">
-                                <MessageSquare className="h-4 w-4 text-white/10" />
-                              </div>
-                              <p className="text-sm text-foreground italic leading-relaxed font-medium">"{item.content}"</p>
+                            <div className={cn(
+                              "bg-white/[0.03] border-l-4 border-[hsl(200_100%_60%)]/20 group-hover:border-[hsl(200_100%_60%)]/50 transition-colors relative",
+                              compactMode ? "p-2 mb-2" : "p-4 mb-4"
+                            )}>
+                              <p className={cn(
+                                "text-foreground italic font-medium leading-relaxed truncate",
+                                compactMode ? "text-[11px]" : "text-sm"
+                              )}>
+                                "{item.content}"
+                              </p>
                             </div>
                             
                             {item.ai_response && (
-                              <div className="mt-4 flex gap-4 items-start bg-[hsl(200_100%_60%)]/5 p-4 border border-[hsl(200_100%_60%)]/20 shadow-[0_0_10px_rgba(0,210,255,0.05)] relative group/ai">
+                              <div className={cn(
+                                "flex gap-2 items-start bg-[hsl(200_100%_60%)]/5 border border-[hsl(200_100%_60%)]/20 relative group/ai",
+                                compactMode ? "p-2 mt-2" : "p-4 mt-4"
+                              )}>
                                 <div className="absolute top-0 right-0 px-2 py-0.5 bg-[hsl(200_100%_60%)] text-black text-[7px] font-black uppercase tracking-[0.2em]">IA Response</div>
-                                <div className="p-1.5 bg-[hsl(200_100%_60%)]/20 border border-[hsl(200_100%_60%)]/30 rounded-none">
-                                  <Bot className="h-3.5 w-3.5 text-[hsl(200_100%_60%)] animate-pulse" />
+                                <div className={cn(
+                                  "bg-[hsl(200_100%_60%)]/10 border border-[hsl(200_100%_60%)]/30 rounded-none shrink-0",
+                                  compactMode ? "p-1" : "p-1.5"
+                                )}>
+                                  <Bot className={cn("text-[hsl(200_100%_60%)]", compactMode ? "h-3 w-3" : "h-3.5 w-3.5")} />
                                 </div>
-                                <div className="space-y-1.5 flex-1">
-                                  <p className="text-xs text-foreground leading-relaxed font-semibold italic text-[hsl(200_100%_60%)]/90">{item.ai_response}</p>
-                                  {item.processed_at && (
-                                    <p className="text-[8px] text-muted-foreground uppercase font-black tracking-widest flex items-center gap-1.5">
-                                      <Activity className="h-2.5 w-2.5" />
-                                      Processado às {format(new Date(item.processed_at), "HH:mm:ss", { locale: ptBR })}
-                                    </p>
-                                  )}
+                                <div className="min-w-0 flex-1">
+                                  <p className={cn(
+                                    "text-foreground font-semibold italic text-[hsl(200_100%_60%)]/90 truncate",
+                                    compactMode ? "text-[11px]" : "text-xs"
+                                  )}>
+                                    {item.ai_response}
+                                  </p>
                                 </div>
                               </div>
                             )}
@@ -484,21 +522,21 @@ const SocialRobotPage = () => {
                                   href={item.post_url} 
                                   target="_blank" 
                                   rel="noopener noreferrer"
-                                  className="text-[9px] text-[hsl(200_100%_60%)] hover:drop-shadow-[0_0_5px_rgba(0,210,255,0.6)] transition-all flex items-center gap-1.5 font-black uppercase tracking-widest border border-[hsl(200_100%_60%)]/20 w-fit px-2 py-1 bg-[hsl(200_100%_60%)]/5 hover:bg-[hsl(200_100%_60%)]/10"
+                                  className="text-[8px] text-[hsl(200_100%_60%)] hover:text-[hsl(200_100%_65%)] transition-all flex items-center gap-1 font-black uppercase tracking-widest border border-[hsl(200_100%_60%)]/20 w-fit px-1.5 py-0.5 bg-[hsl(200_100%_60%)]/5 hover:bg-[hsl(200_100%_60%)]/10"
                                 >
-                                  Ver Postagem Original <ExternalLink className="h-2.5 w-2.5" />
+                                  Original Post <ExternalLink className="h-2 w-2" />
                                 </a>
                               </div>
                             )}
                           </div>
                         </div>
-                        <div className="flex flex-row md:flex-col items-center md:items-end gap-3">
+                        <div className="flex flex-row md:flex-col items-center md:items-end gap-2 shrink-0">
                           <Badge 
                             variant="secondary" 
                             className={cn(
-                              "text-[10px] uppercase font-black px-4 py-1.5 tracking-[0.15em] border-2",
-                              item.status === 'replied' ? "border-success shadow-[0_0_15px_rgba(34,197,94,0.2)] bg-success/10 text-success" : 
-                              item.status === 'processed' ? "border-primary shadow-neon-lilac/40 bg-primary/10 text-primary" :
+                              "text-[8px] uppercase font-black px-1.5 py-0.5 tracking-[0.05em] border",
+                              item.status === 'replied' ? "border-success bg-success/10 text-success" : 
+                              item.status === 'processed' ? "border-[hsl(200_100%_60%)] bg-[hsl(200_100%_60%)]/10 text-[hsl(200_100%_60%)]" :
                               "border-warning/30 bg-warning/5 text-warning"
                             )}
                           >
@@ -896,31 +934,31 @@ const SocialRobotPage = () => {
                   </div>
                 ) : logs.length > 0 ? (
                   logs.map((log) => (
-                    <div key={log.id} className="p-6 hover:bg-white/[0.03] transition-all relative group">
-                      <div className="flex items-start gap-6">
+                    <div key={log.id} className="p-3 hover:bg-white/[0.03] transition-all relative group">
+                      <div className="flex items-start gap-3">
                         <div className={cn(
-                          "mt-1 p-3 rounded-none border-2 transition-all group-hover:scale-110",
+                          "mt-0.5 p-2 rounded-none border transition-all group-hover:scale-110",
                           log.level === 'error' ? "border-destructive/30 bg-destructive/10 text-destructive shadow-[0_0_15px_rgba(239,68,68,0.2)]" :
                           log.level === 'warn' ? "border-warning/30 bg-warning/10 text-warning" :
-                          "border-[hsl(200_100%_60%)]/30 bg-[hsl(200_100%_60%)]/10 text-[hsl(200_100%_60%)] shadow-[0_0_10px_rgba(0,210,255,0.1)]"
+                           "border-[hsl(200_100%_60%)]/30 bg-[hsl(200_100%_60%)]/10 text-[hsl(200_100%_60%)] shadow-[0_0_10px_rgba(0,210,255,0.1)]"
                         )}>
-                          {log.level === 'error' ? <AlertCircle className="h-4 w-4" /> :
-                           log.level === 'warn' ? <AlertCircle className="h-4 w-4" /> :
-                           <Bot className="h-4 w-4" />}
+                          {log.level === 'error' ? <AlertCircle className="h-3.5 w-3.5" /> :
+                           log.level === 'warn' ? <AlertCircle className="h-3.5 w-3.5" /> :
+                           <Bot className="h-3.5 w-3.5" />}
                         </div>
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between mb-1.5">
-                            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[hsl(200_100%_60%)]/60 group-hover:text-[hsl(200_100%_60%)] transition-colors">
-                              {log.module} <span className="text-white/20 mx-1.5">|</span> {format(new Date(log.created_at), "HH:mm:ss.ms", { locale: ptBR })}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-[8px] font-black uppercase tracking-[0.2em] text-[hsl(200_100%_60%)]/60 group-hover:text-[hsl(200_100%_60%)] transition-colors">
+                              {log.module} <span className="text-white/20 mx-1">|</span> {format(new Date(log.created_at), "HH:mm", { locale: ptBR })}
                             </span>
                             <Badge variant="outline" className={cn(
-                              "text-[9px] px-2 h-5 font-black uppercase tracking-widest rounded-none border-2",
-                              log.level === 'error' ? "border-destructive text-destructive" : "border-primary text-primary"
+                              "text-[8px] px-1.5 h-4 font-black uppercase tracking-widest rounded-none border",
+                              log.level === 'error' ? "border-destructive text-destructive" : "border-[hsl(200_100%_60%)] text-[hsl(200_100%_60%)]"
                             )}>
                               {log.level.toUpperCase()}
                             </Badge>
                           </div>
-                          <p className="text-sm font-bold text-foreground leading-relaxed group-hover:text-primary transition-colors">{log.message}</p>
+                          <p className="text-xs font-bold text-foreground leading-tight group-hover:text-[hsl(200_100%_60%)] transition-colors truncate">{log.message}</p>
                           {log.details && (
                             <div className="mt-4 p-5 bg-black/60 border border-primary/20 shadow-inner overflow-hidden">
                               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
