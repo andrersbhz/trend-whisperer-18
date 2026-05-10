@@ -59,6 +59,15 @@ const Dashboard = () => {
   const [processingInteractions, setProcessingInteractions] = useState(false);
   const [refreshInterval, setRefreshInterval] = useState(30); // minutes
   const [nextRefresh, setNextRefresh] = useState<Date | null>(null);
+  const [widgets, setWidgets] = useState({
+    stats: true,
+    meta: true,
+    robot: true,
+    trends: true,
+    categories: true,
+    audit: true,
+    alternate_stats: true,
+  });
 
 
   const fetchStats = async () => {
