@@ -355,7 +355,7 @@ const Dashboard = () => {
   ];
 
   return (
-    <div key="dashboard-main" className="space-y-6 lg:space-y-8 pb-10">
+    <div key="dashboard" className="space-y-6 lg:space-y-8 pb-10">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex flex-col">
           <h1 className="text-2xl sm:text-3xl font-bold neon-text-lilac uppercase tracking-tighter">NEURAL VORTEX</h1>
