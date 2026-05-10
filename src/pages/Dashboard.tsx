@@ -643,6 +643,7 @@ const Dashboard = () => {
       </div>
       )}
       {/* Google Trends Preview */}
+      {widgets.trends && (
         <Card className="glass-card neon-border-lilac h-full">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
