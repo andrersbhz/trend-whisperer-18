@@ -108,7 +108,6 @@ serve(async (req) => {
         // Note: page_views_total is not available for all page types, keeping core engagement metrics
         const insightsMetrics = [
           "page_post_engagements",
-          "page_fan_adds",
           "page_impressions",
           "page_engaged_users"
         ].join(",");
