@@ -21,6 +21,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/lib/backend';
 import SpaceBackground from './SpaceBackground';
+import a3Logo from '@/assets/a3-logo.jpg';
 
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
