@@ -334,7 +334,7 @@ const SocialRobotPage = () => {
             ) : (
               <PowerOff className="h-3 w-3 mr-1.5" />
             )}
-            <span className="hidden lg:inline">{automationEnabled ? "DESATIVAR" : "ATIVAR"}</span>
+            <span className="hidden sm:inline">{automationEnabled ? "DESATIVAR" : "ATIVAR"}</span>
           </Button>
 
           <Button
