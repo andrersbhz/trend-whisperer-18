@@ -647,7 +647,7 @@ const Dashboard = () => {
         </Card>
 
       {/* === ARTIGOS MAIS VISTOS === */}
-      {jetpackStats?.topPosts && jetpackStats.topPosts.length > 0 && (
+      {jetpackStats?.available && jetpackStats?.topPosts && jetpackStats.topPosts.length > 0 && (
         <Card className="glass-card neon-border-lilac overflow-hidden animate-fade-in">
           <CardHeader className="pb-3 border-b border-white/5">
             <div className="flex items-center gap-2">
