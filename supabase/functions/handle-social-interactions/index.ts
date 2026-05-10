@@ -24,9 +24,10 @@ async function processPage(
   supabase: any,
   userId: string,
   page: { page_id: string; access_token: string; page_name?: string; picture_url?: string | null }
-): Promise<number> {
+): Promise<{ processed: number; postsScanned: number }> {
   const { page_id: pageId, access_token: token, page_name: pageName, picture_url: pagePicture } = page;
   let processed = 0;
+  let postsScanned = 0;
 
   let finalToken = token;
   if (token?.startsWith("ENCRYPTED:")) {
@@ -54,6 +55,16 @@ async function processPage(
   }
 
   const postsList = (await postsResp.json()).data || [];
+  postsScanned = postsList.length;
+  
+  // Log posts found for visibility
+  await supabase.from("automation_logs").insert({
+    user_id: userId,
+    level: "info",
+    module: "sync",
+    message: `Escaneando ${postsScanned} postagens na página: ${pageName || pageId}`,
+  });
+
   const pageAvatar = pagePicture || `https://graph.facebook.com/${pageId}/picture?type=large`;
 
   // Process posts in parallel
