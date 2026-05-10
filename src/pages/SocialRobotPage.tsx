@@ -384,7 +384,8 @@ const SocialRobotPage = () => {
                         <img src={page.facebook?.picture?.data?.url || `https://graph.facebook.com/${page.page_id}/picture?type=large`} className="h-full w-full object-cover" alt="" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <CardTitle className="text-lg uppercase tracking-tighter truncate">{page.page_name}</CardTitle>
+                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Analisando página</p>
+                        <CardTitle className="text-xl uppercase tracking-tighter truncate text-primary">{page.page_name}</CardTitle>
                         <div className="flex flex-wrap gap-2 mt-1">
                           <Badge variant="outline" className="text-[9px] px-1 border-primary/20 text-primary">FB: {page.facebook?.fan_count || 0} Seguidores</Badge>
                           {page.instagram && (
@@ -395,18 +396,22 @@ const SocialRobotPage = () => {
                     </div>
                   </CardHeader>
                   <CardContent className="p-4 space-y-4 flex-1">
-                    <div className="grid grid-cols-3 gap-2">
-                      <div className="bg-white/5 p-2 border border-white/5 text-center">
-                        <p className="text-[9px] text-muted-foreground uppercase font-bold">Postagens (Total)</p>
-                        <p className="text-lg font-black text-primary">{page.facebook?.post_stats?.total_posts || 0}</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      <div className="bg-white/5 p-3 border border-white/5 text-center flex flex-col justify-center">
+                        <p className="text-[10px] text-muted-foreground uppercase font-black tracking-tighter mb-1">Postagens</p>
+                        <p className="text-xl font-black text-primary leading-none">{page.facebook?.post_stats?.total_posts || 0}</p>
                       </div>
-                      <div className="bg-white/5 p-2 border border-white/5 text-center">
-                        <p className="text-[9px] text-muted-foreground uppercase font-bold">Total Curtidas</p>
-                        <p className="text-lg font-black text-primary">{page.facebook?.post_stats?.total_likes || 0}</p>
+                      <div className="bg-white/5 p-3 border border-white/5 text-center flex flex-col justify-center">
+                        <p className="text-[10px] text-muted-foreground uppercase font-black tracking-tighter mb-1">Curtidas</p>
+                        <p className="text-xl font-black text-primary leading-none">{page.facebook?.post_stats?.total_likes || 0}</p>
                       </div>
-                      <div className="bg-white/5 p-2 border border-white/5 text-center">
-                        <p className="text-[9px] text-muted-foreground uppercase font-bold">Total Comentários</p>
-                        <p className="text-lg font-black text-primary">{page.facebook?.post_stats?.total_comments || 0}</p>
+                      <div className="bg-white/5 p-3 border border-white/5 text-center flex flex-col justify-center">
+                        <p className="text-[10px] text-muted-foreground uppercase font-black tracking-tighter mb-1">Comentários</p>
+                        <p className="text-xl font-black text-primary leading-none">{page.facebook?.post_stats?.total_comments || 0}</p>
+                      </div>
+                      <div className="bg-white/5 p-3 border border-white/5 text-center flex flex-col justify-center">
+                        <p className="text-[10px] text-muted-foreground uppercase font-black tracking-tighter mb-1">Compartilhamentos</p>
+                        <p className="text-xl font-black text-primary leading-none">{page.facebook?.post_stats?.total_shares || 0}</p>
                       </div>
                     </div>
                     
