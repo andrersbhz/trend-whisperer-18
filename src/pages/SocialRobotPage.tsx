@@ -349,12 +349,12 @@ const SocialRobotPage = () => {
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2 p-1.5 glass border-white/5 w-fit rounded-none shadow-elevated">
+      <div className="flex flex-wrap gap-2 p-1.5 glass border-white/5 w-fit rounded-none shadow-[0_0_20px_rgba(0,0,0,0.3)]">
         {[
-          { id: 'telemetry', label: 'Log de Comando', icon: Bot },
-          { id: 'interactions', label: 'Interações Ativas', icon: History },
-          { id: 'metrics', label: 'Análise de Tráfego', icon: Activity },
-          { id: 'growth', label: 'Dashboard de Expansão', icon: TrendingUp },
+          { id: 'telemetry', label: 'Comando', icon: Bot },
+          { id: 'interactions', label: 'Interações', icon: History },
+          { id: 'metrics', label: 'Análise', icon: Activity },
+          { id: 'growth', label: 'Expansão', icon: TrendingUp },
         ].map((tab) => (
           <Button 
             key={tab.id}
@@ -367,16 +367,16 @@ const SocialRobotPage = () => {
               if (tab.id === 'growth') fetchInvitedFollowers();
             }}
             className={cn(
-              "text-[10px] uppercase font-black tracking-[0.15em] h-9 px-5 rounded-none transition-all relative overflow-hidden group border border-transparent",
+              "text-[9px] uppercase font-black tracking-[0.15em] h-8 px-4 rounded-none transition-all relative overflow-hidden group border border-transparent",
               activeTab === tab.id 
-                ? "bg-primary/20 text-primary border-primary/30 shadow-neon-lilac" 
+                ? "bg-[hsl(200_100%_60%)]/20 text-[hsl(200_100%_60%)] border-[hsl(200_100%_60%)]/30 shadow-[0_0_15px_rgba(0,210,255,0.2)]" 
                 : "text-muted-foreground hover:text-foreground hover:bg-white/5"
             )}
           >
-            <tab.icon className={cn("h-3.5 w-3.5 mr-2", activeTab === tab.id && "animate-pulse")} />
+            <tab.icon className={cn("h-3 w-3 mr-2", activeTab === tab.id && "animate-pulse")} />
             {tab.label}
             {activeTab === tab.id && (
-              <span className="absolute bottom-0 left-0 w-full h-0.5 bg-primary shadow-neon-lilac" />
+              <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[hsl(200_100%_60%)] shadow-[0_0_10px_rgba(0,210,255,0.8)]" />
             )}
           </Button>
         ))}
