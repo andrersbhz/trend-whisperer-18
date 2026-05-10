@@ -938,16 +938,16 @@ const SocialRobotPage = () => {
                           "mt-1 p-3 rounded-none border-2 transition-all group-hover:scale-110",
                           log.level === 'error' ? "border-destructive/30 bg-destructive/10 text-destructive shadow-[0_0_15px_rgba(239,68,68,0.2)]" :
                           log.level === 'warn' ? "border-warning/30 bg-warning/10 text-warning" :
-                          "border-[hsl(200_100%_60%)]/30 bg-[hsl(200_100%_60%)]/10 text-[hsl(200_100%_60%)] shadow-[0_0_10px_rgba(0,210,255,0.1)]"
+                           "border-[hsl(200_100%_60%)]/30 bg-[hsl(200_100%_60%)]/10 text-[hsl(200_100%_60%)] shadow-[0_0_10px_rgba(0,210,255,0.1)]"
                         )}>
-                          {log.level === 'error' ? <AlertCircle className="h-4 w-4" /> :
-                           log.level === 'warn' ? <AlertCircle className="h-4 w-4" /> :
-                           <Bot className="h-4 w-4" />}
+                          {log.level === 'error' ? <AlertCircle className="h-3.5 w-3.5" /> :
+                           log.level === 'warn' ? <AlertCircle className="h-3.5 w-3.5" /> :
+                           <Bot className="h-3.5 w-3.5" />}
                         </div>
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between mb-1.5">
-                            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[hsl(200_100%_60%)]/60 group-hover:text-[hsl(200_100%_60%)] transition-colors">
-                              {log.module} <span className="text-white/20 mx-1.5">|</span> {format(new Date(log.created_at), "HH:mm:ss.ms", { locale: ptBR })}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-[8px] font-black uppercase tracking-[0.2em] text-[hsl(200_100%_60%)]/60 group-hover:text-[hsl(200_100%_60%)] transition-colors">
+                              {log.module} <span className="text-white/20 mx-1">|</span> {format(new Date(log.created_at), "HH:mm", { locale: ptBR })}
                             </span>
                             <Badge variant="outline" className={cn(
                               "text-[9px] px-2 h-5 font-black uppercase tracking-widest rounded-none border-2",
