@@ -868,18 +868,18 @@ const SocialRobotPage = () => {
             </Card>
           </div>
         ) : (
-          <Card className="glass-card border-primary/20 overflow-hidden shadow-elevated">
-            <CardHeader className="pb-4 border-b border-white/5 flex flex-row items-center justify-between bg-black/40 relative">
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-primary opacity-50" />
+          <Card className="glass-card border-[hsl(200_100%_60%)]/20 overflow-hidden shadow-elevated">
+            <CardHeader className="p-4 border-b border-white/5 flex flex-row items-center justify-between bg-black/40 relative">
+              <div className="absolute top-0 left-0 w-full h-0.5 bg-[hsl(200_100%_60%)] opacity-30" />
               <div className="flex items-center gap-4 relative z-10">
-                <div className="h-2.5 w-2.5 bg-success rounded-full animate-pulse-dot shadow-neon-success" />
+                <div className="h-2 w-2 bg-success rounded-full animate-pulse-dot shadow-[0_0_8px_rgba(34,197,94,0.8)]" />
                 <div>
-                  <CardTitle className="text-xl font-black uppercase tracking-tighter text-primary">Terminal de Comando</CardTitle>
-                  <CardDescription className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Kernel Operations Live-Feed</CardDescription>
+                  <CardTitle className="text-lg font-black uppercase tracking-tighter text-[hsl(200_100%_60%)]">Terminal de Comando</CardTitle>
+                  <CardDescription className="text-[8px] uppercase font-bold tracking-widest text-muted-foreground">Kernel Operations Live-Feed</CardDescription>
                 </div>
               </div>
               <div className="flex items-center gap-4 relative z-10">
-                <span className="text-[9px] text-primary/60 font-mono font-black uppercase tracking-[0.2em] animate-pulse">System Live</span>
+                <span className="text-[8px] text-[hsl(200_100%_60%)]/60 font-mono font-black uppercase tracking-[0.2em] animate-pulse">System Live</span>
                 <Button 
                   variant="ghost" 
                   size="sm" 
