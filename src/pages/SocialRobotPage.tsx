@@ -447,7 +447,7 @@ const SocialRobotPage = () => {
                               )}
                             </div>
                             {item.page_avatar && (
-                              <div className="absolute -bottom-1 -right-1 h-6 w-6 rounded-none border border-[hsl(200_100%_60%)]/40 bg-background overflow-hidden z-10">
+                              <div className="absolute -bottom-0.5 -right-0.5 h-5 w-5 rounded-none border border-[hsl(200_100%_60%)]/40 bg-background overflow-hidden z-10">
                                 <img src={item.page_avatar} alt="Página" className="h-full w-full object-cover" />
                               </div>
                             )}
