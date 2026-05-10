@@ -764,7 +764,8 @@ const Dashboard = () => {
 
 
       {/* Logs de Auditoria e Erros */}
-      <div id="audit-logs-section" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {widgets.audit && (
+        <div id="audit-logs-section" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Audit Logs */}
         <Card className="glass-card">
           <CardHeader className="pb-2">
