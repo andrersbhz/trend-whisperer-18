@@ -935,6 +935,13 @@ const ArticlesPage = () => {
           )}
         </DialogContent>
       </Dialog>
+      
+      <ManualArticleDialog 
+        open={manualDialogOpen} 
+        onOpenChange={setManualDialogOpen} 
+        categories={userCategories}
+        onSuccess={fetchArticles}
+      />
     </div>
   );
 };
