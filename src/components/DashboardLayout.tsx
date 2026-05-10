@@ -113,7 +113,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
             <div className="h-10 w-10 rounded-full overflow-hidden border-2 border-[hsl(200_100%_60%)] shadow-[0_0_15px_hsl(200_100%_60%/0.7)] group-hover:scale-105 transition-transform shrink-0">
               <img src={a3Logo} alt="A3 PostWP" className="h-full w-full object-cover" />
             </div>
-            <span className="font-bold text-base tracking-tight uppercase italic text-foreground">A3 <span className="text-[hsl(200_100%_60%)]">PostWP</span></span>
+            <span className="font-extrabold text-base tracking-tighter uppercase italic text-foreground font-montserrat">A3 <span className="text-[hsl(200_100%_60%)]">PostWP</span></span>
           </Link>
           <button
             onClick={() => setSidebarOpen(false)}

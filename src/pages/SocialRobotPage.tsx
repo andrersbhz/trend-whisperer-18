@@ -244,22 +244,57 @@ const SocialRobotPage = () => {
 
   return (
     <div className="space-y-6 lg:space-y-8 animate-float-up">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 p-6 glass-card border-primary/20 relative overflow-hidden group">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 p-6 glass-card border-primary/20 relative overflow-hidden group">
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -mr-32 -mt-32 group-hover:bg-primary/10 transition-colors duration-700" />
-        <div className="relative z-10">
-          <h1 className="text-3xl sm:text-4xl font-black text-gradient-primary uppercase tracking-tighter flex items-center gap-4">
-            <div className="p-3 bg-primary/10 rounded-none border border-primary/30 shadow-neon-lilac animate-glow">
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center gap-6 flex-1">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-primary/10 rounded-none border border-primary/30 shadow-neon-lilac animate-glow shrink-0">
               <Bot className="h-8 w-8 text-primary animate-pulse" />
             </div>
-            <span>Robô Social A3</span>
-          </h1>
-          <p className="text-muted-foreground text-[10px] mt-2 uppercase tracking-[0.2em] flex items-center gap-2 font-bold">
-            <span className="flex h-2 w-2 relative">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
-            </span>
-            Neural Management Interface
-          </p>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-black text-gradient-primary uppercase tracking-tighter whitespace-nowrap font-montserrat">
+                Robô Social A3
+              </h1>
+              <p className="text-muted-foreground text-[9px] mt-1 uppercase tracking-[0.2em] flex items-center gap-2 font-bold whitespace-nowrap">
+                <span className="flex h-2 w-2 relative">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
+                </span>
+                Neural Interface
+              </p>
+            </div>
+          </div>
+          
+          <div className="hidden lg:block h-10 w-px bg-white/10 mx-2" />
+          
+          <div className="flex flex-wrap items-center gap-4 md:gap-6 flex-1">
+            <div className="flex flex-col">
+              <span className="text-[8px] text-muted-foreground uppercase font-black tracking-widest mb-0.5">Status do Sistema</span>
+              <div className={cn(
+                "flex items-center gap-2 text-[11px] font-black uppercase tracking-tighter",
+                automationEnabled ? "text-success" : "text-destructive"
+              )}>
+                {automationEnabled ? <Power className="h-3 w-3" /> : <PowerOff className="h-3 w-3" />}
+                {automationEnabled ? "ONLINE" : "OFFLINE"}
+              </div>
+            </div>
+            
+            <div className="flex flex-col">
+              <span className="text-[8px] text-muted-foreground uppercase font-black tracking-widest mb-0.5">Modo de Operação</span>
+              <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-tighter text-primary">
+                <UserCheck className="h-3 w-3" />
+                {followerGrowthMode ? "CRESCIMENTO" : "PADRÃO"}
+              </div>
+            </div>
+
+            <div className="flex flex-col">
+              <span className="text-[8px] text-muted-foreground uppercase font-black tracking-widest mb-0.5">Nodes Ativos</span>
+              <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-tighter text-foreground">
+                <Activity className="h-3 w-3 text-primary" />
+                {interactions.length} INTERAÇÕES
+              </div>
+            </div>
+          </div>
         </div>
         
         <div className="flex flex-wrap gap-3 relative z-10">
