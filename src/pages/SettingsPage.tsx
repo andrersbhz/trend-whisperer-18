@@ -14,6 +14,7 @@ import GroqSettings from '@/components/settings/GroqSettings';
 import JetpackSettings from '@/components/settings/JetpackSettings';
 import FacebookSettings from '@/components/settings/FacebookSettings';
 import { getErrorMessage, runBackendMutation, runBackendQuery } from '@/lib/backend';
+import DashboardWidgetSettings from '@/components/settings/DashboardWidgetSettings';
 
 export interface UserSettings {
   wordpress_url: string;
