@@ -437,7 +437,7 @@ const SocialRobotPage = () => {
                       )}>
                         <div className="flex gap-4 min-w-0 flex-1">
                           <div className="relative shrink-0">
-                            <div className="h-12 w-12 rounded-none border border-[hsl(200_100%_60%)]/30 bg-background overflow-hidden group-hover:border-[hsl(200_100%_60%)] transition-colors shadow-[0_0_10px_rgba(0,210,255,0.1)]">
+                            <div className="h-10 w-10 rounded-none border border-[hsl(200_100%_60%)]/30 bg-background overflow-hidden group-hover:border-[hsl(200_100%_60%)] transition-colors">
                               {item.author_avatar ? (
                                 <img src={item.author_avatar} alt={item.author_name} className="h-full w-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
                               ) : (
