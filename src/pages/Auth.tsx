@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Newspaper, Sparkles, Loader2 } from 'lucide-react';
 import { lovable } from '@/integrations/lovable/index';
 import { Separator } from '@/components/ui/separator';
+import SpaceBackground from '@/components/SpaceBackground';
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -71,10 +72,8 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4 relative overflow-hidden">
-      {/* Background glow effects */}
-      <div className="absolute top-1/4 -left-32 w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
-      <div className="absolute bottom-1/4 -right-32 w-64 h-64 bg-accent/10 rounded-full blur-3xl" />
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+      <SpaceBackground />
 
       <div className="w-full max-w-md animate-fade-in relative z-10">
         <div className="flex items-center justify-center gap-2 mb-8">

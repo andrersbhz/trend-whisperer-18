@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/lib/backend';
+import SpaceBackground from './SpaceBackground';
 
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
@@ -87,7 +88,8 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const userInitial = (user?.email?.[0] || 'U').toUpperCase();
 
   return (
-    <div className="min-h-screen flex bg-background">
+    <div className="min-h-screen flex relative">
+      <SpaceBackground />
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
