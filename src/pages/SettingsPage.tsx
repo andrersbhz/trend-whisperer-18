@@ -14,6 +14,7 @@ import GroqSettings from '@/components/settings/GroqSettings';
 import JetpackSettings from '@/components/settings/JetpackSettings';
 import FacebookSettings from '@/components/settings/FacebookSettings';
 import { getErrorMessage, runBackendMutation, runBackendQuery } from '@/lib/backend';
+import DashboardWidgetSettings from '@/components/settings/DashboardWidgetSettings';
 
 export interface UserSettings {
   wordpress_url: string;
@@ -36,6 +37,15 @@ export interface UserSettings {
   image_mode: 'ai' | 'manual' | 'none';
   image_prompt: string;
   interaction_mode: string;
+  dashboard_widgets: {
+    stats: boolean;
+    meta: boolean;
+    robot: boolean;
+    trends: boolean;
+    categories: boolean;
+    audit: boolean;
+    alternate_stats: boolean;
+  };
 }
 
 const defaultSettings: UserSettings = {
@@ -59,6 +69,15 @@ const defaultSettings: UserSettings = {
   image_mode: 'ai',
   image_prompt: '',
   interaction_mode: 'standard',
+  dashboard_widgets: {
+    stats: true,
+    meta: true,
+    robot: true,
+    trends: true,
+    categories: true,
+    audit: true,
+    alternate_stats: true,
+  },
 };
 
 interface CredentialsStatus {
@@ -86,7 +105,7 @@ const SettingsPage = () => {
       try {
         const { data: userData, error: userError } = await supabase
           .from('user_settings')
-          .select('wordpress_url, wordpress_username, google_analytics_property_id, facebook_page_id, instagram_account_id, categories, articles_per_day, auto_publish, writer_prompt, azure_openai_endpoint, azure_openai_deployment_name, image_mode, image_prompt, interaction_mode')
+          .select('*, dashboard_widgets')
           .eq('user_id', user.id)
           .maybeSingle();
 
@@ -119,6 +138,7 @@ const SettingsPage = () => {
             image_mode: (userData.image_mode as 'ai' | 'manual' | 'none') || 'ai',
             image_prompt: userData.image_prompt || '',
             interaction_mode: userData.interaction_mode || 'standard',
+            dashboard_widgets: (userData.dashboard_widgets as UserSettings['dashboard_widgets']) || defaultSettings.dashboard_widgets,
           });
         }
 
@@ -178,6 +198,7 @@ const SettingsPage = () => {
         image_mode: settings.image_mode,
         image_prompt: settings.image_prompt,
         interaction_mode: settings.interaction_mode,
+        dashboard_widgets: settings.dashboard_widgets,
       };
 
       if (settings.wordpress_app_password) {
@@ -244,6 +265,7 @@ const SettingsPage = () => {
           writer_prompt: settings.writer_prompt,
           image_mode: settings.image_mode,
           image_prompt: settings.image_prompt,
+          dashboard_widgets: settings.dashboard_widgets,
         };
         await runBackendMutation(() =>
           supabase.from('user_settings').update(payload as any).eq('user_id', user.id),
@@ -316,6 +338,10 @@ const SettingsPage = () => {
       <WordPressSettings settings={settings} onChange={updateSettings} hasWpPassword={credStatus.has_wp_password} onDisconnect={() => disconnectCredential({ wordpress_url: '', wordpress_username: '', wordpress_app_password: '' }, 'WordPress')} />
       <JetpackSettings settings={settings} hasWpPassword={credStatus.has_wp_password} />
       <FacebookSettings settings={settings} onChange={updateSettings} />
+      <DashboardWidgetSettings 
+        widgets={settings.dashboard_widgets} 
+        onChange={(w) => updateSettings({ dashboard_widgets: w })} 
+      />
       <GoogleAnalyticsSettings settings={settings} onChange={updateSettings} />
       <AutomationSettings settings={settings} onChange={updateSettings} />
 

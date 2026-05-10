@@ -410,6 +410,7 @@ export type Database = {
           azure_openai_endpoint: string | null
           categories: string[] | null
           created_at: string
+          dashboard_widgets: Json | null
           facebook_access_token: string | null
           facebook_ad_account_id: string | null
           facebook_page_id: string | null
@@ -447,6 +448,7 @@ export type Database = {
           azure_openai_endpoint?: string | null
           categories?: string[] | null
           created_at?: string
+          dashboard_widgets?: Json | null
           facebook_access_token?: string | null
           facebook_ad_account_id?: string | null
           facebook_page_id?: string | null
@@ -484,6 +486,7 @@ export type Database = {
           azure_openai_endpoint?: string | null
           categories?: string[] | null
           created_at?: string
+          dashboard_widgets?: Json | null
           facebook_access_token?: string | null
           facebook_ad_account_id?: string | null
           facebook_page_id?: string | null
