@@ -21,6 +21,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/lib/backend';
 import SpaceBackground from './SpaceBackground';
+import a3Logo from '@/assets/a3-logo.jpg';
 
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
@@ -108,11 +109,11 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
       >
         {/* Brand */}
         <div className="p-5 flex items-center justify-between border-b border-border/40">
-          <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="gradient-primary p-2 rounded-lg shadow-neon-lilac group-hover:scale-105 transition-transform">
-              <Newspaper className="h-5 w-5 text-primary-foreground" />
+          <Link to="/" className="flex items-center gap-3 group">
+            <div className="h-10 w-10 rounded-full overflow-hidden border-2 border-[hsl(200_100%_60%)] shadow-[0_0_15px_hsl(200_100%_60%/0.7)] group-hover:scale-105 transition-transform shrink-0">
+              <img src={a3Logo} alt="A3 PostWP" className="h-full w-full object-cover" />
             </div>
-            <span className="font-bold text-lg tracking-tighter neon-text-lilac uppercase italic">NEURAL VORTEX</span>
+            <span className="font-bold text-base tracking-tight uppercase italic text-foreground">A3 <span className="text-[hsl(200_100%_60%)]">PostWP</span></span>
           </Link>
           <button
             onClick={() => setSidebarOpen(false)}
