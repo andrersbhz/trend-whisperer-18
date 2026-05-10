@@ -828,6 +828,7 @@ const Dashboard = () => {
         </Card>
         </div>
       )}
+      {/* End of Audit section */}
 
 
       <Card className="glass-card">
