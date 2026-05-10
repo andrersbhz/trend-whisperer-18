@@ -112,7 +112,7 @@ const Dashboard = () => {
             .order('fetched_at', { ascending: false })
             .limit(10)
         ),
-        runBackendQuery(() => supabase.from('user_settings').select('categories').eq('user_id', user.id).maybeSingle()),
+        runBackendQuery(() => supabase.from('user_settings').select('categories, dashboard_widgets').eq('user_id', user.id).maybeSingle()),
       ]);
 
       setTrendingList(topTrends || []);
