@@ -232,6 +232,26 @@
   50% { box-shadow: 0 0 20px hsla(210, 100%, 50%, 0.4); }
 }
 
+@keyframes cosmic-drift {
+  from { background-position: 0 0; }
+  to { background-position: 100% 100%; }
+}
+
+.cosmic-dust {
+  position: absolute;
+  inset: -50%;
+  background-image: 
+    radial-gradient(1px 1px at 20px 30px, #fff, rgba(0,0,0,0)),
+    radial-gradient(1px 1px at 40px 70px, #fff, rgba(0,0,0,0)),
+    radial-gradient(1px 1px at 50px 160px, #fff, rgba(0,0,0,0)),
+    radial-gradient(1px 1px at 90px 40px, #fff, rgba(0,0,0,0)),
+    radial-gradient(1px 1px at 130px 80px, #fff, rgba(0,0,0,0));
+  background-repeat: repeat;
+  background-size: 200px 200px;
+  opacity: 0.1;
+  animation: cosmic-drift 60s linear infinite;
+}
+
 @keyframes shimmer {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
