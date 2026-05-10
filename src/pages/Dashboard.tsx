@@ -760,6 +760,7 @@ const Dashboard = () => {
           )}
         </CardContent>
       </Card>
+      )}
 
 
       {/* Logs de Auditoria e Erros */}
