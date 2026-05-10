@@ -24,7 +24,7 @@ const SocialRobotPage = () => {
   const [loadingSettings, setLoadingSettings] = useState(true);
   const [logs, setLogs] = useState<any[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
-  const [activeTab, setActiveTab] = useState<'interactions' | 'metrics' | 'telemetry'>('interactions');
+  const [activeTab, setActiveTab] = useState<'interactions' | 'metrics' | 'telemetry'>('telemetry');
 
   const fetchLogs = async () => {
     if (!user) return;
@@ -161,10 +161,13 @@ const SocialRobotPage = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold neon-text-lilac uppercase tracking-tighter flex items-center gap-3">
-            <Bot className="h-8 w-8 text-primary" />
-            Robô Social Humano
+            <Bot className="h-8 w-8 text-primary animate-pulse" />
+            Vortex Robot Log
           </h1>
-          <p className="text-muted-foreground text-sm mt-1">Interaja com seu público de forma orgânica e automática</p>
+          <p className="text-muted-foreground text-xs mt-1 uppercase tracking-widest flex items-center gap-2">
+            <Activity className="h-3 w-3 text-success animate-pulse" />
+            Sistema em Operação Real-Time
+          </p>
         </div>
         <div className="flex flex-wrap gap-3">
           <Button
@@ -202,6 +205,19 @@ const SocialRobotPage = () => {
 
       <div className="flex gap-1 mb-2 p-1 bg-white/[0.03] w-fit rounded-none border border-white/5">
         <Button 
+          variant={activeTab === 'telemetry' ? 'secondary' : 'ghost'} 
+          size="sm" 
+          onClick={() => {
+            setActiveTab('telemetry');
+            fetchLogs();
+          }}
+          className="text-[9px] uppercase font-bold tracking-widest h-7 px-3 rounded-none relative overflow-hidden group"
+        >
+          {activeTab === 'telemetry' && <div className="absolute inset-0 bg-primary/10 animate-pulse" />}
+          <Bot className={cn("h-3 w-3 mr-1.5 opacity-70 z-10", activeTab === 'telemetry' && "animate-pulse")} />
+          <span className="z-10 text-primary">Log do Robô</span>
+        </Button>
+        <Button 
           variant={activeTab === 'interactions' ? 'secondary' : 'ghost'} 
           size="sm" 
           onClick={() => setActiveTab('interactions')}
@@ -220,19 +236,7 @@ const SocialRobotPage = () => {
           className="text-[9px] uppercase font-bold tracking-widest h-7 px-3 rounded-none"
         >
           <Activity className="h-3 w-3 mr-1.5 opacity-70" />
-          Análise de Páginas
-        </Button>
-        <Button 
-          variant={activeTab === 'telemetry' ? 'secondary' : 'ghost'} 
-          size="sm" 
-          onClick={() => {
-            setActiveTab('telemetry');
-            fetchLogs();
-          }}
-          className="text-[9px] uppercase font-bold tracking-widest h-7 px-3 rounded-none"
-        >
-          <Bot className="h-3 w-3 mr-1.5 opacity-70" />
-          Telemetria
+          Métricas
         </Button>
       </div>
 
@@ -455,17 +459,20 @@ const SocialRobotPage = () => {
           </div>
         ) : (
           <Card className="glass-card border-accent/20 overflow-hidden">
-            <CardHeader className="pb-3 border-b border-white/5 flex flex-row items-center justify-between">
+            <CardHeader className="pb-3 border-b border-white/5 flex flex-row items-center justify-between bg-black/40">
               <div className="flex items-center gap-2">
-                <Activity className="h-5 w-5 text-accent" />
-                <CardTitle className="text-lg uppercase tracking-tighter">Telemetria da Automação</CardTitle>
+                <div className="h-2 w-2 bg-success rounded-full animate-ping" />
+                <CardTitle className="text-lg uppercase tracking-tighter text-primary">Terminal de Operações</CardTitle>
               </div>
-              <Button variant="ghost" size="sm" onClick={fetchLogs} disabled={loadingLogs}>
-                <RefreshCw className={cn("h-4 w-4", loadingLogs && "animate-spin")} />
-              </Button>
+              <div className="flex items-center gap-4">
+                <span className="text-[10px] text-muted-foreground font-mono uppercase animate-pulse">Live Feed</span>
+                <Button variant="ghost" size="sm" onClick={fetchLogs} disabled={loadingLogs} className="h-8 w-8 p-0">
+                  <RefreshCw className={cn("h-4 w-4", loadingLogs && "animate-spin")} />
+                </Button>
+              </div>
             </CardHeader>
-            <CardContent className="p-0">
-              <div className="divide-y divide-white/5">
+            <CardContent className="p-0 bg-black/60">
+              <div className="divide-y divide-white/5 font-mono">
                 {loadingLogs ? (
                   <div className="p-20 flex flex-col items-center gap-4">
                     <Loader2 className="h-8 w-8 animate-spin text-accent" />
