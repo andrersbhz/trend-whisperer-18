@@ -461,16 +461,16 @@ const SocialRobotPage = () => {
                             </div>
                             
                             {item.ai_response && (
-                              <div className="mt-4 flex gap-5 items-start bg-primary/5 p-5 border border-primary/20 shadow-neon-lilac/5 relative group/ai">
-                                <div className="absolute top-0 right-0 px-3 py-1 bg-primary text-primary-foreground text-[8px] font-black uppercase tracking-[0.2em]">IA Response</div>
-                                <div className="p-2 bg-primary/20 border border-primary/30 rounded-none">
-                                  <Bot className="h-4 w-4 text-primary animate-pulse" />
+                              <div className="mt-4 flex gap-4 items-start bg-[hsl(200_100%_60%)]/5 p-4 border border-[hsl(200_100%_60%)]/20 shadow-[0_0_10px_rgba(0,210,255,0.05)] relative group/ai">
+                                <div className="absolute top-0 right-0 px-2 py-0.5 bg-[hsl(200_100%_60%)] text-black text-[7px] font-black uppercase tracking-[0.2em]">IA Response</div>
+                                <div className="p-1.5 bg-[hsl(200_100%_60%)]/20 border border-[hsl(200_100%_60%)]/30 rounded-none">
+                                  <Bot className="h-3.5 w-3.5 text-[hsl(200_100%_60%)] animate-pulse" />
                                 </div>
-                                <div className="space-y-2 flex-1">
-                                  <p className="text-sm text-foreground leading-relaxed font-semibold italic text-primary/90">{item.ai_response}</p>
+                                <div className="space-y-1.5 flex-1">
+                                  <p className="text-xs text-foreground leading-relaxed font-semibold italic text-[hsl(200_100%_60%)]/90">{item.ai_response}</p>
                                   {item.processed_at && (
-                                    <p className="text-[9px] text-muted-foreground uppercase font-black tracking-widest flex items-center gap-2">
-                                      <Activity className="h-3 w-3" />
+                                    <p className="text-[8px] text-muted-foreground uppercase font-black tracking-widest flex items-center gap-1.5">
+                                      <Activity className="h-2.5 w-2.5" />
                                       Processado às {format(new Date(item.processed_at), "HH:mm:ss", { locale: ptBR })}
                                     </p>
                                   )}
@@ -479,14 +479,14 @@ const SocialRobotPage = () => {
                             )}
                             
                             {item.post_url && (
-                              <div className="mt-4">
+                              <div className="mt-3">
                                 <a 
                                   href={item.post_url} 
                                   target="_blank" 
                                   rel="noopener noreferrer"
-                                  className="text-[10px] text-primary hover:neon-text-lilac transition-all flex items-center gap-2 font-black uppercase tracking-widest border border-primary/20 w-fit px-3 py-1.5 bg-primary/5 hover:bg-primary/10"
+                                  className="text-[9px] text-[hsl(200_100%_60%)] hover:drop-shadow-[0_0_5px_rgba(0,210,255,0.6)] transition-all flex items-center gap-1.5 font-black uppercase tracking-widest border border-[hsl(200_100%_60%)]/20 w-fit px-2 py-1 bg-[hsl(200_100%_60%)]/5 hover:bg-[hsl(200_100%_60%)]/10"
                                 >
-                                  Ver Postagem Original <ExternalLink className="h-3 w-3" />
+                                  Ver Postagem Original <ExternalLink className="h-2.5 w-2.5" />
                                 </a>
                               </div>
                             )}
