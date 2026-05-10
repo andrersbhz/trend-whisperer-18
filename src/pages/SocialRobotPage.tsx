@@ -538,6 +538,7 @@ const SocialRobotPage = () => {
                         </div>
                       </div>
                     </div>
+                  </div>
                   ))
                 ) : (
                   <div className="p-32 text-center space-y-6">
