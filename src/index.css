@@ -6,22 +6,22 @@
 
 @layer base {
   :root {
-    --background: 230 25% 4%;
+    --background: 230 25% 3%;
     --foreground: 210 20% 98%;
 
-    --card: 230 25% 6%;
+    --card: 230 25% 4%;
     --card-foreground: 210 20% 98%;
 
-    --popover: 230 25% 6%;
+    --popover: 230 25% 4%;
     --popover-foreground: 210 20% 98%;
 
     --primary: 210 100% 50%;
     --primary-foreground: 210 20% 98%;
 
-    --secondary: 230 20% 10%;
+    --secondary: 230 20% 8%;
     --secondary-foreground: 210 20% 90%;
 
-    --muted: 230 20% 12%;
+    --muted: 230 20% 10%;
     --muted-foreground: 215 15% 65%;
 
     --accent: 190 100% 50%;
@@ -36,18 +36,18 @@
     --warning: 45 95% 60%;
     --warning-foreground: 230 25% 4%;
 
-    --border: 230 20% 15%;
-    --input: 230 20% 15%;
+    --border: 210 100% 50% / 0.15;
+    --input: 230 20% 12%;
     --ring: 210 100% 50%;
     --radius: 0px;
 
-    --sidebar-background: 230 25% 3%;
+    --sidebar-background: 230 25% 2%;
     --sidebar-foreground: 215 15% 70%;
     --sidebar-primary: 210 100% 50%;
     --sidebar-primary-foreground: 210 20% 98%;
-    --sidebar-accent: 230 20% 12%;
+    --sidebar-accent: 230 20% 10%;
     --sidebar-accent-foreground: 210 20% 98%;
-    --sidebar-border: 230 20% 15%;
+    --sidebar-border: 210 100% 50% / 0.1;
     --sidebar-ring: 210 100% 50%;
 
     --neon-lilac: 210 100% 50%;
@@ -59,10 +59,10 @@
     --gradient-neon: linear-gradient(135deg, hsl(210 100% 50%), hsl(220 100% 45%));
     --gradient-pink-purple: linear-gradient(135deg, hsl(190 100% 50%), hsl(220 100% 30%));
     --gradient-success: linear-gradient(135deg, hsl(210 100% 50%), hsl(180 100% 45%));
-    --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.5), 0 0 20px -5px rgba(0, 150, 255, 0.1);
-    --shadow-elevated: 0 15px 35px -10px rgba(0, 0, 0, 0.7), 0 0 40px -15px rgba(0, 150, 255, 0.2);
-    --shadow-neon-lilac: 0 0 25px rgba(0, 150, 255, 0.25);
-    --shadow-neon-pink: 0 0 25px rgba(0, 255, 255, 0.2);
+    --shadow-card: 0 4px 20px -5px rgba(0, 0, 0, 0.5), 0 0 15px -5px rgba(0, 150, 255, 0.15);
+    --shadow-elevated: 0 20px 40px -10px rgba(0, 0, 0, 0.8), 0 0 30px -10px rgba(0, 150, 255, 0.25);
+    --shadow-neon-lilac: 0 0 20px rgba(0, 150, 255, 0.3);
+    --shadow-neon-pink: 0 0 20px rgba(0, 255, 255, 0.25);
   }
 }
 
