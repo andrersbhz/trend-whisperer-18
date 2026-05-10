@@ -817,20 +817,20 @@ const SocialRobotPage = () => {
             </div>
 
             <Card className="glass-card border-primary/20 overflow-hidden shadow-elevated">
-              <CardHeader className="pb-4 border-b border-white/5 bg-white/[0.02] flex flex-row items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-primary/10 border border-primary/20">
-                    <History className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-xl font-black uppercase tracking-tighter">Log de Expansão Recente</CardTitle>
-                    <CardDescription className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Últimos Convites Transmitidos</CardDescription>
-                  </div>
+            <CardHeader className="p-4 border-b border-white/5 bg-white/[0.02] flex flex-row items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-[hsl(200_100%_60%)]/10 border border-[hsl(200_100%_60%)]/20">
+                  <History className="h-4 w-4 text-[hsl(200_100%_60%)]" />
                 </div>
-                <Badge variant="outline" className="border-primary shadow-neon-lilac text-primary font-black uppercase text-[10px] px-3">
-                  {invitedFollowers.length} TRANSMISSÕES
-                </Badge>
-              </CardHeader>
+                <div>
+                  <CardTitle className="text-lg font-black uppercase tracking-tighter text-[hsl(200_100%_60%)]">Log de Expansão</CardTitle>
+                  <CardDescription className="text-[8px] uppercase font-bold tracking-widest text-muted-foreground">Últimos Convites Transmitidos</CardDescription>
+                </div>
+              </div>
+              <Badge variant="outline" className="border-[hsl(200_100%_60%)] shadow-[0_0_10px_rgba(0,210,255,0.2)] text-[hsl(200_100%_60%)] font-black uppercase text-[8px] px-2 h-6">
+                {invitedFollowers.length} TRANSMISSÕES
+              </Badge>
+            </CardHeader>
               <CardContent className="p-0">
                 <div className="divide-y divide-white/5">
                   {loadingInvited ? (
