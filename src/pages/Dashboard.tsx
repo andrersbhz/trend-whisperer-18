@@ -830,7 +830,6 @@ const Dashboard = () => {
         </Card>
       </div>
 
-      )}
 
       <Card className="glass-card">
         <CardHeader>
