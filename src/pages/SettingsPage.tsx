@@ -37,6 +37,15 @@ export interface UserSettings {
   image_mode: 'ai' | 'manual' | 'none';
   image_prompt: string;
   interaction_mode: string;
+  dashboard_widgets: {
+    stats: boolean;
+    meta: boolean;
+    robot: boolean;
+    trends: boolean;
+    categories: boolean;
+    audit: boolean;
+    alternate_stats: boolean;
+  };
 }
 
 const defaultSettings: UserSettings = {
