@@ -243,38 +243,45 @@ const SocialRobotPage = () => {
   }, [dateFilter]);
 
   return (
-    <div className="space-y-6 lg:space-y-8">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold neon-text-lilac uppercase tracking-tighter flex items-center gap-3">
-            <Bot className="h-8 w-8 text-primary animate-pulse" />
-            Vortex Robot Log
+    <div className="space-y-6 lg:space-y-8 animate-float-up">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 p-6 glass-card border-primary/20 relative overflow-hidden group">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -mr-32 -mt-32 group-hover:bg-primary/10 transition-colors duration-700" />
+        <div className="relative z-10">
+          <h1 className="text-3xl sm:text-4xl font-black text-gradient-primary uppercase tracking-tighter flex items-center gap-4">
+            <div className="p-3 bg-primary/10 rounded-none border border-primary/30 shadow-neon-lilac animate-glow">
+              <Bot className="h-8 w-8 text-primary animate-pulse" />
+            </div>
+            <span>Robô Social A3</span>
           </h1>
-          <p className="text-muted-foreground text-xs mt-1 uppercase tracking-widest flex items-center gap-2">
-            <Activity className="h-3 w-3 text-success animate-pulse" />
-            Sistema em Operação Real-Time
+          <p className="text-muted-foreground text-[10px] mt-2 uppercase tracking-[0.2em] flex items-center gap-2 font-bold">
+            <span className="flex h-2 w-2 relative">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
+            </span>
+            Neural Management Interface
           </p>
         </div>
-        <div className="flex flex-wrap gap-3">
+        
+        <div className="flex flex-wrap gap-3 relative z-10">
           <Button
             variant="outline"
             onClick={() => toggleAutomation(!automationEnabled)}
             disabled={loadingSettings}
             className={cn(
-              "font-bold uppercase tracking-widest text-[10px] h-9 px-6 rounded-none transition-all shadow-sm border-2",
+              "font-black uppercase tracking-widest text-[10px] h-10 px-6 rounded-none transition-all duration-300 border-2",
               automationEnabled 
-                ? "border-success/50 bg-success/5 text-success hover:bg-success/10 shadow-neon-success" 
-                : "border-destructive/20 bg-destructive/5 text-destructive hover:bg-destructive/10"
+                ? "border-success shadow-[0_0_20px_rgba(34,197,94,0.3)] bg-success/10 text-success hover:bg-success/20" 
+                : "border-destructive/30 bg-destructive/5 text-destructive hover:bg-destructive/10"
             )}
           >
             {loadingSettings ? (
-              <Loader2 className="h-3 w-3 mr-2 animate-spin" />
+              <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" />
             ) : automationEnabled ? (
-              <Power className="h-3 w-3 mr-2 animate-pulse" />
+              <Power className="h-3.5 w-3.5 mr-2" />
             ) : (
-              <PowerOff className="h-3 w-3 mr-2" />
+              <PowerOff className="h-3.5 w-3.5 mr-2" />
             )}
-            {automationEnabled ? "Robô Ligado" : "Robô Desligado"}
+            {automationEnabled ? "AUTOMAÇÃO ATIVA" : "AUTOMAÇÃO INATIVA"}
           </Button>
 
           <Button
@@ -282,24 +289,23 @@ const SocialRobotPage = () => {
             onClick={() => toggleFollowerGrowth(!followerGrowthMode)}
             disabled={loadingSettings}
             className={cn(
-              "font-bold uppercase tracking-widest text-[10px] h-9 px-6 rounded-none transition-all shadow-sm border-2",
+              "font-black uppercase tracking-widest text-[10px] h-10 px-6 rounded-none transition-all duration-300 border-2",
               followerGrowthMode 
-                ? "border-primary/50 bg-primary/5 text-primary hover:bg-primary/10 shadow-neon-lilac" 
+                ? "border-primary shadow-neon-lilac bg-primary/10 text-primary hover:bg-primary/20" 
                 : "border-white/10 bg-white/5 text-muted-foreground hover:bg-white/10"
             )}
           >
-            <UserCheck className={cn("h-3 w-3 mr-2", followerGrowthMode && "animate-bounce")} />
-            {followerGrowthMode ? "Modo Crescimento: ON" : "Modo Crescimento: OFF"}
+            <UserCheck className={cn("h-3.5 w-3.5 mr-2", followerGrowthMode && "animate-bounce")} />
+            {followerGrowthMode ? "MODO CRESCIMENTO" : "MODO PADRÃO"}
           </Button>
 
           <Button
             onClick={handleProcessInteractions}
             disabled={processing}
-            size="sm"
-            className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold uppercase tracking-widest text-[10px] h-9 px-6 rounded-none transition-all shadow-sm border-none"
+            className="gradient-primary text-primary-foreground font-black uppercase tracking-widest text-[10px] h-10 px-6 rounded-none transition-all shadow-neon-lilac border-none hover:scale-105 active:scale-95"
           >
-            {processing ? <Loader2 className="h-3 w-3 mr-2 animate-spin" /> : <UserCheck className="h-3 w-3 mr-2" />}
-            Sincronizar
+            {processing ? <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5 mr-2" />}
+            Sincronizar Agora
           </Button>
         </div>
       </div>
