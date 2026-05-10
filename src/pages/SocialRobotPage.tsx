@@ -303,6 +303,21 @@ const SocialRobotPage = () => {
           <Button
             variant="outline"
             size="sm"
+            onClick={() => setCompactMode(!compactMode)}
+            className={cn(
+              "font-black uppercase tracking-widest text-[9px] h-8 px-2 rounded-none transition-all duration-300 border-2",
+              compactMode 
+                ? "border-warning bg-warning/5 text-warning" 
+                : "border-white/10 bg-white/5 text-muted-foreground hover:bg-white/10"
+            )}
+            title={compactMode ? "Desativar Modo Compacto" : "Ativar Modo Compacto"}
+          >
+            {compactMode ? "COMPACTO" : "NORMAL"}
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => toggleAutomation(!automationEnabled)}
             disabled={loadingSettings}
             className={cn(
