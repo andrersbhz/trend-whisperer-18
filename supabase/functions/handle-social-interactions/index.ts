@@ -6,7 +6,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Helper: fetch with timeout to avoid hanging requests
 async function fetchWithTimeout(url: string, ms = 8000): Promise<Response | null> {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), ms);
@@ -35,10 +34,10 @@ async function processPage(
     finalToken = decryptedToken || token;
   }
 
-  // 1. Feed (reduced limit for performance)
   const postsResp = await fetchWithTimeout(
     `https://graph.facebook.com/v21.0/${pageId}/feed?fields=id,permalink_url&limit=8&access_token=${finalToken}`
   );
+  
   if (!postsResp || !postsResp.ok) {
     const errText = postsResp ? await postsResp.text() : "timeout";
     console.error(`[handle-social-interactions] Feed error ${pageId}:`, errText);
@@ -51,26 +50,24 @@ async function processPage(
       message: `Erro na página ${pageName || pageId}: ${postsResp ? "Permissão negada pela Meta." : "Timeout."}`,
       details,
     });
-    return processed;
+    return { processed, postsScanned };
   }
 
   const postsList = (await postsResp.json()).data || [];
   postsScanned = postsList.length;
-  
-  // Log posts found for visibility
+
+  // Adiciona log de progresso para visibilidade do usuário
   await supabase.from("automation_logs").insert({
     user_id: userId,
     level: "info",
     module: "sync",
-    message: `Escaneando ${postsScanned} postagens na página: ${pageName || pageId}`,
+    message: `Iniciando análise de ${postsScanned} postagens na página: ${pageName || pageId}`,
   });
 
   const pageAvatar = pagePicture || `https://graph.facebook.com/${pageId}/picture?type=large`;
 
-  // Process posts in parallel
   await Promise.all(
     postsList.map(async (post: any) => {
-      // Comments + reactions in parallel
       const [commentsResp, reactionsResp] = await Promise.all([
         fetchWithTimeout(
           `https://graph.facebook.com/v21.0/${post.id}/comments?fields=id,message,from{name,picture},created_time,permalink_url&limit=10&access_token=${finalToken}`
@@ -122,7 +119,6 @@ async function processPage(
 
       if (newRows.length === 0) return;
 
-      // Batch dedupe: filter out already-saved external_ids
       const ids = newRows.map((r) => r.external_id);
       const { data: existing } = await supabase
         .from("social_interactions")
@@ -138,7 +134,7 @@ async function processPage(
     })
   );
 
-  return processed;
+  return { processed, postsScanned };
 }
 
 serve(async (req) => {
@@ -183,22 +179,23 @@ serve(async (req) => {
       });
     }
 
-    console.log(`[handle-social-interactions] Processando ${allPages.length} páginas em paralelo`);
-
-    // Process all pages in parallel — major speedup
     const results = await Promise.all(
       allPages.map((p) =>
         processPage(supabase, userId, p).catch((err) => {
-          console.error(`[handle-social-interactions] Erro página ${p.page_id}:`, err);
-          return 0;
+          console.error(`[handle-social-interactions] Erro página ${p.id}:`, err);
+          return { processed: 0, postsScanned: 0 };
         })
       )
     );
 
-    const totalProcessed = results.reduce((a, b) => a + b, 0);
-    console.log(`[handle-social-interactions] Sync OK. ${totalProcessed} novas interações.`);
+    const totalProcessed = results.reduce((a, b) => a + b.processed, 0);
+    const totalPosts = results.reduce((a, b) => a + b.postsScanned, 0);
 
-    return new Response(JSON.stringify({ success: true, newInteractions: totalProcessed }), {
+    return new Response(JSON.stringify({ 
+      success: true, 
+      newInteractions: totalProcessed,
+      postsScanned: totalPosts 
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error: any) {

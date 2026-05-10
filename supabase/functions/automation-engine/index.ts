@@ -63,7 +63,7 @@ serve(async (req) => {
             user_id: user.user_id,
             level: 'info',
             module: 'sync',
-            message: `Sincronização concluída: ${syncResp.data?.newInteractions || 0} novas interações.`,
+            message: `Sincronização concluída: ${syncResp.data?.postsScanned || 0} postagens analisadas e ${syncResp.data?.newInteractions || 0} novas interações.`,
             details: syncResp.data
           });
         }
