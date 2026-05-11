@@ -292,6 +292,8 @@ const AnalyticsPage = ({ isModal = false, pageId }: { isModal?: boolean; pageId?
   const jp = socialMetrics?.jetpack;
   const pl = socialMetrics?.publish_log;
 
+  const filteredMetaMetrics = metaMetrics?.filter((pg: any) => !selectedPageId || pg.page_id === selectedPageId || pg.instagram?.id === selectedPageId);
+
   const socialSection = (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold neon-text-pink flex items-center gap-2">
@@ -817,7 +819,6 @@ const AnalyticsPage = ({ isModal = false, pageId }: { isModal?: boolean; pageId?
     { icon: FileText, label: 'Artigos Publicados', value: String(articleStats.published), color: 'text-accent' },
   ];
 
-  const filteredMetaMetrics = metaMetrics?.filter((pg: any) => !selectedPageId || pg.page_id === selectedPageId || pg.instagram?.id === selectedPageId);
 
   return (
     <div className="space-y-6">
