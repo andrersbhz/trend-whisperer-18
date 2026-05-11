@@ -45,6 +45,7 @@ export interface UserSettings {
     categories: boolean;
     audit: boolean;
     alternate_stats: boolean;
+    chart: boolean;
   };
 }
 
@@ -77,6 +78,7 @@ const defaultSettings: UserSettings = {
     categories: true,
     audit: true,
     alternate_stats: true,
+    chart: true,
   },
 };
 
