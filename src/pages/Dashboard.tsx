@@ -492,7 +492,7 @@ const Dashboard = () => {
               {categoryStats.map(c => {
                 const pct = stats.total > 0 ? Math.round((c.total / stats.total) * 100) : 0;
                 return (
-                  <div key={c.category} className="p-4 bg-secondary/30 border border-border/40 animate-float-up">
+                  <div key={c.category} className="p-4 bg-secondary/30 border border-primary/10 glass-card animate-float-up">
                     <div className="flex justify-between mb-2">
                       <span className="text-sm font-bold uppercase tracking-tighter truncate">{categoryLabels[c.category] || c.category}</span>
                       <Badge variant="secondary" className="bg-primary/15 text-primary text-[10px]">{pct}%</Badge>
