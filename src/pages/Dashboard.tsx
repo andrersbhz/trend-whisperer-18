@@ -518,7 +518,7 @@ const Dashboard = () => {
             <CardHeader className="pb-2 flex flex-row items-center gap-2"><Clock className="h-5 w-5 text-primary" /><CardTitle className="text-lg uppercase tracking-tighter">Logs de Auditoria</CardTitle></CardHeader>
             <CardContent className="space-y-3 p-4">
               {auditLogs.length > 0 ? auditLogs.map(log => (
-                <div key={log.id} className="p-3 bg-background/40 border border-border/50 text-[10px] font-bold uppercase tracking-widest flex flex-col gap-1">
+                <div key={log.id} className="p-3 bg-background/40 border border-primary/10 glass-card text-[10px] font-bold uppercase tracking-widest flex flex-col gap-1 hover:translate-x-1 transition-transform">
                   <div className="flex justify-between">
                     <span className="text-primary">{log.action.replace(/_/g, ' ')}</span>
                     <span className="text-muted-foreground">{format(new Date(log.created_at), "dd/MM HH:mm")}</span>
