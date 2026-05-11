@@ -818,6 +818,8 @@ const AnalyticsPage = ({ isModal = false, pageId }: { isModal?: boolean; pageId?
     { icon: FileText, label: 'Artigos Publicados', value: String(articleStats.published), color: 'text-accent' },
   ];
 
+  const filteredMetaMetrics = metaMetrics?.filter((pg: any) => !selectedPageId || pg.page_id === selectedPageId || pg.instagram?.id === selectedPageId);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
