@@ -159,6 +159,28 @@ const Dashboard = () => {
       if (data?.metrics_refresh_interval) setRefreshInterval(data.metrics_refresh_interval);
     };
     fetchIntervalSettings();
+
+    // Set up real-time subscription for articles
+    const articlesSubscription = supabase
+      .channel('articles-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'articles',
+          filter: `user_id=eq.${user.id}`
+        },
+        () => {
+          console.log('Artigo alterado, atualizando dashboard...');
+          fetchStats();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(articlesSubscription);
+    };
   }, [user]);
 
   useEffect(() => {
