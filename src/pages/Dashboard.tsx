@@ -304,7 +304,7 @@ const Dashboard = () => {
             <div>
               <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Total de Postagens</p>
               <h4 className="text-3xl font-black tabular-nums">{stats.total}</h4>
-              <p className="text-[10px] text-success font-medium mt-1">✓ {stats.published} PUBLICADOS</p>
+              <p className="text-[10px] text-accent font-medium mt-1">✓ {stats.published} PUBLICADOS</p>
             </div>
             <div className="h-12 w-12 border border-primary/30 flex items-center justify-center bg-primary/5"><FileText className="h-6 w-6 text-primary" /></div>
           </Card>
