@@ -364,6 +364,50 @@ const AnalyticsPage = ({ isModal = false, pageId }: { isModal?: boolean; pageId?
         </div>
       )}
 
+      {/* === META API COMPARISON PANEL === */}
+      {metaMetrics && metaMetrics.length > 1 && (
+        <Card className="glass-card neon-border-pink">
+          <CardHeader>
+            <CardTitle className="text-lg text-foreground flex items-center gap-2">
+              <PieChartIcon className="h-5 w-5 text-primary" /> Comparativo de Contas Meta
+            </CardTitle>
+            <CardDescription>Comparação de performance entre diferentes páginas e contas do Instagram</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={metaMetrics.map(pg => ({
+                    name: pg.page_name,
+                    seguidores_fb: pg.facebook?.followers_count || pg.facebook?.fan_count || 0,
+                    seguidores_ig: pg.instagram?.followers_count || 0,
+                    posts_fb: pg.facebook?.post_stats?.total_posts || 0,
+                    posts_ig: pg.instagram?.post_stats?.total_posts || 0
+                  }))}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(230, 20%, 15%)" />
+                  <XAxis 
+                    dataKey="name" 
+                    angle={-45} 
+                    textAnchor="end" 
+                    fontSize={10} 
+                    stroke="hsl(260, 10%, 45%)" 
+                    interval={0}
+                    height={60}
+                  />
+                  <YAxis fontSize={10} stroke="hsl(260, 10%, 45%)" />
+                  <Tooltip contentStyle={customTooltipStyle} />
+                  <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                  <Bar dataKey="seguidores_fb" name="Seguidores FB" fill="hsl(220, 80%, 55%)" radius={[3, 3, 0, 0]} />
+                  <Bar dataKey="seguidores_ig" name="Seguidores IG" fill="hsl(320, 80%, 55%)" radius={[3, 3, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* === META API METRICS === */}
       {loadingMeta && (
         <div className="flex items-center gap-2 text-muted-foreground text-sm">
