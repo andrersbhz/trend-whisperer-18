@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,7 +17,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { getErrorMessage, runBackendQuery } from '@/lib/backend';
-import { format } from 'date-fns';
+import { format, subDays, startOfDay, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import AnalyticsPage from '@/pages/AnalyticsPage';
 import { useNavigate } from 'react-router-dom';
@@ -28,12 +28,22 @@ import {
   DialogTitle,
   DialogClose,
 } from "@/components/ui/dialog";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer
+} from 'recharts';
 
 const Dashboard = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [stats, setStats] = useState({ total: 0, published: 0, pending: 0, trending: 0, failed: 0 });
+  const [allArticles, setAllArticles] = useState<any[]>([]);
   const [recentArticles, setRecentArticles] = useState<any[]>([]);
   const [recentErrors, setRecentErrors] = useState<any[]>([]);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
@@ -59,6 +69,7 @@ const Dashboard = () => {
     categories: true,
     audit: true,
     alternate_stats: true,
+    chart: true,
   });
 
   const fetchStats = async () => {
@@ -66,7 +77,7 @@ const Dashboard = () => {
     setLoadingTrends(true);
     try {
       const [articles, trendingTopics, recent, errors, logs, topTrends, categoriesData] = await Promise.all([
-        runBackendQuery(() => supabase.from('articles').select('id, status, category').eq('user_id', user.id)),
+        runBackendQuery(() => supabase.from('articles').select('id, status, category, created_at').eq('user_id', user.id)),
         runBackendQuery(() => supabase.from('trending_topics').select('id').eq('user_id', user.id).eq('used', false)),
         runBackendQuery(() => supabase.from('articles').select('id, title, category, seo_keyword, status').eq('user_id', user.id).order('created_at', { ascending: false }).limit(5)),
         runBackendQuery(() => supabase.from('publish_log').select('id, article_id, error_message, created_at, status').eq('user_id', user.id).eq('status', 'failed').order('created_at', { ascending: false }).limit(5)),
@@ -76,6 +87,7 @@ const Dashboard = () => {
       ]);
 
       setTrendingList(topTrends || []);
+      setAllArticles(articles || []);
       setUserCategories(categoriesData?.categories || ['esportes', 'politica', 'policia', 'saude', 'celebridades', 'financas']);
       if (categoriesData?.dashboard_widgets) setWidgets(categoriesData.dashboard_widgets as any);
       setLoadingTrends(false);
@@ -185,6 +197,30 @@ const Dashboard = () => {
     { icon: Clock, label: 'Pendentes', value: stats.pending, color: 'text-warning', accent: 'from-warning/10', glow: '' },
     { icon: TrendingUp, label: 'Tendências', value: stats.trending, color: 'text-accent', accent: 'from-accent/10', glow: 'neon-border-pink' },
   ];
+  
+  const chartData = useMemo(() => {
+    if (!allArticles.length) return [];
+    
+    const last7Days = Array.from({ length: 7 }, (_, i) => {
+      const date = subDays(new Date(), i);
+      return startOfDay(date);
+    }).reverse();
+
+    return last7Days.map(day => {
+      const count = allArticles.filter(a => isSameDay(new Date(a.created_at), day)).length;
+      return {
+        name: format(day, 'dd/MM'),
+        posts: count
+      };
+    });
+  }, [allArticles]);
+
+  const customTooltipStyle = {
+    backgroundColor: 'hsl(230, 25%, 6%)',
+    border: '1px solid hsl(230, 20%, 20%)',
+    borderRadius: '0px',
+    color: 'hsl(210, 20%, 98%)',
+  };
 
   return (
     <div className="space-y-6 lg:space-y-8 pb-10">
@@ -259,6 +295,62 @@ const Dashboard = () => {
             <div className="h-12 w-12 border border-accent/30 flex items-center justify-center bg-accent/5"><Clock className="h-6 w-6 text-accent" /></div>
           </Card>
         </div>
+      )}
+
+      {widgets.chart && (
+        <Card className="glass-card neon-border-lilac animate-fade-in overflow-hidden">
+          <CardHeader className="pb-2 flex flex-row items-center justify-between">
+            <div className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-primary" />
+              <CardTitle className="text-lg uppercase tracking-tighter">Volume de Artigos (7d)</CardTitle>
+            </div>
+            <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-widest border-primary/20 text-primary">Atividade Recente</Badge>
+          </CardHeader>
+          <CardContent className="pt-4">
+            <div className="h-[250px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData}>
+                  <defs>
+                    <linearGradient id="colorPosts" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(260, 100%, 70%)" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="hsl(260, 100%, 70%)" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(230, 20%, 15%)" vertical={false} />
+                  <XAxis 
+                    dataKey="name" 
+                    fontSize={10} 
+                    stroke="hsl(260, 10%, 45%)" 
+                    tickLine={false}
+                    axisLine={false}
+                    dy={10}
+                  />
+                  <YAxis 
+                    fontSize={10} 
+                    stroke="hsl(260, 10%, 45%)" 
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(value) => `${value}`}
+                  />
+                  <Tooltip 
+                    contentStyle={customTooltipStyle}
+                    cursor={{ stroke: 'hsl(260, 100%, 70%)', strokeWidth: 1 }}
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="posts" 
+                    name="Artigos" 
+                    stroke="hsl(260, 100%, 70%)" 
+                    fillOpacity={1} 
+                    fill="url(#colorPosts)" 
+                    strokeWidth={3}
+                    animationDuration={1500}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {widgets.meta && metaMetrics && (

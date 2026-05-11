@@ -11,6 +11,7 @@ interface DashboardWidgets {
   categories: boolean;
   audit: boolean;
   alternate_stats: boolean;
+  chart: boolean;
 }
 
 interface DashboardWidgetSettingsProps {
@@ -34,6 +35,7 @@ const DashboardWidgetSettings = ({ widgets, onChange }: DashboardWidgetSettingsP
     categories: "Métricas por Categoria",
     audit: "Logs de Auditoria",
     alternate_stats: "Métricas Alternativas (Posts/Agendamentos)",
+    chart: "Gráfico de Atividade (Artigos)",
   };
 
   return (
