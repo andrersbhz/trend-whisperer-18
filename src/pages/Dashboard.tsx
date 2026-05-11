@@ -43,6 +43,7 @@ const Dashboard = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [stats, setStats] = useState({ total: 0, published: 0, pending: 0, trending: 0, failed: 0 });
+  const [allArticles, setAllArticles] = useState<any[]>([]);
   const [recentArticles, setRecentArticles] = useState<any[]>([]);
   const [recentErrors, setRecentErrors] = useState<any[]>([]);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
@@ -86,6 +87,7 @@ const Dashboard = () => {
       ]);
 
       setTrendingList(topTrends || []);
+      setAllArticles(articles || []);
       setUserCategories(categoriesData?.categories || ['esportes', 'politica', 'policia', 'saude', 'celebridades', 'financas']);
       if (categoriesData?.dashboard_widgets) setWidgets(categoriesData.dashboard_widgets as any);
       setLoadingTrends(false);
@@ -195,6 +197,30 @@ const Dashboard = () => {
     { icon: Clock, label: 'Pendentes', value: stats.pending, color: 'text-warning', accent: 'from-warning/10', glow: '' },
     { icon: TrendingUp, label: 'Tendências', value: stats.trending, color: 'text-accent', accent: 'from-accent/10', glow: 'neon-border-pink' },
   ];
+  
+  const chartData = useMemo(() => {
+    if (!allArticles.length) return [];
+    
+    const last7Days = Array.from({ length: 7 }, (_, i) => {
+      const date = subDays(new Date(), i);
+      return startOfDay(date);
+    }).reverse();
+
+    return last7Days.map(day => {
+      const count = allArticles.filter(a => isSameDay(new Date(a.created_at), day)).length;
+      return {
+        name: format(day, 'dd/MM'),
+        posts: count
+      };
+    });
+  }, [allArticles]);
+
+  const customTooltipStyle = {
+    backgroundColor: 'hsl(230, 25%, 6%)',
+    border: '1px solid hsl(230, 20%, 20%)',
+    borderRadius: '0px',
+    color: 'hsl(210, 20%, 98%)',
+  };
 
   return (
     <div className="space-y-6 lg:space-y-8 pb-10">
