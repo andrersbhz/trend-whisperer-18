@@ -297,6 +297,62 @@ const Dashboard = () => {
         </div>
       )}
 
+      {widgets.chart && (
+        <Card className="glass-card neon-border-lilac animate-fade-in overflow-hidden">
+          <CardHeader className="pb-2 flex flex-row items-center justify-between">
+            <div className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-primary" />
+              <CardTitle className="text-lg uppercase tracking-tighter">Volume de Artigos (7d)</CardTitle>
+            </div>
+            <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-widest border-primary/20 text-primary">Atividade Recente</Badge>
+          </CardHeader>
+          <CardContent className="pt-4">
+            <div className="h-[250px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData}>
+                  <defs>
+                    <linearGradient id="colorPosts" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(260, 100%, 70%)" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="hsl(260, 100%, 70%)" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(230, 20%, 15%)" vertical={false} />
+                  <XAxis 
+                    dataKey="name" 
+                    fontSize={10} 
+                    stroke="hsl(260, 10%, 45%)" 
+                    tickLine={false}
+                    axisLine={false}
+                    dy={10}
+                  />
+                  <YAxis 
+                    fontSize={10} 
+                    stroke="hsl(260, 10%, 45%)" 
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(value) => `${value}`}
+                  />
+                  <Tooltip 
+                    contentStyle={customTooltipStyle}
+                    cursor={{ stroke: 'hsl(260, 100%, 70%)', strokeWidth: 1 }}
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="posts" 
+                    name="Artigos" 
+                    stroke="hsl(260, 100%, 70%)" 
+                    fillOpacity={1} 
+                    fill="url(#colorPosts)" 
+                    strokeWidth={3}
+                    animationDuration={1500}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {widgets.meta && metaMetrics && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-fade-in">
           {metaMetrics.map((pg: any, idx: number) => (
