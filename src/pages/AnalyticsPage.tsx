@@ -368,8 +368,7 @@ const AnalyticsPage = ({ isModal = false, pageId }: { isModal?: boolean; pageId?
           <Loader2 className="h-4 w-4 animate-spin" /> Carregando métricas do Meta...
         </div>
       )}
-      {metaMetrics && metaMetrics.length > 0 && metaMetrics
-        .filter((pg: any) => !selectedPageId || pg.page_id === selectedPageId || pg.instagram?.id === selectedPageId)
+      {metaMetrics && metaMetrics.length > 0 && filteredMetaMetrics && filteredMetaMetrics.length > 0 && filteredMetaMetrics
         .map((pg: any, idx: number) => (
         <div key={idx} className="space-y-3">
           <h3 className="text-md font-semibold text-foreground flex items-center gap-2">
