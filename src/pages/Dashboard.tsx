@@ -59,6 +59,7 @@ const Dashboard = () => {
     categories: true,
     audit: true,
     alternate_stats: true,
+    chart: true,
   });
 
   const fetchStats = async () => {
