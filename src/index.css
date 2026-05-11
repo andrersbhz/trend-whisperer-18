@@ -36,7 +36,7 @@
     --warning: 45 95% 60%;
     --warning-foreground: 230 25% 4%;
 
-    --border: 210 100% 50% / 0.15;
+    --border: 190 100% 50% / 0.2;
     --input: 230 20% 12%;
     --ring: 210 100% 50%;
     --radius: 0px;
@@ -152,16 +152,16 @@
     background: hsla(230, 25%, 5%, 0.55);
     backdrop-filter: blur(12px) saturate(160%);
     -webkit-backdrop-filter: blur(12px) saturate(160%);
-    border: 1px solid hsla(210, 100%, 50%, 0.15);
+    border: 1px solid hsla(190, 100%, 50%, 0.3);
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
   }
   .neon-border-lilac {
-    border: 1px solid hsla(210, 100%, 50%, 0.5);
-    box-shadow: 0 0 15px hsla(210, 100%, 50%, 0.2), inset 0 0 5px hsla(210, 100%, 50%, 0.1);
+    border: 1px solid hsla(190, 100%, 50%, 0.4);
+    box-shadow: 0 0 15px hsla(190, 100%, 50%, 0.1), inset 0 0 5px hsla(190, 100%, 50%, 0.05);
   }
   .neon-border-pink {
-    border: 1px solid hsla(190, 100%, 50%, 0.5);
-    box-shadow: 0 0 15px hsla(190, 100%, 50%, 0.2), inset 0 0 5px hsla(190, 100%, 50%, 0.1);
+    border: 1px solid hsla(190, 100%, 50%, 0.4);
+    box-shadow: 0 0 15px hsla(190, 100%, 50%, 0.1), inset 0 0 5px hsla(190, 100%, 50%, 0.05);
   }
   .neon-text-lilac {
     color: hsl(210, 100%, 75%);
