@@ -292,6 +292,8 @@ const AnalyticsPage = ({ isModal = false, pageId }: { isModal?: boolean; pageId?
   const jp = socialMetrics?.jetpack;
   const pl = socialMetrics?.publish_log;
 
+  const filteredMetaMetrics = metaMetrics?.filter((pg: any) => !selectedPageId || pg.page_id === selectedPageId || pg.instagram?.id === selectedPageId);
+
   const socialSection = (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold neon-text-pink flex items-center gap-2">
@@ -368,8 +370,7 @@ const AnalyticsPage = ({ isModal = false, pageId }: { isModal?: boolean; pageId?
           <Loader2 className="h-4 w-4 animate-spin" /> Carregando métricas do Meta...
         </div>
       )}
-      {metaMetrics && metaMetrics.length > 0 && metaMetrics
-        .filter((pg: any) => !selectedPageId || pg.page_id === selectedPageId || pg.instagram?.id === selectedPageId)
+      {metaMetrics && metaMetrics.length > 0 && filteredMetaMetrics && filteredMetaMetrics.length > 0 && filteredMetaMetrics
         .map((pg: any, idx: number) => (
         <div key={idx} className="space-y-3">
           <h3 className="text-md font-semibold text-foreground flex items-center gap-2">
@@ -817,6 +818,7 @@ const AnalyticsPage = ({ isModal = false, pageId }: { isModal?: boolean; pageId?
     { icon: Users, label: 'Novos Usuários', value: analytics?.newUsers?.toLocaleString() || '0', color: 'text-primary' },
     { icon: FileText, label: 'Artigos Publicados', value: String(articleStats.published), color: 'text-accent' },
   ];
+
 
   return (
     <div className="space-y-6">

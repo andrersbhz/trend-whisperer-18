@@ -394,25 +394,13 @@ const Dashboard = () => {
                   <span>Curtidas</span>
                 </div>
               </div>
-              <Button variant="outline" size="sm" className="w-full text-[10px] uppercase font-bold tracking-widest rounded-none border-primary/30" onClick={() => { setSelectedPageForMetrics(pg.page_id); setIsMetricsModalOpen(true); }}>
+              <Button variant="outline" size="sm" className="w-full text-[10px] uppercase font-bold tracking-widest rounded-none border-primary/30" onClick={() => navigate(`/analytics?page=${pg.page_id}`)}>
                 Ver métricas
               </Button>
             </div>
           ))}
         </div>
       )}
-
-      <Dialog open={isMetricsModalOpen} onOpenChange={setIsMetricsModalOpen}>
-        <DialogContent className="max-w-7xl h-[90vh] glass-card p-0 sm:p-6 overflow-y-auto">
-          <DialogHeader className="p-6 sm:p-0">
-            <div className="flex items-center justify-between">
-              <DialogTitle className="text-2xl font-bold neon-text-lilac uppercase tracking-tighter">Métricas da Página</DialogTitle>
-              <DialogClose className="opacity-70 hover:opacity-100"><X className="h-6 w-6" /></DialogClose>
-            </div>
-          </DialogHeader>
-          <AnalyticsPage isModal={true} pageId={selectedPageForMetrics} />
-        </DialogContent>
-      </Dialog>
 
       {widgets.robot && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in">
