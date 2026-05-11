@@ -262,7 +262,7 @@ const SocialRobotPage = () => {
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-success"></span>
                 </span>
-                Neural Interface
+                Interface Neural
               </p>
             </div>
           </div>
@@ -293,7 +293,7 @@ const SocialRobotPage = () => {
               <span className="text-[7px] text-muted-foreground uppercase font-black tracking-widest mb-0.5">Atividade</span>
               <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-tighter text-foreground/90">
                 <Activity className="h-2.5 w-2.5 text-[hsl(200_100%_60%)]" />
-                {interactions.length} NODES
+                {interactions.length} NODOS
               </div>
             </div>
           </div>

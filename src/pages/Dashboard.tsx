@@ -214,7 +214,7 @@ const Dashboard = () => {
   const categoryLabels: Record<string, string> = { esportes: '⚽ Esportes', politica: '🏛️ Política', policia: '🚔 Polícia', saude: '💚 Saúde', celebridades: '⭐ Celebridades', financas: '💰 Finanças' };
 
   const statCards = [
-    { icon: FileText, label: 'Total Artigos', value: stats.total, color: 'text-primary', accent: 'from-primary/10', glow: 'neon-border-lilac' },
+    { icon: FileText, label: 'Total de Artigos', value: stats.total, color: 'text-primary', accent: 'from-primary/10', glow: 'neon-border-lilac' },
     { icon: CheckCircle, label: 'Publicados', value: stats.published, color: 'text-success', accent: 'from-success/10', glow: '' },
     { icon: Clock, label: 'Pendentes', value: stats.pending, color: 'text-warning', accent: 'from-warning/10', glow: '' },
     { icon: TrendingUp, label: 'Tendências', value: stats.trending, color: 'text-accent', accent: 'from-accent/10', glow: 'neon-border-pink' },
@@ -251,7 +251,7 @@ const Dashboard = () => {
           <h1 className="text-2xl sm:text-3xl font-bold neon-text-lilac uppercase tracking-tighter">NEURAL VORTEX</h1>
           <div className="flex items-center gap-2 mt-1">
             <p className="text-muted-foreground text-sm">Visão geral e métricas</p>
-            {nextRefresh && <Badge variant="outline" className="text-[10px] animate-pulse">Auto-update: {format(nextRefresh, "HH:mm")}</Badge>}
+            {nextRefresh && <Badge variant="outline" className="text-[10px] animate-pulse">Auto-atualização: {format(nextRefresh, "HH:mm")}</Badge>}
           </div>
         </div>
         <Button onClick={handleGenerateArticles} disabled={generating} className="gradient-primary uppercase tracking-widest text-[10px] h-9 px-6 rounded-none font-bold">
@@ -501,8 +501,8 @@ const Dashboard = () => {
                     <div className="h-1.5 w-full bg-background/50 overflow-hidden mb-3"><div className="h-full gradient-primary" style={{ width: `${pct}%` }} /></div>
                     <div className="flex justify-between text-[11px] font-bold uppercase tracking-widest">
                       <span className="text-success">{c.published} OK</span>
-                      <span className="text-warning">{c.pending} WAIT</span>
-                      <span className="text-destructive">{c.failed} FAIL</span>
+                      <span className="text-warning">{c.pending} AGUARDA</span>
+                      <span className="text-destructive">{c.failed} FALHA</span>
                     </div>
                   </div>
                 );
@@ -565,7 +565,7 @@ const Dashboard = () => {
                         ))}
                       </DropdownMenuContent>
                     </DropdownMenu>
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">• {article.seo_keyword || 'Sem keyword'}</span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">• {article.seo_keyword || 'Sem palavra-chave'}</span>
                   </div>
                 </div>
                 <Badge className={`${statusColors[article.status] || ''} text-[10px] font-bold uppercase tracking-widest rounded-none border-primary/20 text-primary`} variant="outline">{article.status}</Badge>
