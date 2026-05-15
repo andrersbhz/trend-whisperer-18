@@ -523,6 +523,7 @@ export type Database = {
     }
     Functions: {
       clean_old_trending_topics: { Args: never; Returns: undefined }
+      cleanup_expired_data: { Args: never; Returns: undefined }
       decrypt_credential: {
         Args: { enc_key: string; val: string }
         Returns: string

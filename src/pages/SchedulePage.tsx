@@ -47,6 +47,8 @@ const SchedulePage = () => {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [userCategories, setUserCategories] = useState<string[]>([]);
   const [isRescheduling, setIsRescheduling] = useState(false);
+  const [rescheduleDialogOpen, setRescheduleDialogOpen] = useState(false);
+  const [rescheduleType, setRescheduleType] = useState<'pending' | 'all'>('pending');
 
   useEffect(() => {
     if (!user) return;
@@ -340,21 +342,26 @@ const SchedulePage = () => {
   };
 
   const handleReschedule = async () => {
-    if (articles.length === 0) return;
-    if (!window.confirm(`Deseja reagendar ${articles.length} notícias com base em ${articlesPerDay} postagens por dia?`)) return;
+    const targetArticles = rescheduleType === 'pending' 
+      ? articles.filter(a => a.status === 'ready' || a.status === 'draft')
+      : articles.filter(a => a.status !== 'published');
+
+    if (targetArticles.length === 0) {
+      toast({ title: 'Nenhum artigo para reagendar' });
+      setRescheduleDialogOpen(false);
+      return;
+    }
 
     setIsRescheduling(true);
     try {
-      const updatedArticles = [];
       const now = new Date();
       // Garante que começamos do início do dia seguinte ou do momento atual
       const startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 8, 0, 0);
       if (startDate < now) startDate.setDate(startDate.getDate() + 1);
 
-      // Filtra apenas os que não foram publicados ainda
-      const pendingArticles = articles.filter(a => a.status !== 'published');
+      const updatedArticles = [];
       
-      for (let i = 0; i < pendingArticles.length; i++) {
+      for (let i = 0; i < targetArticles.length; i++) {
         const dayOffset = Math.floor(i / articlesPerDay);
         const articleInDayIndex = i % articlesPerDay;
         
@@ -375,11 +382,11 @@ const SchedulePage = () => {
         const { error } = await supabase
           .from('articles')
           .update({ scheduled_at: isoDate })
-          .eq('id', pendingArticles[i].id);
+          .eq('id', targetArticles[i].id);
 
         if (error) throw error;
         
-        updatedArticles.push({ ...pendingArticles[i], scheduled_at: isoDate });
+        updatedArticles.push({ ...targetArticles[i], scheduled_at: isoDate });
       }
 
       setArticles(prev => {
@@ -400,6 +407,7 @@ const SchedulePage = () => {
         title: 'Reagendamento concluído!', 
         description: `${updatedArticles.length} notícias foram reorganizadas.` 
       });
+      setRescheduleDialogOpen(false);
     } catch (error) {
       toast({ 
         title: 'Erro ao reagendar', 
@@ -474,10 +482,25 @@ const SchedulePage = () => {
             </Button>
             
             <Button
-              onClick={handleReschedule}
+              onClick={() => {
+                setRescheduleType('pending');
+                setRescheduleDialogOpen(true);
+              }}
               disabled={isRescheduling || articles.length === 0}
               variant="outline"
-              className="flex-1 sm:flex-none border-accent text-accent hover:bg-accent/10"
+              className="flex-1 sm:flex-none border-primary/20 hover:bg-primary/5"
+            >
+              {isRescheduling ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+              Reagendar Pendentes
+            </Button>
+            <Button
+              onClick={() => {
+                setRescheduleType('all');
+                setRescheduleDialogOpen(true);
+              }}
+              disabled={isRescheduling || articles.length === 0}
+              variant="outline"
+              className="flex-1 sm:flex-none border-accent/20 hover:bg-accent/5"
             >
               {isRescheduling ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
               Reagendar Todas
@@ -485,6 +508,32 @@ const SchedulePage = () => {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={rescheduleDialogOpen} onOpenChange={setRescheduleDialogOpen}>
+        <DialogContent className="glass-card neon-border-pink">
+          <DialogHeader>
+            <DialogTitle>Confirmar Reagendamento</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-foreground">
+              Você deseja reagendar {rescheduleType === 'pending' ? 'somente as notícias pendentes' : 'todas as notícias agendadas (exceto publicadas)'}?
+            </p>
+            <p className="text-sm text-muted-foreground mt-2">
+              As notícias serão reorganizadas com base em <strong>{articlesPerDay} postagens por dia</strong>, começando a partir de amanhã às 08:00.
+            </p>
+          </div>
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={() => setRescheduleDialogOpen(false)}>Cancelar</Button>
+            <Button 
+              className={rescheduleType === 'all' ? 'gradient-accent' : 'gradient-primary'} 
+              onClick={handleReschedule}
+              disabled={isRescheduling}
+            >
+              {isRescheduling ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : 'Confirmar Reagendamento'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {articles.length === 0 ? (
         <Card className="shadow-card">
