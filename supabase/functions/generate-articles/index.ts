@@ -289,24 +289,26 @@ async function callWithFallback(providers: ProviderConfig[], systemPrompt: strin
 // Não há mais template fixo de imagem: a imagem segue sempre o título e os visual_elements gerados.
 
 function buildImagePrompt(title: string, content: string | null, visualElements: string, customImagePrompt?: string | null): string {
-  const userImageGuidance = customImagePrompt && customImagePrompt.trim().length > 10
-    ? `\nDIRETRIZES DO USUÁRIO (Siga fielmente esse estilo visual):\n${customImagePrompt.trim()}\n`
-    : "";
+  if (!customImagePrompt || customImagePrompt.trim().length < 5) {
+    throw new Error("O prompt de imagem não está configurado. Por favor, configure o Prompt de Imagem IA nas configurações.");
+  }
 
-  const contentSnippet = content ? `\nCONTEXTO DO ARTIGO (USE PARA DETALHES): ${content.replace(/<[^>]*>/g, "").substring(0, 1000)}...` : "";
+  const userImageGuidance = `### DIRETRIZES OBRIGATÓRIAS DO USUÁRIO ###\n${customImagePrompt.trim()}\n`;
+  const contentSnippet = content ? `\nCONTEXTO DO ARTIGO (PARA DETALHES): ${content.replace(/<[^>]*>/g, "").substring(0, 1000)}...` : "";
 
-  return `### INSTRUÇÕES DE HARMONIA CONTEXTUAL (CRÍTICO) ###
+  return `${userImageGuidance}
+
+### INSTRUÇÕES DE HARMONIA CONTEXTUAL ###
 1. LEITURA DO CONTEÚDO: A imagem deve estar em total harmonia com o artigo abaixo.
-2. ESPECIFICIDADE: Se o artigo citar pessoas famosas, locais específicos ou eventos reais, a imagem DEVE retratá-los fielmente.
-3. PROIBIÇÃO DE GENÉRICOS: É estritamente proibido criar imagens genéricas que não remetam diretamente ao assunto.
-4. ESTILO: ${userImageGuidance || "Fotografia editorial realista de alta qualidade, 1:1."}
+2. ESPECIFICIDADE: Se o artigo citar pessoas famosas, locais específicos ou eventos reais, a imagem DEVE retratá-los fielmente seguindo o estilo acima.
+3. PROIBIÇÃO DE GENÉRICOS: É obrigatório seguir o prompt de imagem do usuário.
 
 ### DADOS DO ARTIGO ###
 TÍTULO: ${title}${contentSnippet}
 ELEMENTOS VISUAIS DO CONTEÚDO: ${visualElements || "Cena coerente com o título"}.
 
 ### REQUISITOS OBRIGATÓRIOS ###
-Representar fielmente o conteúdo. Sem texto, sem marcas d'água. Proporção 1:1, 800x800px. Estilo profissional.`;
+Sem texto, sem marcas d'água. Proporção 1:1, 800x800px. Estilo profissional.`;
 }
 
 async function generateImageOpenAI(apiKey: string, title: string, content: string | null, visualElements: string, customImagePrompt?: string | null): Promise<string | null> {

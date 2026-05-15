@@ -8,24 +8,26 @@ const corsHeaders = {
 
 // O prompt da imagem é DERIVADO do image_prompt configurado + conteúdo do artigo.
 function buildImagePrompt(title: string, content: string | null, visualElements: string | null | undefined, imagePrompt: string | null | undefined): string {
-  const userImageGuidance = imagePrompt && imagePrompt.trim().length > 5
-    ? `ESTILO VISUAL (OBRIGATÓRIO): ${imagePrompt.trim()}\n`
-    : "Estilo: Fotografia editorial realista de alta qualidade, 1:1.";
+  if (!imagePrompt || imagePrompt.trim().length < 5) {
+    throw new Error("O prompt de imagem não está configurado. Por favor, configure o Prompt de Imagem IA nas configurações.");
+  }
 
-  const contentSnippet = content ? `\nCONTEXTO DO ARTIGO (USE PARA DETALHES): ${content.replace(/<[^>]*>/g, "").substring(0, 1000)}...` : "";
+  const userImageGuidance = `### DIRETRIZES OBRIGATÓRIAS DO USUÁRIO ###\n${imagePrompt.trim()}\n`;
+  const contentSnippet = content ? `\nCONTEXTO DO ARTIGO (PARA DETALHES): ${content.replace(/<[^>]*>/g, "").substring(0, 1000)}...` : "";
 
-  return `### INSTRUÇÕES DE HARMONIA CONTEXTUAL (CRÍTICO) ###
+  return `${userImageGuidance}
+
+### INSTRUÇÕES DE HARMONIA CONTEXTUAL ###
 1. LEITURA DO CONTEÚDO: A imagem deve estar em total harmonia com o artigo.
-2. ESPECIFICIDADE: Se o artigo citar pessoas famosas, locais específicos ou eventos reais, a imagem DEVE retratá-los fielmente.
-3. PROIBIÇÃO DE GENÉRICOS: É estritamente proibido criar imagens genéricas que não remetam diretamente ao assunto.
-4. ESTILO: ${userImageGuidance}
+2. ESPECIFICIDADE: Se o artigo citar pessoas famosas, locais específicos ou eventos reais, a imagem DEVE retratá-los fielmente conforme as diretrizes acima.
+3. PROIBIÇÃO DE GENÉRICOS: É estritamente proibido ignorar as diretrizes do usuário.
 
 ### DADOS DO ARTIGO ###
 TÍTULO: ${title}${contentSnippet}
 ELEMENTOS VISUAIS SUGERIDOS: ${visualElements || "Cena coerente com o título e conteúdo"}.
 
 ### REQUISITOS TÉCNICOS ###
-Proporção 1:1, sem texto, sem marcas d'água, fotorrealista, 800x800px.`;
+Proporção 1:1, sem texto, sem marcas d'água, alta qualidade, 800x800px.`;
 }
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
