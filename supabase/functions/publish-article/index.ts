@@ -335,7 +335,6 @@ serve(async (req) => {
       }
 
       // Trigger social publishing (Instagram feed + Stories + Facebook page Stories)
-      // Fire-and-forget but await briefly so logs are written before response
       try {
         const socialResp = await fetch(`${supabaseUrl}/functions/v1/publish-social`, {
           method: "POST",
@@ -345,8 +344,19 @@ serve(async (req) => {
           },
           body: JSON.stringify({ articleId, userId }),
         });
-        const socialText = await socialResp.text();
-        console.log(`publish-social response ${socialResp.status}: ${socialText.substring(0, 300)}`);
+        const socialData = await socialResp.json();
+        console.log(`publish-social response:`, socialData);
+        
+        // Log social activity
+        if (socialData.success) {
+          await supabase.from("automation_logs").insert({
+            user_id: userId,
+            level: 'info',
+            module: 'robot',
+            message: `Artigo compartilhado nas redes sociais: ${socialData.message}`,
+            details: socialData.results
+          });
+        }
       } catch (socialErr) {
         console.error("publish-social call failed:", socialErr);
       }
