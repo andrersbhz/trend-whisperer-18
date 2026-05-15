@@ -366,46 +366,126 @@ const AnalyticsPage = ({ isModal = false, pageId }: { isModal?: boolean; pageId?
 
       {/* === META API COMPARISON PANEL === */}
       {metaMetrics && metaMetrics.length > 1 && (
-        <Card className="glass-card neon-border-pink">
-          <CardHeader>
-            <CardTitle className="text-lg text-foreground flex items-center gap-2">
-              <PieChartIcon className="h-5 w-5 text-primary" /> Comparativo de Contas Meta
-            </CardTitle>
-            <CardDescription>Comparação de performance entre diferentes páginas e contas do Instagram</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={metaMetrics.map(pg => ({
-                    name: pg.page_name,
-                    seguidores_fb: pg.facebook?.followers_count || pg.facebook?.fan_count || 0,
-                    seguidores_ig: pg.instagram?.followers_count || 0,
-                    posts_fb: pg.facebook?.post_stats?.total_posts || 0,
-                    posts_ig: pg.instagram?.post_stats?.total_posts || 0
-                  }))}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(230, 20%, 15%)" />
-                  <XAxis 
-                    dataKey="name" 
-                    angle={-45} 
-                    textAnchor="end" 
-                    fontSize={10} 
-                    stroke="hsl(260, 10%, 45%)" 
-                    interval={0}
-                    height={60}
-                  />
-                  <YAxis fontSize={10} stroke="hsl(260, 10%, 45%)" />
-                  <Tooltip contentStyle={customTooltipStyle} />
-                  <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                  <Bar dataKey="seguidores_fb" name="Seguidores FB" fill="hsl(220, 80%, 55%)" radius={[3, 3, 0, 0]} />
-                  <Bar dataKey="seguidores_ig" name="Seguidores IG" fill="hsl(320, 80%, 55%)" radius={[3, 3, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card className="glass-card neon-border-pink">
+            <CardHeader>
+              <CardTitle className="text-lg text-foreground flex items-center gap-2">
+                <Users className="h-5 w-5 text-primary" /> Seguidores por Conta
+              </CardTitle>
+              <CardDescription>Comparação de audiência total entre suas contas</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[350px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={metaMetrics.map(pg => ({
+                      name: pg.page_name,
+                      "Facebook": pg.facebook?.followers_count || pg.facebook?.fan_count || 0,
+                      "Instagram": pg.instagram?.followers_count || 0,
+                    }))}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(230, 20%, 15%)" />
+                    <XAxis 
+                      dataKey="name" 
+                      angle={-45} 
+                      textAnchor="end" 
+                      fontSize={11} 
+                      stroke="hsl(260, 10%, 65%)" 
+                      interval={0}
+                      height={80}
+                    />
+                    <YAxis fontSize={11} stroke="hsl(260, 10%, 65%)" />
+                    <Tooltip 
+                      contentStyle={customTooltipStyle}
+                      cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
+                    />
+                    <Legend verticalAlign="top" height={36} />
+                    <Bar dataKey="Facebook" fill="hsl(220, 80%, 55%)" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="Instagram" fill="hsl(330, 80%, 60%)" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="glass-card neon-border-pink">
+            <CardHeader>
+              <CardTitle className="text-lg text-foreground flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-accent" /> Engajamento Comparado
+              </CardTitle>
+              <CardDescription>Total de interações em posts recentes</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[350px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={metaMetrics.map(pg => ({
+                      name: pg.page_name,
+                      "Engajamento FB": pg.facebook?.post_stats?.total_likes + pg.facebook?.post_stats?.total_comments + pg.facebook?.post_stats?.total_shares || 0,
+                      "Engajamento IG": pg.instagram?.post_stats?.total_likes + pg.instagram?.post_stats?.total_comments || 0,
+                    }))}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(230, 20%, 15%)" />
+                    <XAxis 
+                      dataKey="name" 
+                      angle={-45} 
+                      textAnchor="end" 
+                      fontSize={11} 
+                      stroke="hsl(260, 10%, 65%)" 
+                      interval={0}
+                      height={80}
+                    />
+                    <YAxis fontSize={11} stroke="hsl(260, 10%, 65%)" />
+                    <Tooltip 
+                      contentStyle={customTooltipStyle}
+                      cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
+                    />
+                    <Legend verticalAlign="top" height={36} />
+                    <Bar dataKey="Engajamento FB" fill="hsl(200, 70%, 50%)" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="Engajamento IG" fill="hsl(280, 70%, 50%)" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="glass-card neon-border-pink lg:col-span-2">
+            <CardHeader>
+              <CardTitle className="text-lg text-foreground flex items-center gap-2">
+                <PieChartIcon className="h-5 w-5 text-primary" /> Distribuição de Alcance (28d)
+              </CardTitle>
+              <CardDescription>Alcance total por conta em ambas as plataformas</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[350px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    layout="vertical"
+                    data={metaMetrics.map(pg => ({
+                      name: pg.page_name,
+                      "Alcance FB": pg.facebook?.insights?.page_impressions?.total || 0,
+                      "Alcance IG": pg.instagram?.insights?.reach?.total || 0,
+                    }))}
+                    margin={{ top: 20, right: 30, left: 100, bottom: 20 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(230, 20%, 15%)" horizontal={false} />
+                    <XAxis type="number" fontSize={11} stroke="hsl(260, 10%, 65%)" />
+                    <YAxis dataKey="name" type="category" fontSize={11} stroke="hsl(260, 10%, 65%)" width={90} />
+                    <Tooltip 
+                      contentStyle={customTooltipStyle}
+                      cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
+                    />
+                    <Legend verticalAlign="top" height={36} />
+                    <Bar dataKey="Alcance FB" fill="hsl(210, 100%, 50%)" radius={[0, 4, 4, 0]} />
+                    <Bar dataKey="Alcance IG" fill="hsl(330, 100%, 50%)" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       {/* === META API METRICS === */}
