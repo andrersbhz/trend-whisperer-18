@@ -482,10 +482,25 @@ const SchedulePage = () => {
             </Button>
             
             <Button
-              onClick={handleReschedule}
+              onClick={() => {
+                setRescheduleType('pending');
+                setRescheduleDialogOpen(true);
+              }}
               disabled={isRescheduling || articles.length === 0}
               variant="outline"
-              className="flex-1 sm:flex-none border-accent text-accent hover:bg-accent/10"
+              className="flex-1 sm:flex-none border-primary/20 hover:bg-primary/5"
+            >
+              {isRescheduling ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+              Reagendar Pendentes
+            </Button>
+            <Button
+              onClick={() => {
+                setRescheduleType('all');
+                setRescheduleDialogOpen(true);
+              }}
+              disabled={isRescheduling || articles.length === 0}
+              variant="outline"
+              className="flex-1 sm:flex-none border-accent/20 hover:bg-accent/5"
             >
               {isRescheduling ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
               Reagendar Todas
@@ -493,6 +508,32 @@ const SchedulePage = () => {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={rescheduleDialogOpen} onOpenChange={setRescheduleDialogOpen}>
+        <DialogContent className="glass-card neon-border-pink">
+          <DialogHeader>
+            <DialogTitle>Confirmar Reagendamento</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-foreground">
+              Você deseja reagendar {rescheduleType === 'pending' ? 'somente as notícias pendentes' : 'todas as notícias agendadas (exceto publicadas)'}?
+            </p>
+            <p className="text-sm text-muted-foreground mt-2">
+              As notícias serão reorganizadas com base em <strong>{articlesPerDay} postagens por dia</strong>, começando a partir de amanhã às 08:00.
+            </p>
+          </div>
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={() => setRescheduleDialogOpen(false)}>Cancelar</Button>
+            <Button 
+              className={rescheduleType === 'all' ? 'gradient-accent' : 'gradient-primary'} 
+              onClick={handleReschedule}
+              disabled={isRescheduling}
+            >
+              {isRescheduling ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : 'Confirmar Reagendamento'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {articles.length === 0 ? (
         <Card className="shadow-card">
