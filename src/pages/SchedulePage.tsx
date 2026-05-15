@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, Clock, Calendar, Save, Bot, Trash2, CheckCircle, XCircle, Trash, Eye, FileEdit, Send, Image as ImageIcon, ImagePlus, ChevronDown } from 'lucide-react';
+import { Loader2, Clock, Calendar, Save, Bot, Trash2, CheckCircle, XCircle, Trash, Eye, FileEdit, Send, Image as ImageIcon, ImagePlus, ChevronDown, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
@@ -46,6 +46,7 @@ const SchedulePage = () => {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [userCategories, setUserCategories] = useState<string[]>([]);
+  const [isRescheduling, setIsRescheduling] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -338,6 +339,78 @@ const SchedulePage = () => {
     }
   };
 
+  const handleReschedule = async () => {
+    if (articles.length === 0) return;
+    if (!window.confirm(`Deseja reagendar ${articles.length} notícias com base em ${articlesPerDay} postagens por dia?`)) return;
+
+    setIsRescheduling(true);
+    try {
+      const updatedArticles = [];
+      const now = new Date();
+      // Garante que começamos do início do dia seguinte ou do momento atual
+      const startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 8, 0, 0);
+      if (startDate < now) startDate.setDate(startDate.getDate() + 1);
+
+      // Filtra apenas os que não foram publicados ainda
+      const pendingArticles = articles.filter(a => a.status !== 'published');
+      
+      for (let i = 0; i < pendingArticles.length; i++) {
+        const dayOffset = Math.floor(i / articlesPerDay);
+        const articleInDayIndex = i % articlesPerDay;
+        
+        // Distribui os horários entre 08:00 e 22:00
+        const startHour = 8;
+        const endHour = 22;
+        const hourStep = articlesPerDay > 1 ? (endHour - startHour) / (articlesPerDay - 1) : 0;
+        
+        const scheduledDate = new Date(startDate);
+        scheduledDate.setDate(startDate.getDate() + dayOffset);
+        
+        const hour = startHour + (articleInDayIndex * hourStep);
+        scheduledDate.setHours(Math.floor(hour));
+        scheduledDate.setMinutes(Math.floor((hour % 1) * 60));
+        
+        const isoDate = scheduledDate.toISOString();
+        
+        const { error } = await supabase
+          .from('articles')
+          .update({ scheduled_at: isoDate })
+          .eq('id', pendingArticles[i].id);
+
+        if (error) throw error;
+        
+        updatedArticles.push({ ...pendingArticles[i], scheduled_at: isoDate });
+      }
+
+      setArticles(prev => {
+        const newArticles = [...prev];
+        updatedArticles.forEach(updated => {
+          const idx = newArticles.findIndex(a => a.id === updated.id);
+          if (idx !== -1) newArticles[idx] = updated;
+        });
+        return newArticles.sort((a, b) => {
+          const aPub = a.status === 'published';
+          const bPub = b.status === 'published';
+          if (aPub !== bPub) return aPub ? 1 : -1;
+          return new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime();
+        });
+      });
+
+      toast({ 
+        title: 'Reagendamento concluído!', 
+        description: `${updatedArticles.length} notícias foram reorganizadas.` 
+      });
+    } catch (error) {
+      toast({ 
+        title: 'Erro ao reagendar', 
+        description: getErrorMessage(error), 
+        variant: 'destructive' 
+      });
+    } finally {
+      setIsRescheduling(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -390,14 +463,26 @@ const SchedulePage = () => {
               />
             </div>
           </div>
-          <Button
-            onClick={handleSaveAutomation}
-            disabled={savingAuto || !settingsLoaded}
-            className="gradient-primary w-full sm:w-auto"
-          >
-            {savingAuto ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-            Salvar Automação
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button
+              onClick={handleSaveAutomation}
+              disabled={savingAuto || !settingsLoaded}
+              className="gradient-primary flex-1 sm:flex-none"
+            >
+              {savingAuto ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+              Salvar Automação
+            </Button>
+            
+            <Button
+              onClick={handleReschedule}
+              disabled={isRescheduling || articles.length === 0}
+              variant="outline"
+              className="flex-1 sm:flex-none border-accent text-accent hover:bg-accent/10"
+            >
+              {isRescheduling ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+              Reagendar Todas
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
