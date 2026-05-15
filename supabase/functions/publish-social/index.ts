@@ -245,6 +245,32 @@ serve(async (req) => {
       } catch (e) {
         results.push({ target: t.pageName, channel: "facebook_story", ok: false, error: String(e) });
       }
+      // ===== Facebook Page Post (Feed) =====
+      try {
+        const fbPostResp = await fetch(`${GRAPH_API}/${t.pageId}/feed`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message: caption,
+            link: wpLink,
+            access_token: t.pageToken,
+          }),
+        });
+        if (fbPostResp.ok) {
+          const pd = await fbPostResp.json();
+          results.push({ target: t.pageName, channel: "facebook_feed", ok: true, id: pd.id });
+          await supabase.from("publish_log").insert({
+            user_id: userId, article_id: articleId, platform: "facebook", status: "success",
+            published_url: `https://www.facebook.com/${pd.id}`,
+          });
+        } else {
+          const err = await fbPostResp.text();
+          console.error(`FB feed post failed (${t.pageName}):`, err);
+          results.push({ target: t.pageName, channel: "facebook_feed", ok: false, error: err.substring(0, 200) });
+        }
+      } catch (e) {
+        results.push({ target: t.pageName, channel: "facebook_feed", ok: false, error: String(e) });
+      }
     }
 
     if (firstIgFeedId) {
