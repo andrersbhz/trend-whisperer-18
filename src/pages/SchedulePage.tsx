@@ -47,6 +47,8 @@ const SchedulePage = () => {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [userCategories, setUserCategories] = useState<string[]>([]);
   const [isRescheduling, setIsRescheduling] = useState(false);
+  const [rescheduleDialogOpen, setRescheduleDialogOpen] = useState(false);
+  const [rescheduleType, setRescheduleType] = useState<'pending' | 'all'>('pending');
 
   useEffect(() => {
     if (!user) return;
