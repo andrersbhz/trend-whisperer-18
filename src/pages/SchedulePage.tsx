@@ -342,21 +342,26 @@ const SchedulePage = () => {
   };
 
   const handleReschedule = async () => {
-    if (articles.length === 0) return;
-    if (!window.confirm(`Deseja reagendar ${articles.length} notícias com base em ${articlesPerDay} postagens por dia?`)) return;
+    const targetArticles = rescheduleType === 'pending' 
+      ? articles.filter(a => a.status === 'ready' || a.status === 'draft')
+      : articles.filter(a => a.status !== 'published');
+
+    if (targetArticles.length === 0) {
+      toast({ title: 'Nenhum artigo para reagendar' });
+      setRescheduleDialogOpen(false);
+      return;
+    }
 
     setIsRescheduling(true);
     try {
-      const updatedArticles = [];
       const now = new Date();
       // Garante que começamos do início do dia seguinte ou do momento atual
       const startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 8, 0, 0);
       if (startDate < now) startDate.setDate(startDate.getDate() + 1);
 
-      // Filtra apenas os que não foram publicados ainda
-      const pendingArticles = articles.filter(a => a.status !== 'published');
+      const updatedArticles = [];
       
-      for (let i = 0; i < pendingArticles.length; i++) {
+      for (let i = 0; i < targetArticles.length; i++) {
         const dayOffset = Math.floor(i / articlesPerDay);
         const articleInDayIndex = i % articlesPerDay;
         
@@ -377,11 +382,11 @@ const SchedulePage = () => {
         const { error } = await supabase
           .from('articles')
           .update({ scheduled_at: isoDate })
-          .eq('id', pendingArticles[i].id);
+          .eq('id', targetArticles[i].id);
 
         if (error) throw error;
         
-        updatedArticles.push({ ...pendingArticles[i], scheduled_at: isoDate });
+        updatedArticles.push({ ...targetArticles[i], scheduled_at: isoDate });
       }
 
       setArticles(prev => {
@@ -402,6 +407,7 @@ const SchedulePage = () => {
         title: 'Reagendamento concluído!', 
         description: `${updatedArticles.length} notícias foram reorganizadas.` 
       });
+      setRescheduleDialogOpen(false);
     } catch (error) {
       toast({ 
         title: 'Erro ao reagendar', 
