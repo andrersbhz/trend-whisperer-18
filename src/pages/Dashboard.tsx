@@ -382,15 +382,17 @@ const Dashboard = () => {
               <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />
               
               <div className="flex items-center gap-3 mb-4">
-                <div className="h-14 w-14 rounded-full border-2 border-primary/40 p-0.5 bg-background overflow-hidden shadow-neon-lilac shrink-0">
-                  {pg.facebook?.picture?.data?.url ? (
-                    <img src={pg.facebook.picture.data.url} className="h-full w-full rounded-full object-cover" alt="" />
-                  ) : (
-                    <div className="h-full w-full rounded-full bg-secondary flex items-center justify-center">
-                      <Facebook className="h-6 w-6 text-primary" />
-                    </div>
-                  )}
-                </div>
+              <div className="h-14 w-14 rounded-full border-2 border-primary/40 p-0.5 bg-background overflow-hidden shadow-neon-lilac shrink-0">
+                {pg.facebook?.picture?.data?.url ? (
+                  <img src={pg.facebook.picture.data.url} className="h-full w-full rounded-full object-cover" alt="" />
+                ) : pg.instagram?.profile_picture_url ? (
+                  <img src={pg.instagram.profile_picture_url} className="h-full w-full rounded-full object-cover" alt="" />
+                ) : (
+                  <div className="h-full w-full rounded-full bg-secondary flex items-center justify-center">
+                    {pg.instagram ? <Instagram className="h-6 w-6 text-accent" /> : <Facebook className="h-6 w-6 text-primary" />}
+                  </div>
+                )}
+              </div>
                 <div className="min-w-0 flex-1">
                   <h3 className="text-sm font-black uppercase tracking-tighter truncate leading-tight">{pg.page_name}</h3>
                   <div className="flex items-center gap-2 mt-1">
