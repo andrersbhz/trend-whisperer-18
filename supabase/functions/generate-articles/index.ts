@@ -290,25 +290,26 @@ async function callWithFallback(providers: ProviderConfig[], systemPrompt: strin
 
 function buildImagePrompt(title: string, content: string | null, visualElements: string, customImagePrompt?: string | null): string {
   if (!customImagePrompt || customImagePrompt.trim().length < 5) {
-    throw new Error("O prompt de imagem não está configurado. Por favor, configure o Prompt de Imagem IA nas configurações.");
+    throw new Error("O 'Prompt de Imagem IA' não está configurado. Por favor, vá em Configurações e defina o estilo visual obrigatório.");
   }
 
-  const userImageGuidance = `### DIRETRIZES OBRIGATÓRIAS DO USUÁRIO ###\n${customImagePrompt.trim()}\n`;
-  const contentSnippet = content ? `\nCONTEXTO DO ARTIGO (PARA DETALHES): ${content.replace(/<[^>]*>/g, "").substring(0, 1000)}...` : "";
+  const userImageGuidance = `### DIRETRIZES OBRIGATÓRIAS DE ESTILO DO USUÁRIO ###\n${customImagePrompt.trim()}\n`;
+  const contentSnippet = content ? `\n### CONTEXTO DETALHADO DA HISTÓRIA (PESQUISA) ###\n${content.replace(/<[^>]*>/g, "").substring(0, 1500)}...` : "";
 
   return `${userImageGuidance}
 
-### INSTRUÇÕES DE HARMONIA CONTEXTUAL ###
-1. LEITURA DO CONTEÚDO: A imagem deve estar em total harmonia com o artigo abaixo.
-2. ESPECIFICIDADE: Se o artigo citar pessoas famosas, locais específicos ou eventos reais, a imagem DEVE retratá-los fielmente seguindo o estilo acima.
-3. PROIBIÇÃO DE GENÉRICOS: É obrigatório seguir o prompt de imagem do usuário.
+### INSTRUÇÕES DE ANÁLISE E PESQUISA CONTEXTUAL ###
+1. IDENTIFICAÇÃO DE ENTIDADES: Analise o título e o contexto abaixo para identificar pessoas específicas (artistas, políticos, celebridades), locais, objetos ou eventos mencionados.
+2. REPRESENTAÇÃO FIEL: A imagem DEVE retratar os elementos centrais da história. Se o artigo é sobre um artista específico, a cena deve refletir o universo desse artista ou o evento descrito.
+3. HARMONIA OBRIGATÓRIA: Combine o ESTILO solicitado nas DIRETRIZES DO USUÁRIO com o ASSUNTO extraído dos DADOS DO ARTIGO.
+4. PROIBIÇÃO DE IMAGENS GENÉRICAS: Não ignore o contexto. Se o artigo é sobre futebol, não mostre apenas uma bola genérica; mostre a cena descrita no contexto.
 
-### DADOS DO ARTIGO ###
+### DADOS DO ARTIGO PARA A CENA ###
 TÍTULO: ${title}${contentSnippet}
-ELEMENTOS VISUAIS DO CONTEÚDO: ${visualElements || "Cena coerente com o título"}.
+ELEMENTOS VISUAIS DO CONTEÚDO: ${visualElements || "Cena dinâmica que ilustra o ponto principal do artigo"}.
 
 ### REQUISITOS OBRIGATÓRIOS ###
-Sem texto, sem marcas d'água. Proporção 1:1, 800x800px. Estilo profissional.`;
+Sem texto, sem marcas d'água. Proporção 1:1, 1024x1024px. Estilo profissional.`;
 }
 
 async function generateImageOpenAI(apiKey: string, title: string, content: string | null, visualElements: string, customImagePrompt?: string | null): Promise<string | null> {
