@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
-  FileText, TrendingUp, CheckCircle, Clock, Sparkles, RefreshCw, ChevronDown, Facebook, ExternalLink, BarChart3, X, Eye, MessageSquare, Bot, UserCheck, ArrowRight
+  FileText, TrendingUp, CheckCircle, Clock, Sparkles, RefreshCw, ChevronDown, Facebook, Instagram, ExternalLink, BarChart3, X, Eye, MessageSquare, Bot, UserCheck, ArrowRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import AIProvidersPanel from '@/components/dashboard/AIProvidersPanel';
