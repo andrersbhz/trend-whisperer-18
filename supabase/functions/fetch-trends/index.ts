@@ -39,8 +39,9 @@ async function fetchGoogleTrendsRSS(geo: string): Promise<string | null> {
 
 // ── AI Prompt ─────────────────────────────────────────────────────────────
 
-function buildRSSCategorizationPrompt(rssContent: string, categories: string[]) {
-  const systemPrompt = `Você é um analista de tendências especialista em categorização de notícias. Abaixo está um feed RSS do Google Trends Brasil.
+function buildRSSCategorizationPrompt(rssContent: string, categories: string[], geo: string) {
+  const regionName = geo === "US" ? "Global/EUA" : "Brasil";
+  const systemPrompt = `Você é um analista de tendências especialista em categorização de notícias. Abaixo está um feed RSS do Google Trends (${regionName}).
 Sua tarefa é extrair os tópicos e classificá-los com precisão cirúrgica.
 
 REGRAS:
@@ -49,7 +50,7 @@ REGRAS:
 3. CLASSIFICAÇÃO RIGOROSA: Leia atentamente o título e o contexto para entender do que se trata a notícia. Não use categorias por aproximação se não houver certeza.
 4. CATEGORIA "variedades": Se o assunto não se encaixar claramente em nenhuma das categorias acima ou se você tiver qualquer dúvida sobre a classificação correta, use OBRIGATORIAMENTE a categoria "variedades".
 5. Retorne APENAS um JSON válido no formato:
-[{"topic": "nome", "search_volume": "vol", "category": "cat", "context": "título da notícia real", "source_name": "Google Trends (Portal X)", "source_url": "https://..."}]
+[{"topic": "nome", "search_volume": "vol", "category": "cat", "context": "título da notícia real", "source_name": "Google Trends (${regionName})", "source_url": "https://..."}]
 
 Extraia o máximo possível (até 40 tópicos).`;
 
