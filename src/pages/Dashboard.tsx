@@ -378,25 +378,95 @@ const Dashboard = () => {
       {widgets.meta && metaMetrics && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-fade-in">
           {metaMetrics.map((pg: any, idx: number) => (
-            <div key={pg.page_id || idx} className="glass-card hover-lift p-6 flex flex-col items-center relative overflow-hidden group">
+            <div key={pg.page_id || idx} className="glass-card hover-lift p-5 flex flex-col relative overflow-hidden group">
               <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />
-              <div className="h-20 w-20 rounded-full border-2 border-primary/40 p-1 bg-background mb-4 overflow-hidden shadow-neon-lilac">
-                {pg.facebook?.picture?.data?.url ? <img src={pg.facebook.picture.data.url} className="h-full w-full rounded-full object-cover" alt="" /> : <Facebook className="h-10 w-10 text-primary m-4" />}
-              </div>
-              <h3 className="text-lg font-bold text-center mb-4 uppercase tracking-tighter line-clamp-1">{pg.page_name}</h3>
-              <div className="grid grid-cols-2 gap-4 w-full mb-5 text-[10px] uppercase text-muted-foreground font-bold">
-                <div className="flex flex-col items-center">
-                  <span className="text-foreground text-sm font-black">{(pg.facebook?.followers_count || 0).toLocaleString()}</span>
-                  <span>Seguidores</span>
+              
+              <div className="flex items-center gap-3 mb-4">
+                <div className="h-14 w-14 rounded-full border-2 border-primary/40 p-0.5 bg-background overflow-hidden shadow-neon-lilac shrink-0">
+                  {pg.facebook?.picture?.data?.url ? (
+                    <img src={pg.facebook.picture.data.url} className="h-full w-full rounded-full object-cover" alt="" />
+                  ) : (
+                    <div className="h-full w-full rounded-full bg-secondary flex items-center justify-center">
+                      <Facebook className="h-6 w-6 text-primary" />
+                    </div>
+                  )}
                 </div>
-                <div className="flex flex-col items-center">
-                  <span className="text-foreground text-sm font-black">{(pg.facebook?.fan_count || 0).toLocaleString()}</span>
-                  <span>Curtidas</span>
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-sm font-black uppercase tracking-tighter truncate leading-tight">{pg.page_name}</h3>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Facebook className="h-3 w-3 text-primary" />
+                    <span className="text-[9px] font-black text-muted-foreground uppercase">Conectado</span>
+                    {pg.instagram && (
+                      <>
+                        <div className="h-1 w-1 rounded-full bg-muted-foreground/30" />
+                        <Instagram className="h-3 w-3 text-accent" />
+                        <span className="text-[9px] font-black text-muted-foreground uppercase">IG Ativo</span>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
-              <Button variant="outline" size="sm" className="w-full text-[10px] uppercase font-bold tracking-widest rounded-none border-primary/30" onClick={() => navigate(`/analytics?page=${pg.page_id}`)}>
-                Ver métricas
-              </Button>
+
+              <div className="grid grid-cols-1 gap-2.5 mb-5">
+                {/* Facebook Metrics */}
+                <div className="bg-primary/5 border border-primary/10 p-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 bg-primary/10 rounded-sm">
+                      <Facebook className="h-3.5 w-3.5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-[8px] uppercase tracking-widest text-muted-foreground font-bold">Facebook</p>
+                      <p className="text-xs font-black uppercase tracking-tighter">Página Meta</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-black tabular-nums">{(pg.facebook?.followers_count || pg.facebook?.fan_count || 0).toLocaleString()}</p>
+                    <p className="text-[7px] uppercase font-bold text-muted-foreground">Seguidores</p>
+                  </div>
+                </div>
+
+                {/* Instagram Metrics if available */}
+                {pg.instagram ? (
+                  <div className="bg-accent/5 border border-accent/10 p-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 bg-accent/10 rounded-sm">
+                        <Instagram className="h-3.5 w-3.5 text-accent" />
+                      </div>
+                      <div>
+                        <p className="text-[8px] uppercase tracking-widest text-muted-foreground font-bold">Instagram</p>
+                        <p className="text-xs font-black uppercase tracking-tighter">@{pg.instagram.username || 'perfil'}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-black tabular-nums">{(pg.instagram.followers_count || 0).toLocaleString()}</p>
+                      <p className="text-[7px] uppercase font-bold text-muted-foreground">Seguidores IG</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-muted/5 border border-dashed border-muted-foreground/20 p-3 flex items-center justify-center">
+                    <p className="text-[8px] uppercase font-bold text-muted-foreground opacity-50">Sem Instagram conectado</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 mt-auto">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="h-8 text-[9px] uppercase font-black tracking-widest rounded-none border-primary/20 hover:bg-primary/5" 
+                  onClick={() => navigate(`/analytics?page=${pg.page_id}`)}
+                >
+                  <BarChart3 className="h-3 w-3 mr-1.5" /> Métricas
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="h-8 text-[9px] uppercase font-black tracking-widest rounded-none border-accent/20 hover:bg-accent/5" 
+                  onClick={() => window.open(pg.facebook?.link || `https://facebook.com/${pg.page_id}`, '_blank')}
+                >
+                  <ExternalLink className="h-3 w-3 mr-1.5" /> Visitar
+                </Button>
+              </div>
             </div>
           ))}
         </div>
