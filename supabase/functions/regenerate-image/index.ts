@@ -9,25 +9,26 @@ const corsHeaders = {
 // O prompt da imagem é DERIVADO do image_prompt configurado + conteúdo do artigo.
 function buildImagePrompt(title: string, content: string | null, visualElements: string | null | undefined, imagePrompt: string | null | undefined): string {
   if (!imagePrompt || imagePrompt.trim().length < 5) {
-    throw new Error("O prompt de imagem não está configurado. Por favor, configure o Prompt de Imagem IA nas configurações.");
+    throw new Error("O 'Prompt de Imagem IA' não está configurado. Por favor, vá em Configurações e defina o estilo visual obrigatório.");
   }
 
-  const userImageGuidance = `### DIRETRIZES OBRIGATÓRIAS DO USUÁRIO ###\n${imagePrompt.trim()}\n`;
-  const contentSnippet = content ? `\nCONTEXTO DO ARTIGO (PARA DETALHES): ${content.replace(/<[^>]*>/g, "").substring(0, 1000)}...` : "";
+  const userImageGuidance = `### DIRETRIZES OBRIGATÓRIAS DE ESTILO DO USUÁRIO ###\n${imagePrompt.trim()}\n`;
+  const contentSnippet = content ? `\n### CONTEXTO DETALHADO DA HISTÓRIA (PESQUISA) ###\n${content.replace(/<[^>]*>/g, "").substring(0, 1500)}...` : "";
 
   return `${userImageGuidance}
 
-### INSTRUÇÕES DE HARMONIA CONTEXTUAL ###
-1. LEITURA DO CONTEÚDO: A imagem deve estar em total harmonia com o artigo.
-2. ESPECIFICIDADE: Se o artigo citar pessoas famosas, locais específicos ou eventos reais, a imagem DEVE retratá-los fielmente conforme as diretrizes acima.
-3. PROIBIÇÃO DE GENÉRICOS: É estritamente proibido ignorar as diretrizes do usuário.
+### INSTRUÇÕES DE ANÁLISE E PESQUISA CONTEXTUAL ###
+1. IDENTIFICAÇÃO DE ENTIDADES: Analise o título e o contexto abaixo para identificar pessoas específicas (artistas, políticos, celebridades), locais, objetos ou eventos mencionados.
+2. REPRESENTAÇÃO FIEL: A imagem DEVE retratar os elementos centrais da história. Se o artigo é sobre um artista específico, a cena deve refletir o universo desse artista ou o evento descrito.
+3. HARMONIA OBRIGATÓRIA: Combine o ESTILO solicitado nas DIRETRIZES DO USUÁRIO com o ASSUNTO extraído dos DADOS DO ARTIGO.
+4. PROIBIÇÃO DE IMAGENS GENÉRICAS: Não ignore o contexto. Se o artigo é sobre futebol, não mostre apenas uma bola genérica; mostre a cena descrita no contexto.
 
-### DADOS DO ARTIGO ###
+### DADOS DO ARTIGO PARA A CENA ###
 TÍTULO: ${title}${contentSnippet}
-ELEMENTOS VISUAIS SUGERIDOS: ${visualElements || "Cena coerente com o título e conteúdo"}.
+ELEMENTOS VISUAIS SUGERIDOS: ${visualElements || "Cena dinâmica que ilustra o ponto principal do artigo"}.
 
-### REQUISITOS TÉCNICOS ###
-Proporção 1:1, sem texto, sem marcas d'água, alta qualidade, 800x800px.`;
+### REQUISITOS TÉCNICOS FINAIS ###
+Proporção 1:1, sem texto, sem marcas d'água, realismo cinematográfico de alta qualidade, 1024x1024px.`;
 }
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
