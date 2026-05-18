@@ -453,7 +453,7 @@ const Dashboard = () => {
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <div className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-primary" />
-              <CardTitle className="text-lg uppercase tracking-tighter">Google Trends Brasil 🇧🇷</CardTitle>
+              <CardTitle className="text-lg uppercase tracking-tighter">Google Trends (Brasil & Mundo) 🇧🇷🌎</CardTitle>
             </div>
             <Button variant="ghost" size="sm" onClick={() => navigate('/trends')} className="text-xs h-7 uppercase font-bold tracking-widest text-primary">Ver tudo</Button>
           </CardHeader>
