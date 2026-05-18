@@ -279,7 +279,7 @@ const TrendsPage = () => {
         <div>
           <h1 className="text-2xl font-bold text-foreground">Tendências</h1>
           <div className="flex flex-wrap items-center gap-2 mt-1">
-            <p className="text-muted-foreground text-sm">Assuntos em alta no Brasil</p>
+            <p className="text-muted-foreground text-sm">Assuntos em alta no Brasil e no Mundo</p>
             {lastUpdate && (
               <span className="text-[10px] bg-secondary/50 px-2 py-0.5 rounded-full text-muted-foreground flex items-center gap-1 whitespace-nowrap">
                 <RefreshCw className={`h-2.5 w-2.5 ${fetching ? 'animate-spin' : ''}`} />
@@ -422,7 +422,9 @@ const TrendsPage = () => {
                       <p className="text-xs text-muted-foreground mt-0.5 italic line-clamp-1">{topic.context}</p>
                     )}
                     <div className="flex flex-wrap items-center gap-2 mt-1">
-                      <Badge variant="outline" className="text-[10px] h-5 bg-blue-500/10 text-blue-500 border-blue-500/20">Google Trends BR 🇧🇷</Badge>
+                      <Badge variant="outline" className="text-[10px] h-5 bg-blue-500/10 text-blue-500 border-blue-500/20">
+                        {topic.source_name?.includes('US') || topic.source_name?.includes('Global') || topic.source_name?.includes('Mundo') ? 'Google Trends Mundo 🌎' : 'Google Trends BR 🇧🇷'}
+                      </Badge>
                       <Badge variant="secondary">{topic.category}</Badge>
                       {topic.search_volume && (
                         <span className="text-xs text-muted-foreground">{topic.search_volume} buscas</span>

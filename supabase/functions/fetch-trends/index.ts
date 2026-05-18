@@ -8,10 +8,13 @@ const corsHeaders = {
 
 // ── RSS Fetching ─────────────────────────────────────────────────────────
 
-async function fetchGoogleTrendsRSS(): Promise<string | null> {
-  const url = "https://trends.google.com.br/trending/rss?geo=BR";
+async function fetchGoogleTrendsRSS(geo: string): Promise<string | null> {
+  const url = geo === "US" 
+    ? "https://trends.google.com/trending/rss?geo=US"
+    : "https://trends.google.com.br/trending/rss?geo=BR";
+    
   try {
-    console.log(`[RSS] Fetching Google Trends from ${url}`);
+    console.log(`[RSS] Fetching Google Trends from ${url} (Geo: ${geo})`);
     const resp = await fetch(url, {
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
@@ -36,8 +39,9 @@ async function fetchGoogleTrendsRSS(): Promise<string | null> {
 
 // ── AI Prompt ─────────────────────────────────────────────────────────────
 
-function buildRSSCategorizationPrompt(rssContent: string, categories: string[]) {
-  const systemPrompt = `Você é um analista de tendências especialista em categorização de notícias. Abaixo está um feed RSS do Google Trends Brasil.
+function buildRSSCategorizationPrompt(rssContent: string, categories: string[], geo: string) {
+  const regionName = geo === "US" ? "Global/EUA" : "Brasil";
+  const systemPrompt = `Você é um analista de tendências especialista em categorização de notícias. Abaixo está um feed RSS do Google Trends (${regionName}).
 Sua tarefa é extrair os tópicos e classificá-los com precisão cirúrgica.
 
 REGRAS:
@@ -46,7 +50,7 @@ REGRAS:
 3. CLASSIFICAÇÃO RIGOROSA: Leia atentamente o título e o contexto para entender do que se trata a notícia. Não use categorias por aproximação se não houver certeza.
 4. CATEGORIA "variedades": Se o assunto não se encaixar claramente em nenhuma das categorias acima ou se você tiver qualquer dúvida sobre a classificação correta, use OBRIGATORIAMENTE a categoria "variedades".
 5. Retorne APENAS um JSON válido no formato:
-[{"topic": "nome", "search_volume": "vol", "category": "cat", "context": "título da notícia real", "source_name": "Google Trends (Portal X)", "source_url": "https://..."}]
+[{"topic": "nome", "search_volume": "vol", "category": "cat", "context": "título da notícia real", "source_name": "Google Trends (${regionName})", "source_url": "https://..."}]
 
 Extraia o máximo possível (até 40 tópicos).`;
 
@@ -94,10 +98,10 @@ async function callAI(providers: any[], systemPrompt: string, userPrompt: string
 
 // ── RSS Direct Parser (fallback when AI fails) ──────────────────────────
 
-function parseRSSDirectly(rss: string, categories: string[]): any[] {
-  console.log(`[parseRSSDirectly] Starting manual parse of ${rss.length} chars`);
+function parseRSSDirectly(rss: string, categories: string[], geo: string): any[] {
+  console.log(`[parseRSSDirectly] Starting manual parse of ${rss.length} chars (Geo: ${geo})`);
   const items = rss.match(/<item[\s\S]*?<\/item>/gi) || [];
-  console.log(`[parseRSSDirectly] Found ${items.length} items`);
+  const regionName = geo === "US" ? "Global" : "Brasil";
   
   const decode = (s: string) =>
     s.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
@@ -105,12 +109,10 @@ function parseRSSDirectly(rss: string, categories: string[]): any[] {
       .replace(/&quot;/g, '"').replace(/&#39;/g, "'").trim();
       
   const pick = (block: string, tagName: string): string => {
-    // Escape dots and allow optional namespace
     const tag = tagName.replace(":", "\\:");
     const m = block.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i"));
     if (m) return decode(m[1]);
     
-    // Try without namespace if provided one failed
     if (tagName.includes(":")) {
       const simpleTag = tagName.split(":")[1];
       const m2 = block.match(new RegExp(`<${simpleTag}[^>]*>([\\s\\S]*?)<\\/${simpleTag}>`, "i"));
@@ -122,19 +124,18 @@ function parseRSSDirectly(rss: string, categories: string[]): any[] {
   const guessCategory = (text: string): string => {
     const t = text.toLowerCase();
     const keywords: Record<string, string[]> = {
-      esportes: ["futebol", "jogo", "time", "campeonato", "gol", "atleta", "olimp", "copa", "seleção", "técnico", "brasileirão", "vôlei", "basquete", "tênis", "luta", "mma", "boxe", "f1", "fórmula 1"],
-      politica: ["presidente", "ministro", "senado", "câmara", "lula", "governo", "stf", "congresso", "deputado", "eleição", "voto", "partido", "prefeito", "tarcísio", "bolsonaro"],
-      policia: ["polícia", "preso", "crime", "operação", "assalto", "homicídio", "investigação", "tráfico", "justiça", "roubo", "furt", "acusad"],
-      saude: ["saúde", "vacina", "hospital", "anvisa", "doença", "covid", "médico", "tratamento", "vírus", "dengue", "gripe", "remédio"],
-      celebridades: ["ator", "atriz", "cantor", "novela", "famoso", "bbb", "show", "reality", "influencer", "cinema", "netflix", "globop"],
-      financas: ["dólar", "bolsa", "ibovespa", "juros", "banco central", "selic", "imposto", "economia", "dinheiro", "bitcoin", "investimento", "ação", "ações", "mercado"],
-      tecnologia: ["celular", "iphone", "google", "apple", "microsoft", "ia", "inteligência artificial", "lançamento", "app", "software", "nuvem", "internet"],
+      esportes: ["futebol", "jogo", "time", "campeonato", "gol", "atleta", "olimp", "copa", "seleção", "técnico", "brasileirão", "vôlei", "basquete", "tênis", "luta", "mma", "boxe", "f1", "fórmula 1", "soccer", "football", "match", "team", "nfl", "nba", "mlb"],
+      politica: ["presidente", "ministro", "senado", "câmara", "lula", "governo", "stf", "congresso", "deputado", "eleição", "voto", "partido", "prefeito", "tarcísio", "bolsonaro", "president", "minister", "senate", "congress", "election", "vote", "party", "biden", "trump"],
+      policia: ["polícia", "preso", "crime", "operação", "assalto", "homicídio", "investigação", "tráfico", "justiça", "roubo", "furt", "acusad", "police", "arrested", "crime", "operation", "robbery", "investigation", "justice"],
+      saude: ["saúde", "vacina", "hospital", "anvisa", "doença", "covid", "médico", "tratamento", "vírus", "dengue", "gripe", "remédio", "health", "vaccine", "disease", "doctor", "treatment", "virus", "flu", "medicine"],
+      celebridades: ["ator", "atriz", "cantor", "novela", "famoso", "bbb", "show", "reality", "influencer", "cinema", "netflix", "globop", "actor", "actress", "singer", "famous", "reality", "influencer", "cinema", "movie"],
+      financas: ["dólar", "bolsa", "ibovespa", "juros", "banco central", "selic", "imposto", "economia", "dinheiro", "bitcoin", "investimento", "ação", "ações", "mercado", "dollar", "stock", "interest", "economy", "money", "investment", "market"],
+      tecnologia: ["celular", "iphone", "google", "apple", "microsoft", "ia", "inteligência artificial", "lançamento", "app", "software", "nuvem", "internet", "cellphone", "ai", "artificial intelligence", "software", "cloud"],
     };
     for (const cat of categories) {
       const kws = keywords[cat] || [cat];
       if (kws.some((kw) => t.includes(kw))) return cat;
     }
-    // Fallback: use varieties if no specific match
     return "variedades";
   };
 
@@ -153,11 +154,10 @@ function parseRSSDirectly(rss: string, categories: string[]): any[] {
       search_volume: traffic || "médio",
       category: guessCategory(`${title} ${newsTitle}`),
       context: newsTitle || null,
-      source_name: newsSource ? `Google Trends Brasil (${newsSource})` : "Google Trends Brasil",
+      source_name: newsSource ? `Google Trends ${regionName} (${newsSource})` : `Google Trends ${regionName}`,
       source_url: newsUrl || null,
     });
   }
-  console.log(`[parseRSSDirectly] Extracted ${topics.length} topics`);
   return topics;
 }
 
@@ -275,33 +275,46 @@ serve(async (req) => {
     if (gKey) providers.push({ name: "Gemini", key: gKey });
     if (Deno.env.get("LOVABLE_API_KEY")) providers.push({ name: "Lovable", key: Deno.env.get("LOVABLE_API_KEY") });
 
-    const rss = await fetchGoogleTrendsRSS();
-    if (!rss) throw new Error("RSS do Google Trends não disponível no momento. Tente novamente em alguns minutos.");
-
-    console.log(`[fetch-trends] RSS fetched, length: ${rss.length}`);
-    const itemsFound = rss.match(/<item[\s\S]*?<\/item>/gi) || [];
-    console.log(`[fetch-trends] Items found in RSS via regex: ${itemsFound.length}`);
+    // Fetch trends from BR and US
+    const rssBR = await fetchGoogleTrendsRSS("BR");
+    const rssUS = await fetchGoogleTrendsRSS("US");
+    
+    if (!rssBR && !rssUS) throw new Error("RSS do Google Trends não disponível no momento. Tente novamente em alguns minutos.");
 
     let topics: any[] = [];
-    try {
-      const { systemPrompt, userPrompt } = buildRSSCategorizationPrompt(rss, categories);
-      const { content, provider } = await callAI(providers, systemPrompt, userPrompt);
-      console.log(`[fetch-trends] AI (${provider}) response length: ${content?.length || 0}`);
-      topics = extractTopicsFromAIResponse(content);
-    } catch (aiErr: any) {
-      console.warn("[fetch-trends] AI parsing failed:", aiErr.message);
+    
+    // Process BR trends
+    if (rssBR) {
+      console.log(`[fetch-trends] BR RSS fetched, length: ${rssBR.length}`);
+      let brTopics: any[] = [];
+      try {
+        const { systemPrompt, userPrompt } = buildRSSCategorizationPrompt(rssBR, categories, "BR");
+        const { content, provider } = await callAI(providers, systemPrompt, userPrompt);
+        brTopics = extractTopicsFromAIResponse(content);
+      } catch (aiErr: any) {
+        console.warn("[fetch-trends] BR AI parsing failed:", aiErr.message);
+      }
+      if (!brTopics.length) brTopics = parseRSSDirectly(rssBR, categories, "BR");
+      topics = [...topics, ...brTopics];
+    }
+    
+    // Process US trends
+    if (rssUS) {
+      console.log(`[fetch-trends] US RSS fetched, length: ${rssUS.length}`);
+      let usTopics: any[] = [];
+      try {
+        const { systemPrompt, userPrompt } = buildRSSCategorizationPrompt(rssUS, categories, "US");
+        const { content, provider } = await callAI(providers, systemPrompt, userPrompt);
+        usTopics = extractTopicsFromAIResponse(content);
+      } catch (aiErr: any) {
+        console.warn("[fetch-trends] US AI parsing failed:", aiErr.message);
+      }
+      if (!usTopics.length) usTopics = parseRSSDirectly(rssUS, categories, "US");
+      topics = [...topics, ...usTopics];
     }
 
-    // Fallback: parse RSS XML directly when AI fails or returns nothing
     if (!topics.length) {
-      console.log("[fetch-trends] No topics from AI or AI failed. Falling back to direct RSS parsing...");
-      topics = parseRSSDirectly(rss, categories);
-      console.log(`[fetch-trends] Direct RSS parsing recovered ${topics.length} topics`);
-    }
-
-    if (!topics.length) {
-      console.error("[fetch-trends] Final topics count is 0. RSS preview:", rss.substring(0, 500));
-      throw new Error("Não foi possível extrair tópicos do feed. O formato do feed pode ter mudado.");
+      throw new Error("Não foi possível extrair tópicos dos feeds. O formato dos feeds pode ter mudado.");
     }
 
     // 1. Buscar tópicos existentes do usuário que não foram usados
