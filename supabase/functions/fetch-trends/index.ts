@@ -98,10 +98,10 @@ async function callAI(providers: any[], systemPrompt: string, userPrompt: string
 
 // ── RSS Direct Parser (fallback when AI fails) ──────────────────────────
 
-function parseRSSDirectly(rss: string, categories: string[]): any[] {
-  console.log(`[parseRSSDirectly] Starting manual parse of ${rss.length} chars`);
+function parseRSSDirectly(rss: string, categories: string[], geo: string): any[] {
+  console.log(`[parseRSSDirectly] Starting manual parse of ${rss.length} chars (Geo: ${geo})`);
   const items = rss.match(/<item[\s\S]*?<\/item>/gi) || [];
-  console.log(`[parseRSSDirectly] Found ${items.length} items`);
+  const regionName = geo === "US" ? "Global" : "Brasil";
   
   const decode = (s: string) =>
     s.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
@@ -109,12 +109,10 @@ function parseRSSDirectly(rss: string, categories: string[]): any[] {
       .replace(/&quot;/g, '"').replace(/&#39;/g, "'").trim();
       
   const pick = (block: string, tagName: string): string => {
-    // Escape dots and allow optional namespace
     const tag = tagName.replace(":", "\\:");
     const m = block.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i"));
     if (m) return decode(m[1]);
     
-    // Try without namespace if provided one failed
     if (tagName.includes(":")) {
       const simpleTag = tagName.split(":")[1];
       const m2 = block.match(new RegExp(`<${simpleTag}[^>]*>([\\s\\S]*?)<\\/${simpleTag}>`, "i"));
@@ -126,19 +124,18 @@ function parseRSSDirectly(rss: string, categories: string[]): any[] {
   const guessCategory = (text: string): string => {
     const t = text.toLowerCase();
     const keywords: Record<string, string[]> = {
-      esportes: ["futebol", "jogo", "time", "campeonato", "gol", "atleta", "olimp", "copa", "seleção", "técnico", "brasileirão", "vôlei", "basquete", "tênis", "luta", "mma", "boxe", "f1", "fórmula 1"],
-      politica: ["presidente", "ministro", "senado", "câmara", "lula", "governo", "stf", "congresso", "deputado", "eleição", "voto", "partido", "prefeito", "tarcísio", "bolsonaro"],
-      policia: ["polícia", "preso", "crime", "operação", "assalto", "homicídio", "investigação", "tráfico", "justiça", "roubo", "furt", "acusad"],
-      saude: ["saúde", "vacina", "hospital", "anvisa", "doença", "covid", "médico", "tratamento", "vírus", "dengue", "gripe", "remédio"],
-      celebridades: ["ator", "atriz", "cantor", "novela", "famoso", "bbb", "show", "reality", "influencer", "cinema", "netflix", "globop"],
-      financas: ["dólar", "bolsa", "ibovespa", "juros", "banco central", "selic", "imposto", "economia", "dinheiro", "bitcoin", "investimento", "ação", "ações", "mercado"],
-      tecnologia: ["celular", "iphone", "google", "apple", "microsoft", "ia", "inteligência artificial", "lançamento", "app", "software", "nuvem", "internet"],
+      esportes: ["futebol", "jogo", "time", "campeonato", "gol", "atleta", "olimp", "copa", "seleção", "técnico", "brasileirão", "vôlei", "basquete", "tênis", "luta", "mma", "boxe", "f1", "fórmula 1", "soccer", "football", "match", "team", "nfl", "nba", "mlb"],
+      politica: ["presidente", "ministro", "senado", "câmara", "lula", "governo", "stf", "congresso", "deputado", "eleição", "voto", "partido", "prefeito", "tarcísio", "bolsonaro", "president", "minister", "senate", "congress", "election", "vote", "party", "biden", "trump"],
+      policia: ["polícia", "preso", "crime", "operação", "assalto", "homicídio", "investigação", "tráfico", "justiça", "roubo", "furt", "acusad", "police", "arrested", "crime", "operation", "robbery", "investigation", "justice"],
+      saude: ["saúde", "vacina", "hospital", "anvisa", "doença", "covid", "médico", "tratamento", "vírus", "dengue", "gripe", "remédio", "health", "vaccine", "disease", "doctor", "treatment", "virus", "flu", "medicine"],
+      celebridades: ["ator", "atriz", "cantor", "novela", "famoso", "bbb", "show", "reality", "influencer", "cinema", "netflix", "globop", "actor", "actress", "singer", "famous", "reality", "influencer", "cinema", "movie"],
+      financas: ["dólar", "bolsa", "ibovespa", "juros", "banco central", "selic", "imposto", "economia", "dinheiro", "bitcoin", "investimento", "ação", "ações", "mercado", "dollar", "stock", "interest", "economy", "money", "investment", "market"],
+      tecnologia: ["celular", "iphone", "google", "apple", "microsoft", "ia", "inteligência artificial", "lançamento", "app", "software", "nuvem", "internet", "cellphone", "ai", "artificial intelligence", "software", "cloud"],
     };
     for (const cat of categories) {
       const kws = keywords[cat] || [cat];
       if (kws.some((kw) => t.includes(kw))) return cat;
     }
-    // Fallback: use varieties if no specific match
     return "variedades";
   };
 
@@ -157,11 +154,10 @@ function parseRSSDirectly(rss: string, categories: string[]): any[] {
       search_volume: traffic || "médio",
       category: guessCategory(`${title} ${newsTitle}`),
       context: newsTitle || null,
-      source_name: newsSource ? `Google Trends Brasil (${newsSource})` : "Google Trends Brasil",
+      source_name: newsSource ? `Google Trends ${regionName} (${newsSource})` : `Google Trends ${regionName}`,
       source_url: newsUrl || null,
     });
   }
-  console.log(`[parseRSSDirectly] Extracted ${topics.length} topics`);
   return topics;
 }
 
