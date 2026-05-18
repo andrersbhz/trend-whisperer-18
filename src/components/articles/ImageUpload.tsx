@@ -265,6 +265,9 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
           Gerar com IA
         </Button>
       </div>
+      <p className="text-[10px] text-muted-foreground text-center italic">
+        A imagem será baseada obrigatoriamente no seu "Prompt de Imagem IA" e nos detalhes da história.
+      </p>
 
       <Dialog open={isCropDialogOpen} onOpenChange={setIsCropDialogOpen}>
         <DialogContent className="sm:max-w-[700px] p-0 overflow-hidden bg-background border-primary/20">
