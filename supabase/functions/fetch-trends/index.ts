@@ -8,10 +8,13 @@ const corsHeaders = {
 
 // ── RSS Fetching ─────────────────────────────────────────────────────────
 
-async function fetchGoogleTrendsRSS(): Promise<string | null> {
-  const url = "https://trends.google.com.br/trending/rss?geo=BR";
+async function fetchGoogleTrendsRSS(geo: string): Promise<string | null> {
+  const url = geo === "US" 
+    ? "https://trends.google.com/trending/rss?geo=US"
+    : "https://trends.google.com.br/trending/rss?geo=BR";
+    
   try {
-    console.log(`[RSS] Fetching Google Trends from ${url}`);
+    console.log(`[RSS] Fetching Google Trends from ${url} (Geo: ${geo})`);
     const resp = await fetch(url, {
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
