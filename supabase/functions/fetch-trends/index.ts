@@ -275,33 +275,46 @@ serve(async (req) => {
     if (gKey) providers.push({ name: "Gemini", key: gKey });
     if (Deno.env.get("LOVABLE_API_KEY")) providers.push({ name: "Lovable", key: Deno.env.get("LOVABLE_API_KEY") });
 
-    const rss = await fetchGoogleTrendsRSS();
-    if (!rss) throw new Error("RSS do Google Trends não disponível no momento. Tente novamente em alguns minutos.");
-
-    console.log(`[fetch-trends] RSS fetched, length: ${rss.length}`);
-    const itemsFound = rss.match(/<item[\s\S]*?<\/item>/gi) || [];
-    console.log(`[fetch-trends] Items found in RSS via regex: ${itemsFound.length}`);
+    // Fetch trends from BR and US
+    const rssBR = await fetchGoogleTrendsRSS("BR");
+    const rssUS = await fetchGoogleTrendsRSS("US");
+    
+    if (!rssBR && !rssUS) throw new Error("RSS do Google Trends não disponível no momento. Tente novamente em alguns minutos.");
 
     let topics: any[] = [];
-    try {
-      const { systemPrompt, userPrompt } = buildRSSCategorizationPrompt(rss, categories);
-      const { content, provider } = await callAI(providers, systemPrompt, userPrompt);
-      console.log(`[fetch-trends] AI (${provider}) response length: ${content?.length || 0}`);
-      topics = extractTopicsFromAIResponse(content);
-    } catch (aiErr: any) {
-      console.warn("[fetch-trends] AI parsing failed:", aiErr.message);
+    
+    // Process BR trends
+    if (rssBR) {
+      console.log(`[fetch-trends] BR RSS fetched, length: ${rssBR.length}`);
+      let brTopics: any[] = [];
+      try {
+        const { systemPrompt, userPrompt } = buildRSSCategorizationPrompt(rssBR, categories, "BR");
+        const { content, provider } = await callAI(providers, systemPrompt, userPrompt);
+        brTopics = extractTopicsFromAIResponse(content);
+      } catch (aiErr: any) {
+        console.warn("[fetch-trends] BR AI parsing failed:", aiErr.message);
+      }
+      if (!brTopics.length) brTopics = parseRSSDirectly(rssBR, categories, "BR");
+      topics = [...topics, ...brTopics];
+    }
+    
+    // Process US trends
+    if (rssUS) {
+      console.log(`[fetch-trends] US RSS fetched, length: ${rssUS.length}`);
+      let usTopics: any[] = [];
+      try {
+        const { systemPrompt, userPrompt } = buildRSSCategorizationPrompt(rssUS, categories, "US");
+        const { content, provider } = await callAI(providers, systemPrompt, userPrompt);
+        usTopics = extractTopicsFromAIResponse(content);
+      } catch (aiErr: any) {
+        console.warn("[fetch-trends] US AI parsing failed:", aiErr.message);
+      }
+      if (!usTopics.length) usTopics = parseRSSDirectly(rssUS, categories, "US");
+      topics = [...topics, ...usTopics];
     }
 
-    // Fallback: parse RSS XML directly when AI fails or returns nothing
     if (!topics.length) {
-      console.log("[fetch-trends] No topics from AI or AI failed. Falling back to direct RSS parsing...");
-      topics = parseRSSDirectly(rss, categories);
-      console.log(`[fetch-trends] Direct RSS parsing recovered ${topics.length} topics`);
-    }
-
-    if (!topics.length) {
-      console.error("[fetch-trends] Final topics count is 0. RSS preview:", rss.substring(0, 500));
-      throw new Error("Não foi possível extrair tópicos do feed. O formato do feed pode ter mudado.");
+      throw new Error("Não foi possível extrair tópicos dos feeds. O formato dos feeds pode ter mudado.");
     }
 
     // 1. Buscar tópicos existentes do usuário que não foram usados
