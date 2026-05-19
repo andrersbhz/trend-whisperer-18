@@ -47,7 +47,10 @@ export interface UserSettings {
     alternate_stats: boolean;
     chart: boolean;
   };
+  dashboard_order: string[];
 }
+
+const defaultOrder = ['stats', 'alternate_stats', 'chart', 'meta', 'robot', 'trends', 'categories', 'audit'];
 
 const defaultSettings: UserSettings = {
   wordpress_url: '',
