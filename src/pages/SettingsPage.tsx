@@ -47,7 +47,10 @@ export interface UserSettings {
     alternate_stats: boolean;
     chart: boolean;
   };
+  dashboard_order: string[];
 }
+
+const defaultOrder = ['stats', 'alternate_stats', 'chart', 'meta', 'robot', 'trends', 'categories', 'audit'];
 
 const defaultSettings: UserSettings = {
   wordpress_url: '',
@@ -80,6 +83,7 @@ const defaultSettings: UserSettings = {
     alternate_stats: true,
     chart: true,
   },
+  dashboard_order: defaultOrder,
 };
 
 interface CredentialsStatus {
@@ -107,7 +111,7 @@ const SettingsPage = () => {
       try {
         const { data: userData, error: userError } = await supabase
           .from('user_settings')
-          .select('*, dashboard_widgets')
+          .select('*, dashboard_widgets, dashboard_order')
           .eq('user_id', user.id)
           .maybeSingle();
 
@@ -141,6 +145,7 @@ const SettingsPage = () => {
             image_prompt: userData.image_prompt || '',
             interaction_mode: userData.interaction_mode || 'standard',
             dashboard_widgets: (userData.dashboard_widgets as UserSettings['dashboard_widgets']) || defaultSettings.dashboard_widgets,
+            dashboard_order: (userData.dashboard_order as string[]) || defaultSettings.dashboard_order,
           });
         }
 
@@ -201,6 +206,7 @@ const SettingsPage = () => {
         image_prompt: settings.image_prompt,
         interaction_mode: settings.interaction_mode,
         dashboard_widgets: settings.dashboard_widgets,
+        dashboard_order: settings.dashboard_order,
       };
 
       if (settings.wordpress_app_password) {
@@ -268,6 +274,7 @@ const SettingsPage = () => {
           image_mode: settings.image_mode,
           image_prompt: settings.image_prompt,
           dashboard_widgets: settings.dashboard_widgets,
+          dashboard_order: settings.dashboard_order,
         };
         await runBackendMutation(() =>
           supabase.from('user_settings').update(payload as any).eq('user_id', user.id),
@@ -342,7 +349,9 @@ const SettingsPage = () => {
       <FacebookSettings settings={settings} onChange={updateSettings} />
       <DashboardWidgetSettings 
         widgets={settings.dashboard_widgets} 
+        order={settings.dashboard_order}
         onChange={(w) => updateSettings({ dashboard_widgets: w })} 
+        onOrderChange={(o) => updateSettings({ dashboard_order: o })}
       />
       <GoogleAnalyticsSettings settings={settings} onChange={updateSettings} />
       <AutomationSettings settings={settings} onChange={updateSettings} />
