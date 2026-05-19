@@ -34,6 +34,7 @@ interface AnalyticsData {
   countries: { country: string; users: number }[];
   topReferrers: { referrer: string; visits: number }[];
   hourlyTraffic: { hour: string; views: number }[];
+  categoryStats?: { category: string; views: number; percentage: number }[];
 }
 
 interface SocialMetrics {
@@ -1308,6 +1309,32 @@ const AnalyticsPage = ({ isModal = false, pageId }: { isModal?: boolean; pageId?
                   <div key={i} className="flex items-center justify-between p-2 rounded-lg hover:bg-secondary/30 transition-colors">
                     <span className="text-sm text-foreground">{c.country}</span>
                     <Badge variant="secondary" className="bg-primary/10 text-primary">{c.users} usuários</Badge>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {analytics?.categoryStats && analytics.categoryStats.length > 0 && (
+          <Card className="glass-card">
+            <CardHeader>
+              <CardTitle className="text-lg text-foreground">Acessos por Tema (Categoria)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {analytics.categoryStats.map((c, i) => (
+                  <div key={i} className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-foreground capitalize">{c.category}</span>
+                      <span className="text-xs font-medium text-muted-foreground">{c.views.toLocaleString()} views ({c.percentage}%)</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-secondary overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all"
+                        style={{ width: `${c.percentage}%`, backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }}
+                      />
+                    </div>
                   </div>
                 ))}
               </div>
