@@ -79,34 +79,42 @@ const Dashboard = () => {
     setLoadingTrends(true);
     try {
       const [articles, trendingTopics, recent, errors, logs, topTrends, categoriesData] = await Promise.all([
-        runBackendQuery(() => supabase.from('articles').select('id, status, category, created_at').eq('user_id', user.id)),
-        runBackendQuery(() => supabase.from('trending_topics').select('id').eq('user_id', user.id).eq('used', false)),
-        runBackendQuery(() => supabase.from('articles').select('id, title, category, seo_keyword, status').eq('user_id', user.id).order('created_at', { ascending: false }).limit(5)),
-        runBackendQuery(() => supabase.from('publish_log').select('id, article_id, error_message, created_at, status').eq('user_id', user.id).eq('status', 'failed').order('created_at', { ascending: false }).limit(5)),
-        runBackendQuery(() => supabase.from('audit_logs').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(10)),
-        runBackendQuery(() => supabase.from('trending_topics').select('*').eq('user_id', user.id).eq('used', false).order('fetched_at', { ascending: false }).limit(10)),
-        runBackendQuery(() => supabase.from('user_settings').select('categories, dashboard_widgets, dashboard_order').eq('user_id', user.id).maybeSingle()),
+        supabase.from('articles').select('id, status, category, created_at').eq('user_id', user.id),
+        supabase.from('trending_topics').select('id').eq('user_id', user.id).eq('used', false),
+        supabase.from('articles').select('id, title, category, seo_keyword, status').eq('user_id', user.id).order('created_at', { ascending: false }).limit(5),
+        supabase.from('publish_log').select('id, article_id, error_message, created_at, status').eq('user_id', user.id).eq('status', 'failed').order('created_at', { ascending: false }).limit(5),
+        supabase.from('audit_logs').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(10),
+        supabase.from('trending_topics').select('*').eq('user_id', user.id).eq('used', false).order('fetched_at', { ascending: false }).limit(10),
+        supabase.from('user_settings').select('categories, dashboard_widgets, dashboard_order').eq('user_id', user.id).maybeSingle(),
       ]);
 
-      setTrendingList(topTrends || []);
-      setAllArticles(articles || []);
-      setUserCategories(categoriesData?.categories || ['esportes', 'politica', 'policia', 'saude', 'celebridades', 'financas']);
-      if (categoriesData?.dashboard_widgets) setWidgets(categoriesData.dashboard_widgets as any);
-      if (categoriesData?.dashboard_order) setWidgetOrder(categoriesData.dashboard_order as string[]);
+      const data_articles = articles.data || [];
+      const data_trendingTopics = trendingTopics.data || [];
+      const data_recent = recent.data || [];
+      const data_errors = errors.data || [];
+      const data_logs = logs.data || [];
+      const data_topTrends = topTrends.data || [];
+      const data_settings = categoriesData.data;
+
+      setTrendingList(data_topTrends);
+      setAllArticles(data_articles);
+      setUserCategories(data_settings?.categories || ['esportes', 'politica', 'policia', 'saude', 'celebridades', 'financas']);
+      if (data_settings?.dashboard_widgets) setWidgets(data_settings.dashboard_widgets as any);
+      if (data_settings?.dashboard_order) setWidgetOrder(data_settings.dashboard_order as string[]);
       setLoadingTrends(false);
 
       setStats({
-        total: articles?.length || 0,
-        published: (articles || []).filter((a: any) => a.status === 'published').length,
-        pending: (articles || []).filter((a: any) => a.status === 'ready' || a.status === 'draft').length,
-        trending: trendingTopics?.length || 0,
-        failed: (articles || []).filter((a: any) => a.status === 'failed').length,
+        total: data_articles.length,
+        published: data_articles.filter((a: any) => a.status === 'published').length,
+        pending: data_articles.filter((a: any) => a.status === 'ready' || a.status === 'draft').length,
+        trending: data_trendingTopics.length,
+        failed: data_articles.filter((a: any) => a.status === 'failed').length,
       });
 
       const ALL_CATEGORIES = ['esportes', 'politica', 'policia', 'saude', 'celebridades', 'financas'];
       const byCat: Record<string, any> = {};
       ALL_CATEGORIES.forEach(cat => byCat[cat] = { total: 0, published: 0, pending: 0, failed: 0 });
-      (articles || []).forEach((a: any) => {
+      data_articles.forEach((a: any) => {
         const cat = a.category || 'outros';
         if (!byCat[cat]) byCat[cat] = { total: 0, published: 0, pending: 0, failed: 0 };
         byCat[cat].total += 1;
@@ -115,9 +123,9 @@ const Dashboard = () => {
         else byCat[cat].pending += 1;
       });
       setCategoryStats(Object.entries(byCat).map(([category, v]) => ({ category, ...v })).sort((a, b) => b.total - a.total));
-      setRecentArticles(recent || []);
-      setRecentErrors(errors || []);
-      setAuditLogs(logs || []);
+      setRecentArticles(data_recent);
+      setRecentErrors(data_errors);
+      setAuditLogs(data_logs);
     } catch (error) {
       toast({ title: 'Erro ao carregar painel', description: getErrorMessage(error), variant: 'destructive' });
     }
