@@ -181,8 +181,11 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchStats();
-    fetchMetaMetrics();
-    fetchInteractions();
+    // Delay non-essential social metrics to prioritize core dashboard loading
+    setTimeout(() => {
+      fetchMetaMetrics();
+      fetchInteractions();
+    }, 1000);
     const fetchIntervalSettings = async () => {
       if (!user) return;
       const { data } = await supabase.from('user_settings').select('metrics_refresh_interval').eq('user_id', user.id).maybeSingle();
