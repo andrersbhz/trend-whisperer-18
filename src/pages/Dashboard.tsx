@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, Suspense, lazy } from 'react';
+import { useEffect, useState, useMemo, Suspense } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { monitorPerformance, withCache } from '@/lib/performance';
 import { supabase } from '@/integrations/supabase/client';
