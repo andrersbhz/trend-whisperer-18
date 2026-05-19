@@ -274,6 +274,7 @@ const SettingsPage = () => {
           image_mode: settings.image_mode,
           image_prompt: settings.image_prompt,
           dashboard_widgets: settings.dashboard_widgets,
+          dashboard_order: settings.dashboard_order,
         };
         await runBackendMutation(() =>
           supabase.from('user_settings').update(payload as any).eq('user_id', user.id),
