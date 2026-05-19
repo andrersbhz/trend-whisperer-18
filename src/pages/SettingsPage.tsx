@@ -3,13 +3,13 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Save, Loader2 } from 'lucide-react';
+import { Save, Loader2, Cpu, Globe, Share2, BarChart3, Settings2, Sparkles } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import WordPressSettings from '@/components/settings/WordPressSettings';
 import GoogleAnalyticsSettings from '@/components/settings/GoogleAnalyticsSettings';
 import AutomationSettings from '@/components/settings/AutomationSettings';
 import GeminiSettings from '@/components/settings/GeminiSettings';
 import OpenAISettings from '@/components/settings/OpenAISettings';
-// Azure Copilot settings removed
 import GroqSettings from '@/components/settings/GroqSettings';
 import JetpackSettings from '@/components/settings/JetpackSettings';
 import FacebookSettings from '@/components/settings/FacebookSettings';
