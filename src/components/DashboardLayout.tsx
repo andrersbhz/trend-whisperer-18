@@ -189,6 +189,36 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           </button>
           <h2 className="font-semibold text-foreground truncate">{currentLabel}</h2>
           <div className="ml-auto flex items-center gap-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary">
+                  <Activity className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 glass-card p-4">
+                <div className="space-y-4">
+                  <h4 className="font-bold text-xs uppercase tracking-widest text-primary border-b border-white/10 pb-2">Monitor de Performance</h4>
+                  <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                    {getPerformanceLogs().length === 0 ? (
+                      <p className="text-[10px] text-muted-foreground italic">Aguardando métricas...</p>
+                    ) : (
+                      getPerformanceLogs().slice().reverse().map((log, i) => (
+                        <div key={i} className="flex justify-between items-center gap-2 text-[10px] bg-white/5 p-2 rounded-sm">
+                          <span className="truncate font-medium">{log.label}</span>
+                          <span className={cn(
+                            "font-bold tabular-nums shrink-0",
+                            log.duration > 1000 ? "text-destructive" : log.duration > 500 ? "text-warning" : "text-success"
+                          )}>
+                            {log.duration}ms
+                          </span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+            
             <Button
               onClick={handleGlobalGenerate}
               disabled={generating}
