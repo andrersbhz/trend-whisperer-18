@@ -145,6 +145,7 @@ const SettingsPage = () => {
             image_prompt: userData.image_prompt || '',
             interaction_mode: userData.interaction_mode || 'standard',
             dashboard_widgets: (userData.dashboard_widgets as UserSettings['dashboard_widgets']) || defaultSettings.dashboard_widgets,
+            dashboard_order: (userData.dashboard_order as string[]) || defaultSettings.dashboard_order,
           });
         }
 
