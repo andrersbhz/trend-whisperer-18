@@ -23,13 +23,9 @@ export const monitorPerformance = async <T>(label: string, task: () => Promise<T
     
     logs.push(log);
     
-    // Alert on slow queries
+    // Alert on slow queries (logged only, no toast to avoid annoyance)
     if (duration > SLOW_QUERY_THRESHOLD) {
-      toast({
-        title: "Alerta de Performance",
-        description: `A consulta "${label}" demorou ${duration}ms (limite: ${SLOW_QUERY_THRESHOLD}ms).`,
-        variant: "destructive",
-      });
+      console.warn(`[Performance Alert] "${label}" took ${duration}ms (limit: ${SLOW_QUERY_THRESHOLD}ms).`);
     }
 
     // Log to console in development
