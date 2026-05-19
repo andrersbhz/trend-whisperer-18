@@ -14,7 +14,14 @@ import {
   Sparkles,
   Loader2,
   Bot,
+  Activity,
 } from 'lucide-react';
+import { getPerformanceLogs } from '@/lib/performance';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
