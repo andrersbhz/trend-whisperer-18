@@ -195,7 +195,7 @@ const Dashboard = () => {
 
     const articlesSubscription = supabase
       .channel('articles-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'articles', filter: `user_id=eq.${user.id}` }, () => fetchStats())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'articles', filter: `user_id=eq.${user.id}` }, () => fetchStats(true))
       .subscribe();
 
     return () => { supabase.removeChannel(articlesSubscription); };
