@@ -30,6 +30,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/lib/backend';
 import SpaceBackground from './SpaceBackground';
+import { PerformanceLogTicker } from './PerformanceLogTicker';
 import a3Logo from '@/assets/a3-logo.jpg';
 
 const navItems = [
