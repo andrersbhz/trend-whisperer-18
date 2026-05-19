@@ -30,6 +30,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/lib/backend';
 import SpaceBackground from './SpaceBackground';
+import { PerformanceLogTicker } from './PerformanceLogTicker';
 import a3Logo from '@/assets/a3-logo.jpg';
 
 const navItems = [
@@ -47,6 +48,13 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const { toast } = useToast();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [logCount, setLogCount] = useState(0);
+
+  useEffect(() => {
+    const handleLogAdded = () => setLogCount(prev => prev + 1);
+    window.addEventListener('performance-log-added', handleLogAdded);
+    return () => window.removeEventListener('performance-log-added', handleLogAdded);
+  }, []);
 
   const handleGlobalGenerate = async () => {
     if (!user || generating) return;
@@ -251,6 +259,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
         <div className="p-4 sm:p-6 lg:p-8 animate-fade-in flex-1">
           <div className="page-container">{children}</div>
         </div>
+        <PerformanceLogTicker />
       </main>
     </div>
   );
