@@ -282,24 +282,31 @@ const Dashboard = () => {
         </DropdownMenu>
       </div>
 
-      {widgets.stats && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          {statCards.map((stat, i) => (
-            <Card key={stat.label} className={`glass-card hover-lift ${stat.glow} relative overflow-hidden animate-float-up`}>
-              <div className={`absolute inset-0 bg-gradient-to-br ${stat.accent} to-transparent opacity-50`} />
-              <CardContent className="p-4 sm:p-5 relative">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-[11px] uppercase tracking-wider text-muted-foreground">{stat.label}</p>
-                    <p className="text-2xl font-bold mt-1.5 tabular-nums">{stat.value}</p>
-                  </div>
-                  <div className={`p-2 rounded-lg bg-background/40 ${stat.color}`}><stat.icon className="h-5 w-5" /></div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+      <div className="flex flex-col gap-6 lg:gap-8">
+        {widgetOrder.map((widgetId) => {
+          if (widgetId === 'stats' && widgets.stats) {
+            return (
+              <div key="stats" className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                {statCards.map((stat) => (
+                  <Card key={stat.label} className={`glass-card hover-lift ${stat.glow} relative overflow-hidden animate-float-up`}>
+                    <div className={`absolute inset-0 bg-gradient-to-br ${stat.accent} to-transparent opacity-50`} />
+                    <CardContent className="p-4 sm:p-5 relative">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="text-[11px] uppercase tracking-wider text-muted-foreground">{stat.label}</p>
+                          <p className="text-2xl font-bold mt-1.5 tabular-nums">{stat.value}</p>
+                        </div>
+                        <div className={`p-2 rounded-lg bg-background/40 ${stat.color}`}><stat.icon className="h-5 w-5" /></div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            );
+          }
+          return null;
+        })}
+      </div>
 
       {widgets.alternate_stats && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fade-in">
