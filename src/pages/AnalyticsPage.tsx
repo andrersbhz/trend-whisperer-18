@@ -9,7 +9,7 @@ import {
   BarChart3, TrendingUp, TrendingDown, Eye, MousePointerClick, Users,
   Lightbulb, RefreshCw, Loader2, Globe, Clock, ArrowUpRight, Percent,
   FileText, Smartphone, Monitor, Tablet, Facebook, Instagram, Heart, Share2,
-  Twitter, Linkedin, Send, PieChart as PieChartIcon, TrendingDown
+  Twitter, Linkedin, Send, PieChart as PieChartIcon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
