@@ -1,4 +1,8 @@
-import { useEffect, useState, useMemo, Suspense } from 'react';
+import { useEffect, useState, useMemo, Suspense, useRef } from 'react';
+import * as ReactWindow from 'react-window';
+const List = (ReactWindow as any).FixedSizeList;
+
+
 import { useAuth } from '@/hooks/useAuth';
 import { monitorPerformance, withCache } from '@/lib/performance';
 import { supabase } from '@/integrations/supabase/client';
@@ -88,7 +92,7 @@ const Dashboard = () => {
           const [articles, trendingTopics, recent, errors, logs, topTrends, categoriesData] = await Promise.all([
             supabase.from('articles').select('id, status, category, created_at').eq('user_id', user.id),
             supabase.from('trending_topics').select('id').eq('user_id', user.id).eq('used', false),
-            supabase.from('articles').select('id, title, category, seo_keyword, status').eq('user_id', user.id).order('created_at', { ascending: false }).limit(5),
+            supabase.from('articles').select('id, title, category, seo_keyword, status').eq('user_id', user.id).order('created_at', { ascending: false }).limit(200),
             supabase.from('publish_log').select('id, article_id, error_message, created_at, status').eq('user_id', user.id).eq('status', 'failed').order('created_at', { ascending: false }).limit(5),
             supabase.from('audit_logs').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(10),
             supabase.from('trending_topics').select('*').eq('user_id', user.id).eq('used', false).order('fetched_at', { ascending: false }).limit(10),
@@ -379,31 +383,68 @@ const Dashboard = () => {
 
       <div className="mt-8 animate-fade-in">
         <Card className="glass-card">
-        <CardHeader><CardTitle className="text-lg uppercase tracking-tighter">Artigos Recentes</CardTitle></CardHeader>
-        <CardContent>
-          <div className="space-y-2.5">
-            {recentArticles.map((article, idx) => (
-              <div key={article.id} className="flex items-center justify-between p-3 sm:p-4 bg-secondary/30 hover:bg-secondary/60 hover:translate-x-1 transition-all animate-float-up" style={{ animationDelay: `${idx * 40}ms` }}>
-                <div className="min-w-0 flex-1">
-                  <p className="font-bold uppercase tracking-tighter text-sm sm:text-base truncate">{article.title}</p>
-                  <div className="flex items-center gap-1.5 mt-1">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground cursor-pointer hover:text-primary transition-colors flex items-center gap-1">{categoryLabels[article.category] || article.category} <ChevronDown className="h-2.5 w-2.5" /></span>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start" className="max-h-[250px] overflow-y-auto">
-                        {userCategories.map(cat => (<DropdownMenuItem key={cat} onClick={() => handleUpdateCategory(article.id, cat)} className={`capitalize text-xs font-bold ${article.category === cat ? 'bg-primary/10 text-primary' : ''}`}>{categoryLabels[cat] || cat}</DropdownMenuItem>))}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">• {article.seo_keyword || 'Sem palavra-chave'}</span>
-                  </div>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-lg uppercase tracking-tighter">Artigos Recentes</CardTitle>
+            <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground border-white/10">
+              {recentArticles.length} Artigos
+            </Badge>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="h-[400px] w-full">
+              {recentArticles.length > 0 ? (
+                <List
+                  height={400}
+                  itemCount={recentArticles.length}
+                  itemSize={80}
+                  width="100%"
+                  className="custom-scrollbar"
+                >
+                  {({ index, style }: { index: number; style: React.CSSProperties }) => {
+                    const article = recentArticles[index];
+                    return (
+                      <div style={style} className="px-6">
+                        <div className="flex items-center justify-between h-[70px] border-b border-white/5 hover:bg-secondary/20 transition-all px-4 -mx-4 group">
+                          <div className="min-w-0 flex-1">
+                            <p className="font-bold uppercase tracking-tighter text-sm truncate group-hover:text-primary transition-colors">{article.title}</p>
+                            <div className="flex items-center gap-1.5 mt-1">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground cursor-pointer hover:text-primary transition-colors flex items-center gap-1">
+                                    {categoryLabels[article.category] || article.category} <ChevronDown className="h-2.5 w-2.5" />
+                                  </span>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="start" className="max-h-[250px] overflow-y-auto">
+                                  {userCategories.map(cat => (
+                                    <DropdownMenuItem 
+                                      key={cat} 
+                                      onClick={() => handleUpdateCategory(article.id, cat)} 
+                                      className={`capitalize text-xs font-bold ${article.category === cat ? 'bg-primary/10 text-primary' : ''}`}
+                                    >
+                                      {categoryLabels[cat] || cat}
+                                    </DropdownMenuItem>
+                                  ))}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">• {article.seo_keyword || 'Sem palavra-chave'}</span>
+                            </div>
+                          </div>
+                          <Badge className={`${statusColors[article.status] || ''} text-[9px] font-bold uppercase tracking-widest rounded-none border-primary/20 text-primary shrink-0`} variant="outline">
+                            {article.status}
+                          </Badge>
+                        </div>
+                      </div>
+                    );
+                  }}
+                </List>
+              ) : (
+                <div className="flex items-center justify-center h-full text-muted-foreground text-xs uppercase opacity-50">
+                  Nenhum artigo encontrado
                 </div>
-                <Badge className={`${statusColors[article.status] || ''} text-[10px] font-bold uppercase tracking-widest rounded-none border-primary/20 text-primary`} variant="outline">{article.status}</Badge>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
       </div>
     </div>
   );

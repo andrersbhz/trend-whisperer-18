@@ -1,3 +1,5 @@
+import { toast } from "@/hooks/use-toast";
+
 type PerformanceLog = {
   label: string;
   duration: number;
@@ -5,24 +7,34 @@ type PerformanceLog = {
 };
 
 const logs: PerformanceLog[] = [];
+const SLOW_QUERY_THRESHOLD = 800; // ms
 
 export const monitorPerformance = async <T>(label: string, task: () => Promise<T>): Promise<T> => {
   const start = performance.now();
   try {
     const result = await task();
-    const duration = performance.now() - start;
+    const duration = Math.round(performance.now() - start);
     
     const log = {
       label,
-      duration: Math.round(duration),
+      duration,
       timestamp: new Date().toISOString()
     };
     
     logs.push(log);
     
+    // Alert on slow queries
+    if (duration > SLOW_QUERY_THRESHOLD) {
+      toast({
+        title: "Alerta de Performance",
+        description: `A consulta "${label}" demorou ${duration}ms (limite: ${SLOW_QUERY_THRESHOLD}ms).`,
+        variant: "destructive",
+      });
+    }
+
     // Log to console in development
     if (import.meta.env.DEV) {
-      console.log(`[Performance] ${label}: ${log.duration}ms`);
+      console.log(`[Performance] ${label}: ${duration}ms`);
     }
     
     // Keep only last 100 logs
@@ -30,11 +42,12 @@ export const monitorPerformance = async <T>(label: string, task: () => Promise<T
     
     return result;
   } catch (error) {
-    const duration = performance.now() - start;
-    console.error(`[Performance Error] ${label} failed after ${Math.round(duration)}ms`, error);
+    const duration = Math.round(performance.now() - start);
+    console.error(`[Performance Error] ${label} failed after ${duration}ms`, error);
     throw error;
   }
 };
+
 
 export const getPerformanceLogs = () => [...logs];
 
