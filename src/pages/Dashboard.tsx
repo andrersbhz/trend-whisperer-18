@@ -85,7 +85,7 @@ const Dashboard = () => {
         runBackendQuery(() => supabase.from('publish_log').select('id, article_id, error_message, created_at, status').eq('user_id', user.id).eq('status', 'failed').order('created_at', { ascending: false }).limit(5)),
         runBackendQuery(() => supabase.from('audit_logs').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(10)),
         runBackendQuery(() => supabase.from('trending_topics').select('*').eq('user_id', user.id).eq('used', false).order('fetched_at', { ascending: false }).limit(10)),
-        runBackendQuery(() => supabase.from('user_settings').select('categories, dashboard_widgets').eq('user_id', user.id).maybeSingle()),
+        runBackendQuery(() => supabase.from('user_settings').select('categories, dashboard_widgets, dashboard_order').eq('user_id', user.id).maybeSingle()),
       ]);
 
       setTrendingList(topTrends || []);
