@@ -76,7 +76,7 @@ const TrendsPage = () => {
     });
 
     return result;
-  }, [topics, sourceFilter, sortBy]);
+  }, [topics, sourceFilter, regionFilter, sortBy]);
 
   const fetchTopics = async () => {
     if (!user) return;
