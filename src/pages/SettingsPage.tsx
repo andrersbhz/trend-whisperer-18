@@ -83,6 +83,7 @@ const defaultSettings: UserSettings = {
     alternate_stats: true,
     chart: true,
   },
+  dashboard_order: defaultOrder,
 };
 
 interface CredentialsStatus {
