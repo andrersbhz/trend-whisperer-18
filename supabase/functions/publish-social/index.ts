@@ -144,9 +144,19 @@ serve(async (req) => {
     }
 
     const results: Array<{ target: string; channel: string; ok: boolean; id?: string; error?: string }> = [];
+    const processedTargets = new Set<string>();
     let firstIgFeedId: string | null = null;
 
     for (const t of targets) {
+      // Avoid double posting if the same page/IG is connected in multiple places
+      const targetKey = `${t.pageId}-${t.igId || 'no-ig'}`;
+      if ((globalThis as any).processedTargets?.has(targetKey)) {
+        console.log(`Skipping duplicate target: ${t.pageName} (${targetKey})`);
+        continue;
+      }
+      if (!(globalThis as any).processedTargets) (globalThis as any).processedTargets = new Set();
+      (globalThis as any).processedTargets.add(targetKey);
+
       // ===== Instagram Feed =====
       if (t.igId) {
         try {
