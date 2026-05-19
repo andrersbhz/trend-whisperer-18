@@ -72,6 +72,7 @@ const Dashboard = () => {
     alternate_stats: true,
     chart: true,
   });
+  const [widgetOrder, setWidgetOrder] = useState<string[]>(['stats', 'alternate_stats', 'chart', 'meta', 'robot', 'trends', 'categories', 'audit']);
 
   const fetchStats = async () => {
     if (!user) return;
