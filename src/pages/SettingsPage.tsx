@@ -3,13 +3,13 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Save, Loader2 } from 'lucide-react';
+import { Save, Loader2, Cpu, Globe, Share2, BarChart3, Settings2, Sparkles } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import WordPressSettings from '@/components/settings/WordPressSettings';
 import GoogleAnalyticsSettings from '@/components/settings/GoogleAnalyticsSettings';
 import AutomationSettings from '@/components/settings/AutomationSettings';
 import GeminiSettings from '@/components/settings/GeminiSettings';
 import OpenAISettings from '@/components/settings/OpenAISettings';
-// Azure Copilot settings removed
 import GroqSettings from '@/components/settings/GroqSettings';
 import JetpackSettings from '@/components/settings/JetpackSettings';
 import FacebookSettings from '@/components/settings/FacebookSettings';
@@ -330,36 +330,76 @@ const SettingsPage = () => {
   }
 
   return (
-    <div className="space-y-6 max-w-3xl">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Configurações</h1>
-        <p className="text-muted-foreground text-sm mt-1">Configure suas integrações e preferências</p>
+    <div className="space-y-6 max-w-5xl pb-10">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Configurações</h1>
+          <p className="text-muted-foreground text-sm mt-1">Gerencie suas integrações, IAs e preferências do sistema</p>
+        </div>
+        <Button onClick={handleSave} disabled={saving} className="gradient-primary shadow-neon-lilac">
+          {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+          Salvar Alterações
+        </Button>
       </div>
 
-      <div className="p-3 rounded-lg bg-accent/20 border border-accent/40 text-xs text-muted-foreground">
-        <strong className="text-foreground">🔄 Sistema Multi-IA:</strong> O sistema tenta gerar artigos na seguinte ordem: <strong>Gemini → OpenAI → Groq → Lovable AI</strong>. Para imagens: <strong>DALL-E 3 → Lovable AI → Gemini</strong>. Se um provedor estiver sem saldo, o próximo é usado automaticamente.
+      <div className="p-4 rounded-xl bg-accent/10 border border-accent/20 text-xs text-muted-foreground flex items-start gap-3">
+        <Sparkles className="h-5 w-5 text-accent shrink-0 mt-0.5" />
+        <div>
+          <strong className="text-foreground block mb-1">🔄 Sistema Multi-IA Inteligente</strong>
+          O sistema alterna automaticamente entre os provedores configurados para garantir alta disponibilidade. 
+          Ordem de Escrita: <span className="text-foreground">Gemini → OpenAI → Groq</span>. 
+          Imagens: <span className="text-foreground">DALL-E 3 → Lovable</span>.
+        </div>
       </div>
 
-      <GeminiSettings settings={settings} onChange={updateSettings} hasGeminiKey={credStatus.has_gemini_key} onDisconnect={() => disconnectCredential({ gemini_api_key: '' }, 'Gemini')} />
-      <OpenAISettings settings={settings} onChange={updateSettings} hasOpenaiKey={credStatus.has_openai_key} onDisconnect={() => disconnectCredential({ openai_api_key: '' }, 'OpenAI')} />
-      {/* Azure Copilot settings removed */}
-      <GroqSettings settings={settings} onChange={updateSettings} hasGroqKey={credStatus.has_groq_key} onDisconnect={() => disconnectCredential({ groq_api_key: '' }, 'Groq')} />
-      <WordPressSettings settings={settings} onChange={updateSettings} hasWpPassword={credStatus.has_wp_password} onDisconnect={() => disconnectCredential({ wordpress_url: '', wordpress_username: '', wordpress_app_password: '' }, 'WordPress')} />
-      <JetpackSettings settings={settings} hasWpPassword={credStatus.has_wp_password} />
-      <FacebookSettings settings={settings} onChange={updateSettings} />
-      <DashboardWidgetSettings 
-        widgets={settings.dashboard_widgets} 
-        order={settings.dashboard_order}
-        onChange={(w) => updateSettings({ dashboard_widgets: w })} 
-        onOrderChange={(o) => updateSettings({ dashboard_order: o })}
-      />
-      <GoogleAnalyticsSettings settings={settings} onChange={updateSettings} />
-      <AutomationSettings settings={settings} onChange={updateSettings} />
+      <Tabs defaultValue="ai" className="w-full space-y-6">
+        <TabsList className="grid grid-cols-2 md:grid-cols-5 h-auto p-1 bg-background/50 border border-border/50 backdrop-blur-sm rounded-xl">
+          <TabsTrigger value="ai" className="py-2.5 rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
+            <Cpu className="h-4 w-4 mr-2" /> Inteligência Artificial
+          </TabsTrigger>
+          <TabsTrigger value="wordpress" className="py-2.5 rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
+            <Globe className="h-4 w-4 mr-2" /> WordPress
+          </TabsTrigger>
+          <TabsTrigger value="social" className="py-2.5 rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
+            <Share2 className="h-4 w-4 mr-2" /> Redes Sociais
+          </TabsTrigger>
+          <TabsTrigger value="appearance" className="py-2.5 rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
+            <BarChart3 className="h-4 w-4 mr-2" /> Interface
+          </TabsTrigger>
+          <TabsTrigger value="general" className="py-2.5 rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
+            <Settings2 className="h-4 w-4 mr-2" /> Geral
+          </TabsTrigger>
+        </TabsList>
 
-      <Button onClick={handleSave} disabled={saving} className="gradient-primary w-full sm:w-auto">
-        {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-        Salvar Configurações
-      </Button>
+        <TabsContent value="ai" className="space-y-6 mt-0 animate-in fade-in-50 duration-300">
+          <GeminiSettings settings={settings} onChange={updateSettings} hasGeminiKey={credStatus.has_gemini_key} onDisconnect={() => disconnectCredential({ gemini_api_key: '' }, 'Gemini')} />
+          <OpenAISettings settings={settings} onChange={updateSettings} hasOpenaiKey={credStatus.has_openai_key} onDisconnect={() => disconnectCredential({ openai_api_key: '' }, 'OpenAI')} />
+          <GroqSettings settings={settings} onChange={updateSettings} hasGroqKey={credStatus.has_groq_key} onDisconnect={() => disconnectCredential({ groq_api_key: '' }, 'Groq')} />
+        </TabsContent>
+
+        <TabsContent value="wordpress" className="space-y-6 mt-0 animate-in fade-in-50 duration-300">
+          <WordPressSettings settings={settings} onChange={updateSettings} hasWpPassword={credStatus.has_wp_password} onDisconnect={() => disconnectCredential({ wordpress_url: '', wordpress_username: '', wordpress_app_password: '' }, 'WordPress')} />
+          <JetpackSettings settings={settings} hasWpPassword={credStatus.has_wp_password} />
+        </TabsContent>
+
+        <TabsContent value="social" className="space-y-6 mt-0 animate-in fade-in-50 duration-300">
+          <FacebookSettings settings={settings} onChange={updateSettings} />
+        </TabsContent>
+
+        <TabsContent value="appearance" className="space-y-6 mt-0 animate-in fade-in-50 duration-300">
+          <DashboardWidgetSettings 
+            widgets={settings.dashboard_widgets} 
+            order={settings.dashboard_order}
+            onChange={(w) => updateSettings({ dashboard_widgets: w })} 
+            onOrderChange={(o) => updateSettings({ dashboard_order: o })}
+          />
+        </TabsContent>
+
+        <TabsContent value="general" className="space-y-6 mt-0 animate-in fade-in-50 duration-300">
+          <GoogleAnalyticsSettings settings={settings} onChange={updateSettings} />
+          <AutomationSettings settings={settings} onChange={updateSettings} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
