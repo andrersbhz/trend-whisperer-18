@@ -402,6 +402,7 @@ const Dashboard = () => {
           </div>
         </CardContent>
       </Card>
+      </div>
       </Suspense>
     </div>
   );
