@@ -127,12 +127,13 @@ const AnalyticsPage = ({ isModal = false, pageId }: { isModal?: boolean; pageId?
 
     try {
       const data = await runBackendQuery(() => supabase.from('articles').select('status').eq('user_id', user.id));
-
-      setArticleStats({
+      
+      const stats = {
         total: data?.length || 0,
         published: (data || []).filter((a) => a.status === 'published').length,
         failed: (data || []).filter((a) => a.status === 'failed').length,
-      });
+      };
+      setArticleStats(stats);
     } catch {
       setArticleStats({ total: 0, published: 0, failed: 0 });
     }
