@@ -108,7 +108,7 @@ const Dashboard = () => {
         });
       });
 
-      const { articles, trendingTopics, recent: data_recent, errors: data_errors, logs: data_logs, topTrends: data_topTrends, settings: data_settings } = dashboardData;
+      const { articles, trendingCount, recent: data_recent, errors: data_errors, logs: data_logs, topTrends: data_topTrends, settings: data_settings } = dashboardData;
 
       setTrendingList(data_topTrends);
       setAllArticles(articles);
@@ -121,7 +121,7 @@ const Dashboard = () => {
         total: articles.length,
         published: articles.filter((a: any) => a.status === 'published').length,
         pending: articles.filter((a: any) => a.status === 'ready' || a.status === 'draft').length,
-        trending: trendingTopics.length,
+        trending: trendingCount,
         failed: articles.filter((a: any) => a.status === 'failed').length,
       });
 
