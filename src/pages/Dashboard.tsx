@@ -375,7 +375,7 @@ const Dashboard = () => {
         })}
       </div>
 
-      <Suspense fallback={<div className="h-[400px] animate-pulse bg-secondary/20 rounded-lg" />}>
+      <div className="mt-8 animate-fade-in">
         <Card className="glass-card">
         <CardHeader><CardTitle className="text-lg uppercase tracking-tighter">Artigos Recentes</CardTitle></CardHeader>
         <CardContent>
