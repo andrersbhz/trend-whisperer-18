@@ -22,6 +22,7 @@ export const monitorPerformance = async <T>(label: string, task: () => Promise<T
     };
     
     logs.push(log);
+    window.dispatchEvent(new CustomEvent('performance-log-added', { detail: log }));
     
     // Alert on slow queries (logged only, no toast to avoid annoyance)
     if (duration > SLOW_QUERY_THRESHOLD) {
