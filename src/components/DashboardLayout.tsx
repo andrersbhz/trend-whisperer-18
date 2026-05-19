@@ -47,6 +47,13 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const { toast } = useToast();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [logCount, setLogCount] = useState(0);
+
+  useEffect(() => {
+    const handleLogAdded = () => setLogCount(prev => prev + 1);
+    window.addEventListener('performance-log-added', handleLogAdded);
+    return () => window.removeEventListener('performance-log-added', handleLogAdded);
+  }, []);
 
   const handleGlobalGenerate = async () => {
     if (!user || generating) return;
