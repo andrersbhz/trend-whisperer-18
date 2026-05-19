@@ -323,9 +323,20 @@ const TrendsPage = () => {
         <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
           <div className="flex items-center gap-2">
             <Filter className="h-4 w-4 text-muted-foreground" />
+            <Select value={regionFilter} onValueChange={(v: any) => setRegionFilter(v)}>
+              <SelectTrigger className="w-[140px] h-9">
+                <SelectValue placeholder="Região" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">BR & Mundo</SelectItem>
+                <SelectItem value="BR">Apenas Brasil 🇧🇷</SelectItem>
+                <SelectItem value="World">Apenas Mundo 🌎</SelectItem>
+              </SelectContent>
+            </Select>
+            
             <Select value={sourceFilter} onValueChange={setSourceFilter}>
-              <SelectTrigger className="w-[180px] h-9">
-                <SelectValue placeholder="Filtrar por fonte" />
+              <SelectTrigger className="w-[160px] h-9">
+                <SelectValue placeholder="Fonte" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas as fontes</SelectItem>
