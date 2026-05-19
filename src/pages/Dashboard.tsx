@@ -75,47 +75,59 @@ const Dashboard = () => {
   });
   const [widgetOrder, setWidgetOrder] = useState<string[]>(['stats', 'alternate_stats', 'chart', 'meta', 'robot', 'trends', 'categories', 'audit']);
 
-  const fetchStats = async () => {
+  const fetchStats = async (forceRefresh = false) => {
     if (!user) return;
     setLoadingTrends(true);
+    
     try {
-      const [articles, trendingTopics, recent, errors, logs, topTrends, categoriesData] = await Promise.all([
-        supabase.from('articles').select('id, status, category, created_at').eq('user_id', user.id),
-        supabase.from('trending_topics').select('id').eq('user_id', user.id).eq('used', false),
-        supabase.from('articles').select('id, title, category, seo_keyword, status').eq('user_id', user.id).order('created_at', { ascending: false }).limit(5),
-        supabase.from('publish_log').select('id, article_id, error_message, created_at, status').eq('user_id', user.id).eq('status', 'failed').order('created_at', { ascending: false }).limit(5),
-        supabase.from('audit_logs').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(10),
-        supabase.from('trending_topics').select('*').eq('user_id', user.id).eq('used', false).order('fetched_at', { ascending: false }).limit(10),
-        supabase.from('user_settings').select('categories, dashboard_widgets, dashboard_order').eq('user_id', user.id).maybeSingle(),
-      ]);
+      const dashboardData = await monitorPerformance('Dashboard Full Load', async () => {
+        const cacheKey = `dashboard_stats_${user.id}`;
+        
+        // Use cache for 60 seconds if not force refreshing
+        return withCache(cacheKey, forceRefresh ? 0 : 60, async () => {
+          const [articles, trendingTopics, recent, errors, logs, topTrends, categoriesData] = await Promise.all([
+            supabase.from('articles').select('id, status, category, created_at').eq('user_id', user.id),
+            supabase.from('trending_topics').select('id').eq('user_id', user.id).eq('used', false),
+            supabase.from('articles').select('id, title, category, seo_keyword, status').eq('user_id', user.id).order('created_at', { ascending: false }).limit(5),
+            supabase.from('publish_log').select('id, article_id, error_message, created_at, status').eq('user_id', user.id).eq('status', 'failed').order('created_at', { ascending: false }).limit(5),
+            supabase.from('audit_logs').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(10),
+            supabase.from('trending_topics').select('*').eq('user_id', user.id).eq('used', false).order('fetched_at', { ascending: false }).limit(10),
+            supabase.from('user_settings').select('categories, dashboard_widgets, dashboard_order').eq('user_id', user.id).maybeSingle(),
+          ]);
 
-      const data_articles = articles.data || [];
-      const data_trendingTopics = trendingTopics.data || [];
-      const data_recent = recent.data || [];
-      const data_errors = errors.data || [];
-      const data_logs = logs.data || [];
-      const data_topTrends = topTrends.data || [];
-      const data_settings = categoriesData.data;
+          return {
+            articles: articles.data || [],
+            trendingTopics: trendingTopics.data || [],
+            recent: recent.data || [],
+            errors: errors.data || [],
+            logs: logs.data || [],
+            topTrends: topTrends.data || [],
+            settings: categoriesData.data
+          };
+        });
+      });
+
+      const { articles, trendingTopics, recent: data_recent, errors: data_errors, logs: data_logs, topTrends: data_topTrends, settings: data_settings } = dashboardData;
 
       setTrendingList(data_topTrends);
-      setAllArticles(data_articles);
+      setAllArticles(articles);
       setUserCategories(data_settings?.categories || ['esportes', 'politica', 'policia', 'saude', 'celebridades', 'financas']);
       if (data_settings?.dashboard_widgets) setWidgets(data_settings.dashboard_widgets as any);
       if (data_settings?.dashboard_order) setWidgetOrder(data_settings.dashboard_order as string[]);
       setLoadingTrends(false);
 
       setStats({
-        total: data_articles.length,
-        published: data_articles.filter((a: any) => a.status === 'published').length,
-        pending: data_articles.filter((a: any) => a.status === 'ready' || a.status === 'draft').length,
-        trending: data_trendingTopics.length,
-        failed: data_articles.filter((a: any) => a.status === 'failed').length,
+        total: articles.length,
+        published: articles.filter((a: any) => a.status === 'published').length,
+        pending: articles.filter((a: any) => a.status === 'ready' || a.status === 'draft').length,
+        trending: trendingTopics.length,
+        failed: articles.filter((a: any) => a.status === 'failed').length,
       });
 
       const ALL_CATEGORIES = ['esportes', 'politica', 'policia', 'saude', 'celebridades', 'financas'];
       const byCat: Record<string, any> = {};
       ALL_CATEGORIES.forEach(cat => byCat[cat] = { total: 0, published: 0, pending: 0, failed: 0 });
-      data_articles.forEach((a: any) => {
+      articles.forEach((a: any) => {
         const cat = a.category || 'outros';
         if (!byCat[cat]) byCat[cat] = { total: 0, published: 0, pending: 0, failed: 0 };
         byCat[cat].total += 1;
@@ -132,11 +144,17 @@ const Dashboard = () => {
     }
   };
 
-  const fetchMetaMetrics = async () => {
+  const fetchMetaMetrics = async (forceRefresh = false) => {
     if (!user) return;
     setLoadingMeta(true);
     try {
-      const { data } = await supabase.functions.invoke('fetch-meta-metrics', { body: { userId: user.id } });
+      const data = await monitorPerformance('Fetch Meta Metrics', async () => {
+        const cacheKey = `meta_metrics_${user.id}`;
+        return withCache(cacheKey, forceRefresh ? 0 : 300, async () => {
+          const { data } = await supabase.functions.invoke('fetch-meta-metrics', { body: { userId: user.id } });
+          return data;
+        });
+      });
       if (data?.pages) setMetaMetrics(data.pages.length > 0 ? data.pages : null);
     } catch (error) { console.error(error); } finally { setLoadingMeta(false); }
   };
