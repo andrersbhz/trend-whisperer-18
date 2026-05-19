@@ -111,7 +111,7 @@ const SettingsPage = () => {
       try {
         const { data: userData, error: userError } = await supabase
           .from('user_settings')
-          .select('*, dashboard_widgets')
+          .select('*, dashboard_widgets, dashboard_order')
           .eq('user_id', user.id)
           .maybeSingle();
 
