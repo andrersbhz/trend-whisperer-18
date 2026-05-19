@@ -1315,6 +1315,32 @@ const AnalyticsPage = ({ isModal = false, pageId }: { isModal?: boolean; pageId?
             </CardContent>
           </Card>
         )}
+
+        {analytics?.categoryStats && analytics.categoryStats.length > 0 && (
+          <Card className="glass-card">
+            <CardHeader>
+              <CardTitle className="text-lg text-foreground">Acessos por Tema (Categoria)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {analytics.categoryStats.map((c, i) => (
+                  <div key={i} className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-foreground capitalize">{c.category}</span>
+                      <span className="text-xs font-medium text-muted-foreground">{c.views.toLocaleString()} views ({c.percentage}%)</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-secondary overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all"
+                        style={{ width: `${c.percentage}%`, backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* AI Tips */}
