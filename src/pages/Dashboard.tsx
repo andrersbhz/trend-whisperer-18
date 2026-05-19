@@ -224,7 +224,7 @@ const Dashboard = () => {
       await supabase.from('articles').update({ category: newCategory }).eq('id', articleId);
       setRecentArticles(prev => prev.map(a => a.id === articleId ? { ...a, category: newCategory } : a));
       toast({ title: 'Categoria atualizada' });
-      fetchStats();
+      fetchStats(true);
     } catch (error) { toast({ title: 'Erro', description: getErrorMessage(error), variant: 'destructive' }); }
   };
 
