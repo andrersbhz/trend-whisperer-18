@@ -83,11 +83,9 @@ const Dashboard = () => {
     setLoadingTrends(true);
     
     try {
-      const dashboardData = await monitorPerformance('Dashboard Full Load', async () => {
-        const cacheKey = `dashboard_stats_${user.id}`;
-        
-        // Use cache for 60 seconds if not force refreshing
-        return withCache(cacheKey, forceRefresh ? 0 : 60, async () => {
+      const cacheKey = `dashboard_stats_${user.id}`;
+      const dashboardData = await withCache(cacheKey, forceRefresh ? 0 : 60, async () => {
+        return monitorPerformance('Dashboard Full Load', async () => {
           const [articles, trendingTopics, recent, errors, logs, topTrends, categoriesData] = await Promise.all([
             supabase.from('articles').select('id, status, category, created_at').eq('user_id', user.id),
             supabase.from('trending_topics').select('id').eq('user_id', user.id).eq('used', false),
@@ -151,9 +149,9 @@ const Dashboard = () => {
     if (!user) return;
     setLoadingMeta(true);
     try {
-      const data = await monitorPerformance('Fetch Meta Metrics', async () => {
-        const cacheKey = `meta_metrics_${user.id}`;
-        return withCache(cacheKey, forceRefresh ? 0 : 300, async () => {
+      const cacheKey = `meta_metrics_${user.id}`;
+      const data = await withCache(cacheKey, forceRefresh ? 0 : 300, async () => {
+        return monitorPerformance('Fetch Meta Metrics', async () => {
           const { data } = await supabase.functions.invoke('fetch-meta-metrics', { body: { userId: user.id } });
           return data;
         });
