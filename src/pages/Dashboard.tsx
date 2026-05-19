@@ -1,5 +1,7 @@
 import { useEffect, useState, useMemo, Suspense, useRef } from 'react';
-import { FixedSizeList as List } from 'react-window';
+import * as ReactWindow from 'react-window';
+const List = (ReactWindow as any).FixedSizeList;
+
 
 import { useAuth } from '@/hooks/useAuth';
 import { monitorPerformance, withCache } from '@/lib/performance';
