@@ -1,4 +1,6 @@
-import { useEffect, useState, useMemo, Suspense } from 'react';
+import { useEffect, useState, useMemo, Suspense, useRef } from 'react';
+import { FixedSizeList as List } from 'react-window';
+
 import { useAuth } from '@/hooks/useAuth';
 import { monitorPerformance, withCache } from '@/lib/performance';
 import { supabase } from '@/integrations/supabase/client';
