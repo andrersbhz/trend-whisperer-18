@@ -526,14 +526,42 @@ const Dashboard = () => {
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <div className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-primary" />
-              <CardTitle className="text-lg uppercase tracking-tighter">Google Trends (Brasil & Mundo) 🇧🇷🌎</CardTitle>
+              <CardTitle className="text-lg uppercase tracking-tighter">Google Trends 🇧🇷🌎</CardTitle>
             </div>
-            <Button variant="ghost" size="sm" onClick={() => navigate('/trends')} className="text-xs h-7 uppercase font-bold tracking-widest text-primary">Ver tudo</Button>
+            <div className="flex items-center gap-2">
+              <div className="hidden sm:flex bg-background/50 border border-white/10 p-0.5">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setTrendingFilter('all')} 
+                  className={`h-6 text-[9px] px-2 rounded-none ${trendingFilter === 'all' ? 'bg-primary text-primary-foreground' : 'hover:bg-white/5'}`}
+                >Tudo</Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setTrendingFilter('BR')} 
+                  className={`h-6 text-[9px] px-2 rounded-none ${trendingFilter === 'BR' ? 'bg-primary text-primary-foreground' : 'hover:bg-white/5'}`}
+                >Brasil 🇧🇷</Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setTrendingFilter('World')} 
+                  className={`h-6 text-[9px] px-2 rounded-none ${trendingFilter === 'World' ? 'bg-primary text-primary-foreground' : 'hover:bg-white/5'}`}
+                >Mundo 🌎</Button>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => navigate('/trends')} className="text-xs h-7 uppercase font-bold tracking-widest text-primary">Ver tudo</Button>
+            </div>
           </CardHeader>
           <CardContent>
             {loadingTrends ? <div className="flex justify-center py-8"><RefreshCw className="h-6 w-6 animate-spin text-primary" /></div> : (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                {trendingList.slice(0, 6).map(t => (
+                {trendingList
+                  .filter(t => {
+                    if (trendingFilter === 'all') return true;
+                    const isWorld = t.source_name?.includes('US') || t.source_name?.includes('Global') || t.source_name?.includes('Mundo');
+                    return trendingFilter === 'World' ? isWorld : !isWorld;
+                  })
+                  .slice(0, 6).map(t => (
                   <div key={t.id} className="p-3 rounded-none bg-secondary/20 border border-primary/10 hover:border-primary/30 transition-colors">
                     <span className="text-sm font-bold uppercase tracking-tighter">{t.topic}</span>
                     <Badge variant="outline" className="ml-2 text-[9px] h-3.5 border-primary/20 text-primary">{t.category}</Badge>
