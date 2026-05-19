@@ -110,7 +110,26 @@ serve(async (req) => {
       };
     });
 
+    // Calculate visits by category
+    const categoryMap: Record<string, number> = {};
+    topPages.forEach(p => {
+      const parts = p.page.split('/');
+      if (parts.length >= 2 && parts[1] !== "") {
+        const cat = parts[1];
+        categoryMap[cat] = (categoryMap[cat] || 0) + p.views;
+      }
+    });
+
+    const categoryStats = Object.entries(categoryMap)
+      .map(([category, views]) => ({
+        category,
+        views,
+        percentage: totalViews > 0 ? Math.round((views / totalViews) * 100) : 0
+      }))
+      .sort((a, b) => b.views - a.views);
+
     const analytics = {
+      categoryStats,
       pageviews: totalViews,
       sessions: Math.floor(totalViews * 0.7),
       users: Math.floor(totalViews * 0.5),

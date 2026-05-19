@@ -34,6 +34,7 @@ interface AnalyticsData {
   countries: { country: string; users: number }[];
   topReferrers: { referrer: string; visits: number }[];
   hourlyTraffic: { hour: string; views: number }[];
+  categoryStats?: { category: string; views: number; percentage: number }[];
 }
 
 interface SocialMetrics {
