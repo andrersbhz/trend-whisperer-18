@@ -375,6 +375,7 @@ const Dashboard = () => {
           return null;
         })}
       </div>
+      </Suspense>
 
       <div className="mt-8 animate-fade-in">
         <Card className="glass-card">
