@@ -592,13 +592,24 @@ const AnalyticsPage = ({ isModal = false, pageId }: { isModal?: boolean; pageId?
               {pg.instagram.insights && (
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {[
-                    { label: 'Impressões (28d)', value: pg.instagram.insights.impressions?.total || 0 },
-                    { label: 'Alcance (28d)', value: pg.instagram.insights.reach?.total || 0 },
-                    { label: 'Visitas Perfil', value: pg.instagram.insights.profile_views?.total || 0 },
-                    { label: 'Cliques Site', value: pg.instagram.insights.website_clicks?.total || 0 },
+                    { label: 'Impressões (28d)', value: pg.instagram.insights.impressions?.total || 0, growth: pg.instagram.insights.impressions?.growth },
+                    { label: 'Alcance (28d)', value: pg.instagram.insights.reach?.total || 0, growth: pg.instagram.insights.reach?.growth },
+                    { label: 'Visitas Perfil', value: pg.instagram.insights.profile_views?.total || 0, growth: pg.instagram.insights.profile_views?.growth },
+                    { label: 'Cliques Site', value: pg.instagram.insights.website_clicks?.total || 0, growth: pg.instagram.insights.website_clicks?.growth },
                   ].map((s: any) => (
                     <Card key={s.label} className="glass-card"><CardContent className="p-3">
-                      <p className="text-lg font-bold text-foreground">{(s.value || 0).toLocaleString()}</p>
+                      <div className="flex justify-between items-start">
+                        <p className="text-lg font-bold text-foreground">{(s.value || 0).toLocaleString()}</p>
+                        {s.growth !== undefined && (
+                          <div className={cn(
+                            "flex items-center text-[10px] font-bold px-1 rounded",
+                            s.growth > 0 ? "text-success bg-success/10" : s.growth < 0 ? "text-destructive bg-destructive/10" : "text-muted-foreground bg-secondary"
+                          )}>
+                            {s.growth > 0 ? <TrendingUp className="h-2.5 w-2.5 mr-0.5" /> : s.growth < 0 ? <TrendingDown className="h-2.5 w-2.5 mr-0.5" /> : null}
+                            {Math.abs(s.growth)}%
+                          </div>
+                        )}
+                      </div>
                       <p className="text-xs text-muted-foreground">{s.label}</p>
                     </CardContent></Card>
                   ))}

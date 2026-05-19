@@ -12,8 +12,8 @@ serve(async (req) => {
   }
 
   try {
-    const { analytics } = await req.json();
-    if (!analytics) throw new Error("analytics data is required");
+    const { analytics, socialMetrics } = await req.json();
+    if (!analytics && !socialMetrics) throw new Error("analytics or socialMetrics data is required");
 
     // Get user's Gemini API key from settings
     const authHeader = req.headers.get("Authorization");
@@ -41,16 +41,22 @@ serve(async (req) => {
       }
     }
 
-    const prompt = `Analise estes dados do Google Analytics de um blog brasileiro de notícias e gere exatamente 5 dicas práticas e acionáveis para melhorar o desempenho:
+    const prompt = `Analise estes dados de Analytics e Redes Sociais de um blog brasileiro de notícias e gere exatamente 5 dicas práticas e acionáveis para melhorar o engajamento e crescimento:
 
-Dados:
-- Pageviews: ${analytics.pageviews}
+Dados do Site:
+${analytics ? `- Pageviews: ${analytics.pageviews}
 - Sessões: ${analytics.sessions}
 - Usuários: ${analytics.users}
 - Taxa de Rejeição: ${analytics.bounceRate}%
 - Duração Média: ${analytics.avgSessionDuration}
 - Páginas mais visitadas: ${JSON.stringify(analytics.topPages)}
-- Fontes de tráfego: ${JSON.stringify(analytics.trafficSources)}
+- Fontes de tráfego: ${JSON.stringify(analytics.trafficSources)}` : "Dados do site não disponíveis."}
+
+Dados de Redes Sociais:
+${socialMetrics ? `- Facebook Engajamento: ${socialMetrics.summary?.total_facebook || 0} posts
+- Instagram Engajamento: ${socialMetrics.summary?.total_instagram || 0} posts
+- Compartilhamentos: ${socialMetrics.summary?.total_shared_social || 0}
+- Redes conectadas: ${JSON.stringify(socialMetrics.jetpack?.shares_by_network || {})}` : "Dados de redes sociais não disponíveis."}
 
 Responda APENAS com um JSON array, sem markdown, sem explicação. Cada item deve ter:
 - "category": uma dessas (SEO, Conteúdo, Redes Sociais, Experiência do Usuário, Tráfego)
