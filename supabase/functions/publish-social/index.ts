@@ -150,12 +150,11 @@ serve(async (req) => {
     for (const t of targets) {
       // Avoid double posting if the same page/IG is connected in multiple places
       const targetKey = `${t.pageId}-${t.igId || 'no-ig'}`;
-      if ((globalThis as any).processedTargets?.has(targetKey)) {
+      if (processedTargets.has(targetKey)) {
         console.log(`Skipping duplicate target: ${t.pageName} (${targetKey})`);
         continue;
       }
-      if (!(globalThis as any).processedTargets) (globalThis as any).processedTargets = new Set();
-      (globalThis as any).processedTargets.add(targetKey);
+      processedTargets.add(targetKey);
 
       // ===== Instagram Feed =====
       if (t.igId) {
