@@ -50,6 +50,7 @@ const Dashboard = () => {
   const [categoryStats, setCategoryStats] = useState<any[]>([]);
   const [generating, setGenerating] = useState(false);
   const [trendingList, setTrendingList] = useState<any[]>([]);
+  const [trendingFilter, setTrendingFilter] = useState<"all" | "BR" | "World">("all");
   const [loadingTrends, setLoadingTrends] = useState(true);
   const [userCategories, setUserCategories] = useState<string[]>([]);
   const [metaMetrics, setMetaMetrics] = useState<any[] | null>(null);
