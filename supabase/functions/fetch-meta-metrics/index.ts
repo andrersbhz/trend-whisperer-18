@@ -128,9 +128,17 @@ serve(async (req) => {
                 const total = values.reduce((sum: number, v: any) => sum + (typeof v.value === "number" ? v.value : 0), 0);
                 const latestValue = values[values.length - 1]?.value;
                 
+                // Calculate growth (last 7 days vs previous 7 days)
+                const last7 = values.slice(-7);
+                const prev7 = values.slice(-14, -7);
+                const last7Total = last7.reduce((sum: number, v: any) => sum + (typeof v.value === "number" ? v.value : 0), 0);
+                const prev7Total = prev7.reduce((sum: number, v: any) => sum + (typeof v.value === "number" ? v.value : 0), 0);
+                const growth = prev7Total > 0 ? ((last7Total - prev7Total) / prev7Total) * 100 : 0;
+
                 pageMetrics.facebook.insights[metricName] = {
                   total,
                   latest: typeof latestValue === "object" ? total : (latestValue ?? total),
+                  growth: Math.round(growth),
                   daily: values.map((v: any) => ({
                     date: v.end_time?.split("T")[0],
                     value: typeof v.value === "number" ? v.value : 0,
@@ -216,8 +224,17 @@ serve(async (req) => {
               for (const metric of igInsights.data || []) {
                 const values = metric.values || [];
                 const total = values.reduce((sum: number, v: any) => sum + (typeof v.value === "number" ? v.value : 0), 0);
+                
+                // Calculate growth (last 7 days vs previous 7 days)
+                const last7 = values.slice(-7);
+                const prev7 = values.slice(-14, -7);
+                const last7Total = last7.reduce((sum: number, v: any) => sum + (typeof v.value === "number" ? v.value : 0), 0);
+                const prev7Total = prev7.reduce((sum: number, v: any) => sum + (typeof v.value === "number" ? v.value : 0), 0);
+                const growth = prev7Total > 0 ? ((last7Total - prev7Total) / prev7Total) * 100 : 0;
+
                 pageMetrics.instagram.insights[metric.name] = {
                   total,
+                  growth: Math.round(growth),
                   daily: values.map((v: any) => ({
                     date: v.end_time?.split("T")[0],
                     value: typeof v.value === "number" ? v.value : 0,
