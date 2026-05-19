@@ -289,6 +289,7 @@ const Dashboard = () => {
         </DropdownMenu>
       </div>
 
+      <Suspense fallback={<div className="flex flex-col gap-6 animate-pulse"><div className="h-24 bg-secondary/20 rounded-lg" /><div className="h-48 bg-secondary/20 rounded-lg" /></div>}>
       <div className="flex flex-col gap-6 lg:gap-8">
         {widgetOrder.map((widgetId) => {
           if (widgetId === 'stats' && widgets.stats) {
