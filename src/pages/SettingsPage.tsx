@@ -349,7 +349,9 @@ const SettingsPage = () => {
       <FacebookSettings settings={settings} onChange={updateSettings} />
       <DashboardWidgetSettings 
         widgets={settings.dashboard_widgets} 
+        order={settings.dashboard_order}
         onChange={(w) => updateSettings({ dashboard_widgets: w })} 
+        onOrderChange={(o) => updateSettings({ dashboard_order: o })}
       />
       <GoogleAnalyticsSettings settings={settings} onChange={updateSettings} />
       <AutomationSettings settings={settings} onChange={updateSettings} />
