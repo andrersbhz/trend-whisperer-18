@@ -56,6 +56,13 @@ const TrendsPage = () => {
       result = result.filter(t => t.source_name === sourceFilter);
     }
 
+    if (regionFilter !== "all") {
+      result = result.filter(t => {
+        const isWorld = t.source_name?.includes('US') || t.source_name?.includes('Global') || t.source_name?.includes('Mundo');
+        return regionFilter === "World" ? isWorld : !isWorld;
+      });
+    }
+
     result.sort((a, b) => {
       if (sortBy === "audience_desc" || sortBy === "audience_asc") {
         const volumeA = parseInt(a.search_volume?.replace(/[^0-9]/g, '') || '0');
