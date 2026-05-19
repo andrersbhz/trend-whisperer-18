@@ -15,8 +15,10 @@ import {
   Loader2,
   Bot,
   Activity,
+  Download,
 } from 'lucide-react';
-import { getPerformanceLogs } from '@/lib/performance';
+import { getPerformanceLogs, exportLogsToCSV } from '@/lib/performance';
+
 import {
   Popover,
   PopoverContent,
@@ -197,8 +199,20 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
               </PopoverTrigger>
               <PopoverContent className="w-80 glass-card p-4">
                 <div className="space-y-4">
-                  <h4 className="font-bold text-xs uppercase tracking-widest text-primary border-b border-white/10 pb-2">Monitor de Performance</h4>
+                  <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                    <h4 className="font-bold text-xs uppercase tracking-widest text-primary">Monitor de Performance</h4>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-6 w-6 text-muted-foreground hover:text-primary"
+                      onClick={() => exportLogsToCSV()}
+                      title="Exportar CSV"
+                    >
+                      <Download className="h-3 w-3" />
+                    </Button>
+                  </div>
                   <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+
                     {getPerformanceLogs().length === 0 ? (
                       <p className="text-[10px] text-muted-foreground italic">Aguardando métricas...</p>
                     ) : (

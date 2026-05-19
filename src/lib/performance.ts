@@ -38,6 +38,27 @@ export const monitorPerformance = async <T>(label: string, task: () => Promise<T
 
 export const getPerformanceLogs = () => [...logs];
 
+export const exportLogsToCSV = () => {
+  if (logs.length === 0) return;
+  
+  const headers = ["Label", "Duration (ms)", "Timestamp"];
+  const csvContent = [
+    headers.join(","),
+    ...logs.map(log => `"${log.label}",${log.duration},"${log.timestamp}"`)
+  ].join("\n");
+  
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.setAttribute("href", url);
+  link.setAttribute("download", `performance-logs-${new Date().toISOString()}.csv`);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
+
 // Simple Cache Utility
 const cache: Record<string, { data: any; expiry: number }> = {};
 
