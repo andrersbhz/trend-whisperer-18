@@ -403,7 +403,6 @@ const Dashboard = () => {
         </CardContent>
       </Card>
       </div>
-      </Suspense>
     </div>
   );
 };
