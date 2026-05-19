@@ -180,7 +180,7 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    fetchStats();
+    fetchStats(false);
     // Delay non-essential social metrics to prioritize core dashboard loading
     setTimeout(() => {
       fetchMetaMetrics();
