@@ -92,7 +92,7 @@ const Dashboard = () => {
           const [articles, trendingTopics, recent, errors, logs, topTrends, categoriesData] = await Promise.all([
             supabase.from('articles').select('id, status, category, created_at').eq('user_id', user.id),
             supabase.from('trending_topics').select('id').eq('user_id', user.id).eq('used', false),
-            supabase.from('articles').select('id, title, category, seo_keyword, status').eq('user_id', user.id).order('created_at', { ascending: false }).limit(5),
+            supabase.from('articles').select('id, title, category, seo_keyword, status').eq('user_id', user.id).order('created_at', { ascending: false }).limit(200),
             supabase.from('publish_log').select('id, article_id, error_message, created_at, status').eq('user_id', user.id).eq('status', 'failed').order('created_at', { ascending: false }).limit(5),
             supabase.from('audit_logs').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(10),
             supabase.from('trending_topics').select('*').eq('user_id', user.id).eq('used', false).order('fetched_at', { ascending: false }).limit(10),
