@@ -35,11 +35,16 @@ import {
 import {
   AreaChart,
   Area,
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
-  ResponsiveContainer
+  ResponsiveContainer,
+  Legend
 } from 'recharts';
 
 const Dashboard = () => {
@@ -54,7 +59,7 @@ const Dashboard = () => {
   const [categoryStats, setCategoryStats] = useState<any[]>([]);
   const [generating, setGenerating] = useState(false);
   const [trendingList, setTrendingList] = useState<any[]>([]);
-  const [trendingFilter, setTrendingFilter] = useState<"all" | "BR" | "World">("all");
+  const [trendingFilter, setTrendingFilter] = useState<"all" | "BR" | "World">("BR");
   const [loadingTrends, setLoadingTrends] = useState(true);
   const [userCategories, setUserCategories] = useState<string[]>([]);
   const [metaMetrics, setMetaMetrics] = useState<any[] | null>(null);
@@ -65,6 +70,7 @@ const Dashboard = () => {
   const [loadingInteractions, setLoadingInteractions] = useState(false);
   const [processingInteractions, setProcessingInteractions] = useState(false);
   const [refreshInterval, setRefreshInterval] = useState(30);
+  const [chartType, setChartType] = useState<'area' | 'bar' | 'line'>('area');
   const [nextRefresh, setNextRefresh] = useState<Date | null>(null);
   const [widgets, setWidgets] = useState({
     stats: true,
@@ -323,7 +329,69 @@ const Dashboard = () => {
               <Suspense key="chart" fallback={<div className="h-[300px] animate-pulse bg-secondary/20 rounded-lg" />}>
                 <Card className="glass-card neon-border-lilac animate-fade-in overflow-hidden">
                   <CardHeader className="pb-2 flex flex-row items-center justify-between"><div className="flex items-center gap-2"><BarChart3 className="h-5 w-5 text-primary" /><CardTitle className="text-lg uppercase tracking-tighter">Volume de Artigos (7d)</CardTitle></div><Badge variant="outline" className="text-[10px] uppercase font-bold tracking-widest border-primary/20 text-primary">Atividade Recente</Badge></CardHeader>
-                  <CardContent className="pt-4"><div className="h-[250px] w-full"><ResponsiveContainer width="100%" height="100%"><AreaChart data={chartData}><defs><linearGradient id="colorPosts" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="hsl(260, 100%, 70%)" stopOpacity={0.3}/><stop offset="95%" stopColor="hsl(260, 100%, 70%)" stopOpacity={0}/></linearGradient></defs><CartesianGrid strokeDasharray="3 3" stroke="hsl(230, 20%, 15%)" vertical={false} /><XAxis dataKey="name" fontSize={10} stroke="hsl(260, 10%, 45%)" tickLine={false} axisLine={false} dy={10} /><YAxis fontSize={10} stroke="hsl(260, 10%, 45%)" tickLine={false} axisLine={false} tickFormatter={(value) => `${value}`} /><Tooltip contentStyle={customTooltipStyle} cursor={{ stroke: 'hsl(260, 100%, 70%)', strokeWidth: 1 }} /><Area type="monotone" dataKey="posts" name="Artigos" stroke="hsl(260, 100%, 70%)" fillOpacity={1} fill="url(#colorPosts)" strokeWidth={3} animationDuration={1500} /></AreaChart></ResponsiveContainer></div></CardContent>
+                  <CardContent className="pt-4">
+                    <div className="flex justify-end gap-2 mb-4">
+                      <Button 
+                        variant={chartType === 'area' ? 'secondary' : 'ghost'} 
+                        size="sm" 
+                        onClick={() => setChartType('area')}
+                        className="h-7 text-[10px] px-2 font-bold uppercase tracking-widest"
+                      >
+                        Área
+                      </Button>
+                      <Button 
+                        variant={chartType === 'line' ? 'secondary' : 'ghost'} 
+                        size="sm" 
+                        onClick={() => setChartType('line')}
+                        className="h-7 text-[10px] px-2 font-bold uppercase tracking-widest"
+                      >
+                        Linha
+                      </Button>
+                      <Button 
+                        variant={chartType === 'bar' ? 'secondary' : 'ghost'} 
+                        size="sm" 
+                        onClick={() => setChartType('bar')}
+                        className="h-7 text-[10px] px-2 font-bold uppercase tracking-widest"
+                      >
+                        Barras
+                      </Button>
+                    </div>
+                    <div className="h-[250px] w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        {chartType === 'bar' ? (
+                          <BarChart data={chartData}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="hsl(230, 20%, 15%)" vertical={false} />
+                            <XAxis dataKey="name" fontSize={10} stroke="hsl(260, 10%, 45%)" tickLine={false} axisLine={false} dy={10} />
+                            <YAxis fontSize={10} stroke="hsl(260, 10%, 45%)" tickLine={false} axisLine={false} tickFormatter={(value) => `${value}`} />
+                            <Tooltip contentStyle={customTooltipStyle} cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }} />
+                            <Bar dataKey="posts" name="Artigos" fill="hsl(260, 100%, 70%)" radius={[4, 4, 0, 0]} />
+                          </BarChart>
+                        ) : chartType === 'line' ? (
+                          <LineChart data={chartData}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="hsl(230, 20%, 15%)" vertical={false} />
+                            <XAxis dataKey="name" fontSize={10} stroke="hsl(260, 10%, 45%)" tickLine={false} axisLine={false} dy={10} />
+                            <YAxis fontSize={10} stroke="hsl(260, 10%, 45%)" tickLine={false} axisLine={false} tickFormatter={(value) => `${value}`} />
+                            <Tooltip contentStyle={customTooltipStyle} />
+                            <Line type="monotone" dataKey="posts" name="Artigos" stroke="hsl(260, 100%, 70%)" strokeWidth={3} dot={{ r: 4 }} />
+                          </LineChart>
+                        ) : (
+                          <AreaChart data={chartData}>
+                            <defs>
+                              <linearGradient id="colorPosts" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="hsl(260, 100%, 70%)" stopOpacity={0.3}/>
+                                <stop offset="95%" stopColor="hsl(260, 100%, 70%)" stopOpacity={0}/>
+                              </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" stroke="hsl(230, 20%, 15%)" vertical={false} />
+                            <XAxis dataKey="name" fontSize={10} stroke="hsl(260, 10%, 45%)" tickLine={false} axisLine={false} dy={10} />
+                            <YAxis fontSize={10} stroke="hsl(260, 10%, 45%)" tickLine={false} axisLine={false} tickFormatter={(value) => `${value}`} />
+                            <Tooltip contentStyle={customTooltipStyle} cursor={{ stroke: 'hsl(260, 100%, 70%)', strokeWidth: 1 }} />
+                            <Area type="monotone" dataKey="posts" name="Artigos" stroke="hsl(260, 100%, 70%)" fillOpacity={1} fill="url(#colorPosts)" strokeWidth={3} animationDuration={1500} />
+                          </AreaChart>
+                        )}
+                      </ResponsiveContainer>
+                    </div>
+                  </CardContent>
                 </Card>
               </Suspense>
             );

@@ -109,7 +109,7 @@ const AnalyticsPage = ({ isModal = false, pageId }: { isModal?: boolean; pageId?
   const [loadingMeta, setLoadingMeta] = useState(false);
   const [jetpackStats, setJetpackStats] = useState<JetpackStats | null>(null);
   const [loadingJetpack, setLoadingJetpack] = useState(false);
-  const [chartType, setChartType] = useState<'area' | 'bar'>('area');
+  const [chartType, setChartType] = useState<'area' | 'bar' | 'line'>('area');
   const [pieChartType, setPieChartType] = useState<'pie' | 'donut'>('donut');
   const [dateRange, setDateRange] = useState({ from: '', to: '' });
 
@@ -378,35 +378,113 @@ const AnalyticsPage = ({ isModal = false, pageId }: { isModal?: boolean; pageId?
               <CardDescription>Comparação de audiência total entre suas contas</CardDescription>
             </CardHeader>
             <CardContent>
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant={chartType === 'area' ? 'secondary' : 'ghost'} 
+                  size="sm" 
+                  onClick={() => setChartType('area')}
+                  className="h-8 text-xs px-2"
+                >
+                  Área
+                </Button>
+                <Button 
+                  variant={chartType === 'line' ? 'secondary' : 'ghost'} 
+                  size="sm" 
+                  onClick={() => setChartType('line')}
+                  className="h-8 text-xs px-2"
+                >
+                  Linhas
+                </Button>
+                <Button 
+                  variant={chartType === 'bar' ? 'secondary' : 'ghost'} 
+                  size="sm" 
+                  onClick={() => setChartType('bar')}
+                  className="h-8 text-xs px-2"
+                >
+                  Barras
+                </Button>
+              </div>
               <div className="h-[350px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={metaMetrics.map(pg => ({
-                      name: pg.page_name,
-                      "Facebook": pg.facebook?.followers_count || pg.facebook?.fan_count || 0,
-                      "Instagram": pg.instagram?.followers_count || 0,
-                    }))}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(230, 20%, 15%)" />
-                    <XAxis 
-                      dataKey="name" 
-                      angle={-45} 
-                      textAnchor="end" 
-                      fontSize={11} 
-                      stroke="hsl(260, 10%, 65%)" 
-                      interval={0}
-                      height={80}
-                    />
-                    <YAxis fontSize={11} stroke="hsl(260, 10%, 65%)" />
-                    <Tooltip 
-                      contentStyle={customTooltipStyle}
-                      cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
-                    />
-                    <Legend verticalAlign="top" height={36} />
-                    <Bar dataKey="Facebook" fill="hsl(220, 80%, 55%)" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="Instagram" fill="hsl(330, 80%, 60%)" radius={[4, 4, 0, 0]} />
-                  </BarChart>
+                  {chartType === 'bar' ? (
+                    <BarChart
+                      data={metaMetrics.map(pg => ({
+                        name: pg.page_name,
+                        "Facebook": pg.facebook?.followers_count || pg.facebook?.fan_count || 0,
+                        "Instagram": pg.instagram?.followers_count || 0,
+                      }))}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(230, 20%, 15%)" />
+                      <XAxis 
+                        dataKey="name" 
+                        angle={-45} 
+                        textAnchor="end" 
+                        fontSize={11} 
+                        stroke="hsl(260, 10%, 65%)" 
+                        interval={0}
+                        height={80}
+                      />
+                      <YAxis fontSize={11} stroke="hsl(260, 10%, 65%)" />
+                      <Tooltip 
+                        contentStyle={customTooltipStyle}
+                        cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
+                      />
+                      <Legend verticalAlign="top" height={36} />
+                      <Bar dataKey="Facebook" fill="hsl(220, 80%, 55%)" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="Instagram" fill="hsl(330, 80%, 60%)" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  ) : chartType === 'line' ? (
+                    <LineChart
+                      data={metaMetrics.map(pg => ({
+                        name: pg.page_name,
+                        "Facebook": pg.facebook?.followers_count || pg.facebook?.fan_count || 0,
+                        "Instagram": pg.instagram?.followers_count || 0,
+                      }))}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(230, 20%, 15%)" />
+                      <XAxis 
+                        dataKey="name" 
+                        angle={-45} 
+                        textAnchor="end" 
+                        fontSize={11} 
+                        stroke="hsl(260, 10%, 65%)" 
+                        interval={0}
+                        height={80}
+                      />
+                      <YAxis fontSize={11} stroke="hsl(260, 10%, 65%)" />
+                      <Tooltip contentStyle={customTooltipStyle} />
+                      <Legend verticalAlign="top" height={36} />
+                      <Line type="monotone" dataKey="Facebook" stroke="hsl(220, 80%, 55%)" strokeWidth={3} dot={{ r: 4 }} />
+                      <Line type="monotone" dataKey="Instagram" stroke="hsl(330, 80%, 60%)" strokeWidth={3} dot={{ r: 4 }} />
+                    </LineChart>
+                  ) : (
+                    <AreaChart
+                      data={metaMetrics.map(pg => ({
+                        name: pg.page_name,
+                        "Facebook": pg.facebook?.followers_count || pg.facebook?.fan_count || 0,
+                        "Instagram": pg.instagram?.followers_count || 0,
+                      }))}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(230, 20%, 15%)" />
+                      <XAxis 
+                        dataKey="name" 
+                        angle={-45} 
+                        textAnchor="end" 
+                        fontSize={11} 
+                        stroke="hsl(260, 10%, 65%)" 
+                        interval={0}
+                        height={80}
+                      />
+                      <YAxis fontSize={11} stroke="hsl(260, 10%, 65%)" />
+                      <Tooltip contentStyle={customTooltipStyle} />
+                      <Legend verticalAlign="top" height={36} />
+                      <Area type="monotone" dataKey="Facebook" stroke="hsl(220, 80%, 55%)" fill="hsl(220, 80%, 55%, 0.15)" strokeWidth={3} />
+                      <Area type="monotone" dataKey="Instagram" stroke="hsl(330, 80%, 60%)" fill="hsl(330, 80%, 60%, 0.15)" strokeWidth={3} />
+                    </AreaChart>
+                  )}
                 </ResponsiveContainer>
               </div>
             </CardContent>
@@ -422,33 +500,85 @@ const AnalyticsPage = ({ isModal = false, pageId }: { isModal?: boolean; pageId?
             <CardContent>
               <div className="h-[350px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={metaMetrics.map(pg => ({
-                      name: pg.page_name,
-                      "Engajamento FB": pg.facebook?.post_stats?.total_likes + pg.facebook?.post_stats?.total_comments + pg.facebook?.post_stats?.total_shares || 0,
-                      "Engajamento IG": pg.instagram?.post_stats?.total_likes + pg.instagram?.post_stats?.total_comments || 0,
-                    }))}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(230, 20%, 15%)" />
-                    <XAxis 
-                      dataKey="name" 
-                      angle={-45} 
-                      textAnchor="end" 
-                      fontSize={11} 
-                      stroke="hsl(260, 10%, 65%)" 
-                      interval={0}
-                      height={80}
-                    />
-                    <YAxis fontSize={11} stroke="hsl(260, 10%, 65%)" />
-                    <Tooltip 
-                      contentStyle={customTooltipStyle}
-                      cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
-                    />
-                    <Legend verticalAlign="top" height={36} />
-                    <Bar dataKey="Engajamento FB" fill="hsl(200, 70%, 50%)" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="Engajamento IG" fill="hsl(280, 70%, 50%)" radius={[4, 4, 0, 0]} />
-                  </BarChart>
+                  {chartType === 'bar' ? (
+                    <BarChart
+                      data={metaMetrics.map(pg => ({
+                        name: pg.page_name,
+                        "Engajamento FB": pg.facebook?.post_stats?.total_likes + pg.facebook?.post_stats?.total_comments + pg.facebook?.post_stats?.total_shares || 0,
+                        "Engajamento IG": pg.instagram?.post_stats?.total_likes + pg.instagram?.post_stats?.total_comments || 0,
+                      }))}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(230, 20%, 15%)" />
+                      <XAxis 
+                        dataKey="name" 
+                        angle={-45} 
+                        textAnchor="end" 
+                        fontSize={11} 
+                        stroke="hsl(260, 10%, 65%)" 
+                        interval={0}
+                        height={80}
+                      />
+                      <YAxis fontSize={11} stroke="hsl(260, 10%, 65%)" />
+                      <Tooltip 
+                        contentStyle={customTooltipStyle}
+                        cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
+                      />
+                      <Legend verticalAlign="top" height={36} />
+                      <Bar dataKey="Engajamento FB" fill="hsl(200, 70%, 50%)" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="Engajamento IG" fill="hsl(280, 70%, 50%)" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  ) : chartType === 'line' ? (
+                    <LineChart
+                      data={metaMetrics.map(pg => ({
+                        name: pg.page_name,
+                        "Engajamento FB": pg.facebook?.post_stats?.total_likes + pg.facebook?.post_stats?.total_comments + pg.facebook?.post_stats?.total_shares || 0,
+                        "Engajamento IG": pg.instagram?.post_stats?.total_likes + pg.instagram?.post_stats?.total_comments || 0,
+                      }))}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(230, 20%, 15%)" />
+                      <XAxis 
+                        dataKey="name" 
+                        angle={-45} 
+                        textAnchor="end" 
+                        fontSize={11} 
+                        stroke="hsl(260, 10%, 65%)" 
+                        interval={0}
+                        height={80}
+                      />
+                      <YAxis fontSize={11} stroke="hsl(260, 10%, 65%)" />
+                      <Tooltip contentStyle={customTooltipStyle} />
+                      <Legend verticalAlign="top" height={36} />
+                      <Line type="monotone" dataKey="Engajamento FB" stroke="hsl(200, 70%, 50%)" strokeWidth={3} dot={{ r: 4 }} />
+                      <Line type="monotone" dataKey="Engajamento IG" stroke="hsl(280, 70%, 50%)" strokeWidth={3} dot={{ r: 4 }} />
+                    </LineChart>
+                  ) : (
+                    <AreaChart
+                      data={metaMetrics.map(pg => ({
+                        name: pg.page_name,
+                        "Engajamento FB": pg.facebook?.post_stats?.total_likes + pg.facebook?.post_stats?.total_comments + pg.facebook?.post_stats?.total_shares || 0,
+                        "Engajamento IG": pg.instagram?.post_stats?.total_likes + pg.instagram?.post_stats?.total_comments || 0,
+                      }))}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(230, 20%, 15%)" />
+                      <XAxis 
+                        dataKey="name" 
+                        angle={-45} 
+                        textAnchor="end" 
+                        fontSize={11} 
+                        stroke="hsl(260, 10%, 65%)" 
+                        interval={0}
+                        height={80}
+                      />
+                      <YAxis fontSize={11} stroke="hsl(260, 10%, 65%)" />
+                      <Tooltip contentStyle={customTooltipStyle} />
+                      <Legend verticalAlign="top" height={36} />
+                      <Area type="monotone" dataKey="Engajamento FB" stroke="hsl(200, 70%, 50%)" fill="hsl(200, 70%, 50%, 0.15)" strokeWidth={3} />
+                      <Area type="monotone" dataKey="Engajamento IG" stroke="hsl(280, 70%, 50%)" fill="hsl(280, 70%, 50%, 0.15)" strokeWidth={3} />
+                    </AreaChart>
+                  )}
                 </ResponsiveContainer>
               </div>
             </CardContent>
