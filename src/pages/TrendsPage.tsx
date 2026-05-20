@@ -37,7 +37,7 @@ const TrendsPage = () => {
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [refreshInterval, setRefreshInterval] = useState(30); // minutos
   const [sourceFilter, setSourceFilter] = useState<string>("all");
-  const [regionFilter, setRegionFilter] = useState<"all" | "BR" | "World">("all");
+  const [regionFilter, setRegionFilter] = useState<"all" | "BR" | "World">("BR");
   const [sortBy, setSortBy] = useState<"recent" | "oldest" | "audience_desc" | "audience_asc">("audience_desc");
   const [timeFilter, setTimeFilter] = useState<string>("all");
 
