@@ -203,6 +203,7 @@ const Dashboard = () => {
     setTimeout(() => {
       fetchMetaMetrics();
       fetchInteractions();
+      fetchJetpackSummary();
     }, 1000);
     const fetchIntervalSettings = async () => {
       if (!user) return;
