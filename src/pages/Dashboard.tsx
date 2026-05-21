@@ -188,6 +188,15 @@ const Dashboard = () => {
     } catch (error) { toast({ title: 'Erro', description: getErrorMessage(error), variant: 'destructive' }); } finally { setProcessingInteractions(false); }
   };
 
+  const fetchJetpackSummary = async () => {
+    if (!user) return;
+    setLoadingJetpack(true);
+    try {
+      const { data } = await supabase.functions.invoke('fetch-jetpack-stats', { body: { userId: user.id } });
+      if (data?.jetpack?.summary) setJetpackSummary(data.jetpack.summary);
+    } catch (error) { console.error(error); } finally { setLoadingJetpack(false); }
+  };
+
   useEffect(() => {
     fetchStats(false);
     // Delay non-essential social metrics to prioritize core dashboard loading
