@@ -83,6 +83,8 @@ const Dashboard = () => {
     chart: true,
   });
   const [widgetOrder, setWidgetOrder] = useState<string[]>(['stats', 'alternate_stats', 'chart', 'meta', 'robot', 'trends', 'categories', 'audit']);
+  const [jetpackSummary, setJetpackSummary] = useState<any>(null);
+  const [loadingJetpack, setLoadingJetpack] = useState(false);
 
   const fetchStats = async (forceRefresh = false) => {
     if (!user) return;
@@ -186,12 +188,22 @@ const Dashboard = () => {
     } catch (error) { toast({ title: 'Erro', description: getErrorMessage(error), variant: 'destructive' }); } finally { setProcessingInteractions(false); }
   };
 
+  const fetchJetpackSummary = async () => {
+    if (!user) return;
+    setLoadingJetpack(true);
+    try {
+      const { data } = await supabase.functions.invoke('fetch-jetpack-stats', { body: { userId: user.id } });
+      if (data?.jetpack?.summary) setJetpackSummary(data.jetpack.summary);
+    } catch (error) { console.error(error); } finally { setLoadingJetpack(false); }
+  };
+
   useEffect(() => {
     fetchStats(false);
     // Delay non-essential social metrics to prioritize core dashboard loading
     setTimeout(() => {
       fetchMetaMetrics();
       fetchInteractions();
+      fetchJetpackSummary();
     }, 1000);
     const fetchIntervalSettings = async () => {
       if (!user) return;
@@ -263,18 +275,49 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6 lg:space-y-8 pb-10">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div className="flex flex-col">
-          <h1 className="text-2xl sm:text-3xl font-bold neon-text-lilac uppercase tracking-tighter">NEURAL VORTEX</h1>
-          <div className="flex items-center gap-2 mt-1">
-            <p className="text-muted-foreground text-sm">Visão geral e métricas</p>
-            {nextRefresh && <Badge variant="outline" className="text-[10px] animate-pulse">Auto-atualização: {format(nextRefresh, "HH:mm")}</Badge>}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-2 border-b border-white/5">
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 bg-primary/20 flex items-center justify-center rounded-sm border border-primary/30 shadow-neon-lilac">
+              <BarChart3 className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-xl font-black uppercase tracking-tighter text-foreground leading-none">Métricas Consolidadas</h1>
+              <p className="text-[10px] uppercase font-bold tracking-[0.2em] text-muted-foreground mt-1.5 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
+                Sistema em Tempo Real
+              </p>
+            </div>
           </div>
         </div>
-        <Button onClick={handleGenerateArticles} disabled={generating} className="gradient-primary uppercase tracking-widest text-[10px] h-9 px-6 rounded-none font-bold">
-          {generating ? <RefreshCw className="h-3 w-3 mr-2 animate-spin" /> : <Sparkles className="h-3 w-3 mr-2" />}
-          Gerar Artigos
-        </Button>
+
+        <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+          <div className="flex items-center gap-4 px-4 py-2 bg-secondary/20 border border-white/5 glass-card">
+            <div className="text-center">
+              <p className="text-[9px] uppercase font-bold text-muted-foreground tracking-widest">Publicados</p>
+              <p className="text-lg font-black tabular-nums text-success">{stats.published}</p>
+            </div>
+            <div className="w-[1px] h-8 bg-white/10" />
+            <div className="text-center">
+              <p className="text-[9px] uppercase font-bold text-muted-foreground tracking-widest">Seguidores</p>
+              <p className="text-lg font-black tabular-nums text-primary">
+                {metaMetrics ? metaMetrics.reduce((acc, pg) => acc + (pg.facebook?.followers_count || pg.facebook?.fan_count || 0) + (pg.instagram?.followers_count || 0), 0).toLocaleString() : '---'}
+              </p>
+            </div>
+            <div className="w-[1px] h-8 bg-white/10" />
+            <div className="text-center">
+              <p className="text-[9px] uppercase font-bold text-muted-foreground tracking-widest">Visualizações</p>
+              <p className="text-lg font-black tabular-nums text-accent">
+                {jetpackSummary?.views?.toLocaleString() || '---'}
+              </p>
+            </div>
+          </div>
+
+          <Button onClick={handleGenerateArticles} disabled={generating} className="gradient-primary uppercase tracking-widest text-[10px] h-10 px-6 rounded-none font-bold shadow-neon-lilac border-none">
+            {generating ? <RefreshCw className="h-3 w-3 mr-2 animate-spin" /> : <Sparkles className="h-3 w-3 mr-2" />}
+            Gerar Artigos
+          </Button>
+        </div>
       </div>
 
       <div className="flex justify-end">
@@ -409,20 +452,18 @@ const Dashboard = () => {
                     ))}
                   </div>
 
-                  <Card className="glass-card neon-border-pink">
-                    <CardHeader className="pb-2 flex flex-row items-center justify-between">
+                  <div className="mt-4">
+                    <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-2">
                         <BarChart3 className="h-5 w-5 text-accent" />
-                        <CardTitle className="text-lg uppercase tracking-tighter">Visão Geral de Analytics</CardTitle>
+                        <h2 className="text-xl font-black uppercase tracking-tighter">Análise Detalhada de Crescimento</h2>
                       </div>
-                      <Button variant="ghost" size="sm" onClick={() => navigate('/analytics')} className="text-xs h-7 uppercase font-bold tracking-widest text-primary">Ver Tudo</Button>
-                    </CardHeader>
-                    <CardContent className="pt-4 px-0 pb-0">
-                      <div className="h-[600px] overflow-y-auto custom-scrollbar px-6 pb-6">
-                        <AnalyticsPage isModal={true} />
-                      </div>
-                    </CardContent>
-                  </Card>
+                      <Button variant="outline" size="sm" onClick={() => navigate('/analytics')} className="text-[10px] h-8 uppercase font-bold tracking-widest border-primary/20 text-primary rounded-none">Ver Relatório Completo</Button>
+                    </div>
+                    <div className="glass-card neon-border-pink p-1 sm:p-4">
+                      <AnalyticsPage isModal={true} />
+                    </div>
+                  </div>
                 </div>
               </Suspense>
             );
