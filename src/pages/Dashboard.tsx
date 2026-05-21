@@ -306,8 +306,10 @@ const Dashboard = () => {
             </div>
             <div className="w-[1px] h-8 bg-white/10" />
             <div className="text-center">
-              <p className="text-[9px] uppercase font-bold text-muted-foreground tracking-widest">Tendências</p>
-              <p className="text-lg font-black tabular-nums text-accent">{stats.trending}</p>
+              <p className="text-[9px] uppercase font-bold text-muted-foreground tracking-widest">Visualizações</p>
+              <p className="text-lg font-black tabular-nums text-accent">
+                {jetpackSummary?.views?.toLocaleString() || '---'}
+              </p>
             </div>
           </div>
 
