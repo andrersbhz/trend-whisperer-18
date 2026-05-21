@@ -370,7 +370,7 @@ const Dashboard = () => {
           if (widgetId === 'chart' && widgets.chart) {
             return (
               <Suspense key="chart" fallback={<div className="h-[300px] animate-pulse bg-secondary/20 rounded-lg" />}>
-                <Card className="glass-card neon-border-lilac animate-fade-in overflow-hidden">
+                <Card className="glass-card neon-border-lilac animate-fade-in overflow-hidden mt-6">
                   <CardHeader className="pb-2 flex flex-row items-center justify-between"><div className="flex items-center gap-2"><BarChart3 className="h-5 w-5 text-primary" /><CardTitle className="text-lg uppercase tracking-tighter">Volume de Artigos (7d)</CardTitle></div><Badge variant="outline" className="text-[10px] uppercase font-bold tracking-widest border-primary/20 text-primary">Atividade Recente</Badge></CardHeader>
                   <CardContent className="pt-4">
                     <div className="flex justify-end gap-2 mb-4">
