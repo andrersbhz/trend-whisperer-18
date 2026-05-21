@@ -438,20 +438,18 @@ const Dashboard = () => {
                     ))}
                   </div>
 
-                  <Card className="glass-card neon-border-pink">
-                    <CardHeader className="pb-2 flex flex-row items-center justify-between">
+                  <div className="mt-4">
+                    <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-2">
                         <BarChart3 className="h-5 w-5 text-accent" />
-                        <CardTitle className="text-lg uppercase tracking-tighter">Visão Geral de Analytics</CardTitle>
+                        <h2 className="text-xl font-black uppercase tracking-tighter">Análise Detalhada de Crescimento</h2>
                       </div>
-                      <Button variant="ghost" size="sm" onClick={() => navigate('/analytics')} className="text-xs h-7 uppercase font-bold tracking-widest text-primary">Ver Tudo</Button>
-                    </CardHeader>
-                    <CardContent className="pt-4 px-0 pb-0">
-                      <div className="h-[600px] overflow-y-auto custom-scrollbar px-6 pb-6">
-                        <AnalyticsPage isModal={true} />
-                      </div>
-                    </CardContent>
-                  </Card>
+                      <Button variant="outline" size="sm" onClick={() => navigate('/analytics')} className="text-[10px] h-8 uppercase font-bold tracking-widest border-primary/20 text-primary rounded-none">Ver Relatório Completo</Button>
+                    </div>
+                    <div className="glass-card neon-border-pink p-1 sm:p-4">
+                      <AnalyticsPage isModal={true} />
+                    </div>
+                  </div>
                 </div>
               </Suspense>
             );
