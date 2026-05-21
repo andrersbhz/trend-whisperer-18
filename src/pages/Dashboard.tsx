@@ -83,6 +83,8 @@ const Dashboard = () => {
     chart: true,
   });
   const [widgetOrder, setWidgetOrder] = useState<string[]>(['stats', 'alternate_stats', 'chart', 'meta', 'robot', 'trends', 'categories', 'audit']);
+  const [jetpackSummary, setJetpackSummary] = useState<any>(null);
+  const [loadingJetpack, setLoadingJetpack] = useState(false);
 
   const fetchStats = async (forceRefresh = false) => {
     if (!user) return;
