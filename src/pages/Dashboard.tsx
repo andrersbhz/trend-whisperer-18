@@ -361,7 +361,7 @@ const Dashboard = () => {
           }
           if (widgetId === 'alternate_stats' && widgets.alternate_stats) {
             return (
-              <div key="alternate_stats" className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fade-in">
+              <div key="alternate_stats" className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fade-in mt-6">
                 <Card className="glass-card neon-border-lilac p-6 flex items-center justify-between"><div><p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Total de Postagens</p><h4 className="text-3xl font-black tabular-nums">{stats.total}</h4><p className="text-[10px] text-accent font-medium mt-1">✓ {stats.published} PUBLICADOS</p></div><div className="h-12 w-12 border border-primary/30 flex items-center justify-center bg-primary/5"><FileText className="h-6 w-6 text-primary" /></div></Card>
                 <Card className="glass-card neon-border-pink p-6 flex items-center justify-between"><div><p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Agendamentos Ativos</p><h4 className="text-3xl font-black tabular-nums">{stats.pending}</h4><p className="text-[10px] text-warning font-medium mt-1">🕒 AGUARDANDO PUBLICAÇÃO</p></div><div className="h-12 w-12 border border-accent/30 flex items-center justify-center bg-accent/5"><Clock className="h-6 w-6 text-accent" /></div></Card>
               </div>
