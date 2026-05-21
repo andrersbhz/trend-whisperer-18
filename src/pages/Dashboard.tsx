@@ -82,7 +82,7 @@ const Dashboard = () => {
     alternate_stats: true,
     chart: true,
   });
-  const [widgetOrder, setWidgetOrder] = useState<string[]>(['stats', 'alternate_stats', 'chart', 'meta', 'robot', 'trends', 'categories', 'audit']);
+  const [widgetOrder, setWidgetOrder] = useState<string[]>(['stats', 'meta', 'alternate_stats', 'chart', 'robot', 'trends', 'categories', 'audit']);
   const [jetpackSummary, setJetpackSummary] = useState<any>(null);
   const [loadingJetpack, setLoadingJetpack] = useState(false);
 
@@ -361,7 +361,7 @@ const Dashboard = () => {
           }
           if (widgetId === 'alternate_stats' && widgets.alternate_stats) {
             return (
-              <div key="alternate_stats" className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fade-in">
+              <div key="alternate_stats" className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fade-in mt-6">
                 <Card className="glass-card neon-border-lilac p-6 flex items-center justify-between"><div><p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Total de Postagens</p><h4 className="text-3xl font-black tabular-nums">{stats.total}</h4><p className="text-[10px] text-accent font-medium mt-1">✓ {stats.published} PUBLICADOS</p></div><div className="h-12 w-12 border border-primary/30 flex items-center justify-center bg-primary/5"><FileText className="h-6 w-6 text-primary" /></div></Card>
                 <Card className="glass-card neon-border-pink p-6 flex items-center justify-between"><div><p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Agendamentos Ativos</p><h4 className="text-3xl font-black tabular-nums">{stats.pending}</h4><p className="text-[10px] text-warning font-medium mt-1">🕒 AGUARDANDO PUBLICAÇÃO</p></div><div className="h-12 w-12 border border-accent/30 flex items-center justify-center bg-accent/5"><Clock className="h-6 w-6 text-accent" /></div></Card>
               </div>
@@ -370,7 +370,7 @@ const Dashboard = () => {
           if (widgetId === 'chart' && widgets.chart) {
             return (
               <Suspense key="chart" fallback={<div className="h-[300px] animate-pulse bg-secondary/20 rounded-lg" />}>
-                <Card className="glass-card neon-border-lilac animate-fade-in overflow-hidden">
+                <Card className="glass-card neon-border-lilac animate-fade-in overflow-hidden mt-6">
                   <CardHeader className="pb-2 flex flex-row items-center justify-between"><div className="flex items-center gap-2"><BarChart3 className="h-5 w-5 text-primary" /><CardTitle className="text-lg uppercase tracking-tighter">Volume de Artigos (7d)</CardTitle></div><Badge variant="outline" className="text-[10px] uppercase font-bold tracking-widest border-primary/20 text-primary">Atividade Recente</Badge></CardHeader>
                   <CardContent className="pt-4">
                     <div className="flex justify-end gap-2 mb-4">
