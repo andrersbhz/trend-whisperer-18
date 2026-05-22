@@ -472,7 +472,7 @@ const SocialRobotPage = () => {
       </div>
 
       <div className="grid grid-cols-1 gap-6">
-        {activeTab === 'interactions' ? (
+        {activeTab === 'interactions' && (
           <Card className="glass-card border-primary/20 overflow-hidden shadow-elevated">
             <CardHeader className="pb-4 border-b border-white/5 bg-white/5 flex flex-row items-center justify-between">
               <div className="flex items-center gap-3">
