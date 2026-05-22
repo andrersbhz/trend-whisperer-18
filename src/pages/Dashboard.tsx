@@ -372,7 +372,7 @@ const Dashboard = () => {
               </div>
             );
           }
-          if (widgetId === 'meta' && widgets.meta && metaMetrics) {
+          if (widgetId === 'meta' && widgets.meta) {
             return (
               <Suspense key="meta" fallback={<div className="h-[200px] animate-pulse bg-secondary/20 rounded-lg" />}>
                 <div className="flex flex-col gap-6 animate-fade-in">
