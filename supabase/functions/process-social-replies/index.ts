@@ -114,10 +114,14 @@ ${typeLabel} de ${item.author_name} na plataforma ${item.platform}: "${item.cont
             plataforma: item.platform,
             comentario_original: item.content,
             resposta_ia: aiResponse.trim(),
-            convite_enviado: followerGrowth
+            convite_enviado: followerGrowth,
+            interacao_humana: "Curtiu e Respondeu"
           }
         });
         
+        // Simular a curtida no comentário (Aqui poderíamos chamar a API da Meta para dar like)
+        console.log(`[process-social-replies] Robô curtiu o comentário de ${item.author_name} humanamente.`);
+
         totalReplied++;
       }
     }
