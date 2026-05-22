@@ -444,20 +444,6 @@ const ArticlesPage = () => {
   if (loading && articles.length === 0) return <Preloader message="Carregando biblioteca de artigos..." />;
 
   return (
-      <div className="flex flex-col items-center justify-center py-20 gap-4">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-sm text-muted-foreground">Carregando seus artigos...</p>
-        <div className="flex gap-2">
-          <Button variant="ghost" size="sm" onClick={() => fetchArticles()} className="text-xs">
-            Tentar carregar novamente
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => setLoading(false)} className="text-xs">
-            Pular carregamento
-          </Button>
-        </div>
-      </div>
-    );
-  }
 
   if (errorState) {
     return (
