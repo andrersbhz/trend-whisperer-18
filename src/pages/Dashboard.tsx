@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo, Suspense } from 'react';
+import Preloader from '@/components/Preloader';
 
 
 
@@ -51,6 +52,7 @@ const Dashboard = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ total: 0, published: 0, pending: 0, trending: 0, failed: 0 });
   const [allArticles, setAllArticles] = useState<any[]>([]);
   const [recentArticles, setRecentArticles] = useState<any[]>([]);
@@ -124,6 +126,7 @@ const Dashboard = () => {
       if (data_settings?.dashboard_widgets) setWidgets(data_settings.dashboard_widgets as any);
       if (data_settings?.dashboard_order) setWidgetOrder(data_settings.dashboard_order as string[]);
       setLoadingTrends(false);
+      setTimeout(() => setLoading(false), 800);
 
       setStats({
         total: articles.length,
@@ -272,6 +275,8 @@ const Dashboard = () => {
     borderRadius: '0px',
     color: 'hsl(210, 20%, 98%)',
   };
+
+  if (loading) return <Preloader />;
 
   return (
     <div className="space-y-6 lg:space-y-8 pb-10">

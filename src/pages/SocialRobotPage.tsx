@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
+import Preloader from '@/components/Preloader';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -275,6 +276,8 @@ const SocialRobotPage = () => {
       supabase.removeChannel(logsChannel);
     };
   }, [user]);
+
+  if (loading) return <Preloader message="Iniciando Robô Social..." />;
 
   return (
     <div className="space-y-6 lg:space-y-8 animate-float-up">

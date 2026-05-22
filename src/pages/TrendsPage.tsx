@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
+import Preloader from '@/components/Preloader';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
@@ -273,13 +274,7 @@ const TrendsPage = () => {
   };
 
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  if (loading) return <Preloader message="Carregando tendências..." />;
 
   return (
     <div className="space-y-6">
