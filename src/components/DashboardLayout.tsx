@@ -259,7 +259,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
         <div className="p-4 sm:p-6 lg:p-8 animate-fade-in flex-1">
           <div className="page-container">{children}</div>
         </div>
-        <PerformanceLogTicker />
+        
       </main>
     </div>
   );
