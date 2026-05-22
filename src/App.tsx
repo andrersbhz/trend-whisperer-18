@@ -13,6 +13,8 @@ import SchedulePage from "@/pages/SchedulePage";
 import SettingsPage from "@/pages/SettingsPage";
 import AnalyticsPage from "@/pages/AnalyticsPage";
 import SocialRobotPage from "@/pages/SocialRobotPage";
+import GooglePage from "@/pages/GooglePage";
+import MetaPage from "@/pages/MetaPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -46,6 +48,8 @@ const App = () => (
             <Route path="/schedule" element={<ProtectedRoute><SchedulePage /></ProtectedRoute>} />
             <Route path="/analytics" element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
             <Route path="/robot" element={<ProtectedRoute><SocialRobotPage /></ProtectedRoute>} />
+            <Route path="/google" element={<ProtectedRoute><GooglePage /></ProtectedRoute>} />
+            <Route path="/meta" element={<ProtectedRoute><MetaPage /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>

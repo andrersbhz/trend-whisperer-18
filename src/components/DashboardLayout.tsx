@@ -16,6 +16,8 @@ import {
   Bot,
   Activity,
   Download,
+  Search,
+  Facebook,
 } from 'lucide-react';
 import { getPerformanceLogs, exportLogsToCSV } from '@/lib/performance';
 
@@ -36,10 +38,13 @@ import a3Logo from '@/assets/a3-logo.jpg';
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
   { icon: FileText, label: 'Artigos', path: '/articles' },
+  { icon: Search, label: 'Google', path: '/google' },
+  { icon: Facebook, label: 'Meta', path: '/meta' },
   { icon: TrendingUp, label: 'Tendências', path: '/trends' },
+  { icon: Bot, label: 'Robô Social', path: '/robot' },
+  { icon: Activity, label: 'Analytics', path: '/analytics' },
   { icon: Clock, label: 'Agendamentos', path: '/schedule' },
   { icon: Settings, label: 'Configurações', path: '/settings' },
-  { icon: Bot, label: 'Robô Social', path: '/robot' },
 ];
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
