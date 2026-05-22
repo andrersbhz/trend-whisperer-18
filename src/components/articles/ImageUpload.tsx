@@ -33,7 +33,8 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
   const [isCropDialogOpen, setIsCropDialogOpen] = useState(false);
-  const [aspect, setAspect] = useState<number | undefined>(undefined);
+  const [aspect, setAspect] = useState<number | undefined>(0.8); // Default to 4:5 for Instagram
+  const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
 
   const onCropComplete = useCallback((_croppedArea: any, croppedAreaPixels: any) => {
     setCroppedAreaPixels(croppedAreaPixels);
@@ -67,7 +68,13 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
         return;
       }
 
-      const croppedImageBlob = await getCroppedImg(selectedImage, croppedAreaPixels);
+      const croppedImageBlob = await getCroppedImg(
+        selectedImage, 
+        croppedAreaPixels,
+        0,
+        { horizontal: false, vertical: false },
+        aspect === 0.8 ? 1080 : 1080 // Always use 1080 for high quality
+      );
       if (!croppedImageBlob) throw new Error("Erro ao processar imagem");
 
       const fileExt = 'jpg';
@@ -274,14 +281,14 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
           <DialogHeader className="p-6 pb-0">
             <div className="flex items-center justify-between">
               <DialogTitle>Ajustar Imagem</DialogTitle>
-              <div className="flex gap-2 mr-6">
+              <div className="flex flex-wrap gap-2 mr-6">
                 <Button 
-                  variant={aspect === undefined ? "default" : "outline"} 
+                  variant={aspect === 0.8 ? "default" : "outline"} 
                   size="sm" 
-                  onClick={() => setAspect(undefined)}
+                  onClick={() => setAspect(0.8)}
                   className="h-8 text-xs"
                 >
-                  Livre
+                  1080x1350 (4:5)
                 </Button>
                 <Button 
                   variant={aspect === 1 ? "default" : "outline"} 
@@ -292,14 +299,6 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
                   1:1
                 </Button>
                 <Button 
-                  variant={aspect === 4/3 ? "default" : "outline"} 
-                  size="sm" 
-                  onClick={() => setAspect(4/3)}
-                  className="h-8 text-xs"
-                >
-                  4:3
-                </Button>
-                <Button 
                   variant={aspect === 16/9 ? "default" : "outline"} 
                   size="sm" 
                   onClick={() => setAspect(16/9)}
@@ -307,23 +306,54 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
                 >
                   16:9
                 </Button>
+                <Button 
+                  variant={aspect === undefined ? "default" : "outline"} 
+                  size="sm" 
+                  onClick={() => setAspect(undefined)}
+                  className="h-8 text-xs"
+                >
+                  Livre
+                </Button>
               </div>
             </div>
           </DialogHeader>
           
           <div className="p-6 space-y-6">
-            <div className="relative w-full h-[400px] bg-black rounded-md overflow-hidden">
-              {selectedImage && (
-                <Cropper
-                  image={selectedImage}
-                  crop={crop}
-                  zoom={zoom}
-                  aspect={aspect}
-                  onCropChange={setCrop}
-                  onCropComplete={onCropComplete}
-                  onZoomChange={setZoom}
-                />
-              )}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div className="md:col-span-3 relative w-full h-[400px] bg-black rounded-md overflow-hidden border border-primary/10">
+                {selectedImage && (
+                  <Cropper
+                    image={selectedImage}
+                    crop={crop}
+                    zoom={zoom}
+                    aspect={aspect}
+                    onCropChange={setCrop}
+                    onCropComplete={onCropComplete}
+                    onZoomChange={setZoom}
+                    onMediaLoaded={(mediaSize) => setImageSize(mediaSize)}
+                  />
+                )}
+              </div>
+              
+              <div className="hidden md:flex flex-col gap-4">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Pré-visualização</h4>
+                <div className="relative border border-primary/20 rounded-md overflow-hidden bg-muted/20 aspect-[4/5] w-full max-w-[150px] mx-auto">
+                  {selectedImage && croppedAreaPixels && (
+                    <div
+                      className="absolute inset-0"
+                      style={{
+                        backgroundImage: `url(${selectedImage})`,
+                        backgroundSize: `${(imageSize.width / croppedAreaPixels.width) * 100}% ${(imageSize.height / croppedAreaPixels.height) * 100}%`,
+                        backgroundPosition: `${(croppedAreaPixels.x / (imageSize.width - croppedAreaPixels.width)) * 100}% ${(croppedAreaPixels.y / (imageSize.height - croppedAreaPixels.height)) * 100}%`,
+                        backgroundRepeat: 'no-repeat',
+                      }}
+                    />
+                  )}
+                </div>
+                <p className="text-[10px] text-center text-muted-foreground leading-tight">
+                  Como a imagem será exibida após o corte.
+                </p>
+              </div>
             </div>
 
             <div className="space-y-3">
