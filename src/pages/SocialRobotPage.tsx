@@ -446,7 +446,11 @@ const SocialRobotPage = () => {
               setActiveTab(tab.id as any);
               if (tab.id === 'telemetry') fetchLogs();
               if (tab.id === 'metrics') fetchMetrics();
-              if (tab.id === 'growth') fetchInvitedFollowers();
+              if (tab.id === 'growth') {
+                fetchInvitedFollowers();
+                fetchActiveFollows();
+              }
+              if (tab.id === 'settings') fetchSettings();
             }}
             className={cn(
               "text-[9px] uppercase font-black tracking-[0.1em] h-7 px-3 rounded-none transition-all relative overflow-hidden group border border-transparent",
