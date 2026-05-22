@@ -276,7 +276,7 @@ const Dashboard = () => {
     color: 'hsl(210, 20%, 98%)',
   };
 
-  if (loading) return <Preloader />;
+  if (loading) return <Preloader message="carregando dados aguarde" />;
 
   return (
     <div className="space-y-6 lg:space-y-8 pb-10">

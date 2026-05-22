@@ -31,7 +31,7 @@ const MetaPage = () => {
     fetchMetrics();
   }, [user]);
 
-  if (loading) return <Preloader message="Sincronizando com Meta (Facebook/Instagram)..." />;
+  if (loading) return <Preloader message="carregando dados aguarde" />;
 
   return (
     <div className="space-y-6 animate-fade-in">
