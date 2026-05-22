@@ -91,6 +91,32 @@ serve(async (req) => {
           });
         }
 
+        // Processar crescimento social (Follow/Unfollow)
+        const growthResp = await supabase.functions.invoke("handle-social-growth", {
+          body: { userId: user.user_id }
+        });
+
+        if (growthResp.error) {
+          await supabase.from("automation_logs").insert({
+            user_id: user.user_id,
+            level: 'warn',
+            module: 'growth',
+            message: `Aviso no ciclo de crescimento: ${growthResp.error.message || 'Erro desconhecido'}`,
+            details: growthResp.error
+          });
+        } else {
+          const { followed, unfollowed } = growthResp.data || {};
+          if (followed > 0 || unfollowed > 0) {
+            await supabase.from("automation_logs").insert({
+              user_id: user.user_id,
+              level: 'info',
+              module: 'growth',
+              message: `Ciclo de crescimento concluído: ${followed} seguidos, ${unfollowed} deixados de seguir.`,
+              details: growthResp.data
+            });
+          }
+        }
+
       } catch (userErr: any) {
         console.error(`[automation-engine] Erro no usuário ${user.user_id}:`, userErr);
         await supabase.from("automation_logs").insert({
