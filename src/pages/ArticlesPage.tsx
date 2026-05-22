@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import Preloader from '@/components/Preloader';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
@@ -440,8 +441,9 @@ const ArticlesPage = () => {
     failed: 'Falhou',
   };
 
-  if (loading && articles.length === 0) {
-    return (
+  if (loading && articles.length === 0) return <Preloader message="Carregando biblioteca de artigos..." />;
+
+  return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
         <p className="text-sm text-muted-foreground">Carregando seus artigos...</p>
