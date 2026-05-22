@@ -277,6 +277,8 @@ const SocialRobotPage = () => {
     };
   }, [user]);
 
+  if (loading) return <Preloader message="Iniciando Robô Social..." />;
+
   return (
     <div className="space-y-6 lg:space-y-8 animate-float-up">
       {/* Header Panel */}
