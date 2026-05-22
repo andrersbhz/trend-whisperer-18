@@ -24,10 +24,18 @@ const SocialRobotPage = () => {
   const [automationEnabled, setAutomationEnabled] = useState(false);
   const [followerGrowthMode, setFollowerGrowthMode] = useState(true); // Default to true as requested
   const [loadingSettings, setLoadingSettings] = useState(true);
+  const [growthSettings, setGrowthSettings] = useState({
+    followsMin: 2,
+    followsMax: 8,
+    durationMin: 6,
+    durationMax: 10,
+    humanLike: true
+  });
   const [logs, setLogs] = useState<any[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
-  const [activeTab, setActiveTab] = useState<'interactions' | 'metrics' | 'telemetry' | 'growth'>('telemetry');
+  const [activeTab, setActiveTab] = useState<'interactions' | 'metrics' | 'telemetry' | 'growth' | 'settings'>('telemetry');
   const [invitedFollowers, setInvitedFollowers] = useState<any[]>([]);
+  const [activeFollows, setActiveFollows] = useState<any[]>([]);
   const [loadingInvited, setLoadingInvited] = useState(false);
   const [compactMode, setCompactMode] = useState(true);
   const [dateFilter, setDateFilter] = useState<{start: string, end: string}>({
