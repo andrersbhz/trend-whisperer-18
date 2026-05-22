@@ -80,24 +80,78 @@ const SocialRobotPage = () => {
     }
   };
 
+  const fetchActiveFollows = async () => {
+    if (!user) return;
+    try {
+      const { data } = await supabase
+        .from('social_follows')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'following')
+        .order('followed_at', { ascending: false });
+      setActiveFollows(data || []);
+    } catch (error) {
+      console.error('Error fetching active follows:', error);
+    }
+  };
+
   const fetchSettings = async () => {
     if (!user) return;
     try {
       const { data, error } = await supabase
         .from('user_settings')
-        .select('automation_enabled, follower_growth_mode')
+        .select(`
+          automation_enabled, 
+          follower_growth_mode,
+          instagram_follows_per_day_min,
+          instagram_follows_per_day_max,
+          instagram_follow_duration_min,
+          instagram_follow_duration_max,
+          instagram_automation_human_like
+        `)
         .eq('user_id', user.id)
         .maybeSingle();
       
       if (data) {
         setAutomationEnabled(!!data.automation_enabled);
-        // If it's the first time and data is null or undefined, it will keep the default 'true'
         if (data.follower_growth_mode !== null) {
           setFollowerGrowthMode(!!data.follower_growth_mode);
         }
+        setGrowthSettings({
+          followsMin: data.instagram_follows_per_day_min || 2,
+          followsMax: data.instagram_follows_per_day_max || 8,
+          durationMin: data.instagram_follow_duration_min || 6,
+          durationMax: data.instagram_follow_duration_max || 10,
+          humanLike: data.instagram_automation_human_like !== false
+        });
       }
     } catch (error) {
       console.error('Error fetching settings:', error);
+    } finally {
+      setLoadingSettings(false);
+    }
+  };
+
+  const saveGrowthSettings = async () => {
+    if (!user) return;
+    setLoadingSettings(true);
+    try {
+      const { error } = await supabase
+        .from('user_settings')
+        .update({
+          instagram_follows_per_day_min: growthSettings.followsMin,
+          instagram_follows_per_day_max: growthSettings.followsMax,
+          instagram_follow_duration_min: growthSettings.durationMin,
+          instagram_follow_duration_max: growthSettings.durationMax,
+          instagram_automation_human_like: growthSettings.humanLike
+        })
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      
+      toast({ title: 'Configurações Salvas', description: 'O robô foi atualizado com as novas diretrizes.' });
+    } catch (error) {
+      toast({ title: 'Erro', description: getErrorMessage(error), variant: 'destructive' });
     } finally {
       setLoadingSettings(false);
     }
