@@ -642,7 +642,9 @@ const SocialRobotPage = () => {
               </div>
             </CardContent>
           </Card>
-        ) : activeTab === 'metrics' ? (
+        )}
+
+        {activeTab === 'metrics' && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {loadingMetrics ? (
               <Card className="col-span-full p-32 flex flex-col items-center gap-6 glass-card border-primary/20 shadow-neon-lilac/20">
