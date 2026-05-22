@@ -284,6 +284,7 @@ const SocialRobotPage = () => {
     fetchLogs();
     fetchMetrics();
     fetchInvitedFollowers();
+    fetchActiveFollows();
 
     const logsChannel = supabase
       .channel('realtime-robot-data')
