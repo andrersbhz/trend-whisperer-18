@@ -443,7 +443,6 @@ const ArticlesPage = () => {
 
   if (loading && articles.length === 0) return <Preloader message="Carregando biblioteca de artigos..." />;
 
-  return (
 
   if (errorState) {
     return (
