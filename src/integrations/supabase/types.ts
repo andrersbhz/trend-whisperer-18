@@ -292,6 +292,48 @@ export type Database = {
           },
         ]
       }
+      social_follows: {
+        Row: {
+          created_at: string
+          followed_at: string
+          id: string
+          platform: string
+          status: string
+          target_avatar: string | null
+          target_external_id: string
+          target_username: string | null
+          unfollowed_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          followed_at?: string
+          id?: string
+          platform?: string
+          status?: string
+          target_avatar?: string | null
+          target_external_id: string
+          target_username?: string | null
+          unfollowed_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          followed_at?: string
+          id?: string
+          platform?: string
+          status?: string
+          target_avatar?: string | null
+          target_external_id?: string
+          target_username?: string | null
+          unfollowed_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       social_interactions: {
         Row: {
           ai_response: string | null
@@ -424,6 +466,11 @@ export type Database = {
           image_prompt: string | null
           image_prompt_template: string | null
           instagram_account_id: string | null
+          instagram_automation_human_like: boolean | null
+          instagram_follow_duration_max: number | null
+          instagram_follow_duration_min: number | null
+          instagram_follows_per_day_max: number | null
+          instagram_follows_per_day_min: number | null
           interaction_mode: string | null
           last_trends_fetch: string | null
           linkedin_access_token: string | null
@@ -464,6 +511,11 @@ export type Database = {
           image_prompt?: string | null
           image_prompt_template?: string | null
           instagram_account_id?: string | null
+          instagram_automation_human_like?: boolean | null
+          instagram_follow_duration_max?: number | null
+          instagram_follow_duration_min?: number | null
+          instagram_follows_per_day_max?: number | null
+          instagram_follows_per_day_min?: number | null
           interaction_mode?: string | null
           last_trends_fetch?: string | null
           linkedin_access_token?: string | null
@@ -504,6 +556,11 @@ export type Database = {
           image_prompt?: string | null
           image_prompt_template?: string | null
           instagram_account_id?: string | null
+          instagram_automation_human_like?: boolean | null
+          instagram_follow_duration_max?: number | null
+          instagram_follow_duration_min?: number | null
+          instagram_follows_per_day_max?: number | null
+          instagram_follows_per_day_min?: number | null
           interaction_mode?: string | null
           last_trends_fetch?: string | null
           linkedin_access_token?: string | null
