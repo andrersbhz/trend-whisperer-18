@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
+import Preloader from '@/components/Preloader';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
