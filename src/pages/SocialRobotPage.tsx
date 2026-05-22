@@ -1066,6 +1066,135 @@ const SocialRobotPage = () => {
               </div>
             </CardContent>
           </Card>
+        ) : (
+          <Card className="glass-card border-[hsl(200_100%_60%)]/20 overflow-hidden shadow-elevated">
+            <CardHeader className="p-6 border-b border-white/5 bg-black/40">
+              <div className="flex items-center gap-4">
+                <div className="p-2 bg-primary/10 border border-primary/20">
+                  <ShieldCheck className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl font-black uppercase tracking-tighter text-primary">Diretrizes de Operação</CardTitle>
+                  <CardDescription className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Configuração Neural do Robô Social</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="p-8 space-y-12">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                <div className="space-y-8">
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center mb-6">
+                      <Label className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
+                        <UserPlus className="h-4 w-4 text-primary" /> Seguir por Dia (Intervalo)
+                      </Label>
+                      <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 font-black">
+                        {growthSettings.followsMin} - {growthSettings.followsMax} PESSOAS
+                      </Badge>
+                    </div>
+                    <div className="flex gap-4 items-center">
+                      <div className="flex-1 space-y-2">
+                        <span className="text-[10px] text-muted-foreground uppercase font-black">Mínimo</span>
+                        <Input 
+                          type="number" 
+                          value={growthSettings.followsMin}
+                          onChange={(e) => setGrowthSettings({...growthSettings, followsMin: parseInt(e.target.value)})}
+                          className="bg-black/40 border-primary/20 text-center font-black"
+                        />
+                      </div>
+                      <div className="flex-1 space-y-2">
+                        <span className="text-[10px] text-muted-foreground uppercase font-black">Máximo</span>
+                        <Input 
+                          type="number" 
+                          value={growthSettings.followsMax}
+                          onChange={(e) => setGrowthSettings({...growthSettings, followsMax: parseInt(e.target.value)})}
+                          className="bg-black/40 border-primary/20 text-center font-black"
+                        />
+                      </div>
+                    </div>
+                    <Slider 
+                      value={[growthSettings.followsMin, growthSettings.followsMax]} 
+                      min={0} 
+                      max={50} 
+                      step={1}
+                      onValueChange={([min, max]) => setGrowthSettings({...growthSettings, followsMin: min, followsMax: max})}
+                      className="mt-6"
+                    />
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center mb-6">
+                      <Label className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
+                        <History className="h-4 w-4 text-primary" /> Tempo de Permanência
+                      </Label>
+                      <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 font-black">
+                        {growthSettings.durationMin} - {growthSettings.durationMax} DIAS
+                      </Badge>
+                    </div>
+                    <div className="flex gap-4 items-center">
+                      <div className="flex-1 space-y-2">
+                        <span className="text-[10px] text-muted-foreground uppercase font-black">Mínimo</span>
+                        <Input 
+                          type="number" 
+                          value={growthSettings.durationMin}
+                          onChange={(e) => setGrowthSettings({...growthSettings, durationMin: parseInt(e.target.value)})}
+                          className="bg-black/40 border-primary/20 text-center font-black"
+                        />
+                      </div>
+                      <div className="flex-1 space-y-2">
+                        <span className="text-[10px] text-muted-foreground uppercase font-black">Máximo</span>
+                        <Input 
+                          type="number" 
+                          value={growthSettings.durationMax}
+                          onChange={(e) => setGrowthSettings({...growthSettings, durationMax: parseInt(e.target.value)})}
+                          className="bg-black/40 border-primary/20 text-center font-black"
+                        />
+                      </div>
+                    </div>
+                    <Slider 
+                      value={[growthSettings.durationMin, growthSettings.durationMax]} 
+                      min={1} 
+                      max={30} 
+                      step={1}
+                      onValueChange={([min, max]) => setGrowthSettings({...growthSettings, durationMin: min, durationMax: max})}
+                      className="mt-6"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-8 bg-primary/5 p-8 border border-primary/10">
+                  <div className="flex items-center justify-between p-4 border border-primary/20 bg-black/40">
+                    <div className="space-y-1">
+                      <Label className="text-xs font-black uppercase tracking-widest text-primary">Interação Humana A3</Label>
+                      <p className="text-[9px] text-muted-foreground uppercase font-bold">Simular comportamento não-linear</p>
+                    </div>
+                    <Switch 
+                      checked={growthSettings.humanLike}
+                      onCheckedChange={(checked) => setGrowthSettings({...growthSettings, humanLike: checked})}
+                    />
+                  </div>
+
+                  <div className="p-4 border border-warning/20 bg-warning/5 space-y-3">
+                    <div className="flex items-center gap-2 text-warning">
+                      <AlertCircle className="h-4 w-4" />
+                      <span className="text-[10px] font-black uppercase tracking-widest">Protocolo de Segurança</span>
+                    </div>
+                    <p className="text-[9px] text-muted-foreground uppercase font-bold leading-relaxed">
+                      O sistema A3 ajusta automaticamente a velocidade de interação para evitar bloqueios das plataformas Meta/Instagram. Recomenda-se manter o modo Humano ativado.
+                    </p>
+                  </div>
+
+                  <Button 
+                    className="w-full bg-primary text-black font-black uppercase tracking-widest h-12 shadow-neon-lilac hover:scale-[1.02] active:scale-95 transition-all"
+                    onClick={saveGrowthSettings}
+                    disabled={loadingSettings}
+                  >
+                    {loadingSettings ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+                    Atualizar Diretrizes do Kernel
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         )}
       </div>
     </div>
