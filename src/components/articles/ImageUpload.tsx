@@ -347,8 +347,8 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
                       className="absolute inset-0"
                       style={{
                         backgroundImage: `url(${selectedImage})`,
-                        backgroundSize: `${(imageSize.width / croppedAreaPixels.width) * 100}% ${(imageSize.height / croppedAreaPixels.height) * 100}%`,
-                        backgroundPosition: `${(croppedAreaPixels.x / (imageSize.width - croppedAreaPixels.width)) * 100}% ${(croppedAreaPixels.y / (imageSize.height - croppedAreaPixels.height)) * 100}%`,
+                        backgroundSize: `${(imageSize.width / (croppedAreaPixels.width || 1)) * 100}% ${(imageSize.height / (croppedAreaPixels.height || 1)) * 100}%`,
+                        backgroundPosition: `${(croppedAreaPixels.x / (Math.max(1, imageSize.width - croppedAreaPixels.width))) * 100}% ${(croppedAreaPixels.y / (Math.max(1, imageSize.height - croppedAreaPixels.height))) * 100}%`,
                         backgroundRepeat: 'no-repeat',
                       }}
                     />
