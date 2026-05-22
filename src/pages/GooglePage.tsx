@@ -45,7 +45,7 @@ const GooglePage = () => {
     checkConnection();
   }, [user]);
 
-  if (loading) return <Preloader message="Carregando dados do Google..." />;
+  if (loading) return <Preloader message="carregando dados aguarde" />;
 
   return (
     <div className="space-y-6 animate-fade-in">
