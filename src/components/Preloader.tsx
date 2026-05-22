@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 
-const Preloader = ({ message = "Carregando dados, aguarde..." }: { message?: string }) => {
+const Preloader = ({ message = "carregando dados aguarde" }: { message?: string }) => {
   return (
     <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background/80 backdrop-blur-md animate-in fade-in duration-500">
       <div className="relative">
