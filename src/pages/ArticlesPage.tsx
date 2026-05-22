@@ -942,7 +942,6 @@ const ArticlesPage = () => {
       />
     </div>
   );
-  );
 };
 
 export default ArticlesPage;
