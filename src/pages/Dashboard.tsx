@@ -80,9 +80,9 @@ const Dashboard = () => {
     categories: true,
     audit: true,
     alternate_stats: true,
-    chart: true,
-  });
-  const [widgetOrder, setWidgetOrder] = useState<string[]>(['stats', 'meta', 'chart', 'alternate_stats', 'robot', 'trends', 'categories', 'audit']);
+      chart: false,
+    });
+    const [widgetOrder, setWidgetOrder] = useState<string[]>(['stats', 'meta', 'alternate_stats', 'robot', 'trends', 'categories', 'audit']);
   const [jetpackSummary, setJetpackSummary] = useState<any>(null);
   const [loadingJetpack, setLoadingJetpack] = useState(false);
 
