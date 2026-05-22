@@ -436,6 +436,7 @@ const SocialRobotPage = () => {
           { id: 'interactions', label: 'Interações', icon: History },
           { id: 'metrics', label: 'Análise', icon: Activity },
           { id: 'growth', label: 'Expansão', icon: TrendingUp },
+          { id: 'settings', label: 'Config', icon: ChevronDownIcon },
         ].map((tab) => (
           <Button 
             key={tab.id}
