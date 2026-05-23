@@ -34,7 +34,11 @@ const BlogHome = () => {
           .order('created_at', { ascending: false })
           .limit(40);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Supabase error:', error);
+          setLoading(false);
+          return;
+        }
 
         if (articles) {
           setFeaturedArticles(articles.slice(0, 5));
@@ -161,7 +165,7 @@ const BlogHome = () => {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {latestArticles.map((article) => (
+              {latestArticles.length > 0 ? latestArticles.map((article) => (
                 <article key={article.id} className="group flex flex-col border-b border-border pb-8 last:border-0 last:pb-0 md:border-b-0 md:pb-0">
                   <div className="relative mb-5 border border-border shadow-sm">
                     <NewsImage 
@@ -188,7 +192,11 @@ const BlogHome = () => {
                     <span>{new Date(article.created_at).toLocaleDateString()}</span>
                   </div>
                 </article>
-              ))}
+              )) : (
+                <div className="col-span-full py-20 text-center border border-dashed border-border text-muted-foreground uppercase font-black tracking-widest text-xs">
+                  Nenhuma notícia encontrada no momento.
+                </div>
+              )}
             </div>
           </div>
 
