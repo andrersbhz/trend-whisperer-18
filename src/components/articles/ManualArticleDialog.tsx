@@ -102,6 +102,7 @@ export const ManualArticleDialog = ({ open, onOpenChange, categories, onSuccess 
         slug: formData.slug || formData.title.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, ''),
         seo_title: formData.seo_title || formData.title,
         scheduled_at: scheduledDate ? new Date(scheduledDate).toISOString() : null,
+        author_id: authorId,
       };
 
       const { data: article, error } = await supabase
