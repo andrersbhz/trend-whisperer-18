@@ -186,7 +186,7 @@ const ArticlesPage = () => {
     setLoadingCategories(true);
     try {
       const { data } = await supabase.from('user_settings').select('categories').eq('user_id', user.id).maybeSingle();
-      setUserCategories(data?.categories || ['esportes', 'politica', 'policia', 'saude', 'celebridades', 'financas']);
+      setUserCategories(data?.categories || ['policia', 'celebridades', 'politica', 'esportes', 'saude', 'financas']);
     } catch (e) {
       console.error('Error fetching categories', e);
     } finally {

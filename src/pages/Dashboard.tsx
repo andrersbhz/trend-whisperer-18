@@ -122,7 +122,7 @@ const Dashboard = () => {
 
       setTrendingList(data_topTrends);
       setAllArticles(articles);
-      setUserCategories(data_settings?.categories || ['esportes', 'politica', 'policia', 'saude', 'celebridades', 'financas']);
+      setUserCategories(data_settings?.categories || ['policia', 'celebridades', 'politica', 'esportes', 'saude', 'financas']);
       if (data_settings?.dashboard_widgets) setWidgets(data_settings.dashboard_widgets as any);
       if (data_settings?.dashboard_order) setWidgetOrder(data_settings.dashboard_order as string[]);
       setLoadingTrends(false);
@@ -136,7 +136,7 @@ const Dashboard = () => {
         failed: articles.filter((a: any) => a.status === 'failed').length,
       });
 
-      const ALL_CATEGORIES = ['esportes', 'politica', 'policia', 'saude', 'celebridades', 'financas'];
+      const ALL_CATEGORIES = ['policia', 'celebridades', 'politica', 'esportes', 'saude', 'financas'];
       const byCat: Record<string, any> = {};
       ALL_CATEGORIES.forEach(cat => byCat[cat] = { total: 0, published: 0, pending: 0, failed: 0 });
       articles.forEach((a: any) => {
@@ -251,7 +251,7 @@ const Dashboard = () => {
   };
 
   const statusColors: Record<string, string> = { draft: 'bg-muted', generating: 'bg-warning/20', ready: 'bg-primary/20', published: 'bg-success/20', failed: 'bg-destructive/20' };
-  const categoryLabels: Record<string, string> = { esportes: '⚽ Esportes', politica: '🏛️ Política', policia: '🚔 Polícia', saude: '💚 Saúde', celebridades: '⭐ Celebridades', financas: '💰 Finanças' };
+  const categoryLabels: Record<string, string> = { policia: '🚔 Policial', celebridades: '⭐ Famosos', politica: '🏛️ Política', esportes: '⚽ Esportes', saude: '💚 Saúde', financas: '💰 Finanças' };
 
   const statCards = [
     { icon: FileText, label: 'Total de Artigos', value: stats.total, color: 'text-primary', accent: 'from-primary/10', glow: 'neon-border-lilac' },
