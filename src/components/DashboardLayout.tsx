@@ -36,7 +36,7 @@ import SpaceBackground from './SpaceBackground';
 import a3Logo from '@/assets/a3-logo.jpg';
 
 const navItems = [
-  { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
+  { icon: LayoutDashboard, label: 'Dashboard', path: '/admin' },
   { icon: FileText, label: 'Artigos', path: '/articles' },
   { icon: Search, label: 'Google', path: '/google' },
   { icon: Facebook, label: 'Meta', path: '/meta' },
@@ -44,6 +44,7 @@ const navItems = [
   { icon: Bot, label: 'Robô Social', path: '/robot' },
   { icon: Activity, label: 'Analytics', path: '/analytics' },
   { icon: Clock, label: 'Agendamentos', path: '/schedule' },
+  { icon: Newspaper, label: 'Ver Blog', path: '/pt-br' },
   { icon: Settings, label: 'Configurações', path: '/settings' },
 ];
 
@@ -107,7 +108,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
     return () => { document.body.style.overflow = ''; };
   }, [sidebarOpen]);
 
-  const currentLabel = navItems.find((i) => i.path === location.pathname)?.label || 'Dashboard';
+  const currentLabel = navItems.find((i) => i.path === location.pathname || (i.path === '/admin' && location.pathname === '/admin'))?.label || 'Dashboard';
   const userInitial = (user?.email?.[0] || 'U').toUpperCase();
 
   return (
