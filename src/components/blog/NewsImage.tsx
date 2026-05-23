@@ -27,7 +27,7 @@ const NewsImage = ({ src, alt, className, aspectRatio = 'video' }: NewsImageProp
     )}>
       {/* Blurred background for "no crop" effect */}
       <div 
-        className="absolute inset-0 z-0 scale-110 blur-xl opacity-30 grayscale transition-opacity duration-700"
+        className="absolute inset-0 z-0 scale-110 blur-xl opacity-10 grayscale transition-opacity duration-700"
         style={{ 
           backgroundImage: `url(${src})`,
           backgroundSize: 'cover',
