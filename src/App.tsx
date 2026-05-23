@@ -17,6 +17,7 @@ import SocialRobotPage from "@/pages/SocialRobotPage";
 import GooglePage from "@/pages/GooglePage";
 import MetaPage from "@/pages/MetaPage";
 import BlogHome from "@/pages/BlogHome";
+import BlogArticle from "@/pages/BlogArticle";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -50,7 +51,7 @@ const App = () => (
               {/* Public Blog Routes */}
               <Route path="/:lang" element={<BlogHome />} />
               <Route path="/:lang/category/:categoryId" element={<BlogHome />} />
-              <Route path="/:lang/article/:articleId" element={<BlogHome />} />
+              <Route path="/:lang/article/:articleId" element={<BlogArticle />} />
 
               {/* Admin Dashboard Routes (Protected) */}
               <Route path="/auth" element={<AuthRoute />} />
