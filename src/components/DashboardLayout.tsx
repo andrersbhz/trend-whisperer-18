@@ -18,6 +18,7 @@ import {
   Download,
   Search,
   Facebook,
+  User,
 } from 'lucide-react';
 import { getPerformanceLogs, exportLogsToCSV } from '@/lib/performance';
 
