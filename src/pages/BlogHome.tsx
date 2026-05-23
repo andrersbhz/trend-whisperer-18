@@ -27,12 +27,14 @@ const BlogHome = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const { data: articles } = await supabase
+        const { data: articles, error } = await supabase
           .from('articles')
           .select('*')
           .eq('status', 'published')
           .order('created_at', { ascending: false })
           .limit(40);
+
+        if (error) throw error;
 
         if (articles) {
           setFeaturedArticles(articles.slice(0, 5));
