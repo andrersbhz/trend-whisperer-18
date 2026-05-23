@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { useI18n, Language } from '@/hooks/useI18n';
+import { useI18n } from '@/hooks/useI18n';
 import { Search, Menu, X, Globe } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -15,35 +15,41 @@ const BlogHeader = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const categories = [
-    { id: 'esportes', label: { 'pt-br': 'Esportes', 'eng': 'Sports', 'es': 'Deportes' } },
+    { id: 'policia', label: { 'pt-br': 'Policial', 'eng': 'Police', 'es': 'Policía' } },
+    { id: 'celebridades', label: { 'pt-br': 'Famosos', 'eng': 'Celebrities', 'es': 'Famosos' } },
     { id: 'politica', label: { 'pt-br': 'Política', 'eng': 'Politics', 'es': 'Política' } },
+    { id: 'esportes', label: { 'pt-br': 'Esportes', 'eng': 'Sports', 'es': 'Deportes' } },
     { id: 'saude', label: { 'pt-br': 'Saúde', 'eng': 'Health', 'es': 'Salud' } },
-    { id: 'tecnologia', label: { 'pt-br': 'Tecnologia', 'eng': 'Technology', 'es': 'Tecnología' } },
+    { id: 'financas', label: { 'pt-br': 'Finanças', 'eng': 'Finance', 'es': 'Finanzas' } },
   ];
 
   const currentFlag = languages.find(l => l.code === currentLang)?.flag || '🇧🇷';
 
   return (
-    <header className="sticky top-0 z-50 glass border-b border-primary/20 backdrop-blur-xl">
+    <header className="sticky top-0 z-50 bg-background border-b border-border shadow-sm">
+      {/* Top Bar for Ads/Info */}
+      <div className="bg-primary py-1 hidden sm:block">
+        <div className="max-w-7xl mx-auto px-4 text-[10px] font-bold text-white uppercase tracking-widest text-center">
+          Últimas Notícias: A3 PostWP | Inteligência Artificial e Automação de Conteúdo
+        </div>
+      </div>
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16 sm:h-20">
           {/* Logo */}
           <Link to={`/${currentLang}`} className="flex items-center gap-2 group">
-            <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full overflow-hidden border-2 border-primary shadow-[0_0_15px_rgba(0,150,255,0.5)] group-hover:scale-105 transition-transform shrink-0">
-               <div className="w-full h-full bg-gradient-to-br from-primary to-accent" />
-            </div>
-            <span className="font-black text-lg sm:text-xl tracking-tighter uppercase italic text-foreground font-montserrat">
+            <span className="font-black text-2xl sm:text-3xl tracking-tighter uppercase text-foreground font-playfair">
               A3 <span className="text-primary">BLOG</span>
             </span>
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-6">
+          <nav className="hidden xl:flex items-center gap-6">
             {categories.map((cat) => (
               <Link 
                 key={cat.id} 
                 to={`/${currentLang}/category/${cat.id}`}
-                className="text-xs font-bold uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors"
+                className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground hover:text-primary transition-colors"
               >
                 {cat.label[currentLang]}
               </Link>
@@ -58,16 +64,16 @@ const BlogHeader = () => {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="flex items-center gap-2 px-2 h-9">
+                <Button variant="ghost" className="flex items-center gap-2 px-2 h-9 border border-border">
                   <span className="text-lg">{currentFlag}</span>
                   <Globe className="h-4 w-4 text-muted-foreground" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="glass-card">
+              <DropdownMenuContent align="end" className="bg-background border border-border shadow-xl">
                 {languages.map((lang) => (
                   <DropdownMenuItem 
                     key={lang.code}
-                    onClick={() => changeLanguage(lang.code)}
+                    onClick={() => changeLanguage(lang.code as any)}
                     className="flex items-center gap-3 cursor-pointer"
                   >
                     <span className="text-lg">{lang.flag}</span>
@@ -80,7 +86,7 @@ const BlogHeader = () => {
             <Button 
               variant="ghost" 
               size="icon" 
-              className="md:hidden text-muted-foreground h-9 w-9"
+              className="xl:hidden text-muted-foreground h-9 w-9"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
               {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -91,13 +97,13 @@ const BlogHeader = () => {
 
       {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="md:hidden glass border-t border-primary/10 animate-fade-in">
+        <div className="xl:hidden bg-background border-t border-border animate-fade-in shadow-2xl">
           <div className="px-4 pt-2 pb-6 space-y-2">
             {categories.map((cat) => (
               <Link 
                 key={cat.id} 
                 to={`/${currentLang}/category/${cat.id}`}
-                className="block px-3 py-3 text-sm font-bold uppercase tracking-widest text-muted-foreground hover:text-primary border-b border-primary/5"
+                className="block px-3 py-3 text-sm font-bold uppercase tracking-widest text-muted-foreground hover:text-primary border-b border-border/50"
                 onClick={() => setIsMenuOpen(false)}
               >
                 {cat.label[currentLang]}
