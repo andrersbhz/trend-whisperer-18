@@ -4,10 +4,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useI18n } from '@/hooks/useI18n';
 import BlogHeader from '@/components/blog/BlogHeader';
 import { Helmet } from 'react-helmet-async';
-import { Clock, Calendar, Share2, ArrowLeft, MessageSquare } from 'lucide-react';
+import { Clock, Calendar, Share2, ArrowLeft, MessageSquare, User } from 'lucide-react';
 import Preloader from '@/components/Preloader';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const BlogArticle = () => {
   const { articleId } = useParams<{ articleId: string }>();
