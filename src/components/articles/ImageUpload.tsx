@@ -36,6 +36,8 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
   const [isCropDialogOpen, setIsCropDialogOpen] = useState(false);
   const [aspect, setAspect] = useState<number | undefined>(0.8); // Default to 4:5 for Instagram
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
+  const [format, setFormat] = useState<'image/jpeg' | 'image/webp'>('image/webp');
+  const [quality, setQuality] = useState(0.85);
 
   const onCropComplete = useCallback((_croppedArea: any, croppedAreaPixels: any) => {
     setCroppedAreaPixels(croppedAreaPixels);
@@ -74,17 +76,20 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
         croppedAreaPixels,
         0,
         { horizontal: false, vertical: false },
-        aspect === 0.8 ? 1080 : 1080 // Always use 1080 for high quality
+        aspect === 0.8 ? 1080 : 1080, // Always use 1080 for high quality
+        0.15,
+        format,
+        quality
       );
       if (!croppedImageBlob) throw new Error("Erro ao processar imagem");
 
-      const fileExt = 'jpg';
+      const fileExt = format === 'image/webp' ? 'webp' : 'jpg';
       const filePath = `${user.id}/${articleId}/${Math.random()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from('article-images')
         .upload(filePath, croppedImageBlob, {
-          contentType: 'image/jpeg',
+          contentType: format,
           upsert: true
         });
 
@@ -360,19 +365,58 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
               </div>
             </div>
 
-            <div className="space-y-3">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Zoom</span>
-                <span className="font-medium">{Math.round(zoom * 100)}%</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Zoom</span>
+                  <span className="font-medium">{Math.round(zoom * 100)}%</span>
+                </div>
+                <Slider
+                  value={[zoom]}
+                  min={1}
+                  max={3}
+                  step={0.1}
+                  onValueChange={(value) => setZoom(value[0])}
+                  className="w-full"
+                />
               </div>
-              <Slider
-                value={[zoom]}
-                min={1}
-                max={3}
-                step={0.1}
-                onValueChange={(value) => setZoom(value[0])}
-                className="w-full"
-              />
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Qualidade ({format === 'image/webp' ? 'WebP' : 'JPG'})</span>
+                  <span className="font-medium">{Math.round(quality * 100)}%</span>
+                </div>
+                <Slider
+                  value={[quality * 100]}
+                  min={10}
+                  max={100}
+                  step={1}
+                  onValueChange={(value) => setQuality(value[0] / 100)}
+                  className="w-full"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4 border-t border-primary/10 pt-4">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Formato:</span>
+              <div className="flex gap-2">
+                <Button 
+                  variant={format === 'image/webp' ? "default" : "outline"} 
+                  size="sm" 
+                  onClick={() => setFormat('image/webp')}
+                  className="h-7 text-[10px] px-3"
+                >
+                  WEBP (Leve)
+                </Button>
+                <Button 
+                  variant={format === 'image/jpeg' ? "default" : "outline"} 
+                  size="sm" 
+                  onClick={() => setFormat('image/jpeg')}
+                  className="h-7 text-[10px] px-3"
+                >
+                  JPG (Compatível)
+                </Button>
+              </div>
             </div>
           </div>
 

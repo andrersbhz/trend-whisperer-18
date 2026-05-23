@@ -68,7 +68,9 @@ export async function getCroppedImg(
   rotation = 0,
   flip = { horizontal: false, vertical: false },
   targetWidth = 800, // Default target width for 1:1 article images
-  sharpenAmount = 0.15 // Optional sharpen amount (0 to 1)
+  sharpenAmount = 0.15, // Optional sharpen amount (0 to 1)
+  format: 'image/jpeg' | 'image/webp' = 'image/jpeg',
+  quality = 0.92
 ): Promise<Blob | null> {
   const image = await createImage(imageSrc);
   const canvas = document.createElement('canvas');
@@ -137,7 +139,7 @@ export async function getCroppedImg(
     applySharpen(croppedCtx, targetWidth, targetHeight, sharpenAmount);
   }
 
-  // Export as high quality JPEG
+  // Export with specified format and quality
   return new Promise((resolve, reject) => {
     croppedCanvas.toBlob((file) => {
       if (file) {
@@ -145,7 +147,7 @@ export async function getCroppedImg(
       } else {
         reject(new Error('Canvas is empty'));
       }
-    }, 'image/jpeg', 0.95); // Higher quality (95%) for maximum sharpness
+    }, format, quality);
   });
 }
 
