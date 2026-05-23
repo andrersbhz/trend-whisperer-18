@@ -106,6 +106,26 @@ const BlogArticle = () => {
           dangerouslySetInnerHTML={{ __html: article.content }}
         />
 
+        {/* Author Bio Box */}
+        {article.authors && (
+          <div className="mt-16 p-8 border border-border bg-[#fafafa] flex flex-col sm:flex-row gap-6 items-center sm:items-start text-center sm:text-left">
+            <Avatar className="h-20 w-20 rounded-none border border-primary/20 shadow-sm">
+              <AvatarImage src={article.authors.avatar_url} className="object-cover" />
+              <AvatarFallback className="bg-primary/5 text-primary font-black"><User /></AvatarFallback>
+            </Avatar>
+            <div className="flex-1">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary mb-1">Escrito por</p>
+              <h3 className="text-xl font-black uppercase font-playfair mb-2">{article.authors.name}</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed mb-4 italic">
+                {article.authors.bio || `Especialista em ${article.category}, trazendo as últimas atualizações e análises do setor.`}
+              </p>
+              <div className="flex justify-center sm:justify-start gap-4">
+                {/* Social icons if needed */}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Content Ad */}
         <div className="w-full h-32 bg-muted/30 border border-dashed border-border flex items-center justify-center text-[10px] font-bold text-muted-foreground uppercase tracking-widest my-12">
           Publicidade (AdSense)
