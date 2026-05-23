@@ -6,8 +6,8 @@
 
 @layer base {
   :root {
-    --background: 230 25% 3%;
-    --foreground: 210 20% 98%;
+    --background: 0 0% 100%;
+    --foreground: 230 25% 3%;
 
     --card: 230 25% 4%;
     --card-foreground: 210 20% 98%;
@@ -78,7 +78,6 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Inter', system-ui, sans-serif;
-    background: transparent;
     overflow-x: hidden;
   }
 
