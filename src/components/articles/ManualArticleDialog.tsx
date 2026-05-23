@@ -34,6 +34,7 @@ export const ManualArticleDialog = ({ open, onOpenChange, categories, onSuccess 
   const [isPublishingNow, setIsPublishingNow] = useState(false);
   const [scheduledDate, setScheduledDate] = useState<string>('');
   const [manualSlug, setManualSlug] = useState(false);
+  const [authorId, setAuthorId] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
     title: '',
