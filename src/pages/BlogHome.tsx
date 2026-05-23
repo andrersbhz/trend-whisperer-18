@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useI18n } from '@/hooks/useI18n';
+import { useI18n, languages } from '@/hooks/useI18n';
 import BlogHeader from '@/components/blog/BlogHeader';
+import { Helmet } from 'react-helmet-async';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Clock, TrendingUp, ChevronRight } from 'lucide-react';
