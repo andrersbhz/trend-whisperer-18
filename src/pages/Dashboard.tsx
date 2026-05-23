@@ -136,7 +136,7 @@ const Dashboard = () => {
         failed: articles.filter((a: any) => a.status === 'failed').length,
       });
 
-      const ALL_CATEGORIES = ['esportes', 'politica', 'policia', 'saude', 'celebridades', 'financas'];
+      const ALL_CATEGORIES = ['policia', 'celebridades', 'politica', 'esportes', 'saude', 'financas'];
       const byCat: Record<string, any> = {};
       ALL_CATEGORIES.forEach(cat => byCat[cat] = { total: 0, published: 0, pending: 0, failed: 0 });
       articles.forEach((a: any) => {
