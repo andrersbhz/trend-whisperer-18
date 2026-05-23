@@ -251,7 +251,7 @@ const Dashboard = () => {
   };
 
   const statusColors: Record<string, string> = { draft: 'bg-muted', generating: 'bg-warning/20', ready: 'bg-primary/20', published: 'bg-success/20', failed: 'bg-destructive/20' };
-  const categoryLabels: Record<string, string> = { esportes: '⚽ Esportes', politica: '🏛️ Política', policia: '🚔 Polícia', saude: '💚 Saúde', celebridades: '⭐ Celebridades', financas: '💰 Finanças' };
+  const categoryLabels: Record<string, string> = { policia: '🚔 Policial', celebridades: '⭐ Famosos', politica: '🏛️ Política', esportes: '⚽ Esportes', saude: '💚 Saúde', financas: '💰 Finanças' };
 
   const statCards = [
     { icon: FileText, label: 'Total de Artigos', value: stats.total, color: 'text-primary', accent: 'from-primary/10', glow: 'neon-border-lilac' },
