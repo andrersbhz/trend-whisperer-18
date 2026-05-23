@@ -22,7 +22,7 @@ const BlogArticle = () => {
       try {
         const { data, error } = await supabase
           .from('articles')
-          .select('*')
+          .select('*, authors(*)')
           .or(`id.eq.${articleId},slug.eq.${articleId}`)
           .maybeSingle();
 
