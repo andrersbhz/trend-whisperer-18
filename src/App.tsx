@@ -18,6 +18,7 @@ import GooglePage from "@/pages/GooglePage";
 import MetaPage from "@/pages/MetaPage";
 import BlogHome from "@/pages/BlogHome";
 import BlogArticle from "@/pages/BlogArticle";
+import AuthorsPage from "@/pages/AuthorsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
