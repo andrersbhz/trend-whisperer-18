@@ -7,62 +7,48 @@
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 230 25% 3%;
+    --foreground: 0 0% 0%;
 
-    --card: 230 25% 4%;
-    --card-foreground: 210 20% 98%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 0%;
 
-    --popover: 230 25% 4%;
-    --popover-foreground: 210 20% 98%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 0%;
 
     --primary: 210 100% 50%;
-    --primary-foreground: 210 20% 98%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 230 20% 8%;
-    --secondary-foreground: 210 20% 90%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 0%;
 
-    --muted: 230 20% 10%;
-    --muted-foreground: 215 15% 65%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
 
-    --accent: 190 100% 50%;
-    --accent-foreground: 230 25% 4%;
+    --accent: 210 100% 50%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 85% 60%;
-    --destructive-foreground: 210 20% 98%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
 
-    --success: 160 85% 55%;
-    --success-foreground: 230 25% 4%;
-
-    --warning: 45 95% 60%;
-    --warning-foreground: 230 25% 4%;
-
-    --border: 190 100% 50% / 0.2;
-    --input: 230 20% 12%;
+    --border: 0 0% 89.8%;
+    --input: 0 0% 89.8%;
     --ring: 210 100% 50%;
     --radius: 0px;
 
-    --sidebar-background: 230 25% 2%;
-    --sidebar-foreground: 215 15% 70%;
-    --sidebar-primary: 210 100% 50%;
-    --sidebar-primary-foreground: 210 20% 98%;
-    --sidebar-accent: 230 20% 10%;
-    --sidebar-accent-foreground: 210 20% 98%;
-    --sidebar-border: 210 100% 50% / 0.1;
-    --sidebar-ring: 210 100% 50%;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
 
-    --neon-lilac: 210 100% 50%;
-    --neon-pink: 190 100% 50%;
-    --neon-purple: 220 100% 40%;
-    --subtitle-highlight: 190 100% 50%;
-
-    --gradient-primary: linear-gradient(135deg, hsl(210 100% 50%), hsl(190 100% 50%));
-    --gradient-neon: linear-gradient(135deg, hsl(210 100% 50%), hsl(220 100% 45%));
-    --gradient-pink-purple: linear-gradient(135deg, hsl(190 100% 50%), hsl(220 100% 30%));
-    --gradient-success: linear-gradient(135deg, hsl(210 100% 50%), hsl(180 100% 45%));
-    --shadow-card: 0 4px 20px -5px rgba(0, 0, 0, 0.5), 0 0 15px -5px rgba(0, 150, 255, 0.15);
-    --shadow-elevated: 0 20px 40px -10px rgba(0, 0, 0, 0.8), 0 0 30px -10px rgba(0, 150, 255, 0.25);
-    --shadow-neon-lilac: 0 0 20px rgba(0, 150, 255, 0.3);
-    --shadow-neon-pink: 0 0 20px rgba(0, 255, 255, 0.25);
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    /* ... rest of dark mode if needed, but we want a light theme */
   }
 }
 
