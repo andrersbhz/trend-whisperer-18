@@ -52,8 +52,18 @@ const BlogHome = () => {
 
   if (loading) return <Preloader message="Carregando as últimas notícias..." />;
 
+  const siteTitle = currentLang === 'pt-br' ? 'A3 Blog - Notícias e Tendências' : currentLang === 'eng' ? 'A3 Blog - News and Trends' : 'A3 Blog - Noticias y Tendencias';
+  const siteDesc = currentLang === 'pt-br' ? 'Fique por dentro das últimas notícias sobre tecnologia, política e muito mais.' : 'Stay updated with the latest news on technology, politics, and more.';
+
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-primary/30">
+      <Helmet>
+        <title>{siteTitle}</title>
+        <meta name="description" content={siteDesc} />
+        <link rel="alternate" hrefLang="pt-br" href={`${window.location.origin}/pt-br`} />
+        <link rel="alternate" hrefLang="en" href={`${window.location.origin}/eng`} />
+        <link rel="alternate" hrefLang="es" href={`${window.location.origin}/es`} />
+      </Helmet>
       <BlogHeader />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
