@@ -60,6 +60,22 @@ export const ManualArticleDialog = ({ open, onOpenChange, categories, onSuccess 
     }
   }, [formData.title, manualSlug]);
 
+  useEffect(() => {
+    const fetchAuthorForCategory = async () => {
+      if (!formData.category || !user) return;
+      const { data } = await supabase
+        .from('authors')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('category', formData.category)
+        .maybeSingle();
+      
+      if (data) setAuthorId(data.id);
+      else setAuthorId(null);
+    };
+    fetchAuthorForCategory();
+  }, [formData.category, user]);
+
   const handleSave = async (publishImmediately = false) => {
     if (!user) return;
     
