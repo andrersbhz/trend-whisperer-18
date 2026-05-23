@@ -38,7 +38,7 @@ const BlogHeader = () => {
         <div className="flex justify-between items-center h-16 sm:h-20">
           {/* Logo */}
           <Link to={`/${currentLang}`} className="flex items-center gap-2 group">
-            <span className="font-black text-2xl sm:text-3xl tracking-tighter uppercase text-foreground font-playfair">
+            <span className="font-black text-2xl sm:text-3xl tracking-tighter uppercase text-foreground">
               A3 <span className="text-primary">BLOG</span>
             </span>
           </Link>

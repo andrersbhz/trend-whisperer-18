@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useI18n } from '@/hooks/useI18n';
 import BlogHeader from '@/components/blog/BlogHeader';
+import NewsImage from '@/components/blog/NewsImage';
 import { Helmet } from 'react-helmet-async';
 import { Clock, Calendar, Share2, ArrowLeft, MessageSquare, User } from 'lucide-react';
 import Preloader from '@/components/Preloader';
@@ -69,7 +70,7 @@ const BlogArticle = () => {
           <Badge className="mb-6 bg-primary text-white border-none rounded-none text-[10px] uppercase font-black tracking-[0.2em] px-4 py-1 mx-auto">
             {article.category}
           </Badge>
-          <h1 className="text-3xl sm:text-5xl md:text-6xl font-black leading-[1.1] mb-8 font-playfair tracking-tight">
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-black leading-[1.1] mb-8 tracking-tighter">
             {article.title}
           </h1>
           
@@ -87,11 +88,11 @@ const BlogArticle = () => {
         </header>
 
         {article.featured_image_url && (
-          <div className="relative aspect-[16/9] mb-10 overflow-hidden border border-border shadow-sm">
-            <img 
+          <div className="relative mb-12 border border-border shadow-md">
+            <NewsImage 
               src={article.featured_image_url} 
               alt={article.title}
-              className="w-full h-full object-cover"
+              aspectRatio="hero"
             />
           </div>
         )}
@@ -115,7 +116,7 @@ const BlogArticle = () => {
             </Avatar>
             <div className="flex-1">
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary mb-1">Escrito por</p>
-              <h3 className="text-xl font-black uppercase font-playfair mb-2">{article.authors.name}</h3>
+              <h3 className="text-xl font-black uppercase mb-2">{article.authors.name}</h3>
               <p className="text-sm text-muted-foreground leading-relaxed mb-4 italic">
                 {article.authors.bio || `Especialista em ${article.category}, trazendo as últimas atualizações e análises do setor.`}
               </p>
@@ -133,7 +134,7 @@ const BlogArticle = () => {
         
         <footer className="mt-20 pt-12 border-t border-border">
           <div className="bg-[#f8f8f8] border border-border p-8 sm:p-12 text-center">
-            <h3 className="text-2xl font-black uppercase mb-4 font-playfair">Fique por dentro das novidades</h3>
+            <h3 className="text-2xl font-black uppercase mb-4">Fique por dentro das novidades</h3>
             <p className="text-muted-foreground mb-8 text-sm max-w-lg mx-auto uppercase tracking-wider font-bold">
               Inscreva-se na nossa newsletter e não perca nada.
             </p>

@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useI18n, languages } from '@/hooks/useI18n';
 import BlogHeader from '@/components/blog/BlogHeader';
+import NewsImage from '@/components/blog/NewsImage';
 import { Helmet } from 'react-helmet-async';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Clock, TrendingUp, ChevronRight, Newspaper, ArrowRight } from 'lucide-react';
+import { Clock, TrendingUp, ChevronRight, Newspaper, ArrowRight, Share2, Facebook, Instagram, Twitter } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Preloader from '@/components/Preloader';
 
@@ -83,29 +84,29 @@ const BlogHome = () => {
             {/* Main Story */}
             {featuredArticles[0] && (
               <div className="lg:col-span-7 group">
-                <div className="relative aspect-[16/10] overflow-hidden mb-4 shadow-sm border border-border">
-                  <img 
+                <div className="relative mb-6 shadow-md border border-border group-hover:border-primary/30 transition-colors">
+                  <NewsImage 
                     src={featuredArticles[0].featured_image_url || 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d'} 
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                     alt={featuredArticles[0].title}
+                    aspectRatio="hero"
                   />
-                  <div className="absolute top-4 left-4">
-                    <Badge className="bg-primary text-white rounded-none border-none uppercase font-bold text-[10px] tracking-widest px-3">
+                  <div className="absolute top-6 left-6 z-30">
+                    <Badge className="bg-primary text-white rounded-none border-none uppercase font-black text-[10px] tracking-widest px-4 py-1.5 shadow-lg">
                       {featuredArticles[0].category}
                     </Badge>
                   </div>
                 </div>
                 <Link to={`/${currentLang}/article/${featuredArticles[0].slug || featuredArticles[0].id}`}>
-                  <h1 className="text-3xl sm:text-4xl font-black mb-3 leading-tight font-playfair group-hover:text-primary transition-colors decoration-primary/30 underline-offset-4 decoration-2">
+                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black mb-4 leading-tight group-hover:text-primary transition-colors tracking-tighter">
                     {featuredArticles[0].title}
                   </h1>
                 </Link>
-                <p className="text-muted-foreground text-sm leading-relaxed line-clamp-2 mb-4">
+                <p className="text-muted-foreground text-base leading-relaxed line-clamp-2 mb-6 font-medium">
                   {featuredArticles[0].meta_description}
                 </p>
-                <div className="flex items-center gap-3 text-[10px] font-bold uppercase text-muted-foreground">
-                  <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> 2 MIN ATRÁS</span>
-                  <span>POR REDAÇÃO A3</span>
+                <div className="flex items-center gap-4 text-[10px] font-black uppercase text-muted-foreground/80 tracking-widest">
+                  <span className="flex items-center gap-1.5 bg-muted px-2 py-1"><Clock className="h-3.5 w-3.5" /> 2 MIN ATRÁS</span>
+                  <span className="border-l border-border pl-4">POR REDAÇÃO A3</span>
                 </div>
               </div>
             )}
@@ -117,20 +118,23 @@ const BlogHome = () => {
                 <h2 className="text-xs font-black uppercase tracking-widest">Mais Lidas</h2>
               </div>
               {featuredArticles.slice(1, 5).map((article, idx) => (
-                <div key={article.id} className="flex gap-4 group items-start pb-4 border-b border-border/50 last:border-0">
-                  <div className="w-24 sm:w-32 aspect-square shrink-0 overflow-hidden border border-border">
-                    <img 
+                <div key={article.id} className="flex gap-5 group items-start pb-6 border-b border-border/50 last:border-0 hover:bg-muted/30 p-2 transition-colors -mx-2">
+                  <div className="w-24 sm:w-36 shrink-0 border border-border">
+                    <NewsImage 
                       src={article.featured_image_url || 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d'} 
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                       alt={article.title}
+                      aspectRatio="square"
                     />
                   </div>
                   <div className="flex-1">
-                    <Badge variant="outline" className="text-[8px] uppercase font-bold tracking-tighter mb-1 rounded-none py-0 px-1.5 border-primary/30 text-primary">
-                      {article.category}
-                    </Badge>
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="h-1 w-6 bg-primary/30" />
+                      <span className="text-[9px] uppercase font-black tracking-widest text-primary">
+                        {article.category}
+                      </span>
+                    </div>
                     <Link to={`/${currentLang}/article/${article.slug || article.id}`}>
-                      <h3 className="text-sm font-bold leading-tight group-hover:text-primary transition-colors line-clamp-3">
+                      <h3 className="text-sm sm:text-base font-black leading-tight group-hover:text-primary transition-colors line-clamp-3 tracking-tight">
                         {article.title}
                       </h3>
                     </Link>
@@ -157,18 +161,21 @@ const BlogHome = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {latestArticles.map((article) => (
                 <article key={article.id} className="group flex flex-col border-b border-border pb-8 last:border-0 last:pb-0 md:border-b-0 md:pb-0">
-                  <div className="relative aspect-video mb-4 overflow-hidden border border-border">
-                    <img 
+                  <div className="relative mb-5 border border-border shadow-sm">
+                    <NewsImage 
                       src={article.featured_image_url || 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d'} 
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       alt={article.title}
+                      aspectRatio="video"
                     />
                   </div>
-                  <Badge variant="outline" className="w-fit mb-2 text-[9px] uppercase font-black tracking-widest rounded-none border-primary/20 text-primary">
-                    {article.category}
-                  </Badge>
+                  <div className="flex items-center gap-3 mb-3">
+                    <Badge variant="outline" className="text-[9px] uppercase font-black tracking-widest rounded-none border-primary/40 text-primary px-2 py-0.5">
+                      {article.category}
+                    </Badge>
+                    <span className="h-[1px] flex-1 bg-border" />
+                  </div>
                   <Link to={`/${currentLang}/article/${article.slug || article.id}`}>
-                    <h3 className="text-lg font-bold leading-tight mb-2 group-hover:text-primary transition-colors font-playfair">
+                    <h3 className="text-xl font-black leading-tight mb-3 group-hover:text-primary transition-colors tracking-tight">
                       {article.title}
                     </h3>
                   </Link>
@@ -222,7 +229,7 @@ const BlogHome = () => {
         {Object.entries(categoriesData).filter(([_, arts]: [any, any]) => arts.length >= 3).slice(0, 4).map(([category, articles]: [string, any], catIdx) => (
           <section key={category} className="mt-20 border-t-4 border-[#1a1a1a] pt-8">
             <div className="flex items-center justify-between mb-8">
-              <h2 className="text-2xl font-black uppercase italic tracking-tighter font-playfair decoration-primary/50 underline-offset-8 underline decoration-4">
+              <h2 className="text-2xl font-black uppercase tracking-tighter border-l-4 border-primary pl-4">
                 {category}
               </h2>
               <Button variant="ghost" size="sm" className="text-[10px] font-black uppercase tracking-[0.2em] group border border-border">
@@ -233,15 +240,15 @@ const BlogHome = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {articles.slice(0, 3).map((article: any) => (
                 <article key={article.id} className="group">
-                  <div className="relative aspect-[16/9] mb-4 overflow-hidden border border-border shadow-sm">
-                    <img 
+                  <div className="relative mb-4 border border-border shadow-sm">
+                    <NewsImage 
                       src={article.featured_image_url || 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d'} 
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       alt={article.title}
+                      aspectRatio="video"
                     />
                   </div>
                   <Link to={`/${currentLang}/article/${article.slug || article.id}`}>
-                    <h3 className="text-base font-bold leading-tight group-hover:text-primary transition-colors line-clamp-2 mb-2 font-playfair">
+                    <h3 className="text-base font-black leading-tight group-hover:text-primary transition-colors line-clamp-2 mb-2 tracking-tight">
                       {article.title}
                     </h3>
                   </Link>
@@ -261,7 +268,7 @@ const BlogHome = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-12 mb-16 border-b border-white/10 pb-12">
             <div className="md:col-span-2 lg:col-span-1">
-              <h2 className="font-black text-2xl tracking-tighter uppercase mb-6 font-playfair">A3 <span className="text-primary">PORTAL</span></h2>
+              <h2 className="font-black text-2xl tracking-tighter uppercase mb-6">A3 <span className="text-primary">PORTAL</span></h2>
               <p className="text-white/60 text-xs leading-relaxed max-w-sm mb-6 uppercase tracking-wider font-bold">
                 O maior portal de inteligência de conteúdo do país. Automação, tendências e jornalismo profissional.
               </p>
