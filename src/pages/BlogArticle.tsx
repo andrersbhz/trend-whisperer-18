@@ -76,7 +76,10 @@ const BlogArticle = () => {
           <div className="flex flex-wrap items-center justify-center gap-6 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground border-y border-border py-6">
             <span className="flex items-center gap-2"><Calendar className="h-4 w-4 text-primary" /> {new Date(article.created_at).toLocaleDateString()}</span>
             <span className="flex items-center gap-2"><Clock className="h-4 w-4 text-primary" /> 6 MIN DE LEITURA</span>
-            <span className="flex items-center gap-2"><MessageSquare className="h-4 w-4 text-primary" /> POR REDAÇÃO A3</span>
+            <span className="flex items-center gap-2">
+              <MessageSquare className="h-4 w-4 text-primary" /> 
+              POR {article.authors?.name ? article.authors.name.toUpperCase() : 'REDAÇÃO A3'}
+            </span>
             <Button variant="outline" size="sm" className="ml-auto text-[10px] font-black uppercase tracking-widest gap-2 rounded-none border-border">
               <Share2 className="h-4 w-4" /> Compartilhar
             </Button>
