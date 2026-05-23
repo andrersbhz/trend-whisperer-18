@@ -97,7 +97,7 @@ const BlogHome = () => {
                   </div>
                 </div>
                 <Link to={`/${currentLang}/article/${featuredArticles[0].slug || featuredArticles[0].id}`}>
-                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black mb-4 leading-tight group-hover:text-primary transition-colors tracking-tighter">
+                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black mb-4 leading-tight group-hover:text-primary transition-colors tracking-tighter font-montserrat">
                     {featuredArticles[0].title}
                   </h1>
                 </Link>
@@ -134,7 +134,7 @@ const BlogHome = () => {
                       </span>
                     </div>
                     <Link to={`/${currentLang}/article/${article.slug || article.id}`}>
-                      <h3 className="text-sm sm:text-base font-black leading-tight group-hover:text-primary transition-colors line-clamp-3 tracking-tight">
+                      <h3 className="text-sm sm:text-base font-black leading-tight group-hover:text-primary transition-colors line-clamp-3 tracking-tight font-montserrat">
                         {article.title}
                       </h3>
                     </Link>
@@ -153,7 +153,7 @@ const BlogHome = () => {
           {/* Main Feed */}
           <div className="lg:col-span-8 space-y-12">
             <div className="flex items-center justify-between border-b-2 border-[#1a1a1a] pb-2 mb-8">
-              <h2 className="text-xl font-black uppercase tracking-tighter flex items-center gap-2">
+              <h2 className="text-xl font-black uppercase tracking-tighter flex items-center gap-2 font-montserrat">
                 <Newspaper className="h-5 w-5 text-primary" /> Últimas Notícias
               </h2>
             </div>
@@ -175,7 +175,7 @@ const BlogHome = () => {
                     <span className="h-[1px] flex-1 bg-border" />
                   </div>
                   <Link to={`/${currentLang}/article/${article.slug || article.id}`}>
-                    <h3 className="text-xl font-black leading-tight mb-3 group-hover:text-primary transition-colors tracking-tight">
+                    <h3 className="text-xl font-black leading-tight mb-3 group-hover:text-primary transition-colors tracking-tight font-montserrat">
                       {article.title}
                     </h3>
                   </Link>
@@ -226,10 +226,10 @@ const BlogHome = () => {
         </div>
 
         {/* Dynamic Category Blocks */}
-        {Object.entries(categoriesData).filter(([_, arts]: [any, any]) => arts.length >= 3).slice(0, 4).map(([category, articles]: [string, any], catIdx) => (
+        {Object.entries(categoriesData).filter(([_, arts]: [any, any]) => arts.length >= 1).map(([category, articles]: [string, any], catIdx) => (
           <section key={category} className="mt-20 border-t-4 border-[#1a1a1a] pt-8">
             <div className="flex items-center justify-between mb-8">
-              <h2 className="text-2xl font-black uppercase tracking-tighter border-l-4 border-primary pl-4">
+              <h2 className="text-2xl font-black uppercase tracking-tighter border-l-4 border-primary pl-4 font-montserrat">
                 {category}
               </h2>
               <Button variant="ghost" size="sm" className="text-[10px] font-black uppercase tracking-[0.2em] group border border-border">
@@ -248,7 +248,7 @@ const BlogHome = () => {
                     />
                   </div>
                   <Link to={`/${currentLang}/article/${article.slug || article.id}`}>
-                    <h3 className="text-base font-black leading-tight group-hover:text-primary transition-colors line-clamp-2 mb-2 tracking-tight">
+                    <h3 className="text-base font-black leading-tight group-hover:text-primary transition-colors line-clamp-2 mb-2 tracking-tight font-montserrat">
                       {article.title}
                     </h3>
                   </Link>
