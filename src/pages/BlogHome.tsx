@@ -63,7 +63,7 @@ const BlogHome = () => {
   const siteDesc = 'O portal de notícias mais completo com inteligência artificial. Fique por dentro de política, economia, famosos e muito mais.';
 
   return (
-    <div className="min-h-screen bg-[#fcfcfc] text-[#1a1a1a] selection:bg-primary/20 font-sans">
+    <div className="min-h-screen bg-[#fcfcfc] text-[#1a1a1a] selection:bg-primary/20 font-sans antialiased">
       <Helmet>
         <title>{siteTitle}</title>
         <meta name="description" content={siteDesc} />
