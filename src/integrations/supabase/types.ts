@@ -32,6 +32,7 @@ export type Database = {
       articles: {
         Row: {
           ai_provider: string | null
+          author_id: string | null
           category: string
           content: string | null
           created_at: string
@@ -64,6 +65,7 @@ export type Database = {
         }
         Insert: {
           ai_provider?: string | null
+          author_id?: string | null
           category: string
           content?: string | null
           created_at?: string
@@ -96,6 +98,7 @@ export type Database = {
         }
         Update: {
           ai_provider?: string | null
+          author_id?: string | null
           category?: string
           content?: string | null
           created_at?: string
@@ -126,7 +129,15 @@ export type Database = {
           visual_elements?: Json | null
           wordpress_post_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "articles_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "authors"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       audit_logs: {
         Row: {
@@ -148,6 +159,42 @@ export type Database = {
           created_at?: string
           details?: Json | null
           id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      authors: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          category: string | null
+          created_at: string
+          id: string
+          name: string
+          role: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          category?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          role?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          category?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          role?: string | null
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
