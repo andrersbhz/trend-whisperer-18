@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useI18n } from '@/hooks/useI18n';
 import BlogHeader from '@/components/blog/BlogHeader';
+import NewsImage from '@/components/blog/NewsImage';
 import { Helmet } from 'react-helmet-async';
 import { Clock, Calendar, Share2, ArrowLeft, MessageSquare, User } from 'lucide-react';
 import Preloader from '@/components/Preloader';
@@ -20,7 +21,7 @@ const BlogArticle = () => {
     const fetchArticle = async () => {
       setLoading(true);
       try {
-        const { data, error } = await supabase
+        const { data } = await supabase
           .from('articles')
           .select('*, authors(*)')
           .or(`id.eq.${articleId},slug.eq.${articleId}`)
@@ -41,12 +42,11 @@ const BlogArticle = () => {
   if (!article) return <div className="min-h-screen flex items-center justify-center">Artigo não encontrado.</div>;
 
   return (
-    <div className="min-h-screen bg-white text-[#1a1a1a] selection:bg-primary/30">
+    <div className="min-h-screen bg-white text-[#1a1a1a] selection:bg-primary/30 font-sans">
       <Helmet>
         <title>{article.seo_title || article.title} | A3 Portal</title>
         <meta name="description" content={article.meta_description} />
         {article.seo_keyword && <meta name="keywords" content={article.seo_keyword} />}
-        {/* Open Graph Tags */}
         <meta property="og:title" content={article.title} />
         <meta property="og:description" content={article.meta_description} />
         <meta property="og:image" content={article.featured_image_url} />
@@ -56,7 +56,7 @@ const BlogArticle = () => {
       <BlogHeader />
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 animate-fade-in">
-        <Link to={`/${currentLang}`} className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-primary mb-10 hover:translate-x-[-4px] transition-transform">
+        <Link to={`/${currentLang}`} className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary mb-10 hover:translate-x-[-4px] transition-transform">
           <ArrowLeft className="h-4 w-4" /> Início
         </Link>
 
@@ -69,12 +69,12 @@ const BlogArticle = () => {
           <Badge className="mb-6 bg-primary text-white border-none rounded-none text-[10px] uppercase font-black tracking-[0.2em] px-4 py-1 mx-auto">
             {article.category}
           </Badge>
-          <h1 className="text-3xl sm:text-5xl md:text-6xl font-black leading-[1.1] mb-8 font-playfair tracking-tight">
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-black leading-[1.1] mb-8 tracking-tighter">
             {article.title}
           </h1>
           
-          <div className="flex flex-wrap items-center justify-center gap-6 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground border-y border-border py-6">
-            <span className="flex items-center gap-2"><Calendar className="h-4 w-4 text-primary" /> {new Date(article.created_at).toLocaleDateString()}</span>
+          <div className="flex flex-wrap items-center justify-center gap-6 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground border-y border-border py-6">
+            <span className="flex items-center gap-2 bg-muted px-2 py-1"><Calendar className="h-4 w-4 text-primary" /> {new Date(article.created_at).toLocaleDateString()}</span>
             <span className="flex items-center gap-2"><Clock className="h-4 w-4 text-primary" /> 6 MIN DE LEITURA</span>
             <span className="flex items-center gap-2">
               <MessageSquare className="h-4 w-4 text-primary" /> 
@@ -87,22 +87,22 @@ const BlogArticle = () => {
         </header>
 
         {article.featured_image_url && (
-          <div className="relative aspect-[16/9] mb-10 overflow-hidden border border-border shadow-sm">
-            <img 
+          <div className="relative mb-12 border border-border shadow-md">
+            <NewsImage 
               src={article.featured_image_url} 
               alt={article.title}
-              className="w-full h-full object-cover"
+              aspectRatio="hero"
             />
           </div>
         )}
 
         <div 
           className="prose prose-primary max-w-none 
-            prose-headings:font-black prose-headings:font-playfair prose-headings:tracking-tight
+            prose-headings:font-black prose-headings:tracking-tighter 
             prose-p:text-[#333] prose-p:leading-relaxed prose-p:text-lg prose-p:mb-6
             prose-strong:text-[#1a1a1a] prose-strong:font-black
             prose-a:text-primary prose-a:no-underline hover:prose-a:underline
-            animate-float-up"
+            animate-float-up font-sans"
           dangerouslySetInnerHTML={{ __html: article.content }}
         />
 
@@ -115,25 +115,21 @@ const BlogArticle = () => {
             </Avatar>
             <div className="flex-1">
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary mb-1">Escrito por</p>
-              <h3 className="text-xl font-black uppercase font-playfair mb-2">{article.authors.name}</h3>
+              <h3 className="text-xl font-black uppercase mb-2">{article.authors.name}</h3>
               <p className="text-sm text-muted-foreground leading-relaxed mb-4 italic">
                 {article.authors.bio || `Especialista em ${article.category}, trazendo as últimas atualizações e análises do setor.`}
               </p>
-              <div className="flex justify-center sm:justify-start gap-4">
-                {/* Social icons if needed */}
-              </div>
             </div>
           </div>
         )}
 
-        {/* Content Ad */}
         <div className="w-full h-32 bg-muted/30 border border-dashed border-border flex items-center justify-center text-[10px] font-bold text-muted-foreground uppercase tracking-widest my-12">
           Publicidade (AdSense)
         </div>
         
         <footer className="mt-20 pt-12 border-t border-border">
           <div className="bg-[#f8f8f8] border border-border p-8 sm:p-12 text-center">
-            <h3 className="text-2xl font-black uppercase mb-4 font-playfair">Fique por dentro das novidades</h3>
+            <h3 className="text-2xl font-black uppercase mb-4">Fique por dentro das novidades</h3>
             <p className="text-muted-foreground mb-8 text-sm max-w-lg mx-auto uppercase tracking-wider font-bold">
               Inscreva-se na nossa newsletter e não perca nada.
             </p>
@@ -150,8 +146,6 @@ const BlogArticle = () => {
           </div>
         </footer>
       </main>
-
-      {/* Bottom Ad Fixed / Sticky option could go here */}
     </div>
   );
 };
