@@ -122,7 +122,7 @@ const Dashboard = () => {
 
       setTrendingList(data_topTrends);
       setAllArticles(articles);
-      setUserCategories(data_settings?.categories || ['esportes', 'politica', 'policia', 'saude', 'celebridades', 'financas']);
+      setUserCategories(data_settings?.categories || ['policia', 'celebridades', 'politica', 'esportes', 'saude', 'financas']);
       if (data_settings?.dashboard_widgets) setWidgets(data_settings.dashboard_widgets as any);
       if (data_settings?.dashboard_order) setWidgetOrder(data_settings.dashboard_order as string[]);
       setLoadingTrends(false);
