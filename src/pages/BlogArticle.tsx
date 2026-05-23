@@ -4,10 +4,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useI18n } from '@/hooks/useI18n';
 import BlogHeader from '@/components/blog/BlogHeader';
 import { Helmet } from 'react-helmet-async';
-import { Clock, Calendar, Share2, ArrowLeft, MessageSquare } from 'lucide-react';
+import { Clock, Calendar, Share2, ArrowLeft, MessageSquare, User } from 'lucide-react';
 import Preloader from '@/components/Preloader';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const BlogArticle = () => {
   const { articleId } = useParams<{ articleId: string }>();
@@ -21,7 +22,7 @@ const BlogArticle = () => {
       try {
         const { data, error } = await supabase
           .from('articles')
-          .select('*')
+          .select('*, authors(*)')
           .or(`id.eq.${articleId},slug.eq.${articleId}`)
           .maybeSingle();
 
@@ -75,7 +76,10 @@ const BlogArticle = () => {
           <div className="flex flex-wrap items-center justify-center gap-6 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground border-y border-border py-6">
             <span className="flex items-center gap-2"><Calendar className="h-4 w-4 text-primary" /> {new Date(article.created_at).toLocaleDateString()}</span>
             <span className="flex items-center gap-2"><Clock className="h-4 w-4 text-primary" /> 6 MIN DE LEITURA</span>
-            <span className="flex items-center gap-2"><MessageSquare className="h-4 w-4 text-primary" /> POR REDAÇÃO A3</span>
+            <span className="flex items-center gap-2">
+              <MessageSquare className="h-4 w-4 text-primary" /> 
+              POR {article.authors?.name ? article.authors.name.toUpperCase() : 'REDAÇÃO A3'}
+            </span>
             <Button variant="outline" size="sm" className="ml-auto text-[10px] font-black uppercase tracking-widest gap-2 rounded-none border-border">
               <Share2 className="h-4 w-4" /> Compartilhar
             </Button>
@@ -101,6 +105,26 @@ const BlogArticle = () => {
             animate-float-up"
           dangerouslySetInnerHTML={{ __html: article.content }}
         />
+
+        {/* Author Bio Box */}
+        {article.authors && (
+          <div className="mt-16 p-8 border border-border bg-[#fafafa] flex flex-col sm:flex-row gap-6 items-center sm:items-start text-center sm:text-left">
+            <Avatar className="h-20 w-20 rounded-none border border-primary/20 shadow-sm">
+              <AvatarImage src={article.authors.avatar_url} className="object-cover" />
+              <AvatarFallback className="bg-primary/5 text-primary font-black"><User /></AvatarFallback>
+            </Avatar>
+            <div className="flex-1">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary mb-1">Escrito por</p>
+              <h3 className="text-xl font-black uppercase font-playfair mb-2">{article.authors.name}</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed mb-4 italic">
+                {article.authors.bio || `Especialista em ${article.category}, trazendo as últimas atualizações e análises do setor.`}
+              </p>
+              <div className="flex justify-center sm:justify-start gap-4">
+                {/* Social icons if needed */}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Content Ad */}
         <div className="w-full h-32 bg-muted/30 border border-dashed border-border flex items-center justify-center text-[10px] font-bold text-muted-foreground uppercase tracking-widest my-12">

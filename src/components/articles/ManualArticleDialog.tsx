@@ -34,6 +34,7 @@ export const ManualArticleDialog = ({ open, onOpenChange, categories, onSuccess 
   const [isPublishingNow, setIsPublishingNow] = useState(false);
   const [scheduledDate, setScheduledDate] = useState<string>('');
   const [manualSlug, setManualSlug] = useState(false);
+  const [authorId, setAuthorId] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -58,6 +59,22 @@ export const ManualArticleDialog = ({ open, onOpenChange, categories, onSuccess 
       setFormData(prev => ({ ...prev, slug: generatedSlug }));
     }
   }, [formData.title, manualSlug]);
+
+  useEffect(() => {
+    const fetchAuthorForCategory = async () => {
+      if (!formData.category || !user) return;
+      const { data } = await supabase
+        .from('authors')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('category', formData.category)
+        .maybeSingle();
+      
+      if (data) setAuthorId(data.id);
+      else setAuthorId(null);
+    };
+    fetchAuthorForCategory();
+  }, [formData.category, user]);
 
   const handleSave = async (publishImmediately = false) => {
     if (!user) return;
@@ -85,6 +102,7 @@ export const ManualArticleDialog = ({ open, onOpenChange, categories, onSuccess 
         slug: formData.slug || formData.title.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, ''),
         seo_title: formData.seo_title || formData.title,
         scheduled_at: scheduledDate ? new Date(scheduledDate).toISOString() : null,
+        author_id: authorId,
       };
 
       const { data: article, error } = await supabase
