@@ -26,6 +26,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ImageUpload } from '@/components/articles/ImageUpload';
 
@@ -818,9 +825,21 @@ const SchedulePage = () => {
                   </div>
                   <div>
                     <Label className="text-xs font-bold uppercase text-muted-foreground mb-1 block">Categoria</Label>
-                    <Badge variant="outline" className="h-10 px-4 w-full justify-start capitalize">
-                      {preview?.category}
-                    </Badge>
+                    <Select
+                      value={preview?.category || ''}
+                      onValueChange={(value) => setPreview({...preview, category: value})}
+                    >
+                      <SelectTrigger className="w-full capitalize rounded-none">
+                        <SelectValue placeholder="Selecione uma categoria" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {userCategories.map((cat) => (
+                          <SelectItem key={cat} value={cat} className="capitalize">
+                            {cat}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 
