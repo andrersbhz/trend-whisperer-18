@@ -922,9 +922,21 @@ const ArticlesPage = () => {
                     <div className="space-y-4">
                       <div>
                         <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1 block">Categoria</label>
-                        <Badge className="bg-primary/20 text-primary border-primary/20 text-sm px-4 py-1 h-auto capitalize">
-                          {preview?.category}
-                        </Badge>
+                        <Select
+                          value={preview?.category || ''}
+                          onValueChange={(value) => handleUpdateCategory(preview.id, value)}
+                        >
+                          <SelectTrigger className="w-full capitalize bg-secondary/20 border border-border/40">
+                            <SelectValue placeholder="Selecione uma categoria" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {userCategories.map((cat) => (
+                              <SelectItem key={cat} value={cat} className="capitalize">
+                                {cat}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div>
                         <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1 block">Visual Elements (IA Prompt)</label>
