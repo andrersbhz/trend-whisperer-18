@@ -251,58 +251,21 @@ const BlogHome = () => {
             </section>
           ))}
         </div>
-
-        <AdPlaceholder className="w-full h-24 mt-20" />
       </main>
 
-      <footer className="bg-[#1a1a1a] text-white py-16 mt-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-12 mb-16 border-b border-white/10 pb-12">
-            <div className="md:col-span-2 lg:col-span-1">
-              <h2 className="font-black text-2xl tracking-tighter uppercase mb-6">A3 <span className="text-primary">PORTAL</span></h2>
-              <p className="text-white/60 text-xs leading-relaxed max-w-sm mb-6 uppercase tracking-wider font-bold">
-                O maior portal de inteligência de conteúdo do país. Automação, tendências e jornalismo profissional.
-              </p>
+      <footer className="bg-[#f2f2f2] border-t border-gray-200 py-12 mt-20">
+        <div className="max-w-[1200px] mx-auto px-4 text-center">
+          <div className="flex flex-col items-center gap-6">
+            <span className="font-black text-3xl tracking-tighter text-[#444]">globo</span>
+            <div className="flex flex-wrap justify-center gap-x-8 gap-y-2 text-[11px] font-bold uppercase text-[#777]">
+               <Link to="#" className="hover:text-black">princípios editoriais</Link>
+               <Link to="#" className="hover:text-black">política de privacidade</Link>
+               <Link to="#" className="hover:text-black">minha conta</Link>
+               <Link to="#" className="hover:text-black">anuncie</Link>
             </div>
-            
-            <div className="grid grid-cols-2 gap-8 lg:col-span-2">
-              <div>
-                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] mb-6 text-primary">Editorias</h4>
-                <ul className="space-y-3 text-[10px] font-bold uppercase tracking-widest text-white/50">
-                  <li className="hover:text-primary cursor-pointer transition-colors">Policial</li>
-                  <li className="hover:text-primary cursor-pointer transition-colors">Famosos</li>
-                  <li className="hover:text-primary cursor-pointer transition-colors">Política</li>
-                  <li className="hover:text-primary cursor-pointer transition-colors">Economia</li>
-                </ul>
-              </div>
-              <div>
-                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] mb-6 text-primary">Institucional</h4>
-                <ul className="space-y-3 text-[10px] font-bold uppercase tracking-widest text-white/50">
-                  <li className="hover:text-primary cursor-pointer transition-colors">Anuncie</li>
-                  <li className="hover:text-primary cursor-pointer transition-colors">Expediente</li>
-                  <li className="hover:text-primary cursor-pointer transition-colors">Privacidade</li>
-                  <li className="hover:text-primary cursor-pointer transition-colors">Termos</li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="bg-white/5 p-6 border border-white/10">
-               <h4 className="text-[10px] font-black uppercase tracking-[0.3em] mb-4 text-primary">Idiomas</h4>
-               <div className="flex gap-4">
-                 {languages.map(l => (
-                    <span key={l.code} className="text-xl cursor-pointer hover:scale-110 transition-transform" title={l.label}>{l.flag}</span>
-                 ))}
-               </div>
-            </div>
-          </div>
-          
-          <div className="flex flex-col md:row items-center justify-between gap-4">
-            <p className="text-[9px] font-bold uppercase tracking-widest text-white/30">
-              © 2026 A3 PORTWP. DESENVOLVIDO COM INTELIGÊNCIA ARTIFICIAL.
+            <p className="text-[10px] text-[#999] max-w-2xl">
+              © Copyright 2000-2026 Globo Comunicação e Participações S.A.
             </p>
-            <Button variant="ghost" size="sm" className="text-[9px] font-bold text-white/50 hover:text-white uppercase tracking-tighter">
-              Voltar ao Topo
-            </Button>
           </div>
         </div>
       </footer>
