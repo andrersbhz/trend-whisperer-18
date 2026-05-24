@@ -15,61 +15,46 @@ const BlogHeader = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const categories = [
-    { id: 'policia', label: { 'pt-br': 'Policial', 'eng': 'Police', 'es': 'Policía' } },
-    { id: 'celebridades', label: { 'pt-br': 'Famosos', 'eng': 'Celebrities', 'es': 'Famosos' } },
-    { id: 'politica', label: { 'pt-br': 'Política', 'eng': 'Politics', 'es': 'Política' } },
-    { id: 'esportes', label: { 'pt-br': 'Esportes', 'eng': 'Sports', 'es': 'Deportes' } },
-    { id: 'saude', label: { 'pt-br': 'Saúde', 'eng': 'Health', 'es': 'Salud' } },
-    { id: 'financas', label: { 'pt-br': 'Finanças', 'eng': 'Finance', 'es': 'Finanzas' } },
+    { id: 'g1', label: { 'pt-br': 'g1', 'eng': 'g1', 'es': 'g1' }, color: '#C4170C' },
+    { id: 'o-globo', label: { 'pt-br': 'o globo', 'eng': 'the globe', 'es': 'el globo' }, color: '#004A80' },
+    { id: 'ge', label: { 'pt-br': 'ge', 'eng': 'ge', 'es': 'ge' }, color: '#06AA48' },
+    { id: 'gshow', label: { 'pt-br': 'gshow', 'eng': 'gshow', 'es': 'gshow' }, color: '#FF8000' },
+    { id: 'receitas', label: { 'pt-br': 'receitas', 'eng': 'recipes', 'es': 'recetas' }, color: '#E63314' },
+    { id: 'cartola', label: { 'pt-br': 'cartola', 'eng': 'cartola', 'es': 'cartola' }, color: '#E17000' },
+    { id: 'globoplay', label: { 'pt-br': 'globoplay', 'eng': 'globoplay', 'es': 'globoplay' }, color: '#FB0334' },
   ];
 
   const currentFlag = languages.find(l => l.code === currentLang)?.flag || '🇧🇷';
 
   return (
-    <header className="sticky top-0 z-50 bg-background border-b border-border shadow-sm">
-      {/* Top Bar for Ads/Info */}
-      <div className="bg-primary py-1 hidden sm:block">
-        <div className="max-w-7xl mx-auto px-4 text-[10px] font-bold text-white uppercase tracking-widest text-center">
-          Últimas Notícias: A3 PostWP | Inteligência Artificial e Automação de Conteúdo
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16 sm:h-20">
-          {/* Logo */}
-          <Link to={`/${currentLang}`} className="flex items-center gap-2 group">
-            <span className="font-black text-2xl sm:text-3xl tracking-tighter uppercase text-foreground">
-              A3 <span className="text-primary">BLOG</span>
-            </span>
-          </Link>
-
-          {/* Desktop Nav */}
-          <nav className="hidden xl:flex items-center gap-6">
+    <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
+      {/* Top Bar for Navigation */}
+      <div className="bg-[#f2f2f2] border-b border-gray-200 py-2 hidden lg:block">
+        <div className="max-w-[1200px] mx-auto px-4 flex items-center justify-between text-[11px] font-bold uppercase tracking-tight text-[#444]">
+          <div className="flex items-center gap-6">
+            <span className="text-[#000] font-black mr-2">globo.com</span>
             {categories.map((cat) => (
               <Link 
                 key={cat.id} 
                 to={`/${currentLang}/category/${cat.id}`}
-                className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground hover:text-primary transition-colors"
+                className="hover:opacity-70 transition-opacity"
+                style={{ color: cat.color }}
               >
                 {cat.label[currentLang]}
               </Link>
             ))}
-          </nav>
-
-          {/* Actions */}
-          <div className="flex items-center gap-2 sm:gap-4">
-            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary h-9 w-9">
-              <Search className="h-5 w-5" />
-            </Button>
-
-            <DropdownMenu>
+          </div>
+          <div className="flex items-center gap-4">
+             <button className="flex items-center gap-1 hover:text-black">
+               <Search className="h-3 w-3" /> BUSCAR
+             </button>
+             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="flex items-center gap-2 px-2 h-9 border border-border">
-                  <span className="text-lg">{currentFlag}</span>
-                  <Globe className="h-4 w-4 text-muted-foreground" />
-                </Button>
+                <button className="flex items-center gap-1 hover:text-black uppercase">
+                  {currentFlag} {currentLang}
+                </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-background border border-border shadow-xl">
+              <DropdownMenuContent align="end" className="bg-white border border-gray-200">
                 {languages.map((lang) => (
                   <DropdownMenuItem 
                     key={lang.code}
@@ -82,33 +67,65 @@ const BlogHeader = () => {
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
-
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="xl:hidden text-muted-foreground h-9 w-9"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-            >
-              {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </Button>
+             <button className="hover:text-black">MINHA CONTA</button>
           </div>
+        </div>
+      </div>
+
+      {/* Main Brand Area (Mobile & Sticky Desktop) */}
+      <div className="max-w-[1200px] mx-auto px-4 h-14 flex items-center justify-between lg:h-12 lg:border-t lg:border-gray-100">
+        <div className="flex items-center gap-4">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="text-[#444] h-10 w-10 p-0 hover:bg-transparent"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+          >
+            {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </Button>
+          <Link to={`/${currentLang}`} className="flex items-center">
+            <span className="font-black text-2xl tracking-tighter text-[#0669B2] lg:hidden">
+              globo
+            </span>
+          </Link>
+        </div>
+
+        <div className="hidden lg:flex items-center gap-6 text-[11px] font-bold uppercase text-[#333]">
+           <Link to="#" className="hover:text-primary">notícias</Link>
+           <Link to="#" className="hover:text-primary">esportes</Link>
+           <Link to="#" className="hover:text-primary">entretenimento</Link>
+           <Link to="#" className="hover:text-primary">vídeos</Link>
+        </div>
+
+        <div className="lg:hidden">
+          <Button variant="ghost" size="icon" className="text-[#444] h-10 w-10 p-0 hover:bg-transparent">
+            <Search className="h-5 w-5" />
+          </Button>
         </div>
       </div>
 
       {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="xl:hidden bg-background border-t border-border animate-fade-in shadow-2xl">
-          <div className="px-4 pt-2 pb-6 space-y-2">
-            {categories.map((cat) => (
-              <Link 
-                key={cat.id} 
-                to={`/${currentLang}/category/${cat.id}`}
-                className="block px-3 py-3 text-sm font-bold uppercase tracking-widest text-muted-foreground hover:text-primary border-b border-border/50"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                {cat.label[currentLang]}
-              </Link>
-            ))}
+        <div className="absolute top-full left-0 right-0 bg-white border-b border-gray-200 animate-in slide-in-from-top duration-200 z-40">
+          <div className="px-4 py-4 space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              {categories.map((cat) => (
+                <Link 
+                  key={cat.id} 
+                  to={`/${currentLang}/category/${cat.id}`}
+                  className="text-xs font-bold uppercase tracking-widest p-2 border border-gray-100 rounded text-center"
+                  style={{ color: cat.color }}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {cat.label[currentLang]}
+                </Link>
+              ))}
+            </div>
+            <div className="border-t border-gray-100 pt-4 space-y-2">
+               <Link to="#" className="block py-2 text-sm font-bold uppercase text-gray-700">Notícias</Link>
+               <Link to="#" className="block py-2 text-sm font-bold uppercase text-gray-700">Esportes</Link>
+               <Link to="#" className="block py-2 text-sm font-bold uppercase text-gray-700">Entretenimento</Link>
+            </div>
           </div>
         </div>
       )}
