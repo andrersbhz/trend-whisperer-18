@@ -25,25 +25,14 @@ const NewsImage = ({ src, alt, className, aspectRatio = 'video' }: NewsImageProp
       ratioClasses[aspectRatio],
       className
     )}>
-      {/* Blurred background for "no crop" effect */}
-      <div 
-        className="absolute inset-0 z-0 scale-110 blur-xl opacity-10 grayscale transition-opacity duration-700"
-        style={{ 
-          backgroundImage: `url(${src})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center'
-        }}
-      />
-      
-      {/* Main Image - using object-contain to avoid cropping */}
+      {/* Main Image - using object-cover to look like globo.com */}
       <img
         src={src}
         alt={alt}
         onLoad={() => setIsLoaded(true)}
         className={cn(
-          "relative z-10 w-full h-full object-contain transition-all duration-700",
-          !isLoaded ? "scale-105 blur-sm" : "scale-100 blur-0",
-          "group-hover:scale-[1.02]"
+          "w-full h-full object-cover transition-all duration-700",
+          !isLoaded ? "scale-105 blur-sm" : "scale-100 blur-0"
         )}
       />
       
