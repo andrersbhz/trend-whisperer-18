@@ -65,8 +65,8 @@ const BlogHome = () => {
 
   if (loading) return <Preloader message="Sincronizando as últimas notícias globais..." />;
 
-  const siteTitle = 'A3 Portal | Notícias, Tecnologia e Informação em Tempo Real';
-  const siteDesc = 'O portal de notícias mais completo com inteligência artificial. Fique por dentro de política, economia, famosos e muito mais.';
+  const siteTitle = 'globo.com - Absolutamente tudo sobre notícias, esportes e entretenimento';
+  const siteDesc = 'Só na globo.com você encontra tudo sobre g1, ge, gshow e muito mais.';
 
   return (
     <div className="min-h-screen bg-white text-black selection:bg-primary/20 font-sans antialiased">
