@@ -278,9 +278,57 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
           Gerar com IA
         </Button>
       </div>
+      <div className="flex flex-col gap-2 p-3 bg-muted/20 border border-primary/10 rounded-lg">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Configurações de Exportação</span>
+          <span className="text-[10px] font-medium bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+            {format === 'image/webp' ? 'WEBP' : 'JPG'} @ {Math.round(quality * 100)}%
+          </span>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <span className="text-[10px] text-muted-foreground">Formato</span>
+            <div className="flex gap-1">
+              <button 
+                onClick={() => setFormat('image/webp')}
+                className={cn(
+                  "flex-1 text-[9px] font-bold py-1 rounded transition-all",
+                  format === 'image/webp' ? "bg-primary text-white shadow-sm" : "bg-background text-muted-foreground border border-border hover:border-primary/30"
+                )}
+              >
+                WEBP
+              </button>
+              <button 
+                onClick={() => setFormat('image/jpeg')}
+                className={cn(
+                  "flex-1 text-[9px] font-bold py-1 rounded transition-all",
+                  format === 'image/jpeg' ? "bg-primary text-white shadow-sm" : "bg-background text-muted-foreground border border-border hover:border-primary/30"
+                )}
+              >
+                JPG
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <span className="text-[10px] text-muted-foreground">Qualidade</span>
+            <Slider
+              value={[quality * 100]}
+              min={10}
+              max={100}
+              step={1}
+              onValueChange={(value) => setQuality(value[0] / 100)}
+              className="w-full h-4"
+            />
+          </div>
+        </div>
+      </div>
+
       <p className="text-[10px] text-muted-foreground text-center italic">
         A imagem será baseada obrigatoriamente no seu "Prompt de Imagem IA" e nos detalhes da história.
       </p>
+
 
       <Dialog open={isCropDialogOpen} onOpenChange={setIsCropDialogOpen}>
         <DialogContent className="sm:max-w-[700px] p-0 overflow-hidden bg-background border-primary/20">
