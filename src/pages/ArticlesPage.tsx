@@ -649,10 +649,6 @@ const ArticlesPage = () => {
         </CollapsibleContent>
       </Collapsible>
 
-    );
-  };
-
-  return (
 
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
