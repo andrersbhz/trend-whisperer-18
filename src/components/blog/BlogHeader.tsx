@@ -53,15 +53,15 @@ const BlogHeader = () => {
                  {currentFlag} {currentLang}
                </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align=\"end\" className=\"bg-gray-900 border border-gray-800 shadow-2xl z-[100] min-w-[120px]\">
+              <DropdownMenuContent align="end" className="bg-gray-900 border border-gray-800 shadow-2xl z-[100] min-w-[120px]">
                 {languages.map((lang) => (
                   <DropdownMenuItem 
                     key={lang.code}
                     onClick={() => changeLanguage(lang.code as any)}
-                    className=\"flex items-center gap-3 cursor-pointer hover:bg-gray-800 focus:bg-gray-800 text-white px-4 py-2\"
+                    className="flex items-center gap-3 cursor-pointer hover:bg-gray-800 focus:bg-gray-800 text-white px-4 py-2"
                   >
                     <span className="text-lg">{lang.flag}</span>
-                    <span className="text-xs font-extrabold uppercase tracking-wider text-black">{lang.label}</span>
+                    <span className="text-xs font-extrabold uppercase tracking-wider text-white">{lang.label}</span>
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
