@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useTheme } from '@/components/theme-provider';
 import {
   LayoutDashboard,
   FileText,
@@ -19,6 +20,8 @@ import {
   Search,
   Facebook,
   User,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { getPerformanceLogs, exportLogsToCSV } from '@/lib/performance';
 
@@ -52,6 +55,7 @@ const navItems = [
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const { user, signOut } = useAuth();
+  const { theme, setTheme } = useTheme();
   const location = useLocation();
   const { toast } = useToast();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -207,6 +211,18 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           </button>
           <h2 className="font-semibold text-foreground truncate">{currentLabel}</h2>
           <div className="ml-auto flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-primary"
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            >
+              {theme === 'dark' ? (
+                <Sun className="h-4 w-4 transition-all" />
+              ) : (
+                <Moon className="h-4 w-4 transition-all" />
+              )}
+            </Button>
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary">

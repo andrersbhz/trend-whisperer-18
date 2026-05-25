@@ -2,7 +2,7 @@ import React from 'react';
 
 const SpaceBackground: React.FC = () => {
   return (
-    <div className="fixed inset-0 z-[-1] overflow-hidden pointer-events-none bg-[#02040a]">
+    <div className="fixed inset-0 z-[-1] overflow-hidden pointer-events-none bg-[#02040a] dark:block hidden">
       {/* Dynamic Deep Space Gradient with movement */}
       <div 
         className="absolute inset-0 opacity-40 bg-[radial-gradient(circle_at_50%_50%,#0a1930_0%,#02040a_100%)]"
