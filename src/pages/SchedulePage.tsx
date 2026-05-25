@@ -645,19 +645,18 @@ const SchedulePage = () => {
                           <div className="flex items-center gap-2 mt-1 flex-wrap">
                             <DropdownMenu modal={false}>
                               <DropdownMenuTrigger asChild>
-                                <Badge 
-                                  variant="outline" 
-                                  className="text-[10px] sm:text-xs capitalize cursor-pointer hover:bg-muted transition-colors flex items-center gap-1 font-bold rounded-none py-1"
+                                <button 
+                                  className="inline-flex items-center rounded-none border border-border px-2.5 py-1 text-[10px] sm:text-xs font-bold transition-colors hover:bg-muted capitalize outline-none"
                                 >
                                   {article.category || 'Geral'}
-                                  <ChevronDown className="h-3 w-3 opacity-50" />
-                                </Badge>
+                                  <ChevronDown className="ml-1 h-3 w-3 opacity-50" />
+                                </button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="start" className="max-h-[300px] overflow-y-auto bg-[#0A0A0B] border-primary/20 z-[100] min-w-[150px] shadow-2xl shadow-primary/10">
                                 {userCategories.map((cat) => (
                                   <DropdownMenuItem 
                                     key={cat} 
-                                    onClick={() => handleUpdateCategory(article.id, cat)}
+                                    onSelect={() => handleUpdateCategory(article.id, cat)}
                                     className={`capitalize text-xs text-foreground hover:bg-primary/10 hover:text-primary focus:bg-primary/10 focus:text-primary cursor-pointer transition-colors ${article.category === cat ? 'bg-primary/20 text-primary font-bold' : ''}`}
                                   >
                                     {cat}
