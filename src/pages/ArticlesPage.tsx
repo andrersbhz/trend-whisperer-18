@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Send, Eye, Trash2, Loader2, FileText, RotateCcw, ImagePlus, Sparkles, Database, Layers, Activity, Clock, ChevronDown, ChevronUp, Image as ImageIcon } from 'lucide-react';
+import { Send, Eye, Trash2, Loader2, FileText, RotateCcw, ImagePlus, Sparkles, Database, Layers, Activity, Clock, ChevronDown, ChevronUp, Image as ImageIcon, CheckCircle } from 'lucide-react';
 import { getErrorMessage, runBackendMutation, runBackendQuery } from '@/lib/backend';
 import { diagnostics } from '@/lib/diagnostics';
 import {
