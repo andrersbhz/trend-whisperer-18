@@ -55,6 +55,7 @@ const navItems = [
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const { user, signOut } = useAuth();
+  const { theme, setTheme } = useTheme();
   const location = useLocation();
   const { toast } = useToast();
   const [sidebarOpen, setSidebarOpen] = useState(false);
