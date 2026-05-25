@@ -31,8 +31,7 @@ const BlogHome = () => {
           .from('articles')
           .select('*')
           .in('status', ['published', 'waiting'])
-          .order('created_at', { ascending: false })
-          .limit(40);
+          .order('created_at', { ascending: false });
 
         if (error) {
           console.error('Supabase error:', error);
