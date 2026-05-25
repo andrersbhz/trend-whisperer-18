@@ -504,10 +504,13 @@ const ArticlesPage = () => {
                 )}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <span className="text-[10px] sm:text-xs text-muted-foreground capitalize cursor-pointer hover:text-primary transition-colors flex items-center gap-1">
-                      {article.category}
-                      <ChevronDown className="h-2.5 w-2.5" />
-                    </span>
+                    <Badge 
+                      variant="outline" 
+                      className="text-[10px] sm:text-xs capitalize cursor-pointer hover:bg-muted transition-colors flex items-center gap-1 font-bold"
+                    >
+                      {article.category || 'Geral'}
+                      <ChevronDown className="h-3 w-3 opacity-50" />
+                    </Badge>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start" className="max-h-[300px] overflow-y-auto">
                     {userCategories.map((cat) => (

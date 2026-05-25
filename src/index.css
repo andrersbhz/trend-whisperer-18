@@ -173,10 +173,10 @@
     box-shadow: var(--shadow-neon-pink);
   }
   .glass {
-    @apply bg-white/70 dark:bg-black/40 backdrop-blur-xl border border-black/10 dark:border-white/10;
+    @apply bg-white/70 dark:bg-black/60 backdrop-blur-xl border border-black/10 dark:border-white/10;
   }
   .glass-card {
-    @apply bg-white/80 dark:bg-black/50 backdrop-blur-lg border border-black/10 dark:border-white/10 shadow-lg dark:shadow-none;
+    @apply bg-white/80 dark:bg-card backdrop-blur-lg border border-black/10 dark:border-border shadow-lg dark:shadow-none;
   }
   .neon-border-lilac {
     border: 1px solid rgba(0, 0, 0, 0.1);

@@ -645,9 +645,12 @@ const SchedulePage = () => {
                           <div className="flex items-center gap-2 mt-1 flex-wrap">
                             <DropdownMenu modal={false}>
                               <DropdownMenuTrigger asChild>
-                                <Badge variant="secondary" className="capitalize cursor-pointer hover:bg-secondary/80 transition-colors flex items-center gap-1 rounded-none py-1">
-                                  {article.category}
-                                  <ChevronDown className="h-3 w-3" />
+                                <Badge 
+                                  variant="outline" 
+                                  className="text-[10px] sm:text-xs capitalize cursor-pointer hover:bg-muted transition-colors flex items-center gap-1 font-bold rounded-none py-1"
+                                >
+                                  {article.category || 'Geral'}
+                                  <ChevronDown className="h-3 w-3 opacity-50" />
                                 </Badge>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="start" className="max-h-[300px] overflow-y-auto">
