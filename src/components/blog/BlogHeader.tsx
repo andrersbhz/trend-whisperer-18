@@ -44,14 +44,14 @@ const BlogHeader = () => {
             ))}
           </div>
           <div className="flex items-center gap-4">
-             <button className="flex items-center gap-1 hover:text-black">
-               <Search className="h-3 w-3" /> BUSCAR
+             <button className="flex items-center gap-1.5 px-3 py-1 bg-white/50 hover:bg-white hover:shadow-sm rounded-full transition-all duration-200 text-black/80 hover:text-black border border-black/5">
+               <Search className="h-3.5 w-3.5" /> BUSCAR
              </button>
              <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-1 hover:text-black uppercase">
-                  {currentFlag} {currentLang}
-                </button>
+               <button className="flex items-center gap-1.5 px-3 py-1 bg-white/50 hover:bg-white hover:shadow-sm rounded-full transition-all duration-200 text-black/80 hover:text-black border border-black/5 uppercase">
+                 {currentFlag} {currentLang}
+               </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="bg-white border border-gray-200">
                 {languages.map((lang) => (
@@ -66,7 +66,7 @@ const BlogHeader = () => {
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
-             <button className="hover:text-black">MINHA CONTA</button>
+             <button className="px-4 py-1.5 bg-[#0669B2] text-white rounded-full font-black text-[10px] hover:bg-[#055a9a] hover:shadow-md transition-all duration-200 active:scale-95">MINHA CONTA</button>
           </div>
         </div>
       </div>
