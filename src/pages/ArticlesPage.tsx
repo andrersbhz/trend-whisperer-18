@@ -502,28 +502,27 @@ const ArticlesPage = () => {
                     WP: ✅ | FB: ✅ | IG: ✅
                   </Badge>
                 )}
-                <DropdownMenu>
+                <DropdownMenu modal={false}>
                   <DropdownMenuTrigger asChild>
                     <Badge 
                       variant="outline" 
-                      className="text-[10px] sm:text-xs capitalize cursor-pointer hover:bg-muted transition-colors flex items-center gap-1 font-bold"
+                      className="text-[10px] sm:text-xs capitalize cursor-pointer hover:bg-primary/20 hover:text-primary transition-colors flex items-center gap-1 font-bold rounded-lg py-1 border-primary/30"
                     >
                       {article.category || 'Geral'}
                       <ChevronDown className="h-3 w-3 opacity-50" />
                     </Badge>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="max-h-[300px] overflow-y-auto bg-gray-900 border-gray-800 z-[100] min-w-[150px]">
+                  <DropdownMenuContent align="start" className="max-h-[300px] overflow-y-auto bg-[#0A0A0B] border-primary/20 z-[100] min-w-[150px] shadow-2xl shadow-primary/10">
                     {userCategories.map((cat) => (
                       <DropdownMenuItem 
                         key={cat} 
                         onClick={() => handleUpdateCategory(article.id, cat)}
-                        className={`capitalize text-xs text-white hover:bg-gray-800 focus:bg-gray-800 cursor-pointer ${article.category === cat ? 'bg-primary/20 text-primary font-bold' : ''}`}
+                        className={`capitalize text-xs text-foreground hover:bg-primary/10 hover:text-primary focus:bg-primary/10 focus:text-primary cursor-pointer transition-colors ${article.category === cat ? 'bg-primary/20 text-primary font-bold' : ''}`}
                       >
                         {cat}
                       </DropdownMenuItem>
                     ))}
                   </DropdownMenuContent>
-
                 </DropdownMenu>
               </div>
               <h3 className="font-semibold text-foreground text-sm sm:text-base line-clamp-2 sm:truncate leading-snug">{article.title}</h3>
