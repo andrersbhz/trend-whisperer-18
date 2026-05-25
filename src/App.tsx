@@ -38,6 +38,13 @@ const AuthRoute = () => {
   return <Auth />;
 };
 
+const RootRoute = () => {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  if (user) return <Navigate to="/admin" replace />;
+  return <Navigate to="/pt-br" replace />;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <HelmetProvider>
@@ -48,8 +55,8 @@ const App = () => (
         <BrowserRouter>
           <AuthProvider>
             <Routes>
-              {/* Redirect root to default language blog */}
-              <Route path="/" element={<Navigate to="/pt-br" replace />} />
+              {/* Redirect root based on auth status */}
+              <Route path="/" element={<RootRoute />} />
               
               {/* Public Blog Routes */}
               <Route path="/:lang" element={<BlogHome />} />
