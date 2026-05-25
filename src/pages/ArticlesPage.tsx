@@ -524,8 +524,6 @@ const ArticlesPage = () => {
                     ))}
                   </DropdownMenuContent>
                 </DropdownMenu>
-
-                </DropdownMenu>
               </div>
               <h3 className="font-semibold text-foreground text-sm sm:text-base line-clamp-2 sm:truncate leading-snug">{article.title}</h3>
               {article.seo_keyword && (
