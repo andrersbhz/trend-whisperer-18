@@ -207,7 +207,8 @@ serve(async (req) => {
       .eq("user_id", userId)
       .single();
     
-    const imagePrompt: string | null = settings?.image_prompt || null;
+    // Prioritize user-configured image_prompt, fallback to writer_prompt if missing, or use default
+    const imagePrompt: string = settings?.image_prompt?.trim() || settings?.writer_prompt?.trim() || "Fotografia realista de alta qualidade";
     const imageMode = settings?.image_mode || "ai";
 
     if (imageMode !== "ai" && !force) {
