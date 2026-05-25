@@ -15,13 +15,12 @@ const BlogHeader = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const categories = [
-    { id: 'g1', label: { 'pt-br': 'g1', 'eng': 'g1', 'es': 'g1' }, color: '#C4170C' },
-    { id: 'o-globo', label: { 'pt-br': 'o globo', 'eng': 'the globe', 'es': 'el globo' }, color: '#004A80' },
-    { id: 'ge', label: { 'pt-br': 'ge', 'eng': 'ge', 'es': 'ge' }, color: '#06AA48' },
-    { id: 'gshow', label: { 'pt-br': 'gshow', 'eng': 'gshow', 'es': 'gshow' }, color: '#FF8000' },
-    { id: 'receitas', label: { 'pt-br': 'receitas', 'eng': 'recipes', 'es': 'recetas' }, color: '#E63314' },
-    { id: 'cartola', label: { 'pt-br': 'cartola', 'eng': 'cartola', 'es': 'cartola' }, color: '#E17000' },
-    { id: 'globoplay', label: { 'pt-br': 'globoplay', 'eng': 'globoplay', 'es': 'globoplay' }, color: '#FB0334' },
+    { id: 'noticias', label: { 'pt-br': 'notícias', 'eng': 'news', 'es': 'noticias' }, color: '#C4170C' },
+    { id: 'politica', label: { 'pt-br': 'política', 'eng': 'politics', 'es': 'política' }, color: '#004A80' },
+    { id: 'esportes', label: { 'pt-br': 'esportes', 'eng': 'sports', 'es': 'deportes' }, color: '#06AA48' },
+    { id: 'entretenimento', label: { 'pt-br': 'entretenimento', 'eng': 'entertainment', 'es': 'entretenimiento' }, color: '#FF8000' },
+    { id: 'tecnologia', label: { 'pt-br': 'tecnologia', 'eng': 'technology', 'es': 'tecnología' }, color: '#E63314' },
+    { id: 'economia', label: { 'pt-br': 'economia', 'eng': 'economy', 'es': 'economía' }, color: '#E17000' },
   ];
 
   const currentFlag = languages.find(l => l.code === currentLang)?.flag || '🇧🇷';
@@ -32,7 +31,7 @@ const BlogHeader = () => {
       <div className="bg-[#f2f2f2] border-b border-gray-200 py-2 hidden lg:block">
         <div className="max-w-[1200px] mx-auto px-4 flex items-center justify-between text-[11px] font-bold uppercase tracking-tight text-[#444]">
           <div className="flex items-center gap-6">
-            <span className="text-[#000] font-black mr-2">globo.com</span>
+            <span className="text-[#000] font-black mr-2">A3 BLOG</span>
             {categories.map((cat) => (
               <Link 
                 key={cat.id} 
@@ -84,9 +83,9 @@ const BlogHeader = () => {
             {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </Button>
           <Link to={`/${currentLang}`} className="flex items-center">
-            <span className="font-black text-2xl tracking-tighter text-[#0669B2] lg:hidden">
-              globo
-            </span>
+              <span className="font-black text-2xl tracking-tighter text-[#0669B2] lg:hidden">
+                A3 BLOG
+              </span>
           </Link>
         </div>
 

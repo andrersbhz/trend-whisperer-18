@@ -30,7 +30,7 @@ const BlogHome = () => {
         const { data: articles, error } = await supabase
           .from('articles')
           .select('*')
-          .eq('status', 'published')
+          .in('status', ['published', 'waiting'])
           .order('created_at', { ascending: false })
           .limit(40);
 
@@ -63,10 +63,10 @@ const BlogHome = () => {
     fetchData();
   }, [currentLang]);
 
-  if (loading) return <Preloader message="Sincronizando as últimas notícias globais..." />;
+  if (loading) return <Preloader message="Sincronizando as últimas notícias..." />;
 
-  const siteTitle = 'globo.com - Absolutamente tudo sobre notícias, esportes e entretenimento';
-  const siteDesc = 'Só na globo.com você encontra tudo sobre g1, ge, gshow e muito mais.';
+  const siteTitle = 'A3 BLOG - Absolutamente tudo sobre notícias, esportes e entretenimento';
+  const siteDesc = 'No A3 BLOG você encontra tudo sobre as últimas notícias, esportes, entretenimento e muito mais.';
 
   return (
     <div className="min-h-screen bg-white text-black selection:bg-primary/20 font-sans antialiased">
@@ -156,10 +156,10 @@ const BlogHome = () => {
 
         {/* Triple News Sections (like Jornalismo, Esporte, Entretenimento blocks) */}
         <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 mt-16 pt-12 border-t border-gray-200">
-           {/* Section 1: Jornalismo (g1) */}
+           {/* Section 1: Jornalismo */}
            <div className="space-y-6">
               <div className="flex items-center gap-2 mb-4">
-                 <h2 className="text-[#C4170C] text-2xl font-black lowercase tracking-tighter">g1</h2>
+                 <h2 className="text-[#C4170C] text-2xl font-black lowercase tracking-tighter">notícias</h2>
               </div>
               {latestArticles.slice(0, 3).map((article) => (
                 <div key={article.id} className="group block pb-6 border-b border-gray-100 last:border-0">
@@ -175,10 +175,10 @@ const BlogHome = () => {
               ))}
            </div>
 
-           {/* Section 2: Esportes (ge) */}
+           {/* Section 2: Esportes */}
            <div className="space-y-6">
               <div className="flex items-center gap-2 mb-4">
-                 <h2 className="text-[#06AA48] text-2xl font-black lowercase tracking-tighter">ge</h2>
+                 <h2 className="text-[#06AA48] text-2xl font-black lowercase tracking-tighter">esportes</h2>
               </div>
               {latestArticles.slice(3, 6).map((article) => (
                 <div key={article.id} className="group block pb-6 border-b border-gray-100 last:border-0">
@@ -194,10 +194,10 @@ const BlogHome = () => {
               ))}
            </div>
 
-           {/* Section 3: Entretenimento (gshow) */}
+           {/* Section 3: Entretenimento */}
            <div className="space-y-6">
               <div className="flex items-center gap-2 mb-4">
-                 <h2 className="text-[#FF8000] text-2xl font-black lowercase tracking-tighter">gshow</h2>
+                 <h2 className="text-[#FF8000] text-2xl font-black lowercase tracking-tighter">entretenimento</h2>
               </div>
               {latestArticles.slice(6, 9).map((article) => (
                 <div key={article.id} className="group block pb-6 border-b border-gray-100 last:border-0">
@@ -256,15 +256,15 @@ const BlogHome = () => {
       <footer className="bg-[#f2f2f2] border-t border-gray-200 py-12 mt-20">
         <div className="max-w-[1200px] mx-auto px-4 text-center">
           <div className="flex flex-col items-center gap-6">
-            <span className="font-black text-3xl tracking-tighter text-[#444]">globo</span>
+            <span className="font-black text-3xl tracking-tighter text-[#444]">A3 BLOG</span>
             <div className="flex flex-wrap justify-center gap-x-8 gap-y-2 text-[11px] font-bold uppercase text-[#777]">
                <Link to="#" className="hover:text-black">princípios editoriais</Link>
                <Link to="#" className="hover:text-black">política de privacidade</Link>
-               <Link to="#" className="hover:text-black">minha conta</Link>
+               <Link to="#" className="hover:text-black">contato</Link>
                <Link to="#" className="hover:text-black">anuncie</Link>
             </div>
             <p className="text-[10px] text-[#999] max-w-2xl">
-              © Copyright 2000-2026 Globo Comunicação e Participações S.A.
+              © Copyright 2026 A3 BLOG - Todos os direitos reservados.
             </p>
           </div>
         </div>
