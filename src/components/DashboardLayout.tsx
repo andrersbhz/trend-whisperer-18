@@ -179,8 +179,8 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
         {/* User & Logout */}
         <div className="p-3 border-t border-border/40 space-y-2">
           {user && (
-            <div className="flex items-center gap-3 px-2 py-2 rounded-none bg-secondary/20 border border-primary/10">
-              <div className="h-9 w-9 rounded-none gradient-primary flex items-center justify-center text-primary-foreground font-black text-sm shrink-0 shadow-neon-lilac">
+            <div className="flex items-center gap-3 px-2 py-2 rounded-none bg-secondary/50 border border-primary/20">
+              <div className="h-9 w-9 rounded-none bg-primary flex items-center justify-center text-primary-foreground font-black text-sm shrink-0 shadow-neon-blue">
                 {userInitial}
               </div>
               <div className="min-w-0 flex-1">
