@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useTheme } from '@/components/theme-provider';
 import {
   LayoutDashboard,
   FileText,
@@ -19,6 +20,8 @@ import {
   Search,
   Facebook,
   User,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { getPerformanceLogs, exportLogsToCSV } from '@/lib/performance';
 
