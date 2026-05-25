@@ -512,7 +512,7 @@ const ArticlesPage = () => {
                       <ChevronDown className="h-3 w-3 opacity-50" />
                     </Badge>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="max-h-[300px] overflow-y-auto bg-gray-900 border-gray-800 z-[100]">
+                  <DropdownMenuContent align="start" className="max-h-[300px] overflow-y-auto bg-gray-900 border-gray-800 z-[100] min-w-[150px]">
                     {userCategories.map((cat) => (
                       <DropdownMenuItem 
                         key={cat} 

@@ -653,12 +653,12 @@ const SchedulePage = () => {
                                   <ChevronDown className="h-3 w-3 opacity-50" />
                                 </Badge>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="start" className="max-h-[300px] overflow-y-auto">
+                              <DropdownMenuContent align="start" className="max-h-[300px] overflow-y-auto bg-gray-900 border-gray-800 z-[100] min-w-[150px]">
                                 {userCategories.map((cat) => (
                                   <DropdownMenuItem 
                                     key={cat} 
                                     onClick={() => handleUpdateCategory(article.id, cat)}
-                                    className={`capitalize text-xs ${article.category === cat ? 'bg-primary/10 text-primary' : ''}`}
+                                    className={`capitalize text-xs text-white hover:bg-gray-800 focus:bg-gray-800 cursor-pointer ${article.category === cat ? 'bg-primary/20 text-primary font-bold' : ''}`}
                                   >
                                     {cat}
                                   </DropdownMenuItem>

@@ -460,13 +460,13 @@ const Dashboard = () => {
                                 {categoryLabels[article.category] || article.category} <ChevronDown className="h-2.5 w-2.5" />
                               </span>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="start" className="max-h-[250px] overflow-y-auto">
+                            <DropdownMenuContent align="start" className="max-h-[250px] overflow-y-auto bg-gray-900 border-gray-800 z-[100] min-w-[150px]">
                               {userCategories.map(cat => (
-                                <DropdownMenuItem
-                                  key={cat}
-                                  onClick={() => handleUpdateCategory(article.id, cat)}
-                                  className={`capitalize text-xs font-bold ${article.category === cat ? 'bg-primary/10 text-primary' : ''}`}
-                                >
+                                  <DropdownMenuItem
+                                    key={cat}
+                                    onClick={() => handleUpdateCategory(article.id, cat)}
+                                    className={`capitalize text-xs text-white hover:bg-gray-800 focus:bg-gray-800 cursor-pointer ${article.category === cat ? 'bg-primary/20 text-primary font-bold' : ''}`}
+                                  >
                                   {categoryLabels[cat] || cat}
                                 </DropdownMenuItem>
                               ))}
