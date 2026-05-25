@@ -173,19 +173,10 @@
     box-shadow: var(--shadow-neon-pink);
   }
   .glass {
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(16px) saturate(180%);
-    -webkit-backdrop-filter: blur(16px) saturate(180%);
-    border: 1px solid rgba(0, 0, 0, 0.1);
+    @apply bg-white/70 dark:bg-black/40 backdrop-blur-xl border border-black/10 dark:border-white/10;
   }
   .glass-card {
-    background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(12px) saturate(160%);
-    -webkit-backdrop-filter: blur(12px) saturate(160%);
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    box-shadow: 
-      0 8px 32px 0 rgba(0, 0, 0, 0.05),
-      inset 0 1px 1px 0 rgba(255, 255, 255, 0.5);
+    @apply bg-white/80 dark:bg-black/50 backdrop-blur-lg border border-black/10 dark:border-white/10 shadow-lg dark:shadow-none;
   }
   .neon-border-lilac {
     border: 1px solid rgba(0, 0, 0, 0.1);
