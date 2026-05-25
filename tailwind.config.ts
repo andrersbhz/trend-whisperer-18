@@ -97,6 +97,9 @@ export default {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
       },
+      boxShadow: {
+        'neon-blue': '0 0 5px theme("colors.blue.400"), 0 0 20px theme("colors.blue.700")',
+      },
     },
   },
   plugins: [require("tailwindcss-animate")],
