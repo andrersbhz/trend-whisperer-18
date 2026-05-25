@@ -25,7 +25,7 @@ const NewsImage = ({ src, alt, className, aspectRatio = 'video' }: NewsImageProp
       ratioClasses[aspectRatio],
       className
     )}>
-      {/* Main Image - using object-cover to look like globo.com */}
+      {/* Main Image */}
       <img
         src={src}
         alt={alt}
