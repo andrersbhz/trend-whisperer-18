@@ -298,6 +298,39 @@ export type Database = {
         }
         Relationships: []
       }
+      instagram_accounts_direct: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          last_login: string | null
+          password: string
+          updated_at: string
+          user_id: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_login?: string | null
+          password: string
+          updated_at?: string
+          user_id: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_login?: string | null
+          password?: string
+          updated_at?: string
+          user_id?: string
+          username?: string
+        }
+        Relationships: []
+      }
       publish_log: {
         Row: {
           article_id: string
