@@ -16,6 +16,7 @@ import JetpackSettings from '@/components/settings/JetpackSettings';
 import FacebookSettings from '@/components/settings/FacebookSettings';
 import { getErrorMessage, runBackendMutation, runBackendQuery } from '@/lib/backend';
 import DashboardWidgetSettings from '@/components/settings/DashboardWidgetSettings';
+import InstagramDirectSettings from '@/components/settings/InstagramDirectSettings';
 
 export interface UserSettings {
   wordpress_url: string;
@@ -379,6 +380,7 @@ const SettingsPage = () => {
 
         <TabsContent value="social" className="space-y-6 mt-0 animate-in fade-in-50 duration-300">
           <FacebookSettings settings={settings} onChange={updateSettings} />
+          <InstagramDirectSettings />
         </TabsContent>
 
         <TabsContent value="appearance" className="space-y-6 mt-0 animate-in fade-in-50 duration-300">
