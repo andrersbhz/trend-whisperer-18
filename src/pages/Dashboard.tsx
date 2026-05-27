@@ -254,10 +254,10 @@ const Dashboard = () => {
   const categoryLabels: Record<string, string> = { policia: '🚔 Policial', celebridades: '⭐ Famosos', politica: '🏛️ Política', esportes: '⚽ Esportes', saude: '💚 Saúde', financas: '💰 Finanças' };
 
   const statCards = [
-    { icon: FileText, label: 'Total de Artigos', value: stats.total, color: 'text-primary', accent: 'from-primary/10', glow: 'neon-border-lilac' },
-    { icon: CheckCircle, label: 'Publicados', value: stats.published, color: 'text-success', accent: 'from-success/10', glow: '' },
-    { icon: Clock, label: 'Pendentes', value: stats.pending, color: 'text-warning', accent: 'from-warning/10', glow: '' },
-    { icon: TrendingUp, label: 'Tendências', value: stats.trending, color: 'text-accent', accent: 'from-accent/10', glow: 'neon-border-pink' },
+    { icon: FileText, label: 'Total de Artigos', value: stats.total, color: 'text-primary', accent: 'from-primary/10', glow: 'neon-border-blue' },
+    { icon: CheckCircle, label: 'Publicados', value: stats.published, color: 'text-success', accent: 'from-success/10', glow: 'neon-border-blue' },
+    { icon: Clock, label: 'Pendentes', value: stats.pending, color: 'text-warning', accent: 'from-warning/10', glow: 'neon-border-blue' },
+    { icon: TrendingUp, label: 'Tendências', value: stats.trending, color: 'text-accent', accent: 'from-accent/10', glow: 'neon-border-blue' },
   ];
   
   const chartData = useMemo(() => {
@@ -355,7 +355,7 @@ const Dashboard = () => {
                     <div className={`absolute inset-0 bg-gradient-to-br ${stat.accent} to-transparent opacity-50`} />
                     <CardContent className="p-4 sm:p-5 relative">
                       <div className="flex items-start justify-between">
-                        <div><p className="text-[11px] uppercase tracking-wider text-muted-foreground">{stat.label}</p><p className="text-2xl font-bold mt-1.5 tabular-nums">{stat.value}</p></div>
+                        <div><p className="text-[11px] uppercase tracking-wider text-muted-foreground">{stat.label}</p><p className="text-2xl font-bold mt-1.5 tabular-nums stat-card-value">{stat.value}</p></div>
                         <div className={`p-2 rounded-lg bg-background/40 ${stat.color}`}><stat.icon className="h-5 w-5" /></div>
                       </div>
                     </CardContent>
