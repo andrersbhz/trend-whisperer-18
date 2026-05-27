@@ -370,6 +370,13 @@ export type Database = {
             referencedRelation: "articles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "publish_log_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "public_articles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       social_follows: {
@@ -662,7 +669,95 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_articles: {
+        Row: {
+          ai_provider: string | null
+          author_id: string | null
+          category: string | null
+          content: string | null
+          created_at: string | null
+          excerpt: string | null
+          featured_image_url: string | null
+          focus_keyword: string | null
+          id: string | null
+          image_alt: string | null
+          image_caption: string | null
+          meta_description: string | null
+          meta_title: string | null
+          published_at: string | null
+          scheduled_at: string | null
+          seo_keyword: string | null
+          seo_title: string | null
+          slug: string | null
+          status: string | null
+          title: string | null
+          trending_topic: string | null
+          updated_at: string | null
+          visual_elements: Json | null
+          wordpress_post_id: string | null
+        }
+        Insert: {
+          ai_provider?: string | null
+          author_id?: string | null
+          category?: string | null
+          content?: string | null
+          created_at?: string | null
+          excerpt?: string | null
+          featured_image_url?: string | null
+          focus_keyword?: string | null
+          id?: string | null
+          image_alt?: string | null
+          image_caption?: string | null
+          meta_description?: string | null
+          meta_title?: string | null
+          published_at?: string | null
+          scheduled_at?: string | null
+          seo_keyword?: string | null
+          seo_title?: string | null
+          slug?: string | null
+          status?: string | null
+          title?: string | null
+          trending_topic?: string | null
+          updated_at?: string | null
+          visual_elements?: Json | null
+          wordpress_post_id?: string | null
+        }
+        Update: {
+          ai_provider?: string | null
+          author_id?: string | null
+          category?: string | null
+          content?: string | null
+          created_at?: string | null
+          excerpt?: string | null
+          featured_image_url?: string | null
+          focus_keyword?: string | null
+          id?: string | null
+          image_alt?: string | null
+          image_caption?: string | null
+          meta_description?: string | null
+          meta_title?: string | null
+          published_at?: string | null
+          scheduled_at?: string | null
+          seo_keyword?: string | null
+          seo_title?: string | null
+          slug?: string | null
+          status?: string | null
+          title?: string | null
+          trending_topic?: string | null
+          updated_at?: string | null
+          visual_elements?: Json | null
+          wordpress_post_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "articles_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "authors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       clean_old_trending_topics: { Args: never; Returns: undefined }

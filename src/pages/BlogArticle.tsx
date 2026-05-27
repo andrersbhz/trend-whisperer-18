@@ -22,7 +22,7 @@ const BlogArticle = () => {
       setLoading(true);
       try {
         const { data } = await supabase
-          .from('articles')
+          .from('public_articles')
           .select('*, authors(*)')
           .or(`id.eq.${articleId},slug.eq.${articleId}`)
           .maybeSingle();

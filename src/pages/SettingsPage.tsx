@@ -113,7 +113,7 @@ const SettingsPage = () => {
       try {
         const { data: userData, error: userError } = await supabase
           .from('user_settings')
-          .select('*, dashboard_widgets, dashboard_order')
+          .select('id, user_id, wordpress_url, wordpress_username, facebook_page_id, instagram_account_id, google_analytics_property_id, azure_openai_endpoint, azure_openai_deployment_name, categories, articles_per_day, auto_publish, writer_prompt, image_mode, image_prompt, interaction_mode, dashboard_widgets, dashboard_order')
           .eq('user_id', user.id)
           .maybeSingle();
 
@@ -246,12 +246,7 @@ const SettingsPage = () => {
         );
       }
 
-      // Log action
-      await supabase.from('audit_logs').insert({
-        user_id: user.id,
-        action: 'update_settings',
-        details: { fields_updated: Object.keys(payload) }
-      });
+      // Audit logging happens server-side via edge functions / service role.
 
       setHasExistingSettings(true);
       toast({ title: 'Salvo!', description: 'Configurações atualizadas com sucesso.' });

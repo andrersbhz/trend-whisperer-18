@@ -65,7 +65,7 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
     if (!user) return;
     const { data } = await supabase
       .from('facebook_accounts')
-      .select('*')
+      .select('id, user_id, page_id, page_name, picture_url, instagram_account_id, is_active, last_metrics, metrics_updated_at, created_at, updated_at')
       .eq('user_id', user.id)
       .order('created_at', { ascending: true });
     setAccounts((data as any[]) || []);
