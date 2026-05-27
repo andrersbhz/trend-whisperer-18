@@ -179,16 +179,43 @@
     @apply bg-white/80 dark:bg-card backdrop-blur-lg border border-black/10 dark:border-border shadow-lg dark:shadow-none;
   }
   .neon-border-lilac {
-    border: 1px solid rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(138, 43, 226, 0.3);
+    box-shadow: 0 0 10px rgba(138, 43, 226, 0.1);
+  }
+  .neon-border-lilac:hover {
+    border: 1px solid rgba(138, 43, 226, 0.6);
+    box-shadow: 0 0 20px rgba(138, 43, 226, 0.3);
   }
   .neon-border-pink {
-    border: 1px solid rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 20, 147, 0.3);
+    box-shadow: 0 0 10px rgba(255, 20, 147, 0.1);
+  }
+  .neon-border-pink:hover {
+    border: 1px solid rgba(255, 20, 147, 0.6);
+    box-shadow: 0 0 20px rgba(255, 20, 147, 0.3);
+  }
+  .neon-border-blue {
+    border: 1px solid rgba(0, 255, 255, 0.3);
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.1);
+  }
+  .neon-border-blue:hover {
+    border: 1px solid rgba(0, 255, 255, 0.8);
+    box-shadow: 0 0 25px rgba(0, 255, 255, 0.4);
   }
   .neon-text-lilac {
     color: hsl(var(--primary));
+    text-shadow: 0 0 10px hsla(var(--primary), 0.5);
   }
   .neon-text-pink {
-    color: hsl(var(--primary));
+    color: hsl(var(--accent));
+    text-shadow: 0 0 10px hsla(var(--accent), 0.5);
+  }
+  .stat-card-value {
+    @apply transition-colors duration-300;
+  }
+  .glass-card:hover .stat-card-value {
+    color: #00ffff;
+    text-shadow: 0 0 15px rgba(0, 255, 255, 0.7);
   }
 }
 
