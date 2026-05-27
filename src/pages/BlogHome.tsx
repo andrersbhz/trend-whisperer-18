@@ -28,9 +28,8 @@ const BlogHome = () => {
       setLoading(true);
       try {
         const { data: articles, error } = await supabase
-          .from('articles')
+          .from('public_articles')
           .select('*')
-          .in('status', ['published', 'waiting'])
           .order('created_at', { ascending: false });
 
         if (error) {
