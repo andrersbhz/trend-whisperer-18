@@ -1,31 +1,28 @@
-A conversion-focused blog home page with a modern UX/UI, featuring multi-language support (pt-br, eng, es) and organized categories.
+O sistema atualmente está conectado ao Google Analytics para métricas, mas ainda não possui a integração com a **Google Indexing API** para solicitar a indexação imediata de novos posts.
 
-### Features
-- **Conversion-Optimized UI**: Modern, clean design using the project's futuristic theme (Glassmorphism, gradients, neon accents).
-- **Featured News Banner**: A top-tier slider or grid showing the most accessed articles to capture immediate attention.
-- **Categorized Sections**: Content organized by categories (Sports, Politics, etc.) for better user flow.
-- **Multi-language Support**: Native i18n implementation with URL structure (`/pt-br`, `/eng`, `/es`) and flag-based switching.
-- **SEO & Performance**: Optimized meta tags, semantic HTML, and fast-loading structures for Google ranking.
-- **WordPress Content Transfer**: Conceptual strategy to import content via API or direct database migration (preparing the infrastructure).
+Vou implementar essa funcionalidade para que, assim que um artigo for publicado no WordPress, o sistema envie automaticamente uma solicitação de indexação ao Google.
 
-### Technical Tasks
-1. **Routing**: Update `App.tsx` to handle language prefixes using `react-router-dom`.
-2. **Components**:
-    - `BlogHeader`: New header for the public blog with language switcher (flags).
-    - `FeaturedBanner`: Top section with hero articles.
-    - `CategorySection`: Modular component to render posts by category.
-    - `BlogPostCard`: Beautiful card design for news items.
-    - `BlogFooter`: Conversion-focused footer.
-3. **Pages**:
-    - `BlogHome`: The primary landing page.
-    - `BlogArticle`: Template for individual news reading.
-4. **i18n Logic**: Setup a simple localization hook or context to manage translations and route detection.
-5. **UI/UX**: Refine CSS and use `lucide-react` icons for a premium feel.
+### Alterações Propostas
 
-### SEO Strategy
-- Dynamic titles and meta descriptions per language.
-- Use of `hreflang` tags to indicate language variants to Google.
-- Structured data (JSON-LD) for articles.
+#### 1. Banco de Dados (Migração)
+*   Adicionar coluna `google_indexing_key` na tabela `user_settings` para armazenar a chave JSON da conta de serviço do Google.
+*   Garantir que este campo seja protegido (revogar acesso direto via SELECT e usar criptografia como os outros campos sensíveis).
 
----
-**Note**: This will create a separate "Public Blog" experience distinct from the current "Admin Dashboard".
+#### 2. Interface (Frontend)
+*   Criar o componente `GoogleIndexingSettings.tsx` para permitir que o usuário cole a chave JSON da conta de serviço do Google.
+*   Adicionar este componente na página de Configurações, logo abaixo de Google Analytics.
+
+#### 3. Backend (Edge Function)
+*   Modificar a função `publish-article` para:
+    *   Verificar se a `google_indexing_key` está configurada.
+    *   Se estiver, após a publicação bem-sucedida no WordPress, realizar a chamada para a Google Indexing API (`https://indexing.googleapis.com/v1/urlNotifications:publish`).
+    *   Registrar o resultado (sucesso ou erro) nos logs de automação.
+
+### Requisitos para o Usuário
+Para que funcione, o usuário precisará:
+1.  Criar uma conta de serviço no Google Cloud.
+2.  Baixar a chave JSON.
+3.  Adicionar o e-mail da conta de serviço como "Proprietário" no Google Search Console do site.
+4.  Ativar a "Indexing API" no console do Google Cloud.
+
+Deseja que eu prossiga com essa implementação?
