@@ -361,6 +361,25 @@ serve(async (req) => {
         console.error("publish-social call failed:", socialErr);
       }
 
+      // Step 3: Google Indexing API
+      if (wpLink) {
+        try {
+          console.log("Triggering Google Indexing for:", wpLink);
+          const indexingResp = await fetch(`${supabaseUrl}/functions/v1/google-indexing`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${supabaseKey}`,
+            },
+            body: JSON.stringify({ url: wpLink, userId }),
+          });
+          const indexingData = await indexingResp.json();
+          console.log(`google-indexing response:`, indexingData);
+        } catch (indexingErr) {
+          console.error("google-indexing call failed:", indexingErr);
+        }
+      }
+
       return new Response(
         JSON.stringify({
           success: true,

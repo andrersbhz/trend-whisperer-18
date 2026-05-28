@@ -547,6 +547,7 @@ export type Database = {
           follower_growth_mode: boolean | null
           gemini_api_key: string | null
           google_analytics_property_id: string | null
+          google_indexing_key: string | null
           groq_api_key: string | null
           id: string
           image_mode: string
@@ -592,6 +593,7 @@ export type Database = {
           follower_growth_mode?: boolean | null
           gemini_api_key?: string | null
           google_analytics_property_id?: string | null
+          google_indexing_key?: string | null
           groq_api_key?: string | null
           id?: string
           image_mode?: string
@@ -637,6 +639,7 @@ export type Database = {
           follower_growth_mode?: boolean | null
           gemini_api_key?: string | null
           google_analytics_property_id?: string | null
+          google_indexing_key?: string | null
           groq_api_key?: string | null
           id?: string
           image_mode?: string

@@ -8,6 +8,7 @@ import { Save, Loader2, Cpu, Globe, Share2, BarChart3, Settings2, Sparkles } fro
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import WordPressSettings from '@/components/settings/WordPressSettings';
 import GoogleAnalyticsSettings from '@/components/settings/GoogleAnalyticsSettings';
+import GoogleIndexingSettings from '@/components/settings/GoogleIndexingSettings';
 import AutomationSettings from '@/components/settings/AutomationSettings';
 import GeminiSettings from '@/components/settings/GeminiSettings';
 import OpenAISettings from '@/components/settings/OpenAISettings';
@@ -26,6 +27,7 @@ export interface UserSettings {
   facebook_access_token: string;
   instagram_account_id: string;
   google_analytics_property_id: string;
+  google_indexing_key: string;
   gemini_api_key: string;
   openai_api_key: string;
   azure_openai_api_key: string;
@@ -62,6 +64,7 @@ const defaultSettings: UserSettings = {
   facebook_access_token: '',
   instagram_account_id: '',
   google_analytics_property_id: '',
+  google_indexing_key: '',
   gemini_api_key: '',
   openai_api_key: '',
   azure_openai_api_key: '',
@@ -95,6 +98,8 @@ interface CredentialsStatus {
   has_openai_key: boolean;
   has_azure_key: boolean;
   has_groq_key: boolean;
+  has_linkedin_token: boolean;
+  has_google_indexing_key: boolean;
 }
 
 const SettingsPage = () => {
@@ -104,7 +109,16 @@ const SettingsPage = () => {
   const [saving, setSaving] = useState(false);
   const [hasExistingSettings, setHasExistingSettings] = useState(false);
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
-  const [credStatus, setCredStatus] = useState<CredentialsStatus>({ has_wp_password: false, has_fb_token: false, has_gemini_key: false, has_openai_key: false, has_azure_key: false, has_groq_key: false });
+  const [credStatus, setCredStatus] = useState<CredentialsStatus>({ 
+    has_wp_password: false, 
+    has_fb_token: false, 
+    has_gemini_key: false, 
+    has_openai_key: false, 
+    has_azure_key: false, 
+    has_groq_key: false,
+    has_linkedin_token: false,
+    has_google_indexing_key: false
+  });
 
   useEffect(() => {
     if (!user) return;
@@ -113,7 +127,7 @@ const SettingsPage = () => {
       try {
         const { data: userData, error: userError } = await supabase
           .from('user_settings')
-          .select('id, user_id, wordpress_url, wordpress_username, facebook_page_id, instagram_account_id, google_analytics_property_id, azure_openai_endpoint, azure_openai_deployment_name, categories, articles_per_day, auto_publish, writer_prompt, image_mode, image_prompt, interaction_mode, dashboard_widgets, dashboard_order')
+          .select('id, user_id, wordpress_url, wordpress_username, facebook_page_id, instagram_account_id, google_analytics_property_id, google_indexing_key, azure_openai_endpoint, azure_openai_deployment_name, categories, articles_per_day, auto_publish, writer_prompt, image_mode, image_prompt, interaction_mode, dashboard_widgets, dashboard_order')
           .eq('user_id', user.id)
           .maybeSingle();
 
@@ -133,6 +147,7 @@ const SettingsPage = () => {
             facebook_access_token: '',
             instagram_account_id: userData.instagram_account_id || '',
             google_analytics_property_id: userData.google_analytics_property_id || '',
+            google_indexing_key: userData.google_indexing_key || '',
             gemini_api_key: '',
             openai_api_key: '',
             azure_openai_api_key: '',
@@ -198,6 +213,7 @@ const SettingsPage = () => {
         facebook_page_id: settings.facebook_page_id,
         instagram_account_id: settings.instagram_account_id,
         google_analytics_property_id: settings.google_analytics_property_id,
+        google_indexing_key: settings.google_indexing_key,
         azure_openai_endpoint: settings.azure_openai_endpoint,
         azure_openai_deployment_name: settings.azure_openai_deployment_name,
         categories: settings.categories,
@@ -254,7 +270,7 @@ const SettingsPage = () => {
       const status = await runBackendQuery(() => supabase.rpc('get_credentials_status'));
       if (status) setCredStatus(status as unknown as CredentialsStatus);
 
-      setSettings(prev => ({ ...prev, wordpress_app_password: '', facebook_access_token: '', gemini_api_key: '', openai_api_key: '', azure_openai_api_key: '', groq_api_key: '' }));
+      setSettings(prev => ({ ...prev, wordpress_app_password: '', facebook_access_token: '', gemini_api_key: '', openai_api_key: '', azure_openai_api_key: '', groq_api_key: '', google_indexing_key: '' }));
     } catch (error) {
       if (getErrorMessage(error).includes('duplicate key')) {
         // Retry with update if insert failed due to race condition
@@ -264,6 +280,7 @@ const SettingsPage = () => {
           facebook_page_id: settings.facebook_page_id,
           instagram_account_id: settings.instagram_account_id,
           google_analytics_property_id: settings.google_analytics_property_id,
+          google_indexing_key: settings.google_indexing_key,
           categories: settings.categories,
           articles_per_day: settings.articles_per_day,
           auto_publish: settings.auto_publish,
@@ -389,6 +406,7 @@ const SettingsPage = () => {
 
         <TabsContent value="general" className="space-y-6 mt-0 animate-in fade-in-50 duration-300">
           <GoogleAnalyticsSettings settings={settings} onChange={updateSettings} />
+          <GoogleIndexingSettings settings={settings} onChange={updateSettings} />
           <AutomationSettings settings={settings} onChange={updateSettings} />
         </TabsContent>
       </Tabs>
