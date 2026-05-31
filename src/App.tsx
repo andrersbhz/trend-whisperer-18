@@ -20,6 +20,7 @@ import MetaPage from "@/pages/MetaPage";
 import BlogHome from "@/pages/BlogHome";
 import BlogArticle from "@/pages/BlogArticle";
 import AuthorsPage from "@/pages/AuthorsPage";
+import TermsPage from "@/pages/TermsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -62,6 +63,7 @@ const App = () => (
               <Route path="/:lang" element={<BlogHome />} />
               <Route path="/:lang/category/:categoryId" element={<BlogHome />} />
               <Route path="/:lang/article/:articleId" element={<BlogArticle />} />
+              <Route path="/:lang/termos" element={<TermsPage />} />
 
               {/* Admin Dashboard Routes (Protected) */}
               <Route path="/auth" element={<AuthRoute />} />
