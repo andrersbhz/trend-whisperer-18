@@ -34,7 +34,7 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
   const [isCropDialogOpen, setIsCropDialogOpen] = useState(false);
-  const [aspect, setAspect] = useState<number | undefined>(1350/1080); // Default to 5:4 for Instagram (1350x1080)
+  const [aspect, setAspect] = useState<number | undefined>(1080/1350); // Default to 4:5 for Instagram (1080x1350 Portrait)
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
   const [format, setFormat] = useState<'image/jpeg' | 'image/webp'>('image/webp');
   const [quality, setQuality] = useState(0.85);
@@ -220,7 +220,7 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
 
   return (
     <div className="space-y-4">
-      <div className="relative w-full aspect-[5/4] max-w-full mx-auto rounded-none border-2 border-dashed border-border overflow-hidden bg-muted/30 flex items-center justify-center">
+      <div className="relative w-full aspect-[4/5] max-w-full mx-auto rounded-none border-2 border-dashed border-border overflow-hidden bg-muted/30 flex items-center justify-center">
         {previewUrl ? (
           <>
             <img 
@@ -326,7 +326,7 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
       </div>
 
       <p className="text-[10px] text-muted-foreground text-center italic">
-        A IA gerará uma imagem realista (1350x1080) com uma chamada impactante baseada no título. As imagens são exibidas em seu tamanho original.
+        A IA gerará uma imagem realista (1080x1350) com uma chamada impactante baseada no título. As imagens são exibidas em seu tamanho original.
       </p>
 
 
@@ -337,12 +337,12 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
               <DialogTitle>Ajustar Imagem</DialogTitle>
               <div className="flex flex-wrap gap-2 mr-6">
                 <Button 
-                  variant={aspect === 1350/1080 ? "default" : "outline"} 
+                  variant={aspect === 1080/1350 ? "default" : "outline"} 
                   size="sm" 
-                  onClick={() => setAspect(1350/1080)}
+                  onClick={() => setAspect(1080/1350)}
                   className="h-8 text-xs"
                 >
-                  1350x1080 (5:4)
+                  1080x1350 (4:5)
                 </Button>
                 <Button 
                   variant={aspect === 1 ? "default" : "outline"} 
@@ -393,7 +393,7 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
                 <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Pré-visualização</h4>
                 <div className={cn(
                   "relative border border-primary/20 rounded-md overflow-hidden bg-muted/20 w-full max-w-[150px] mx-auto transition-all",
-                  aspect === 1350/1080 ? "aspect-[5/4]" : aspect === 1 ? "aspect-square" : aspect === 16/9 ? "aspect-video" : "aspect-square"
+                  aspect === 1080/1350 ? "aspect-[4/5]" : aspect === 1 ? "aspect-square" : aspect === 16/9 ? "aspect-video" : "aspect-square"
                 )}>
                   {selectedImage && croppedAreaPixels && (
                     <div
