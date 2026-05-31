@@ -149,7 +149,7 @@ async function generateImageDallE(apiKey: string, title: string, content: string
         model: "dall-e-3",
         prompt: buildImagePrompt(title, content, visualElements, imagePrompt),
         n: 1,
-        size: "1024x1024",
+        size: "1024x1792", // Vertical format closest to 4:5 for DALL-E 3
         quality: "standard",
         response_format: "b64_json",
       }),
