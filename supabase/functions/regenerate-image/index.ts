@@ -262,22 +262,24 @@ serve(async (req) => {
       let imageUrl: string | null = null;
       const providerErrors: string[] = [];
 
-      // Cadeia: OpenAI (Prioridade solicitada) -> Gemini -> Pollinations (fallback)
+      // Prioridade absoluta: OpenAI (ChatGPT/DALL-E) conforme solicitado
       if (openaiApiKey) {
-        try { imageUrl = await generateImageDallE(openaiApiKey, article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt); }
-        catch (error) { providerErrors.push(`OpenAI: ${getErrorMessage(error)}`); }
-      }
-      
-      if (!imageUrl && geminiApiKey) {
+        try { 
+          imageUrl = await generateImageDallE(openaiApiKey, article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt); 
+        } catch (error) { 
+          providerErrors.push(`OpenAI (ChatGPT): ${getErrorMessage(error)}`);
+          // Se o usuário quer "sempre" o ChatGPT, não caímos para outros provedores automaticamente 
+          // a menos que a chave falhe e queiramos um fallback de segurança (mantido apenas Pollinations como última instância)
+        }
+      } else if (geminiApiKey) {
         try { imageUrl = await generateImageGemini(geminiApiKey, article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt); }
         catch (error) { providerErrors.push(`Gemini: ${getErrorMessage(error)}`); }
       }
 
-      // Fallback final: Pollinations (sempre funciona se houver internet)
-      if (!imageUrl) {
+      // Fallback final apenas se NENHUMA chave de API (OpenAI ou Gemini) funcionou ou se não existem chaves
+      if (!imageUrl && !openaiApiKey && !geminiApiKey) {
         try {
           imageUrl = await generateImagePollinations(article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt);
-          console.log(`Fallback Pollinations used for "${article.title}"`);
         } catch (error) {
           providerErrors.push(`Pollinations: ${getErrorMessage(error)}`);
         }
