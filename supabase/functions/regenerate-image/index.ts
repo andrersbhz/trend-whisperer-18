@@ -13,22 +13,23 @@ function buildImagePrompt(title: string, content: string | null, visualElements:
   }
 
   const userImageGuidance = `### DIRETRIZES OBRIGATÓRIAS DE ESTILO DO USUÁRIO ###\n${imagePrompt.trim()}\n`;
-  const contentSnippet = content ? `\n### CONTEXTO DETALHADO DA HISTÓRIA (PESQUISA) ###\n${content.replace(/<[^>]*>/g, "").substring(0, 1500)}...` : "";
+  const contentSnippet = content ? `\n### CONTEXTO DETALHADO DA HISTÓRIA ###\n${content.replace(/<[^>]*>/g, "").substring(0, 1000)}...` : "";
 
   return `${userImageGuidance}
 
-### INSTRUÇÕES DE ANÁLISE E PESQUISA CONTEXTUAL ###
-1. IDENTIFICAÇÃO DE ENTIDADES: Analise o título e o contexto abaixo para identificar pessoas específicas (artistas, políticos, celebridades), locais, objetos ou eventos mencionados.
-2. REPRESENTAÇÃO FIEL: A imagem DEVE retratar os elementos centrais da história. Se o artigo é sobre um artista específico, a cena deve refletir o universo desse artista ou o evento descrito.
-3. HARMONIA OBRIGATÓRIA: Combine o ESTILO solicitado nas DIRETRIZES DO USUÁRIO com o ASSUNTO extraído dos DADOS DO ARTIGO.
-4. PROIBIÇÃO DE IMAGENS GENÉRICAS: Não ignore o contexto. Se o artigo é sobre futebol, não mostre apenas uma bola genérica; mostre a cena descrita no contexto.
+### INSTRUÇÕES DE COMPOSIÇÃO ###
+1. REFERÊNCIA PRINCIPAL: Use o título do artigo como base absoluta para a cena.
+2. IMPACTO VISUAL: A imagem deve ser realista, impactante e cinematográfica, desenhada para maximizar cliques (CTR).
+3. TEXTO INTEGRADO: Inclua uma chamada curta e forte na imagem usando gatilhos mentais. Resuma o título se necessário para que o texto seja minimalista, legível e visualmente atraente.
+4. REPRESENTAÇÃO FIEL: Retrate fielmente as pessoas, locais ou eventos mencionados no título/contexto.
+5. PROPORÇÃO: A imagem deve ser composta para o formato vertical 4:5 (Instagram/Social).
 
-### DADOS DO ARTIGO PARA A CENA ###
+### DADOS DO ARTIGO ###
 TÍTULO: ${title}${contentSnippet}
-ELEMENTOS VISUAIS SUGERIDOS: ${visualElements || "Cena dinâmica que ilustra o ponto principal do artigo"}.
+ELEMENTOS SUGERIDOS: ${visualElements || "Cena dramática e realista que resume o impacto da notícia"}.
 
-### REQUISITOS TÉCNICOS FINAIS ###
-Proporção 1:1, sem texto, sem marcas d'água, realismo cinematográfico de alta qualidade, 1024x1024px.`;
+### REQUISITOS TÉCNICOS ###
+Realismo de alta qualidade, 4k, iluminação profissional, proporção vertical 4:5, sem marcas d'água, pouco texto mas com mensagem poderosa.`;
 }
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -148,7 +149,7 @@ async function generateImageDallE(apiKey: string, title: string, content: string
         model: "dall-e-3",
         prompt: buildImagePrompt(title, content, visualElements, imagePrompt),
         n: 1,
-        size: "1024x1024",
+        size: "1024x1792", // Vertical format closest to 4:5 for DALL-E 3
         quality: "standard",
         response_format: "b64_json",
       }),
@@ -173,7 +174,7 @@ async function generateImagePollinations(title: string, content: string | null, 
   const prompt = buildImagePrompt(title, content, visualElements, imagePrompt);
   const encodedPrompt = encodeURIComponent(prompt);
   const seed = Math.floor(Math.random() * 1000000);
-  const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=800&height=800&nologo=true&seed=${seed}`;
+  const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1080&height=1350&nologo=true&seed=${seed}`;
   
   // Tenta validar se a URL está ok
   try {
