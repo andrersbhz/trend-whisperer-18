@@ -147,6 +147,7 @@ const BlogArticle = () => {
           </div>
         </footer>
       </main>
+      <BlogFooter />
     </div>
   );
 };
