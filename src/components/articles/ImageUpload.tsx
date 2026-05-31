@@ -326,7 +326,7 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
       </div>
 
       <p className="text-[10px] text-muted-foreground text-center italic">
-        A imagem será baseada obrigatoriamente no seu "Prompt de Imagem IA" e nos detalhes da história.
+        A IA gerará uma imagem realista (1080x1350) com uma chamada impactante baseada no título.
       </p>
 
 
