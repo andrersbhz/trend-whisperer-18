@@ -70,7 +70,8 @@ export async function getCroppedImg(
   targetWidth = 800, // Default target width for 1:1 article images
   sharpenAmount = 0.15, // Optional sharpen amount (0 to 1)
   format: 'image/jpeg' | 'image/webp' = 'image/jpeg',
-  quality = 0.92
+  quality = 0.92,
+  forceHeight?: number // Optional forced height
 ): Promise<Blob | null> {
   const image = await createImage(imageSrc);
   const canvas = document.createElement('canvas');
@@ -109,9 +110,9 @@ export async function getCroppedImg(
     return null;
   }
 
-  // Calculate the target height based on crop ratio
+  // Calculate the target height based on crop ratio or use forced height
   const cropRatio = pixelCrop.width / pixelCrop.height;
-  const targetHeight = targetWidth / (cropRatio || 1);
+  const targetHeight = forceHeight || (targetWidth / (cropRatio || 1));
 
   // Set the size of the cropped canvas
   croppedCanvas.width = targetWidth;

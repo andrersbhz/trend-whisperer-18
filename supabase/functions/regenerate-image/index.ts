@@ -152,8 +152,8 @@ async function generateImageDallE(apiKey: string, title: string, content: string
         model: "dall-e-3",
         prompt: buildImagePrompt(title, content, visualElements, imagePrompt),
         n: 1,
-        size: "1024x1024", 
-        quality: "standard"
+        size: "1024x1024", // DALL-E 3 standard, will be resized by frontend to 1080x1350
+        quality: "hd"
       }),
     });
 
