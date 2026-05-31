@@ -22,14 +22,14 @@ function buildImagePrompt(title: string, content: string | null, visualElements:
 2. IMPACTO VISUAL: A imagem deve ser realista, impactante e cinematográfica, desenhada para maximizar cliques (CTR).
 3. TEXTO INTEGRADO: Inclua uma chamada curta e forte na imagem usando gatilhos mentais. Resuma o título se necessário para que o texto seja minimalista, legível e visualmente atraente.
 4. REPRESENTAÇÃO FIEL: Retrate fielmente as pessoas, locais ou eventos mencionados no título/contexto.
-5. PROPORÇÃO: A imagem deve ser composta para o formato vertical 4:5 (Instagram/Social).
+5. PROPORÇÃO: A imagem deve ser composta para o formato horizontal 5:4 (1350x1080 pixels).
 
 ### DADOS DO ARTIGO ###
 TÍTULO: ${title}${contentSnippet}
 ELEMENTOS SUGERIDOS: ${visualElements || "Cena dramática e realista que resume o impacto da notícia"}.
 
 ### REQUISITOS TÉCNICOS ###
-Realismo de alta qualidade, 4k, iluminação profissional, proporção vertical 4:5, sem marcas d'água, pouco texto mas com mensagem poderosa.`;
+Realismo de alta qualidade, 4k, iluminação profissional, proporção horizontal 5:4, sem marcas d'água, pouco texto mas com mensagem poderosa.`;
 }
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -149,7 +149,7 @@ async function generateImageDallE(apiKey: string, title: string, content: string
         model: "dall-e-3",
         prompt: buildImagePrompt(title, content, visualElements, imagePrompt),
         n: 1,
-        size: "1024x1792", // Vertical format closest to 4:5 for DALL-E 3
+        size: "1024x1024", // DALL-E 3 doesn't support 5:4 exactly, sticking to high quality 1:1 or 1792x1024 for landscape
         quality: "standard",
         response_format: "b64_json",
       }),
@@ -174,7 +174,7 @@ async function generateImagePollinations(title: string, content: string | null, 
   const prompt = buildImagePrompt(title, content, visualElements, imagePrompt);
   const encodedPrompt = encodeURIComponent(prompt);
   const seed = Math.floor(Math.random() * 1000000);
-  const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1080&height=1350&nologo=true&seed=${seed}`;
+  const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1350&height=1080&nologo=true&seed=${seed}`;
   
   // Tenta validar se a URL está ok
   try {
