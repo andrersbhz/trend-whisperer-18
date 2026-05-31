@@ -326,7 +326,7 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
       </div>
 
       <p className="text-[10px] text-muted-foreground text-center italic">
-        A IA gerará uma imagem realista (1080x1350) com uma chamada impactante baseada no título.
+        A IA gerará uma imagem realista (1350x1080) com uma chamada impactante baseada no título.
       </p>
 
 
