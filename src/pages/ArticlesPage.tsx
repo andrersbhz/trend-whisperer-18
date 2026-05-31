@@ -870,6 +870,16 @@ const ArticlesPage = () => {
                     setArticles(prev => prev.map(a => a.id === preview.id ? { ...a, featured_image_url: url } : a));
                   }}
                 />
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="w-full mt-2 gap-2 text-[10px] font-bold uppercase tracking-wider"
+                  onClick={handleManualRegenerateImage}
+                  disabled={regeneratingImages}
+                >
+                  {regeneratingImages ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                  Regenerar com IA (ChatGPT/DALL-E)
+                </Button>
               </div>
 
               {/* SEO Summary Card */}
