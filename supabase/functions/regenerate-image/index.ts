@@ -26,11 +26,11 @@ ELEMENTOS VISUAIS SUGERIDOS: ${visualElements || "Uma cena dinâmica e impactant
 ${imagePrompt.trim()}
 
 ### REQUISITOS TÉCNICOS E DE COMPOSIÇÃO ###
-1. FORMATO: A imagem DEVE ser no formato 5:4 (1350x1080 pixels, retrato para Instagram).
+1. FORMATO: A imagem DEVE ser no formato 4:5 (1080x1350 pixels, retrato para Instagram).
 2. CHAMADA CTR: Escreva na imagem uma frase curta, poderosa e provocativa baseada no título, usando GATILHOS MENTAIS (curiosidade, urgência ou exclusividade).
 3. QUALIDADE: Estilo cinematográfico, iluminação profissional, realista (4k), pronta para ser postada no feed.
 4. FOCO: Retrate fielmente os elementos ou pessoas citados no TÍTULO. Evite bancos de imagem genéricos.
-5. PROPORÇÃO DA ARTE: Certifique-se de que o design preencha bem o formato 1350x1080.`;
+5. PROPORÇÃO DA ARTE: Certifique-se de que o design preencha bem o formato 1080x1350.`;
 }
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
