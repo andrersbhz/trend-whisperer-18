@@ -149,9 +149,8 @@ async function generateImageDallE(apiKey: string, title: string, content: string
         model: "dall-e-3",
         prompt: buildImagePrompt(title, content, visualElements, imagePrompt),
         n: 1,
-        size: "1024x1024", // DALL-E 3 doesn't support 5:4 exactly, sticking to high quality 1:1 or 1792x1024 for landscape
-        quality: "standard",
-        response_format: "b64_json",
+        size: "1024x1024", // Use square as it's the most reliable for DALL-E 3 standard
+        quality: "standard"
       }),
     });
 
@@ -160,12 +159,12 @@ async function generateImageDallE(apiKey: string, title: string, content: string
     }
 
     const data = await resp.json();
-    const b64 = data.data?.[0]?.b64_json;
-    if (!b64) {
-      throw new ProviderError("OpenAI DALL-E não retornou uma imagem válida.", 500, false, false);
+    const imageUrl = data.data?.[0]?.url;
+    if (!imageUrl) {
+      throw new ProviderError("OpenAI DALL-E não retornou uma URL de imagem válida.", 500, false, false);
     }
 
-    return `data:image/png;base64,${b64}`;
+    return imageUrl;
   }, 1, 2000);
 }
 
