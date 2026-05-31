@@ -176,7 +176,7 @@ async function generateImagePollinations(title: string, content: string | null, 
   const prompt = buildImagePrompt(title, content, visualElements, imagePrompt);
   const encodedPrompt = encodeURIComponent(prompt);
   const seed = Math.floor(Math.random() * 1000000);
-  const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1350&height=1080&nologo=true&seed=${seed}`;
+  const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1080&height=1350&nologo=true&seed=${seed}`;
   
   // Tenta validar se a URL está ok
   try {
