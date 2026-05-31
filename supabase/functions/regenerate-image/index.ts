@@ -150,7 +150,7 @@ async function generateImageDallE(apiKey: string, title: string, content: string
         model: "dall-e-3",
         prompt: buildImagePrompt(title, content, visualElements, imagePrompt),
         n: 1,
-        size: "1024x1024",
+        size: "1024x1024", // DALL-E 3 doesn't support 1350x1080 directly, will use 1024x1024 as base or Pollock if requested specifically
         quality: "standard"
       }),
     });
