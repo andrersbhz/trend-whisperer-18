@@ -142,6 +142,8 @@ async function generateImageGemini(apiKey: string, title: string, content: strin
 }
 
 async function generateImageDallE(apiKey: string, title: string, content: string | null, visualElements: string | null, imagePrompt: string | null): Promise<string> {
+  // Nota: DALL-E 3 só aceita 1024x1024, 1024x1792 ou 1792x1024.
+  // Como o usuário quer 1350x1080 (quase 5:4), usaremos a mais próxima ou Pollinations para o tamanho exato.
   return await withRetry(async () => {
     const resp = await fetch("https://api.openai.com/v1/images/generations", {
       method: "POST",
@@ -150,7 +152,7 @@ async function generateImageDallE(apiKey: string, title: string, content: string
         model: "dall-e-3",
         prompt: buildImagePrompt(title, content, visualElements, imagePrompt),
         n: 1,
-        size: "1024x1024",
+        size: "1024x1024", 
         quality: "standard"
       }),
     });
