@@ -2,12 +2,17 @@ import { useState, useEffect } from 'react';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Search, LogIn, Loader2, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { Search, LogIn, Loader2, RefreshCw, CheckCircle2, History, ExternalLink, AlertCircle } from 'lucide-react';
 import ConnectionCard from '@/components/ConnectionCard';
 import type { UserSettings } from '@/pages/SettingsPage';
 import { forwardRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface Props {
   settings: UserSettings;
@@ -18,6 +23,9 @@ const GoogleIndexingSettings = forwardRef<HTMLDivElement, Props>(({ settings, on
   const { toast } = useToast();
   const [oauthLoading, setOauthLoading] = useState(false);
   const [hasGoogleToken, setHasGoogleToken] = useState(false);
+  const [history, setHistory] = useState<any[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const connected = !!settings.google_indexing_key || hasGoogleToken;
 
   useEffect(() => {
@@ -26,7 +34,26 @@ const GoogleIndexingSettings = forwardRef<HTMLDivElement, Props>(({ settings, on
       if (data?.connected) setHasGoogleToken(true);
     };
     checkConnector();
+    fetchHistory();
   }, []);
+
+  const fetchHistory = async () => {
+    setLoadingHistory(true);
+    try {
+      const { data, error } = await supabase
+        .from('google_indexing_history' as any)
+        .select('*, articles(title)')
+        .order('created_at', { ascending: false })
+        .limit(10);
+      
+      if (error) throw error;
+      setHistory(data || []);
+    } catch (e) {
+      console.error('Error fetching indexing history:', e);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
 
   const handleGoogleConnect = async () => {
     setOauthLoading(true);
@@ -110,6 +137,72 @@ const GoogleIndexingSettings = forwardRef<HTMLDivElement, Props>(({ settings, on
             className="h-20 text-xs font-mono"
           />
         </div>
+
+        <Collapsible open={showHistory} onOpenChange={setShowHistory} className="space-y-2 border-t border-border pt-4 mt-4">
+          <div className="flex items-center justify-between">
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" size="sm" className="p-0 h-auto hover:bg-transparent text-muted-foreground flex items-center gap-2">
+                <History className="h-4 w-4" />
+                <span className="text-xs font-medium uppercase tracking-wider">Histórico de Indexação</span>
+              </Button>
+            </CollapsibleTrigger>
+            {loadingHistory && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
+          </div>
+
+          <CollapsibleContent className="space-y-3">
+            {history.length === 0 && !loadingHistory ? (
+              <p className="text-xs text-muted-foreground italic py-2">Nenhuma solicitação enviada ainda.</p>
+            ) : (
+              <ScrollArea className="h-[200px] pr-4">
+                <div className="space-y-3 pt-2">
+                  {history.map((item) => (
+                    <div key={item.id} className="p-2.5 rounded-md bg-muted/50 border border-border flex flex-col gap-1.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <Badge variant={item.status === 'success' ? 'default' : 'destructive'} className="text-[10px] h-4 px-1">
+                          {item.status === 'success' ? 'Sucesso' : 'Erro'}
+                        </Badge>
+                        <span className="text-[10px] text-muted-foreground">
+                          {format(new Date(item.created_at), "dd/MM 'às' HH:mm", { locale: ptBR })}
+                        </span>
+                      </div>
+                      
+                      <div className="flex flex-col">
+                        {item.articles?.title && (
+                          <span className="text-xs font-semibold line-clamp-1">{item.articles.title}</span>
+                        )}
+                        <div className="flex items-center gap-1 mt-0.5">
+                          <span className="text-[10px] text-muted-foreground truncate flex-1">{item.url}</span>
+                          <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80">
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        </div>
+                      </div>
+
+                      {item.status === 'error' && item.response_details?.error?.message && (
+                        <div className="mt-1 p-1.5 rounded bg-destructive/10 border border-destructive/20 flex items-start gap-1.5">
+                          <AlertCircle className="h-3 w-3 text-destructive shrink-0 mt-0.5" />
+                          <span className="text-[10px] text-destructive line-clamp-2">
+                            {item.response_details.error.message}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            )}
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full text-[10px] h-7" 
+              onClick={fetchHistory}
+              disabled={loadingHistory}
+            >
+              <RefreshCw className={`h-3 w-3 mr-1.5 ${loadingHistory ? 'animate-spin' : ''}`} />
+              Atualizar Histórico
+            </Button>
+          </CollapsibleContent>
+        </Collapsible>
       </div>
     </ConnectionCard>
   );

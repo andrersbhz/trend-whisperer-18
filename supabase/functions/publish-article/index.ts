@@ -371,7 +371,7 @@ serve(async (req) => {
               "Content-Type": "application/json",
               "Authorization": `Bearer ${supabaseKey}`,
             },
-            body: JSON.stringify({ url: wpLink, userId }),
+            body: JSON.stringify({ url: wpLink, userId, articleId }),
           });
           const indexingData = await indexingResp.json();
           console.log(`google-indexing response:`, indexingData);
