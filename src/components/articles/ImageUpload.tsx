@@ -220,7 +220,7 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
 
   return (
     <div className="space-y-4">
-      <div className="relative aspect-video w-full max-w-full mx-auto rounded-none border-2 border-dashed border-border overflow-hidden bg-muted/30 flex items-center justify-center">
+      <div className="relative w-full max-w-full mx-auto rounded-none border-2 border-dashed border-border overflow-hidden bg-muted/30 flex items-center justify-center">
         {previewUrl ? (
           <>
             <img 
@@ -326,7 +326,7 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
       </div>
 
       <p className="text-[10px] text-muted-foreground text-center italic">
-        A IA gerará uma imagem realista (1350x1080) com uma chamada impactante baseada no título.
+        A IA gerará uma imagem realista (1350x1080) com uma chamada impactante baseada no título. As imagens são exibidas em seu tamanho original.
       </p>
 
 
