@@ -298,6 +298,51 @@ export type Database = {
         }
         Relationships: []
       }
+      google_indexing_history: {
+        Row: {
+          article_id: string | null
+          created_at: string
+          id: string
+          response_details: Json | null
+          status: string
+          url: string
+          user_id: string
+        }
+        Insert: {
+          article_id?: string | null
+          created_at?: string
+          id?: string
+          response_details?: Json | null
+          status: string
+          url: string
+          user_id: string
+        }
+        Update: {
+          article_id?: string | null
+          created_at?: string
+          id?: string
+          response_details?: Json | null
+          status?: string
+          url?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "google_indexing_history_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "articles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "google_indexing_history_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "public_articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       google_search_console_oauth_states: {
         Row: {
           expires_at: string | null

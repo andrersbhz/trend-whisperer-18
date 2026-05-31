@@ -10,7 +10,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { url, userId } = await req.json();
+    const { url, userId, articleId } = await req.json();
     if (!url || !userId) throw new Error("URL and userId are required");
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -88,6 +88,14 @@ serve(async (req) => {
     console.log("Google Indexing API result:", result);
 
     if (response.ok) {
+      await supabase.from("google_indexing_history").insert({
+        user_id: userId,
+        article_id: articleId || null,
+        url: url,
+        status: 'success',
+        response_details: result
+      });
+
       await supabase.from("automation_logs").insert({
         user_id: userId,
         level: 'info',
@@ -100,7 +108,17 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     } else {
-      throw new Error(result.error?.message || "Erro na Indexing API");
+      const errorMsg = result.error?.message || "Erro na Indexing API";
+      
+      await supabase.from("google_indexing_history").insert({
+        user_id: userId,
+        article_id: articleId || null,
+        url: url,
+        status: 'error',
+        response_details: result
+      });
+
+      throw new Error(errorMsg);
     }
 
   } catch (error) {
