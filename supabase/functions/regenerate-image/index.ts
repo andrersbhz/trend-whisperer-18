@@ -142,15 +142,15 @@ async function generateImageGemini(apiKey: string, title: string, content: strin
 
 async function generateImageDallE(apiKey: string, title: string, content: string | null, visualElements: string | null, imagePrompt: string | null): Promise<string> {
   return await withRetry(async () => {
-    // If DALL-E 3/2 names fail, trying without the model parameter 
-    // to see if the API defaults correctly, or just use the standard endpoint.
     const resp = await fetch("https://api.openai.com/v1/images/generations", {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        prompt: buildImagePrompt(title, content, visualElements, imagePrompt).substring(0, 1000),
+        model: "dall-e-3",
+        prompt: buildImagePrompt(title, content, visualElements, imagePrompt),
         n: 1,
         size: "1024x1024",
+        quality: "standard"
       }),
     });
 
