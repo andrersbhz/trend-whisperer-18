@@ -267,16 +267,17 @@ serve(async (req) => {
           imageUrl = await generateImageDallE(openaiApiKey, article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt); 
         } catch (error) { 
           providerErrors.push(`OpenAI (ChatGPT): ${getErrorMessage(error)}`);
-          // Se o usuário quer "sempre" o ChatGPT, não caímos para outros provedores automaticamente 
-          // a menos que a chave falhe e queiramos um fallback de segurança (mantido apenas Pollinations como última instância)
         }
-      } else if (geminiApiKey) {
+      } 
+      
+      // Fallback para Gemini se OpenAI falhar ou não estiver configurado
+      if (!imageUrl && geminiApiKey) {
         try { imageUrl = await generateImageGemini(geminiApiKey, article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt); }
         catch (error) { providerErrors.push(`Gemini: ${getErrorMessage(error)}`); }
       }
 
-      // Fallback final apenas se NENHUMA chave de API (OpenAI ou Gemini) funcionou ou se não existem chaves
-      if (!imageUrl && !openaiApiKey && !geminiApiKey) {
+      // Fallback final: Pollinations (sempre funciona)
+      if (!imageUrl) {
         try {
           imageUrl = await generateImagePollinations(article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt);
         } catch (error) {
