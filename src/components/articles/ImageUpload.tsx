@@ -415,8 +415,7 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
               <div className="hidden md:flex flex-col gap-4">
                 <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Pré-visualização</h4>
                 <div className={cn(
-                  "relative border border-primary/20 rounded-md overflow-hidden bg-muted/20 w-full max-w-[150px] mx-auto transition-all",
-                  aspect === 1080/1350 ? "aspect-[4/5]" : aspect === 1 ? "aspect-square" : aspect === 16/9 ? "aspect-video" : "aspect-square"
+                  "relative border border-primary/20 rounded-md overflow-hidden bg-muted/20 w-full max-w-[150px] mx-auto transition-all aspect-[4/5]"
                 )}>
                   {selectedImage && croppedAreaPixels && (
                     <div
