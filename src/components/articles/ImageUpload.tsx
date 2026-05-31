@@ -337,12 +337,12 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
               <DialogTitle>Ajustar Imagem</DialogTitle>
               <div className="flex flex-wrap gap-2 mr-6">
                 <Button 
-                  variant={aspect === 0.8 ? "default" : "outline"} 
+                  variant={aspect === 1350/1080 ? "default" : "outline"} 
                   size="sm" 
-                  onClick={() => setAspect(0.8)}
+                  onClick={() => setAspect(1350/1080)}
                   className="h-8 text-xs"
                 >
-                  1080x1350 (4:5)
+                  1350x1080 (5:4)
                 </Button>
                 <Button 
                   variant={aspect === 1 ? "default" : "outline"} 
