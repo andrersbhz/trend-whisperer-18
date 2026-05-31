@@ -222,7 +222,7 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
     <div className="space-y-4">
       <div className="relative w-full max-w-full mx-auto rounded-none border-2 border-dashed border-border overflow-hidden bg-muted/30 flex items-center justify-center">
         {previewUrl ? (
-          <div className="w-full flex justify-center bg-black/20">
+          <>
             <img 
               src={previewUrl} 
               alt="Preview" 
