@@ -20,57 +20,33 @@ const GoogleIndexingSettings = forwardRef<HTMLDivElement, Props>(({ settings, on
   const [hasGoogleToken, setHasGoogleToken] = useState(false);
   const connected = !!settings.google_indexing_key || hasGoogleToken;
 
-  const returnUrl = typeof window !== 'undefined' ? `${window.location.origin}/settings` : '/settings';
-  const popupRef = useRef<Window | null>(null);
-
   useEffect(() => {
-    const checkToken = async () => {
-      const { data } = await supabase.from('user_settings').select('google_search_console_token').maybeSingle();
-      if (data?.google_search_console_token) {
-        setHasGoogleToken(true);
-      }
+    const checkConnector = async () => {
+      const { data } = await supabase.functions.invoke('google-search-console-status');
+      if (data?.connected) setHasGoogleToken(true);
     };
-    checkToken();
+    checkConnector();
   }, []);
-
-  useEffect(() => {
-    const onMessage = (e: MessageEvent) => {
-      if (e.data?.type === 'google-oauth-done') {
-        if (e.data.success) {
-          toast({ title: 'Google Search Console conectado!' });
-          setHasGoogleToken(true);
-        } else {
-          toast({ title: 'Erro na conexão', variant: 'destructive' });
-        }
-        setOauthLoading(false);
-      }
-    };
-    window.addEventListener('message', onMessage);
-    return () => window.removeEventListener('message', onMessage);
-  }, [toast]);
 
   const handleGoogleConnect = async () => {
     setOauthLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('google-search-console-auth', {
-        body: { returnUrl },
-      });
+      const { data, error } = await supabase.functions.invoke('google-search-console-status');
       if (error) throw error;
-      if (data?.authUrl) {
-        const width = 600;
-        const height = 700;
-        const left = window.screenX + (window.outerWidth - width) / 2;
-        const top = window.screenY + (window.outerHeight - height) / 2;
-        const popup = window.open(
-          data.authUrl,
-          'google-oauth',
-          `width=${width},height=${height},left=${left},top=${top}`
-        );
-        popupRef.current = popup;
+      if (data?.connected) {
+        setHasGoogleToken(true);
+        toast({ title: 'Google Search Console conectado!' });
+      } else {
+        toast({
+          title: 'Conexão Google não encontrada',
+          description: 'Abra Configurações → Conectores e vincule "Google Search Console".',
+          variant: 'destructive',
+        });
       }
     } catch (e: any) {
+      toast({ title: 'Erro ao verificar', description: e.message, variant: 'destructive' });
+    } finally {
       setOauthLoading(false);
-      toast({ title: 'Erro ao conectar', description: e.message, variant: 'destructive' });
     }
   };
 

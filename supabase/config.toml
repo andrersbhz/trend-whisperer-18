@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.automation-engine]
 verify_jwt = false
+
+[functions.google-search-console-status]
+verify_jwt = false
