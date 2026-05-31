@@ -55,8 +55,11 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
     }
   };
 
-  const handleUpload = async () => {
-    if (!selectedImage || !croppedAreaPixels) return;
+  const handleUpload = async (imageToUpload?: string, areaPixels?: any) => {
+    const sourceImage = imageToUpload || selectedImage;
+    const pixels = areaPixels || croppedAreaPixels;
+    
+    if (!sourceImage || !pixels) return;
 
     try {
       setUploading(true);
@@ -71,15 +74,17 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
         return;
       }
 
+      // Enforce 1080x1350 during crop
       const croppedImageBlob = await getCroppedImg(
-        selectedImage, 
-        croppedAreaPixels,
+        sourceImage, 
+        pixels,
         0,
         { horizontal: false, vertical: false },
-        aspect === 0.8 ? 1080 : 1080, // Always use 1080 for high quality
+        1080,
         0.15,
         format,
-        quality
+        quality,
+        1350 // Forced height
       );
       if (!croppedImageBlob) throw new Error("Erro ao processar imagem");
 
@@ -109,25 +114,82 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
       setPreviewUrl(publicUrl);
       onUploadSuccess(publicUrl);
 
-      // Dispara evento para indicar que o upload terminou
       window.dispatchEvent(new CustomEvent('article-image-uploaded', { 
         detail: { articleId, url: publicUrl } 
       }));
       
-      // Clear cropping states
       setSelectedImage(null);
       setCroppedAreaPixels(null);
 
       toast({
         title: "Sucesso",
-        description: "Imagem enviada com sucesso!",
+        description: "Imagem validada e enviada (1080x1350)!",
       });
+      return publicUrl;
     } catch (error: any) {
       toast({
-        title: "Erro no upload",
+        title: "Erro no processamento",
         description: error.message,
         variant: "destructive",
       });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const processAndUploadAIImage = async (url: string) => {
+    try {
+      setUploading(true);
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+        img.src = url;
+      });
+
+      // Automatic validation: check if it's already 1080x1350
+      if (img.width === 1080 && img.height === 1350) {
+        console.log("AI Image already perfect size");
+        setPreviewUrl(url);
+        onUploadSuccess(url);
+        return;
+      }
+
+      // If not, auto-crop/resize to 1080x1350
+      const imgAspect = img.width / img.height;
+      const targetAspect = 1080 / 1350;
+      
+      let cropWidth, cropHeight, cropX, cropY;
+      
+      if (imgAspect > targetAspect) {
+        // Wider than 4:5, crop horizontal
+        cropHeight = img.height;
+        cropWidth = img.height * targetAspect;
+        cropX = (img.width - cropWidth) / 2;
+        cropY = 0;
+      } else {
+        // Taller than 4:5, crop vertical
+        cropWidth = img.width;
+        cropHeight = img.width / targetAspect;
+        cropX = 0;
+        cropY = (img.height - cropHeight) / 2;
+      }
+
+      const autoPixels = {
+        x: Math.round(cropX),
+        y: Math.round(cropY),
+        width: Math.round(cropWidth),
+        height: Math.round(cropHeight)
+      };
+
+      await handleUpload(url, autoPixels);
+    } catch (e) {
+      console.error("Error auto-processing AI image:", e);
+      // Fallback to the original URL if processing fails
+      setPreviewUrl(url);
+      onUploadSuccess(url);
     } finally {
       setUploading(false);
     }
@@ -145,41 +207,31 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
       
       if (data?.success) {
         const generatedUrl = data.imageUrl;
-        
         if (generatedUrl) {
-          setPreviewUrl(generatedUrl);
-          onUploadSuccess(generatedUrl);
-          toast({ title: "Sucesso", description: "Imagem gerada com sucesso!" });
-
-          // Dispara evento para indicar que a geração automática de imagem terminou
-          window.dispatchEvent(new CustomEvent('article-image-generated', { 
-            detail: { articleId, url: generatedUrl } 
-          }));
+          await processAndUploadAIImage(generatedUrl);
         } else {
           toast({ 
             title: "Gerando imagem...", 
             description: "Aguarde enquanto criamos sua imagem com IA." 
           });
           
-          // Fallback polling se não veio na resposta direta
-          setTimeout(async () => {
+          // Fallback polling
+          let attempts = 0;
+          const interval = setInterval(async () => {
+            attempts++;
             const { data: updated } = await supabase
               .from('articles')
               .select('featured_image_url')
               .eq('id', articleId)
               .single();
               
-            if (updated?.featured_image_url) {
-              setPreviewUrl(updated.featured_image_url);
-              onUploadSuccess(updated.featured_image_url);
-              toast({ title: "Sucesso", description: "Imagem gerada com sucesso!" });
-              
-              // Dispara evento para indicar que a geração automática de imagem terminou
-              window.dispatchEvent(new CustomEvent('article-image-generated', { 
-                detail: { articleId, url: updated.featured_image_url } 
-              }));
+            if (updated?.featured_image_url || attempts > 10) {
+              clearInterval(interval);
+              if (updated?.featured_image_url) {
+                await processAndUploadAIImage(updated.featured_image_url);
+              }
             }
-          }, 8000);
+          }, 4000);
         }
       } else {
         toast({ title: "Erro", description: data?.message || "Não foi possível gerar a imagem.", variant: "destructive" });
@@ -334,40 +386,11 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
         <DialogContent className="sm:max-w-[700px] p-0 overflow-hidden bg-background border-primary/20">
           <DialogHeader className="p-6 pb-0">
             <div className="flex items-center justify-between">
-              <DialogTitle>Ajustar Imagem</DialogTitle>
+              <DialogTitle>Ajustar Imagem (1080x1350)</DialogTitle>
               <div className="flex flex-wrap gap-2 mr-6">
-                <Button 
-                  variant={aspect === 1080/1350 ? "default" : "outline"} 
-                  size="sm" 
-                  onClick={() => setAspect(1080/1350)}
-                  className="h-8 text-xs"
-                >
-                  1080x1350 (4:5)
-                </Button>
-                <Button 
-                  variant={aspect === 1 ? "default" : "outline"} 
-                  size="sm" 
-                  onClick={() => setAspect(1)}
-                  className="h-8 text-xs"
-                >
-                  1:1
-                </Button>
-                <Button 
-                  variant={aspect === 16/9 ? "default" : "outline"} 
-                  size="sm" 
-                  onClick={() => setAspect(16/9)}
-                  className="h-8 text-xs"
-                >
-                  16:9
-                </Button>
-                <Button 
-                  variant={aspect === undefined ? "default" : "outline"} 
-                  size="sm" 
-                  onClick={() => setAspect(undefined)}
-                  className="h-8 text-xs"
-                >
-                  Livre
-                </Button>
+                <span className="text-xs font-medium text-primary bg-primary/10 px-3 py-1 rounded-full border border-primary/20">
+                  Formato Obrigatório: 1080x1350
+                </span>
               </div>
             </div>
           </DialogHeader>
@@ -380,7 +403,7 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
                     image={selectedImage}
                     crop={crop}
                     zoom={zoom}
-                    aspect={aspect}
+                    aspect={1080/1350}
                     onCropChange={setCrop}
                     onCropComplete={onCropComplete}
                     onZoomChange={setZoom}
@@ -392,8 +415,7 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
               <div className="hidden md:flex flex-col gap-4">
                 <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Pré-visualização</h4>
                 <div className={cn(
-                  "relative border border-primary/20 rounded-md overflow-hidden bg-muted/20 w-full max-w-[150px] mx-auto transition-all",
-                  aspect === 1080/1350 ? "aspect-[4/5]" : aspect === 1 ? "aspect-square" : aspect === 16/9 ? "aspect-video" : "aspect-square"
+                  "relative border border-primary/20 rounded-md overflow-hidden bg-muted/20 w-full max-w-[150px] mx-auto transition-all aspect-[4/5]"
                 )}>
                   {selectedImage && croppedAreaPixels && (
                     <div
@@ -478,7 +500,7 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
             >
               Cancelar
             </Button>
-            <Button onClick={handleUpload} className="gap-2">
+            <Button onClick={() => handleUpload()} className="gap-2">
               <Crop className="h-4 w-4" />
               Cortar e Salvar
             </Button>
