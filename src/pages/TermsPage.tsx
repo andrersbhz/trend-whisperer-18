@@ -60,8 +60,10 @@ const TermsPage = () => {
   return (
     <div className="min-h-screen bg-white text-black font-sans antialiased">
       <Helmet>
-        <title>Termos de Uso | Portal de Notícias</title>
-        <meta name="description" content="Termos e condições de uso do Portal de Notícias." />
+        <title>Termos de Uso | A3 BLOG</title>
+        <meta name="description" content="Leia os termos e condições de uso do A3 BLOG para entender suas responsabilidades e direitos ao acessar nosso portal de notícias." />
+        <meta name="keywords" content="termos de uso, condições de uso, regras de conduta, a3 blog" />
+        <link rel="canonical" href={window.location.origin + window.location.pathname} />
       </Helmet>
       
       <BlogHeader />
