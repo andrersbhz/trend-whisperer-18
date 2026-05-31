@@ -501,7 +501,7 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
             >
               Cancelar
             </Button>
-            <Button onClick={handleUpload} className="gap-2">
+            <Button onClick={() => handleUpload()} className="gap-2">
               <Crop className="h-4 w-4" />
               Cortar e Salvar
             </Button>
