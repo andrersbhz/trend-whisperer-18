@@ -389,7 +389,7 @@ const ArticlesPage = () => {
     setRegeneratingImages(true); // Using existing state to show loading if needed, or I can use a more specific one
     try {
       const { data, error } = await supabase.functions.invoke('regenerate-image', {
-        body: { userId: user.id, articleIds: [articleId] },
+        body: { userId: user.id, articleIds: [articleId], force: true },
       });
       
       if (error) throw error;
@@ -427,6 +427,12 @@ const ArticlesPage = () => {
       toast({ title: 'Erro ao gerar imagem', description: getErrorMessage(error), variant: 'destructive' });
     } finally {
       setRegeneratingImages(false);
+    }
+  };
+
+  const handleManualRegenerateImage = () => {
+    if (preview?.id) {
+      handleGenerateImageForArticle(preview.id);
     }
   };
 
@@ -864,6 +870,16 @@ const ArticlesPage = () => {
                     setArticles(prev => prev.map(a => a.id === preview.id ? { ...a, featured_image_url: url } : a));
                   }}
                 />
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="w-full mt-2 gap-2 text-[10px] font-bold uppercase tracking-wider"
+                  onClick={handleManualRegenerateImage}
+                  disabled={regeneratingImages}
+                >
+                  {regeneratingImages ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                  Regenerar com IA (ChatGPT/DALL-E)
+                </Button>
               </div>
 
               {/* SEO Summary Card */}
