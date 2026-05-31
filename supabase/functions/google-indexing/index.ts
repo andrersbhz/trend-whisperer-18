@@ -21,51 +21,55 @@ serve(async (req) => {
     // Fetch settings
     const { data: settings, error: settingsError } = await supabase
       .from("user_settings")
-      .select("google_indexing_key")
+      .select("google_indexing_key, google_search_console_token")
       .eq("user_id", userId)
       .single();
 
-    if (settingsError || !settings?.google_indexing_key) {
-      return new Response(JSON.stringify({ success: false, message: "Google Indexing key not configured" }), {
+    if (settingsError) throw settingsError;
+
+    let accessToken = "";
+
+    // 1. Try Google Search Console Token (OAuth) first
+    if (settings?.google_search_console_token) {
+      try {
+        const tokenData = JSON.parse(settings.google_search_console_token);
+        accessToken = tokenData.access_token;
+        
+        // If expired or near expiration, we should refresh it here using tokenData.refresh_token
+        // For now, let's assume it's fresh or the user just connected
+      } catch (e) {
+        console.error("Error parsing GSC token:", e);
+      }
+    }
+
+    // 2. Fallback to Service Account Key (JSON)
+    if (!accessToken && settings?.google_indexing_key) {
+      let jsonKey = settings.google_indexing_key;
+      if (jsonKey.startsWith("ENCRYPTED:")) {
+        const { data: decrypted } = await supabase.rpc("decrypt_credential", { val: jsonKey, enc_key: encKey });
+        jsonKey = decrypted || jsonKey;
+      }
+
+      try {
+        const sa = JSON.parse(jsonKey);
+        const { JWT } = await import("https://esm.sh/google-auth-library@9.4.1");
+        const client = new JWT({
+          email: sa.client_email,
+          key: sa.private_key,
+          scopes: ["https://www.googleapis.com/auth/indexing"],
+        });
+        const token = await client.authorize();
+        accessToken = token.access_token || "";
+      } catch (e) {
+        console.error("Error generating SA token:", e);
+      }
+    }
+
+    if (!accessToken) {
+      return new Response(JSON.stringify({ success: false, message: "Google Indexing not configured (OAuth or JSON key required)" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-
-    // Decrypt key
-    let jsonKey = settings.google_indexing_key;
-    if (jsonKey.startsWith("ENCRYPTED:")) {
-      const { data: decrypted } = await supabase.rpc("decrypt_credential", { val: jsonKey, enc_key: encKey });
-      jsonKey = decrypted || jsonKey;
-    }
-
-    const serviceAccount = JSON.parse(jsonKey);
-    
-    // Get access token using JWT flow
-    // We'll use a simplified implementation of the JWT flow for Google APIs
-    async function getAccessToken(sa: any) {
-      const header = { alg: "RS256", typ: "JWT" };
-      const now = Math.floor(Date.now() / 1000);
-      const claim = {
-        iss: sa.client_email,
-        scope: "https://www.googleapis.com/auth/indexing",
-        aud: sa.token_uri,
-        exp: now + 3600,
-        iat: now,
-      };
-
-      // In Deno, we can use 'https://deno.land/x/djwt/mod.ts' or similar
-      // But let's use a more robust way via esm.sh google-auth-library
-      const { JWT } = await import("https://esm.sh/google-auth-library@9.4.1");
-      const client = new JWT({
-        email: sa.client_email,
-        key: sa.private_key,
-        scopes: ["https://www.googleapis.com/auth/indexing"],
-      });
-      const token = await client.authorize();
-      return token.access_token;
-    }
-
-    const accessToken = await getAccessToken(serviceAccount);
 
     // Call Google Indexing API
     const response = await fetch("https://indexing.googleapis.com/v1/urlNotifications:publish", {
@@ -84,7 +88,6 @@ serve(async (req) => {
     console.log("Google Indexing API result:", result);
 
     if (response.ok) {
-      // Log success
       await supabase.from("automation_logs").insert({
         user_id: userId,
         level: 'info',
@@ -97,7 +100,7 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     } else {
-      throw new Error(result.error?.message || "Erro desconhecido na Indexing API");
+      throw new Error(result.error?.message || "Erro na Indexing API");
     }
 
   } catch (error) {
@@ -108,3 +111,4 @@ serve(async (req) => {
     });
   }
 });
+

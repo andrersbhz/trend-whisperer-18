@@ -1,10 +1,13 @@
-import { Input } from '@/components/ui/input';
+import { useState, useEffect, useRef } from 'react';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Search } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Search, LogIn, Loader2, RefreshCw, CheckCircle2 } from 'lucide-react';
 import ConnectionCard from '@/components/ConnectionCard';
 import type { UserSettings } from '@/pages/SettingsPage';
 import { forwardRef } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface Props {
   settings: UserSettings;
@@ -12,41 +15,124 @@ interface Props {
 }
 
 const GoogleIndexingSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChange }, ref) => {
-  const connected = !!settings.google_indexing_key;
+  const { toast } = useToast();
+  const [oauthLoading, setOauthLoading] = useState(false);
+  const [hasGoogleToken, setHasGoogleToken] = useState(false);
+  const connected = !!settings.google_indexing_key || hasGoogleToken;
+
+  const returnUrl = typeof window !== 'undefined' ? `${window.location.origin}/settings` : '/settings';
+  const popupRef = useRef<Window | null>(null);
+
+  useEffect(() => {
+    const checkToken = async () => {
+      const { data } = await supabase.from('user_settings').select('google_search_console_token').maybeSingle();
+      if (data?.google_search_console_token) {
+        setHasGoogleToken(true);
+      }
+    };
+    checkToken();
+  }, []);
+
+  useEffect(() => {
+    const onMessage = (e: MessageEvent) => {
+      if (e.data?.type === 'google-oauth-done') {
+        if (e.data.success) {
+          toast({ title: 'Google Search Console conectado!' });
+          setHasGoogleToken(true);
+        } else {
+          toast({ title: 'Erro na conexão', variant: 'destructive' });
+        }
+        setOauthLoading(false);
+      }
+    };
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, [toast]);
+
+  const handleGoogleConnect = async () => {
+    setOauthLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('google-search-console-auth', {
+        body: { returnUrl },
+      });
+      if (error) throw error;
+      if (data?.authUrl) {
+        const width = 600;
+        const height = 700;
+        const left = window.screenX + (window.outerWidth - width) / 2;
+        const top = window.screenY + (window.outerHeight - height) / 2;
+        const popup = window.open(
+          data.authUrl,
+          'google-oauth',
+          `width=${width},height=${height},left=${left},top=${top}`
+        );
+        popupRef.current = popup;
+      }
+    } catch (e: any) {
+      setOauthLoading(false);
+      toast({ title: 'Erro ao conectar', description: e.message, variant: 'destructive' });
+    }
+  };
 
   return (
     <ConnectionCard
       ref={ref}
       icon={<Search className="h-5 w-5 text-primary" />}
-      title="Google Indexing API"
-      description="Indexação imediata de novos posts no Google"
+      title="Google Search Console / Indexing API"
+      description="Indexação imediata e monitoramento de novos posts no Google"
       connected={connected}
-      connectedInfo={connected ? "Configurado (Chave JSON)" : undefined}
-      onDisconnect={() => onChange({ google_indexing_key: '' })}
+      connectedInfo={connected ? (hasGoogleToken ? "Conectado via Google OAuth" : "Configurado (Chave JSON)") : undefined}
+      onDisconnect={async () => {
+        if (hasGoogleToken) {
+           await supabase.from('user_settings').update({ google_search_console_token: null } as any).eq('user_id', (await supabase.auth.getUser()).data.user?.id);
+           setHasGoogleToken(false);
+        }
+        onChange({ google_indexing_key: '' });
+      }}
     >
       <div className="space-y-4">
+        <div className="p-3 rounded-lg border border-primary/40 bg-gradient-to-br from-primary/10 to-accent/10">
+          <div className="flex items-start gap-3">
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground">Conectar com Conta Google (Simples)</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Maneira mais rápida de autorizar a indexação automática via Search Console.
+              </p>
+            </div>
+            <Button
+              size="sm"
+              onClick={handleGoogleConnect}
+              disabled={oauthLoading}
+              className="gradient-primary shrink-0"
+            >
+              {oauthLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : hasGoogleToken ? (
+                <><RefreshCw className="h-4 w-4 mr-1.5" />Reconectar</>
+              ) : (
+                <><LogIn className="h-4 w-4 mr-1.5" />Conectar</>
+              )}
+            </Button>
+          </div>
+        </div>
+
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t border-border" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-background px-2 text-muted-foreground">Ou use chave JSON</span>
+          </div>
+        </div>
+
         <div className="space-y-1.5">
-          <Label className="text-xs">Chave JSON da Conta de Serviço</Label>
+          <Label className="text-xs">Chave JSON da Conta de Serviço (Avançado)</Label>
           <Textarea
             placeholder='{"type": "service_account", "project_id": "...", ...}'
             value={settings.google_indexing_key || ''}
             onChange={(e) => onChange({ google_indexing_key: e.target.value })}
-            className="h-24 text-xs font-mono"
+            className="h-20 text-xs font-mono"
           />
-          <div className="space-y-1 mt-2">
-            <p className="text-[10px] text-muted-foreground">
-              1. Crie uma Conta de Serviço no Google Cloud Console.
-            </p>
-            <p className="text-[10px] text-muted-foreground">
-              2. Baixe a chave JSON e cole o conteúdo acima.
-            </p>
-            <p className="text-[10px] text-muted-foreground">
-              3. Adicione o e-mail da conta de serviço como "Proprietário" no Search Console.
-            </p>
-            <p className="text-[10px] text-muted-foreground font-medium text-amber-500/80">
-              * Importante: Ative a "Indexing API" no projeto do Google Cloud.
-            </p>
-          </div>
         </div>
       </div>
     </ConnectionCard>
@@ -56,3 +142,4 @@ const GoogleIndexingSettings = forwardRef<HTMLDivElement, Props>(({ settings, on
 GoogleIndexingSettings.displayName = 'GoogleIndexingSettings';
 
 export default GoogleIndexingSettings;
+

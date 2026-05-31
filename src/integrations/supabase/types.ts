@@ -298,6 +298,24 @@ export type Database = {
         }
         Relationships: []
       }
+      google_search_console_oauth_states: {
+        Row: {
+          expires_at: string | null
+          state: string
+          user_id: string
+        }
+        Insert: {
+          expires_at?: string | null
+          state: string
+          user_id: string
+        }
+        Update: {
+          expires_at?: string | null
+          state?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       instagram_accounts_direct: {
         Row: {
           created_at: string
@@ -548,6 +566,7 @@ export type Database = {
           gemini_api_key: string | null
           google_analytics_property_id: string | null
           google_indexing_key: string | null
+          google_search_console_token: string | null
           groq_api_key: string | null
           id: string
           image_mode: string
@@ -594,6 +613,7 @@ export type Database = {
           gemini_api_key?: string | null
           google_analytics_property_id?: string | null
           google_indexing_key?: string | null
+          google_search_console_token?: string | null
           groq_api_key?: string | null
           id?: string
           image_mode?: string
@@ -640,6 +660,7 @@ export type Database = {
           gemini_api_key?: string | null
           google_analytics_property_id?: string | null
           google_indexing_key?: string | null
+          google_search_console_token?: string | null
           groq_api_key?: string | null
           id?: string
           image_mode?: string
