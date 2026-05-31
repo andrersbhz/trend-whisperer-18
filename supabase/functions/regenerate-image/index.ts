@@ -15,22 +15,22 @@ function buildImagePrompt(title: string, content: string | null, visualElements:
   // Prepara o conteúdo removendo HTML e limitando o tamanho
   const cleanContent = content ? content.replace(/<[^>]*>/g, "").substring(0, 800) : "";
 
-  return `Você é um fotógrafo profissional editorial. Sua tarefa é criar uma imagem realista e impactante para um artigo de notícias.
+  return `Você é um designer gráfico especializado em artes virais para Instagram. Sua tarefa é criar uma imagem de alta conversão (CTR) para um post.
 
 ### DADOS DO ARTIGO (BASE PARA A CENA) ###
 TÍTULO: ${title}
 CONTEÚDO/CONTEXTO: ${cleanContent}
-ELEMENTOS VISUAIS SUGERIDOS: ${visualElements || "Uma cena dinâmica que represente o assunto principal do título"}
+ELEMENTOS VISUAIS SUGERIDOS: ${visualElements || "Uma cena dinâmica e impactante que represente o assunto principal"}
 
 ### DIRETRIZES OBRIGATÓRIAS DE ESTILO ###
 ${imagePrompt.trim()}
 
-### REQUISITOS DE COMPOSIÇÃO E CTR ###
-1. REFERÊNCIA ABSOLUTA: A imagem DEVE retratar os elementos, pessoas ou locais mencionados no TÍTULO acima. Não gere imagens genéricas se o título for específico.
-2. IMPACTO VISUAL: Estilo cinematográfico, iluminação profissional, realista (4k).
-3. TEXTO NA IMAGEM: Inclua uma chamada curta, forte e legível baseada no título, usando gatilhos mentais para atrair cliques.
-4. PROPORÇÃO: Componha a cena para um formato horizontal 5:4 (1350x1080).
-5. REQUISITO FINAL: Evite rostos genéricos. Foque na ação ou no contexto descrito no título do artigo.`;
+### REQUISITOS TÉCNICOS E DE COMPOSIÇÃO ###
+1. FORMATO: A imagem DEVE ser no formato 5:4 (1350x1080 pixels, retrato para Instagram).
+2. CHAMADA CTR: Escreva na imagem uma frase curta, poderosa e provocativa baseada no título, usando GATILHOS MENTAIS (curiosidade, urgência ou exclusividade).
+3. QUALIDADE: Estilo cinematográfico, iluminação profissional, realista (4k), pronta para ser postada no feed.
+4. FOCO: Retrate fielmente os elementos ou pessoas citados no TÍTULO. Evite bancos de imagem genéricos.
+5. PROPORÇÃO DA ARTE: Certifique-se de que o design preencha bem o formato 1350x1080.`;
 }
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
