@@ -12,24 +12,25 @@ function buildImagePrompt(title: string, content: string | null, visualElements:
     throw new Error("O 'Prompt de Imagem IA' não está configurado. Por favor, vá em Configurações e defina o estilo visual obrigatório.");
   }
 
-  const userImageGuidance = `### DIRETRIZES OBRIGATÓRIAS DE ESTILO DO USUÁRIO ###\n${imagePrompt.trim()}\n`;
-  const contentSnippet = content ? `\n### CONTEXTO DETALHADO DA HISTÓRIA ###\n${content.replace(/<[^>]*>/g, "").substring(0, 1000)}...` : "";
+  // Prepara o conteúdo removendo HTML e limitando o tamanho
+  const cleanContent = content ? content.replace(/<[^>]*>/g, "").substring(0, 800) : "";
 
-  return `${userImageGuidance}
+  return `Você é um fotógrafo profissional editorial. Sua tarefa é criar uma imagem realista e impactante para um artigo de notícias.
 
-### INSTRUÇÕES DE COMPOSIÇÃO ###
-1. REFERÊNCIA PRINCIPAL: Use o título do artigo como base absoluta para a cena.
-2. IMPACTO VISUAL: A imagem deve ser realista, impactante e cinematográfica, desenhada para maximizar cliques (CTR).
-3. TEXTO INTEGRADO: Inclua uma chamada curta e forte na imagem usando gatilhos mentais. Resuma o título se necessário para que o texto seja minimalista, legível e visualmente atraente.
-4. REPRESENTAÇÃO FIEL: Retrate fielmente as pessoas, locais ou eventos mencionados no título/contexto.
-5. PROPORÇÃO: A imagem deve ser composta para o formato horizontal 5:4 (1350x1080 pixels).
+### DADOS DO ARTIGO (BASE PARA A CENA) ###
+TÍTULO: ${title}
+CONTEÚDO/CONTEXTO: ${cleanContent}
+ELEMENTOS VISUAIS SUGERIDOS: ${visualElements || "Uma cena dinâmica que represente o assunto principal do título"}
 
-### DADOS DO ARTIGO ###
-TÍTULO: ${title}${contentSnippet}
-ELEMENTOS SUGERIDOS: ${visualElements || "Cena dramática e realista que resume o impacto da notícia"}.
+### DIRETRIZES OBRIGATÓRIAS DE ESTILO ###
+${imagePrompt.trim()}
 
-### REQUISITOS TÉCNICOS ###
-Realismo de alta qualidade, 4k, iluminação profissional, proporção horizontal 5:4, sem marcas d'água, pouco texto mas com mensagem poderosa.`;
+### REQUISITOS DE COMPOSIÇÃO E CTR ###
+1. REFERÊNCIA ABSOLUTA: A imagem DEVE retratar os elementos, pessoas ou locais mencionados no TÍTULO acima. Não gere imagens genéricas se o título for específico.
+2. IMPACTO VISUAL: Estilo cinematográfico, iluminação profissional, realista (4k).
+3. TEXTO NA IMAGEM: Inclua uma chamada curta, forte e legível baseada no título, usando gatilhos mentais para atrair cliques.
+4. PROPORÇÃO: Componha a cena para um formato horizontal 5:4 (1350x1080).
+5. REQUISITO FINAL: Evite rostos genéricos. Foque na ação ou no contexto descrito no título do artigo.`;
 }
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
