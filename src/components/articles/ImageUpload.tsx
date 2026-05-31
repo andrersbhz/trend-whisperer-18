@@ -393,7 +393,7 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
                 <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Pré-visualização</h4>
                 <div className={cn(
                   "relative border border-primary/20 rounded-md overflow-hidden bg-muted/20 w-full max-w-[150px] mx-auto transition-all",
-                  aspect === 0.8 ? "aspect-[4/5]" : aspect === 1 ? "aspect-square" : aspect === 16/9 ? "aspect-video" : "aspect-square"
+                  aspect === 1350/1080 ? "aspect-[5/4]" : aspect === 1 ? "aspect-square" : aspect === 16/9 ? "aspect-video" : "aspect-square"
                 )}>
                   {selectedImage && croppedAreaPixels && (
                     <div
