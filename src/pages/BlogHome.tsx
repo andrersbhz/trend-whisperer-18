@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useI18n, languages } from '@/hooks/useI18n';
 import BlogHeader from '@/components/blog/BlogHeader';
+import BlogFooter from '@/components/blog/BlogFooter';
 import NewsImage from '@/components/blog/NewsImage';
 import { Helmet } from 'react-helmet-async';
 import { Badge } from '@/components/ui/badge';
@@ -257,6 +258,7 @@ const BlogHome = () => {
             <span className="font-black text-3xl tracking-tighter text-[#444]">A3 BLOG</span>
             <div className="flex flex-wrap justify-center gap-x-8 gap-y-2 text-[11px] font-bold uppercase text-[#777]">
                <Link to="#" className="hover:text-black">princípios editoriais</Link>
+               <Link to={`/${currentLang}/termos`} className="hover:text-black">termos de uso</Link>
                <Link to="#" className="hover:text-black">política de privacidade</Link>
                <Link to="#" className="hover:text-black">contato</Link>
                <Link to="#" className="hover:text-black">anuncie</Link>
