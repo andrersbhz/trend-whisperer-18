@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate, useParams } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { HelmetProvider } from "react-helmet-async";
 import { Toaster } from "@/components/ui/toaster";
@@ -21,6 +21,7 @@ import BlogHome from "@/pages/BlogHome";
 import BlogArticle from "@/pages/BlogArticle";
 import AuthorsPage from "@/pages/AuthorsPage";
 import TermsPage from "@/pages/TermsPage";
+import CategoryPage from "@/pages/CategoryPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -46,6 +47,11 @@ const RootRoute = () => {
   return <Navigate to="/pt-br" replace />;
 };
 
+const CategoryPageWrapper = () => {
+  const { categoryId } = useParams();
+  return <CategoryPage categoryId={categoryId || ''} />;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <HelmetProvider>
@@ -61,7 +67,7 @@ const App = () => (
               
               {/* Public Blog Routes */}
               <Route path="/:lang" element={<BlogHome />} />
-              <Route path="/:lang/category/:categoryId" element={<BlogHome />} />
+              <Route path="/:lang/category/:categoryId" element={<CategoryPageWrapper />} />
               <Route path="/:lang/article/:articleId" element={<BlogArticle />} />
               <Route path="/:lang/termos" element={<TermsPage />} />
 

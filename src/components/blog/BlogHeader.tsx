@@ -90,10 +90,10 @@ const BlogHeader = () => {
         </div>
 
         <div className="hidden lg:flex items-center gap-6 text-[11px] font-bold uppercase text-[#333]">
-           <Link to="#" className="hover:text-primary">notícias</Link>
-           <Link to="#" className="hover:text-primary">esportes</Link>
-           <Link to="#" className="hover:text-primary">entretenimento</Link>
-           <Link to="#" className="hover:text-primary">vídeos</Link>
+           <Link to={`/${currentLang}/category/noticias`} className="hover:text-primary transition-colors">notícias</Link>
+           <Link to={`/${currentLang}/category/esportes`} className="hover:text-primary transition-colors">esportes</Link>
+           <Link to={`/${currentLang}/category/entretenimento`} className="hover:text-primary transition-colors">entretenimento</Link>
+           <Link to={`/${currentLang}/category/tecnologia`} className="hover:text-primary transition-colors">tecnologia</Link>
         </div>
 
         <div className="lg:hidden">

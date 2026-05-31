@@ -66,12 +66,15 @@ const BlogHome = () => {
 
   const siteTitle = 'A3 BLOG - Absolutamente tudo sobre notícias, esportes e entretenimento';
   const siteDesc = 'No A3 BLOG você encontra tudo sobre as últimas notícias, esportes, entretenimento e muito mais.';
+  const siteKeywords = 'notícias, esportes, entretenimento, a3 blog, brasil';
 
   return (
     <div className="min-h-screen bg-white text-black selection:bg-primary/20 font-sans antialiased">
       <Helmet>
         <title>{siteTitle}</title>
         <meta name="description" content={siteDesc} />
+        <meta name="keywords" content={siteKeywords} />
+        <link rel="canonical" href={window.location.origin + window.location.pathname} />
         <link rel="alternate" hrefLang="pt-br" href={`${window.location.origin}/pt-br`} />
         <link rel="alternate" hrefLang="en" href={`${window.location.origin}/eng`} />
         <link rel="alternate" hrefLang="es" href={`${window.location.origin}/es`} />

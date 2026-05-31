@@ -45,10 +45,11 @@ const BlogArticle = () => {
   return (
     <div className="min-h-screen bg-white text-[#1a1a1a] selection:bg-primary/30 font-sans">
       <Helmet>
-        <title>{article.seo_title || article.title} | A3 Portal</title>
+        <title>{article.seo_title || article.title} | A3 BLOG</title>
         <meta name="description" content={article.meta_description} />
         {article.seo_keyword && <meta name="keywords" content={article.seo_keyword} />}
-        <meta property="og:title" content={article.title} />
+        <link rel="canonical" href={window.location.origin + window.location.pathname} />
+        <meta property="og:title" content={article.seo_title || article.title} />
         <meta property="og:description" content={article.meta_description} />
         <meta property="og:image" content={article.featured_image_url} />
         <meta property="og:type" content="article" />
