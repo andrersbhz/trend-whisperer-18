@@ -262,15 +262,15 @@ serve(async (req) => {
       let imageUrl: string | null = null;
       const providerErrors: string[] = [];
 
-      // Cadeia: Gemini (se configurado) -> OpenAI (se configurado) -> Pollinations (fallback garantido)
-      if (geminiApiKey) {
-        try { imageUrl = await generateImageGemini(geminiApiKey, article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt); }
-        catch (error) { providerErrors.push(`Gemini: ${getErrorMessage(error)}`); }
-      }
-      
-      if (!imageUrl && openaiApiKey) {
+      // Cadeia: OpenAI (Prioridade solicitada) -> Gemini -> Pollinations (fallback)
+      if (openaiApiKey) {
         try { imageUrl = await generateImageDallE(openaiApiKey, article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt); }
         catch (error) { providerErrors.push(`OpenAI: ${getErrorMessage(error)}`); }
+      }
+      
+      if (!imageUrl && geminiApiKey) {
+        try { imageUrl = await generateImageGemini(geminiApiKey, article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt); }
+        catch (error) { providerErrors.push(`Gemini: ${getErrorMessage(error)}`); }
       }
 
       // Fallback final: Pollinations (sempre funciona se houver internet)
