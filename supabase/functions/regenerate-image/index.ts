@@ -149,9 +149,8 @@ async function generateImageDallE(apiKey: string, title: string, content: string
         model: "dall-e-3",
         prompt: buildImagePrompt(title, content, visualElements, imagePrompt),
         n: 1,
-        size: "1024x1024", // DALL-E 3 doesn't support 5:4 exactly, sticking to high quality 1:1 or 1792x1024 for landscape
-        quality: "standard",
-        response_format: "b64_json",
+        size: "1024x1024",
+        quality: "standard"
       }),
     });
 
@@ -160,12 +159,12 @@ async function generateImageDallE(apiKey: string, title: string, content: string
     }
 
     const data = await resp.json();
-    const b64 = data.data?.[0]?.b64_json;
-    if (!b64) {
-      throw new ProviderError("OpenAI DALL-E não retornou uma imagem válida.", 500, false, false);
+    const imageUrl = data.data?.[0]?.url;
+    if (!imageUrl) {
+      throw new ProviderError("OpenAI DALL-E não retornou uma URL de imagem válida.", 500, false, false);
     }
 
-    return `data:image/png;base64,${b64}`;
+    return imageUrl;
   }, 1, 2000);
 }
 
@@ -268,16 +267,17 @@ serve(async (req) => {
           imageUrl = await generateImageDallE(openaiApiKey, article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt); 
         } catch (error) { 
           providerErrors.push(`OpenAI (ChatGPT): ${getErrorMessage(error)}`);
-          // Se o usuário quer "sempre" o ChatGPT, não caímos para outros provedores automaticamente 
-          // a menos que a chave falhe e queiramos um fallback de segurança (mantido apenas Pollinations como última instância)
         }
-      } else if (geminiApiKey) {
+      } 
+      
+      // Fallback para Gemini se OpenAI falhar ou não estiver configurado
+      if (!imageUrl && geminiApiKey) {
         try { imageUrl = await generateImageGemini(geminiApiKey, article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt); }
         catch (error) { providerErrors.push(`Gemini: ${getErrorMessage(error)}`); }
       }
 
-      // Fallback final apenas se NENHUMA chave de API (OpenAI ou Gemini) funcionou ou se não existem chaves
-      if (!imageUrl && !openaiApiKey && !geminiApiKey) {
+      // Fallback final: Pollinations (sempre funciona)
+      if (!imageUrl) {
         try {
           imageUrl = await generateImagePollinations(article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt);
         } catch (error) {
