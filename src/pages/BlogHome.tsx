@@ -17,6 +17,7 @@ const AdPlaceholder = ({ className }: { className?: string }) => (
 );
 
 const BlogHome = () => {
+  const { lang } = useParams();
   const { currentLang } = useI18n();
   const [featuredArticles, setFeaturedArticles] = useState<any[]>([]);
   const [sidebarArticles, setSidebarArticles] = useState<any[]>([]);
