@@ -156,102 +156,94 @@ const BlogHome = () => {
           </div>
         </section>
 
-        {/* Triple News Sections (like Jornalismo, Esporte, Entretenimento blocks) */}
-        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 mt-16 pt-12 border-t border-gray-200">
-           {/* Section 1: Jornalismo */}
-           <div className="space-y-6">
-              <div className="flex items-center gap-2 mb-4">
-                 <h2 className="text-[#C4170C] text-2xl font-black lowercase tracking-tighter">notícias</h2>
-              </div>
-              {latestArticles.slice(0, 3).map((article) => (
-                <div key={article.id} className="group block pb-6 border-b border-gray-100 last:border-0">
-                  <Link to={`/${currentLang}/article/${article.slug || article.id}`}>
-                    <div className="relative mb-3">
-                       <NewsImage src={article.featured_image_url} alt={article.title} aspectRatio="video" />
-                    </div>
-                    <h3 className="text-base font-bold leading-snug text-[#333] group-hover:text-[#C4170C] transition-colors line-clamp-2">
-                      {article.title}
-                    </h3>
-                  </Link>
-                </div>
-              ))}
-           </div>
+        {/* Dynamic Category Blocks */}
+        <div className="mt-12 space-y-16">
+          {Object.entries(categoriesData)
+            .filter(([_, arts]: [any, any]) => arts.length >= 1)
+            .map(([category, articles]: [string, any]) => {
+              // Standard system colors/styles based on category
+              const getCategoryStyle = (cat: string) => {
+                const lowerCat = cat.toLowerCase();
+                if (lowerCat.includes('notícia') || lowerCat.includes('news')) return { color: '#C4170C', label: 'notícias' };
+                if (lowerCat.includes('esport') || lowerCat.includes('ge')) return { color: '#06AA48', label: 'esportes' };
+                if (lowerCat.includes('entreten') || lowerCat.includes('gshow')) return { color: '#FF8000', label: 'entretenimento' };
+                if (lowerCat.includes('tecnolog')) return { color: '#0669B2', label: 'tecnologia' };
+                if (lowerCat.includes('saúde') || lowerCat.includes('saude')) return { color: '#00A1AB', label: 'saúde' };
+                return { color: '#333333', label: lowerCat };
+              };
 
-           {/* Section 2: Esportes */}
-           <div className="space-y-6">
-              <div className="flex items-center gap-2 mb-4">
-                 <h2 className="text-[#06AA48] text-2xl font-black lowercase tracking-tighter">esportes</h2>
-              </div>
-              {latestArticles.slice(3, 6).map((article) => (
-                <div key={article.id} className="group block pb-6 border-b border-gray-100 last:border-0">
-                  <Link to={`/${currentLang}/article/${article.slug || article.id}`}>
-                    <div className="relative mb-3">
-                       <NewsImage src={article.featured_image_url} alt={article.title} aspectRatio="video" />
-                    </div>
-                    <h3 className="text-base font-bold leading-snug text-[#333] group-hover:text-[#06AA48] transition-colors line-clamp-2">
-                      {article.title}
-                    </h3>
-                  </Link>
-                </div>
-              ))}
-           </div>
+              const style = getCategoryStyle(category);
 
-           {/* Section 3: Entretenimento */}
-           <div className="space-y-6">
-              <div className="flex items-center gap-2 mb-4">
-                 <h2 className="text-[#FF8000] text-2xl font-black lowercase tracking-tighter">entretenimento</h2>
-              </div>
-              {latestArticles.slice(6, 9).map((article) => (
-                <div key={article.id} className="group block pb-6 border-b border-gray-100 last:border-0">
-                  <Link to={`/${currentLang}/article/${article.slug || article.id}`}>
-                    <div className="relative mb-3">
-                       <NewsImage src={article.featured_image_url} alt={article.title} aspectRatio="video" />
+              return (
+                <section key={category} className="border-t border-gray-100 pt-10">
+                  <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center gap-2">
+                      <h2 style={{ color: style.color }} className="text-2xl font-black lowercase tracking-tighter">
+                        {style.label}
+                      </h2>
                     </div>
-                    <h3 className="text-base font-bold leading-snug text-[#333] group-hover:text-[#FF8000] transition-colors line-clamp-2">
-                      {article.title}
-                    </h3>
-                  </Link>
-                </div>
-              ))}
-           </div>
-        </section>
-
-        {/* Dynamic Category Blocks (Bottom Grid) */}
-        <div className="mt-20 space-y-20">
-          {Object.entries(categoriesData).filter(([_, arts]: [any, any]) => arts.length >= 1).map(([category, articles]: [string, any], catIdx) => (
-            <section key={category} className="border-t border-gray-200 pt-10">
-              <div className="flex items-center justify-between mb-8">
-                <h2 className="text-2xl font-black uppercase tracking-tighter text-[#333]">
-                  {category}
-                </h2>
-                <Link to={`/${currentLang}/category/${category.toLowerCase()}`} className="text-sm font-bold text-[#0669B2] hover:underline">
-                  Ver tudo de {category}
-                </Link>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {articles.slice(0, 4).map((article: any) => (
-                  <article key={article.id} className="group">
-                    <Link to={`/${currentLang}/article/${article.slug || article.id}`}>
-                      <div className="relative mb-3 aspect-video overflow-hidden">
-                        <NewsImage 
-                          src={article.featured_image_url} 
-                          alt={article.title}
-                          aspectRatio="video"
-                        />
-                      </div>
-                      <h3 className="text-[15px] font-bold leading-snug group-hover:text-primary transition-colors line-clamp-2 mb-1 text-[#333]">
-                        {article.title}
-                      </h3>
-                      <p className="text-xs text-[#888] line-clamp-2">
-                        {article.meta_description}
-                      </p>
+                    <Link 
+                      to={`/${currentLang}/category/${category.toLowerCase()}`} 
+                      className="text-xs font-bold text-gray-400 hover:text-primary transition-colors uppercase tracking-widest"
+                    >
+                      Ver tudo <ChevronRight className="inline-block w-3 h-3 ml-1" />
                     </Link>
-                  </article>
-                ))}
-              </div>
-            </section>
-          ))}
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                    {/* Featured in category */}
+                    <div className="lg:col-span-2">
+                      <article className="group">
+                        <Link to={`/${currentLang}/article/${articles[0].slug || articles[0].id}`}>
+                          <div className="relative mb-4 overflow-hidden rounded-sm">
+                            <NewsImage 
+                              src={articles[0].featured_image_url} 
+                              alt={articles[0].title}
+                              aspectRatio="hero"
+                              className="group-hover:scale-105 transition-transform duration-500"
+                            />
+                          </div>
+                          <h3 className="text-2xl font-bold leading-tight group-hover:text-primary transition-colors mb-2 text-[#333]">
+                            {articles[0].title}
+                          </h3>
+                          <p className="text-[#666] leading-snug line-clamp-2">
+                            {articles[0].meta_description}
+                          </p>
+                        </Link>
+                      </article>
+                    </div>
+
+                    {/* List in category */}
+                    <div className="space-y-6">
+                      {articles.slice(1, 4).map((article: any) => (
+                        <article key={article.id} className="group pb-6 border-b border-gray-100 last:border-0 last:pb-0">
+                          <Link to={`/${currentLang}/article/${article.slug || article.id}`} className="flex gap-4">
+                            <div className="w-24 h-24 flex-shrink-0 relative overflow-hidden rounded-sm">
+                              <NewsImage 
+                                src={article.featured_image_url} 
+                                alt={article.title}
+                                aspectRatio="square"
+                                className="group-hover:scale-110 transition-transform duration-500"
+                              />
+                            </div>
+                            <div className="flex flex-col justify-center">
+                              <h4 className="text-[15px] font-bold leading-tight group-hover:text-primary transition-colors line-clamp-3 text-[#333]">
+                                {article.title}
+                              </h4>
+                            </div>
+                          </Link>
+                        </article>
+                      ))}
+                      {articles.length < 2 && (
+                        <div className="h-full flex items-center justify-center border border-dashed border-gray-100 rounded-sm p-8 bg-gray-50/50">
+                          <p className="text-xs text-gray-400 font-medium uppercase tracking-widest">Destaque da categoria</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </section>
+              );
+            })}
         </div>
       </main>
 
