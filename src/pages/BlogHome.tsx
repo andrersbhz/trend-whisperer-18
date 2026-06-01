@@ -122,11 +122,11 @@ const BlogHome = () => {
                   {validArticles.map((article, index) => (
                     <div key={article.id} className="flex-[0_0_100%] min-w-0 relative group">
                       <Link to={`/${currentLang}/article/${article.slug || article.id}`} className="block relative">
-                        <div className="relative h-[400px] sm:h-[600px] lg:h-[800px] overflow-hidden bg-gray-100">
+                        <div className="relative h-auto overflow-hidden bg-gray-100">
                           <img 
                             src={article.featured_image_url || 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d'} 
                             alt={article.title}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                            className="w-full h-auto object-contain group-hover:scale-105 transition-transform duration-700"
                             onError={(e) => {
                               const target = e.target as HTMLImageElement;
                               target.src = 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d';
@@ -253,7 +253,7 @@ const BlogHome = () => {
                     {articles.slice(0, 3).map((article: any) => (
                       <article key={article.id} className="group">
                         <Link to={`/${currentLang}/article/${article.slug || article.id}`}>
-                          <div className="relative mb-4 overflow-hidden rounded-sm aspect-video">
+                          <div className="relative mb-4 overflow-hidden rounded-sm h-auto">
                             <NewsImage 
                               src={article.featured_image_url} 
                               alt={article.title}
