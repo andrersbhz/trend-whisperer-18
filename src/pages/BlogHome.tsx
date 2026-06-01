@@ -169,7 +169,7 @@ const BlogHome = () => {
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-sm font-black uppercase tracking-widest text-[#333] border-l-4 border-primary pl-3">Últimas Notícias</h3>
                 <div className="flex gap-1">
-                  {featuredArticles.map((_, index) => (
+                  {validArticles.map((_, index) => (
                     <button
                       key={index}
                       onClick={() => emblaApi?.scrollTo(index)}
