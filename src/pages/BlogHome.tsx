@@ -47,7 +47,7 @@ const BlogHome = () => {
         const { data: articles, error } = await supabase
           .from('articles')
           .select('*')
-          .eq('status', 'published')
+          .in('status', ['published', 'ready'])
           .order('created_at', { ascending: false });
 
         if (error) {
