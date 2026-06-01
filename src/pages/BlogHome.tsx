@@ -178,11 +178,15 @@ const BlogHome = () => {
                 {sidebarArticles.map((article) => (
                   <article key={article.id} className="group border-b border-gray-100 pb-4 last:border-0 last:pb-0">
                     <Link to={`/${currentLang}/article/${article.slug || article.id}`} className="flex gap-4">
-                      <div className="w-24 h-24 flex-shrink-0 overflow-hidden rounded-sm">
+                      <div className="w-24 h-24 flex-shrink-0 overflow-hidden rounded-sm bg-gray-100">
                         <img 
-                          src={article.featured_image_url} 
+                          src={article.featured_image_url || 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d'} 
                           alt={article.title}
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d';
+                          }}
                         />
                       </div>
                       <div className="flex flex-col justify-center">
