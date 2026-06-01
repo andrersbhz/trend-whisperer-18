@@ -6,9 +6,10 @@ import BlogFooter from '@/components/blog/BlogFooter';
 import NewsImage from '@/components/blog/NewsImage';
 import { Helmet } from 'react-helmet-async';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import Preloader from '@/components/Preloader';
 import useEmblaCarousel from 'embla-carousel-react';
+import Autoplay from 'embla-carousel-autoplay';
 
 const AdPlaceholder = ({ className }: { className?: string }) => (
   <div className={`bg-muted/30 border border-dashed border-border flex items-center justify-center text-[10px] font-bold text-muted-foreground uppercase tracking-widest ${className}`}>
@@ -17,13 +18,14 @@ const AdPlaceholder = ({ className }: { className?: string }) => (
 );
 
 const BlogHome = () => {
+  const { lang } = useParams();
   const { currentLang } = useI18n();
   const [featuredArticles, setFeaturedArticles] = useState<any[]>([]);
   const [sidebarArticles, setSidebarArticles] = useState<any[]>([]);
   const [categoriesData, setCategoriesData] = useState<any>({});
   const [loading, setLoading] = useState(true);
   
-  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, duration: 30 });
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, duration: 30 }, [Autoplay({ delay: 5000 })]);
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   const onSelect = useCallback(() => {
@@ -44,8 +46,9 @@ const BlogHome = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
+        console.log('Fetching articles for lang:', lang);
         const { data: articles, error } = await supabase
-          .from('public_articles')
+          .from('articles')
           .select('*')
           .order('created_at', { ascending: false });
 
@@ -56,12 +59,10 @@ const BlogHome = () => {
         }
 
         if (articles) {
+          console.log('Total articles found:', articles.length);
           // The banner will show the 4 latest articles in a slider
           setFeaturedArticles(articles.slice(0, 4));
-          // Sidebar shows the same or the next 4? Usually, the user wants the "latest news" column.
-          // Let's show the next 4 for variety, or the same 4 if they want a summary.
-          // Re-reading: "coluna do lado direito com as 4 ultimas noticias".
-          // I'll use the next 4 (4 to 8) so the user sees more content.
+          // Sidebar shows the next 4
           setSidebarArticles(articles.slice(4, 8));
           
           const grouped = articles.reduce((acc: any, article) => {
@@ -80,9 +81,13 @@ const BlogHome = () => {
     };
 
     fetchData();
-  }, [currentLang]);
+  }, [lang, currentLang]);
 
   if (loading) return <Preloader message="Sincronizando as últimas notícias..." />;
+
+  // Filter out any articles that might not have a title or required content
+  const validArticles = featuredArticles.filter(a => a && a.title);
+  const validSidebar = sidebarArticles.filter(a => a && a.title);
 
   const siteTitle = 'A3 BLOG - Absolutamente tudo sobre notícias, esportes e entretenimento';
   const siteDesc = 'No A3 BLOG você encontra tudo sobre as últimas notícias, esportes, entretenimento e muito mais.';
@@ -101,20 +106,31 @@ const BlogHome = () => {
       
       <main className="max-w-[1200px] mx-auto px-4 lg:px-0 py-4">
         {/* Main Highlight Section with Sidebar */}
+        {validArticles.length === 0 && !loading ? (
+          <div className="py-20 text-center">
+            <h2 className="text-2xl font-bold text-gray-400">Nenhum artigo encontrado.</h2>
+            <p className="text-gray-500 mt-2">Os artigos aparecerão aqui assim que forem publicados.</p>
+          </div>
+        ) : (
+          <>
         <section className="mb-12">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Main Slider (Left) */}
             <div className="lg:col-span-8 relative">
               <div className="overflow-hidden rounded-sm" ref={emblaRef}>
                 <div className="flex">
-                  {featuredArticles.map((article, index) => (
+                  {validArticles.map((article, index) => (
                     <div key={article.id} className="flex-[0_0_100%] min-w-0 relative group">
                       <Link to={`/${currentLang}/article/${article.slug || article.id}`} className="block relative">
-                        <div className="relative h-[400px] sm:h-[600px] lg:h-[800px] overflow-hidden">
+                        <div className="relative h-[400px] sm:h-[600px] lg:h-[800px] overflow-hidden bg-gray-100">
                           <img 
                             src={article.featured_image_url || 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d'} 
                             alt={article.title}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.src = 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d';
+                            }}
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
                           
@@ -137,7 +153,7 @@ const BlogHome = () => {
               </div>
 
               {/* Slider Controls (Internal) */}
-              {featuredArticles.length > 1 && (
+              {validArticles.length > 1 && (
                 <>
                   <button 
                     onClick={scrollPrev}
@@ -160,7 +176,7 @@ const BlogHome = () => {
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-sm font-black uppercase tracking-widest text-[#333] border-l-4 border-primary pl-3">Últimas Notícias</h3>
                 <div className="flex gap-1">
-                  {featuredArticles.map((_, index) => (
+                  {validArticles.map((_, index) => (
                     <button
                       key={index}
                       onClick={() => emblaApi?.scrollTo(index)}
@@ -170,14 +186,18 @@ const BlogHome = () => {
                 </div>
               </div>
               <div className="space-y-4 flex-grow">
-                {sidebarArticles.map((article) => (
+                {validSidebar.map((article) => (
                   <article key={article.id} className="group border-b border-gray-100 pb-4 last:border-0 last:pb-0">
                     <Link to={`/${currentLang}/article/${article.slug || article.id}`} className="flex gap-4">
-                      <div className="w-24 h-24 flex-shrink-0 overflow-hidden rounded-sm">
+                      <div className="w-24 h-24 flex-shrink-0 overflow-hidden rounded-sm bg-gray-100">
                         <img 
-                          src={article.featured_image_url} 
+                          src={article.featured_image_url || 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d'} 
                           alt={article.title}
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d';
+                          }}
                         />
                       </div>
                       <div className="flex flex-col justify-center">
@@ -284,6 +304,8 @@ const BlogHome = () => {
               );
             })}
         </div>
+          </>
+        )}
       </main>
 
       <BlogFooter />
