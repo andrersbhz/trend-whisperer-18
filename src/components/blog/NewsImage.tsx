@@ -21,8 +21,7 @@ const NewsImage = ({ src, alt, className, aspectRatio = 'video' }: NewsImageProp
 
   return (
     <div className={cn(
-      "relative overflow-hidden bg-muted group",
-      ratioClasses[aspectRatio],
+      "relative overflow-hidden bg-muted group h-auto",
       className
     )}>
       {/* Main Image */}
@@ -35,7 +34,7 @@ const NewsImage = ({ src, alt, className, aspectRatio = 'video' }: NewsImageProp
           target.src = 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d';
         }}
         className={cn(
-          "w-full h-full object-cover transition-all duration-700",
+          "w-full h-auto object-contain transition-all duration-700",
           !isLoaded ? "scale-105 blur-sm" : "scale-100 blur-0"
         )}
       />
