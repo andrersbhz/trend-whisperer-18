@@ -45,6 +45,7 @@ const BlogHome = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
+        console.log('Fetching articles for lang:', lang);
         const { data: articles, error } = await supabase
           .from('articles')
           .select('*')
@@ -57,12 +58,10 @@ const BlogHome = () => {
         }
 
         if (articles) {
+          console.log('Total articles found:', articles.length);
           // The banner will show the 4 latest articles in a slider
           setFeaturedArticles(articles.slice(0, 4));
-          // Sidebar shows the same or the next 4? Usually, the user wants the "latest news" column.
-          // Let's show the next 4 for variety, or the same 4 if they want a summary.
-          // Re-reading: "coluna do lado direito com as 4 ultimas noticias".
-          // I'll use the next 4 (4 to 8) so the user sees more content.
+          // Sidebar shows the next 4
           setSidebarArticles(articles.slice(4, 8));
           
           const grouped = articles.reduce((acc: any, article) => {
@@ -81,7 +80,7 @@ const BlogHome = () => {
     };
 
     fetchData();
-  }, [currentLang]);
+  }, [lang, currentLang]);
 
   if (loading) return <Preloader message="Sincronizando as últimas notícias..." />;
 
