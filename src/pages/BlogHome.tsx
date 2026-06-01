@@ -62,8 +62,8 @@ const BlogHome = () => {
           console.log('Total articles found:', articles.length);
           // The banner will show the 4 latest articles in a slider
           setFeaturedArticles(articles.slice(0, 4));
-          // Sidebar shows the next 4
-          setSidebarArticles(articles.slice(4, 8));
+          // Sidebar shows the next 6
+          setSidebarArticles(articles.slice(4, 10));
           
           const grouped = articles.reduce((acc: any, article) => {
             const cat = article.category || 'Geral';
