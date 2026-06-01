@@ -45,7 +45,9 @@ const CategoryPage = ({ categoryId }: { categoryId: string }) => {
         <meta name="description" content={`Confira as últimas notícias sobre ${displayTitle} no A3 BLOG.`} />
         <link rel="canonical" href={window.location.origin + window.location.pathname} />
       </Helmet>
-...
+      
+      <BlogHeader />
+
       <main className="max-w-[1200px] mx-auto px-4 lg:px-0 py-12">
         <header className="mb-12 border-b border-gray-100 pb-8">
           <h1 className="text-4xl font-black uppercase tracking-tighter text-[#333]">{displayTitle}</h1>
