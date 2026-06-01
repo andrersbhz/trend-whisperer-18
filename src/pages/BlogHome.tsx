@@ -48,7 +48,6 @@ const BlogHome = () => {
           .from('articles')
           .select('*')
           .order('created_at', { ascending: false });
-          .order('created_at', { ascending: false });
 
         if (error) {
           console.error('Supabase error:', error);
