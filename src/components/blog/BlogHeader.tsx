@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom';
 import { useI18n } from '@/hooks/useI18n';
 import { Search, Menu, X, Globe } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,15 +14,26 @@ import {
 const BlogHeader = () => {
   const { currentLang, changeLanguage, languages } = useI18n();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [dynamicCategories, setDynamicCategories] = useState<{id: string, label: string}[]>([]);
 
-  const categories = [
-    { id: 'noticias', label: { 'pt-br': 'notícias', 'eng': 'news', 'es': 'noticias' }, color: '#C4170C' },
-    { id: 'politica', label: { 'pt-br': 'política', 'eng': 'politics', 'es': 'política' }, color: '#004A80' },
-    { id: 'esportes', label: { 'pt-br': 'esportes', 'eng': 'sports', 'es': 'deportes' }, color: '#06AA48' },
-    { id: 'entretenimento', label: { 'pt-br': 'entretenimento', 'eng': 'entertainment', 'es': 'entretenimiento' }, color: '#FF8000' },
-    { id: 'tecnologia', label: { 'pt-br': 'tecnologia', 'eng': 'technology', 'es': 'tecnología' }, color: '#E63314' },
-    { id: 'economia', label: { 'pt-br': 'economia', 'eng': 'economy', 'es': 'economía' }, color: '#E17000' },
-  ];
+  useEffect(() => {
+    const fetchCategories = async () => {
+      const { data, error } = await supabase
+        .from('articles')
+        .select('category')
+        .not('category', 'is', null);
+      
+      if (data) {
+        const uniqueCategories = Array.from(new Set(data.map(item => item.category)))
+          .map(cat => ({
+            id: cat.toLowerCase().replace(/\s+/g, '-'),
+            label: cat
+          }));
+        setDynamicCategories(uniqueCategories);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   const currentFlag = languages.find(l => l.code === currentLang)?.flag || '🇧🇷';
 
