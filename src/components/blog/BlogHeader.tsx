@@ -44,14 +44,13 @@ const BlogHeader = () => {
         <div className="max-w-[1200px] mx-auto px-4 flex items-center justify-between text-[11px] font-bold uppercase tracking-tight text-[#444]">
           <div className="flex items-center gap-6">
             <span className="text-[#000] font-black mr-2">A3 BLOG</span>
-            {categories.map((cat) => (
+            {dynamicCategories.slice(0, 6).map((cat) => (
               <Link 
                 key={cat.id} 
                 to={`/${currentLang}/category/${cat.id}`}
-                className="hover:opacity-70 transition-opacity"
-                style={{ color: cat.color }}
+                className="hover:opacity-70 transition-opacity text-[#444] hover:text-primary"
               >
-                {cat.label[currentLang]}
+                {cat.label}
               </Link>
             ))}
           </div>
