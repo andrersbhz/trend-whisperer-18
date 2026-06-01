@@ -179,7 +179,7 @@ const BlogHome = () => {
                 </div>
               </div>
               <div className="space-y-4 flex-grow">
-                {sidebarArticles.map((article) => (
+                {validSidebar.map((article) => (
                   <article key={article.id} className="group border-b border-gray-100 pb-4 last:border-0 last:pb-0">
                     <Link to={`/${currentLang}/article/${article.slug || article.id}`} className="flex gap-4">
                       <div className="w-24 h-24 flex-shrink-0 overflow-hidden rounded-sm bg-gray-100">
