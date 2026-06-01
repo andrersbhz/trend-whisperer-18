@@ -342,6 +342,7 @@ const SchedulePage = () => {
       setArticles(prev => prev.map(a => a.id === articleId ? { ...a, ...updates } : a));
       setPreview(prev => ({ ...prev, ...updates }));
       toast({ title: 'Artigo atualizado!' });
+      setPreviewOpen(false); // Fecha o modal automaticamente
     } catch (error) {
       toast({ title: 'Erro ao atualizar', description: getErrorMessage(error), variant: 'destructive' });
     } finally {
