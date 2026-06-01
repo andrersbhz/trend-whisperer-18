@@ -112,7 +112,7 @@ const BlogHome = () => {
             <div className="lg:col-span-8 relative">
               <div className="overflow-hidden rounded-sm" ref={emblaRef}>
                 <div className="flex">
-                  {featuredArticles.map((article, index) => (
+                  {validArticles.map((article, index) => (
                     <div key={article.id} className="flex-[0_0_100%] min-w-0 relative group">
                       <Link to={`/${currentLang}/article/${article.slug || article.id}`} className="block relative">
                         <div className="relative h-[400px] sm:h-[600px] lg:h-[800px] overflow-hidden bg-gray-100">
