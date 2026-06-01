@@ -304,6 +304,7 @@ const BlogHome = () => {
               );
             })}
         </div>
+          </>
         )}
       </main>
 
