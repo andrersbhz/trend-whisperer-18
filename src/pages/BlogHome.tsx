@@ -107,7 +107,7 @@ const BlogHome = () => {
         {/* Main Highlight Section with Sidebar */}
         {validArticles.length === 0 && !loading ? (
           <div className="py-20 text-center">
-            <h2 className="text-2xl font-bold text-gray-400">Nenhum artigo encontrado.</h2>
+            <h2 className="text-2xl font-bold text-gray-400">Nenhum artigo encontrado ({lang || 'default'}).</h2>
             <p className="text-gray-500 mt-2">Os artigos aparecerão aqui assim que forem publicados.</p>
           </div>
         ) : (
