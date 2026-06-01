@@ -112,6 +112,7 @@ const BlogHome = () => {
             <p className="text-gray-500 mt-2">Os artigos aparecerão aqui assim que forem publicados.</p>
           </div>
         ) : (
+          <>
         <section className="mb-12">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Main Slider (Left) */}
