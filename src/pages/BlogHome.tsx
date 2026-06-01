@@ -111,11 +111,15 @@ const BlogHome = () => {
                   {featuredArticles.map((article, index) => (
                     <div key={article.id} className="flex-[0_0_100%] min-w-0 relative group">
                       <Link to={`/${currentLang}/article/${article.slug || article.id}`} className="block relative">
-                        <div className="relative h-[400px] sm:h-[600px] lg:h-[800px] overflow-hidden">
+                        <div className="relative h-[400px] sm:h-[600px] lg:h-[800px] overflow-hidden bg-gray-100">
                           <img 
                             src={article.featured_image_url || 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d'} 
                             alt={article.title}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.src = 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d';
+                            }}
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
                           
