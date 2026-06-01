@@ -18,9 +18,9 @@ const CategoryPage = ({ categoryId }: { categoryId: string }) => {
       setLoading(true);
       try {
         const { data } = await supabase
-          .from('public_articles')
+          .from('articles')
           .select('*')
-          .ilike('category', `%${categoryId}%`)
+          .ilike('category', categoryId.replace(/-/g, ' '))
           .order('created_at', { ascending: false });
         
         setArticles(data || []);
@@ -34,21 +34,23 @@ const CategoryPage = ({ categoryId }: { categoryId: string }) => {
     fetchArticles();
   }, [categoryId]);
 
-  if (loading) return <Preloader message={`Carregando ${categoryId}...`} />;
+  if (loading) return <Preloader message={`Carregando ${categoryId.replace(/-/g, ' ')}...`} />;
+
+  const displayTitle = categoryId.replace(/-/g, ' ');
 
   return (
     <div className="min-h-screen bg-white text-black font-sans">
       <Helmet>
-        <title>{categoryId.toUpperCase()} | A3 BLOG</title>
-        <meta name="description" content={`Confira as últimas notícias sobre ${categoryId} no A3 BLOG.`} />
+        <title>{displayTitle.toUpperCase()} | A3 BLOG</title>
+        <meta name="description" content={`Confira as últimas notícias sobre ${displayTitle} no A3 BLOG.`} />
         <link rel="canonical" href={window.location.origin + window.location.pathname} />
       </Helmet>
-
+      
       <BlogHeader />
 
       <main className="max-w-[1200px] mx-auto px-4 lg:px-0 py-12">
         <header className="mb-12 border-b border-gray-100 pb-8">
-          <h1 className="text-4xl font-black uppercase tracking-tighter text-[#333]">{categoryId}</h1>
+          <h1 className="text-4xl font-black uppercase tracking-tighter text-[#333]">{displayTitle}</h1>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

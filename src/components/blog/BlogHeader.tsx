@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom';
 import { useI18n } from '@/hooks/useI18n';
 import { Search, Menu, X, Globe } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,15 +14,27 @@ import {
 const BlogHeader = () => {
   const { currentLang, changeLanguage, languages } = useI18n();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [dynamicCategories, setDynamicCategories] = useState<{id: string, label: string}[]>([]);
 
-  const categories = [
-    { id: 'noticias', label: { 'pt-br': 'notícias', 'eng': 'news', 'es': 'noticias' }, color: '#C4170C' },
-    { id: 'politica', label: { 'pt-br': 'política', 'eng': 'politics', 'es': 'política' }, color: '#004A80' },
-    { id: 'esportes', label: { 'pt-br': 'esportes', 'eng': 'sports', 'es': 'deportes' }, color: '#06AA48' },
-    { id: 'entretenimento', label: { 'pt-br': 'entretenimento', 'eng': 'entertainment', 'es': 'entretenimiento' }, color: '#FF8000' },
-    { id: 'tecnologia', label: { 'pt-br': 'tecnologia', 'eng': 'technology', 'es': 'tecnología' }, color: '#E63314' },
-    { id: 'economia', label: { 'pt-br': 'economia', 'eng': 'economy', 'es': 'economía' }, color: '#E17000' },
-  ];
+  useEffect(() => {
+    const fetchCategories = async () => {
+      const { data, error } = await supabase
+        .from('articles')
+        .select('category')
+        .eq('status', 'published')
+        .not('category', 'is', null);
+      
+      if (data) {
+        const uniqueCategories = Array.from(new Set(data.map(item => item.category)))
+          .map(cat => ({
+            id: cat.toLowerCase().replace(/\s+/g, '-'),
+            label: cat
+          }));
+        setDynamicCategories(uniqueCategories);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   const currentFlag = languages.find(l => l.code === currentLang)?.flag || '🇧🇷';
 
@@ -32,14 +45,13 @@ const BlogHeader = () => {
         <div className="max-w-[1200px] mx-auto px-4 flex items-center justify-between text-[11px] font-bold uppercase tracking-tight text-[#444]">
           <div className="flex items-center gap-6">
             <span className="text-[#000] font-black mr-2">A3 BLOG</span>
-            {categories.map((cat) => (
+            {dynamicCategories.slice(0, 6).map((cat) => (
               <Link 
                 key={cat.id} 
                 to={`/${currentLang}/category/${cat.id}`}
-                className="hover:opacity-70 transition-opacity"
-                style={{ color: cat.color }}
+                className="hover:opacity-70 transition-opacity text-[#444] hover:text-primary"
               >
-                {cat.label[currentLang]}
+                {cat.label}
               </Link>
             ))}
           </div>
@@ -90,10 +102,15 @@ const BlogHeader = () => {
         </div>
 
         <div className="hidden lg:flex items-center gap-6 text-[11px] font-bold uppercase text-[#333]">
-           <Link to={`/${currentLang}/category/noticias`} className="hover:text-primary transition-colors">notícias</Link>
-           <Link to={`/${currentLang}/category/esportes`} className="hover:text-primary transition-colors">esportes</Link>
-           <Link to={`/${currentLang}/category/entretenimento`} className="hover:text-primary transition-colors">entretenimento</Link>
-           <Link to={`/${currentLang}/category/tecnologia`} className="hover:text-primary transition-colors">tecnologia</Link>
+           {dynamicCategories.slice(0, 5).map(cat => (
+             <Link 
+               key={cat.id} 
+               to={`/${currentLang}/category/${cat.id}`} 
+               className="hover:text-primary transition-colors"
+             >
+               {cat.label}
+             </Link>
+           ))}
         </div>
 
         <div className="lg:hidden">
@@ -108,22 +125,19 @@ const BlogHeader = () => {
         <div className="absolute top-full left-0 right-0 bg-white border-b border-gray-200 animate-in slide-in-from-top duration-200 z-40">
           <div className="px-4 py-4 space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              {categories.map((cat) => (
+              {dynamicCategories.map((cat) => (
                 <Link 
                   key={cat.id} 
                   to={`/${currentLang}/category/${cat.id}`}
-                  className="text-xs font-bold uppercase tracking-widest p-2 border border-gray-100 rounded text-center"
-                  style={{ color: cat.color }}
+                  className="text-xs font-bold uppercase tracking-widest p-2 border border-gray-100 rounded text-center text-gray-700 hover:text-primary hover:border-primary transition-colors"
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  {cat.label[currentLang]}
+                  {cat.label}
                 </Link>
               ))}
             </div>
-            <div className="border-t border-gray-100 pt-4 space-y-2">
-               <Link to="#" className="block py-2 text-sm font-bold uppercase text-gray-700">Notícias</Link>
-               <Link to="#" className="block py-2 text-sm font-bold uppercase text-gray-700">Esportes</Link>
-               <Link to="#" className="block py-2 text-sm font-bold uppercase text-gray-700">Entretenimento</Link>
+            <div className="border-t border-gray-100 pt-4 space-y-2 text-center">
+               <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Portal de Notícias</span>
             </div>
           </div>
         </div>
