@@ -303,6 +303,7 @@ const BlogHome = () => {
               );
             })}
         </div>
+        )}
       </main>
 
       <BlogFooter />
