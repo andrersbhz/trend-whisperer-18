@@ -85,6 +85,10 @@ const BlogHome = () => {
 
   if (loading) return <Preloader message="Sincronizando as últimas notícias..." />;
 
+  // Filter out any articles that might not have a title or required content
+  const validArticles = featuredArticles.filter(a => a && a.title);
+  const validSidebar = sidebarArticles.filter(a => a && a.title);
+
   const siteTitle = 'A3 BLOG - Absolutamente tudo sobre notícias, esportes e entretenimento';
   const siteDesc = 'No A3 BLOG você encontra tudo sobre as últimas notícias, esportes, entretenimento e muito mais.';
   const siteKeywords = 'notícias, esportes, entretenimento, a3 blog, brasil';
