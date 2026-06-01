@@ -250,55 +250,26 @@ const BlogHome = () => {
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-                    {/* Featured in category */}
-                    <div className="lg:col-span-2">
-                      <article className="group">
-                        <Link to={`/${currentLang}/article/${articles[0].slug || articles[0].id}`}>
-                          <div className="relative mb-4 overflow-hidden rounded-sm">
+                    {articles.slice(0, 3).map((article: any) => (
+                      <article key={article.id} className="group">
+                        <Link to={`/${currentLang}/article/${article.slug || article.id}`}>
+                          <div className="relative mb-4 overflow-hidden rounded-sm aspect-video">
                             <NewsImage 
-                              src={articles[0].featured_image_url} 
-                              alt={articles[0].title}
-                              aspectRatio="hero"
+                              src={article.featured_image_url} 
+                              alt={article.title}
+                              aspectRatio="video"
                               className="group-hover:scale-105 transition-transform duration-500"
                             />
                           </div>
-                          <h3 className="text-2xl font-bold leading-tight group-hover:text-primary transition-colors mb-2 text-[#333]">
-                            {articles[0].title}
+                          <h3 className="text-xl font-bold leading-tight group-hover:text-primary transition-colors mb-2 text-[#333] line-clamp-2">
+                            {article.title}
                           </h3>
-                          <p className="text-[#666] leading-snug line-clamp-2">
-                            {articles[0].meta_description}
+                          <p className="text-[#666] leading-snug line-clamp-2 text-sm">
+                            {article.meta_description}
                           </p>
                         </Link>
                       </article>
-                    </div>
-
-                    {/* List in category */}
-                    <div className="space-y-6">
-                      {articles.slice(1, 4).map((article: any) => (
-                        <article key={article.id} className="group pb-6 border-b border-gray-100 last:border-0 last:pb-0">
-                          <Link to={`/${currentLang}/article/${article.slug || article.id}`} className="flex gap-4">
-                            <div className="w-24 h-24 flex-shrink-0 relative overflow-hidden rounded-sm">
-                              <NewsImage 
-                                src={article.featured_image_url} 
-                                alt={article.title}
-                                aspectRatio="square"
-                                className="group-hover:scale-110 transition-transform duration-500"
-                              />
-                            </div>
-                            <div className="flex flex-col justify-center">
-                              <h4 className="text-[15px] font-bold leading-tight group-hover:text-primary transition-colors line-clamp-3 text-[#333]">
-                                {article.title}
-                              </h4>
-                            </div>
-                          </Link>
-                        </article>
-                      ))}
-                      {articles.length < 2 && (
-                        <div className="h-full flex items-center justify-center border border-dashed border-gray-100 rounded-sm p-8 bg-gray-50/50">
-                          <p className="text-xs text-gray-400 font-medium uppercase tracking-widest">Destaque da categoria</p>
-                        </div>
-                      )}
-                    </div>
+                    ))}
                   </div>
                 </section>
               );
