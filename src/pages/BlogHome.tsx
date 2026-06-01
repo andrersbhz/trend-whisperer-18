@@ -106,6 +106,12 @@ const BlogHome = () => {
       
       <main className="max-w-[1200px] mx-auto px-4 lg:px-0 py-4">
         {/* Main Highlight Section with Sidebar */}
+        {validArticles.length === 0 && !loading ? (
+          <div className="py-20 text-center">
+            <h2 className="text-2xl font-bold text-gray-400">Nenhum artigo encontrado.</h2>
+            <p className="text-gray-500 mt-2">Os artigos aparecerão aqui assim que forem publicados.</p>
+          </div>
+        ) : (
         <section className="mb-12">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Main Slider (Left) */}
