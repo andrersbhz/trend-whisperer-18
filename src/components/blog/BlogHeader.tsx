@@ -119,22 +119,19 @@ const BlogHeader = () => {
         <div className="absolute top-full left-0 right-0 bg-white border-b border-gray-200 animate-in slide-in-from-top duration-200 z-40">
           <div className="px-4 py-4 space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              {categories.map((cat) => (
+              {dynamicCategories.map((cat) => (
                 <Link 
                   key={cat.id} 
                   to={`/${currentLang}/category/${cat.id}`}
-                  className="text-xs font-bold uppercase tracking-widest p-2 border border-gray-100 rounded text-center"
-                  style={{ color: cat.color }}
+                  className="text-xs font-bold uppercase tracking-widest p-2 border border-gray-100 rounded text-center text-gray-700 hover:text-primary hover:border-primary transition-colors"
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  {cat.label[currentLang]}
+                  {cat.label}
                 </Link>
               ))}
             </div>
-            <div className="border-t border-gray-100 pt-4 space-y-2">
-               <Link to="#" className="block py-2 text-sm font-bold uppercase text-gray-700">Notícias</Link>
-               <Link to="#" className="block py-2 text-sm font-bold uppercase text-gray-700">Esportes</Link>
-               <Link to="#" className="block py-2 text-sm font-bold uppercase text-gray-700">Entretenimento</Link>
+            <div className="border-t border-gray-100 pt-4 space-y-2 text-center">
+               <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Portal de Notícias</span>
             </div>
           </div>
         </div>
