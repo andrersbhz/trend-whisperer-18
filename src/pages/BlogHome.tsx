@@ -19,6 +19,7 @@ const AdPlaceholder = ({ className }: { className?: string }) => (
 const BlogHome = () => {
   const { currentLang } = useI18n();
   const [featuredArticles, setFeaturedArticles] = useState<any[]>([]);
+  const [sidebarArticles, setSidebarArticles] = useState<any[]>([]);
   const [categoriesData, setCategoriesData] = useState<any>({});
   const [loading, setLoading] = useState(true);
   
@@ -57,6 +58,11 @@ const BlogHome = () => {
         if (articles) {
           // The banner will show the 4 latest articles in a slider
           setFeaturedArticles(articles.slice(0, 4));
+          // Sidebar shows the same or the next 4? Usually, the user wants the "latest news" column.
+          // Let's show the next 4 for variety, or the same 4 if they want a summary.
+          // Re-reading: "coluna do lado direito com as 4 ultimas noticias".
+          // I'll use the next 4 (4 to 8) so the user sees more content.
+          setSidebarArticles(articles.slice(4, 8));
           
           const grouped = articles.reduce((acc: any, article) => {
             const cat = article.category || 'Geral';
@@ -94,66 +100,99 @@ const BlogHome = () => {
       <BlogHeader />
       
       <main className="max-w-[1200px] mx-auto px-4 lg:px-0 py-4">
-        {/* Banner Slider Section */}
-        <section className="mb-12 relative -mx-4 lg:-mx-0">
-          <div className="overflow-hidden lg:rounded-sm" ref={emblaRef}>
-            <div className="flex">
-              {featuredArticles.map((article, index) => (
-                <div key={article.id} className="flex-[0_0_100%] min-w-0 relative group">
-                  <Link to={`/${currentLang}/article/${article.slug || article.id}`} className="block relative">
-                    <div className="relative h-[400px] sm:h-[500px] lg:h-[600px] overflow-hidden">
-                      <img 
-                        src={article.featured_image_url || 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d'} 
-                        alt={article.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
-                      
-                      <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-10 text-white">
-                        <span className="inline-block px-3 py-1 bg-primary text-white text-[10px] font-bold uppercase tracking-widest mb-4">
-                          {article.category || 'Destaque'}
-                        </span>
-                        <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black mb-4 leading-[1.05] tracking-tighter max-w-4xl group-hover:underline underline-offset-4 decoration-primary">
-                          {article.title}
-                        </h2>
-                        <p className="text-gray-200 text-lg sm:text-xl line-clamp-2 max-w-2xl font-medium hidden sm:block">
-                          {article.meta_description}
-                        </p>
-                      </div>
+        {/* Main Highlight Section with Sidebar */}
+        <section className="mb-12">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Main Slider (Left) */}
+            <div className="lg:col-span-8 relative">
+              <div className="overflow-hidden rounded-sm" ref={emblaRef}>
+                <div className="flex">
+                  {featuredArticles.map((article, index) => (
+                    <div key={article.id} className="flex-[0_0_100%] min-w-0 relative group">
+                      <Link to={`/${currentLang}/article/${article.slug || article.id}`} className="block relative">
+                        <div className="relative aspect-[1350/1080] lg:h-[600px] overflow-hidden">
+                          <img 
+                            src={article.featured_image_url || 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d'} 
+                            alt={article.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+                          
+                          <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-10 text-white">
+                            <span className="inline-block px-3 py-1 bg-primary text-white text-[10px] font-bold uppercase tracking-widest mb-4">
+                              {article.category || 'Destaque'}
+                            </span>
+                            <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black mb-4 leading-[1.05] tracking-tighter max-w-4xl group-hover:underline underline-offset-4 decoration-primary">
+                              {article.title}
+                            </h2>
+                            <p className="text-gray-200 text-sm sm:text-base line-clamp-2 max-w-2xl font-medium hidden sm:block">
+                              {article.meta_description}
+                            </p>
+                          </div>
+                        </div>
+                      </Link>
                     </div>
-                  </Link>
+                  ))}
                 </div>
-              ))}
+              </div>
+
+              {/* Slider Controls (Internal) */}
+              {featuredArticles.length > 1 && (
+                <>
+                  <button 
+                    onClick={scrollPrev}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-sm flex items-center justify-center text-white transition-all z-10"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                  <button 
+                    onClick={scrollNext}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-sm flex items-center justify-center text-white transition-all z-10"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                </>
+              )}
             </div>
-          </div>
 
-          {/* Slider Controls */}
-          {featuredArticles.length > 1 && (
-            <>
-              <button 
-                onClick={scrollPrev}
-                className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md flex items-center justify-center text-white transition-all z-10"
-              >
-                <ChevronLeft className="w-6 h-6" />
-              </button>
-              <button 
-                onClick={scrollNext}
-                className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md flex items-center justify-center text-white transition-all z-10"
-              >
-                <ChevronRight className="w-6 h-6" />
-              </button>
-
-              <div className="absolute bottom-6 right-10 flex gap-2 z-10">
-                {featuredArticles.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => emblaApi?.scrollTo(index)}
-                    className={`w-2 h-2 rounded-full transition-all ${selectedIndex === index ? 'bg-primary w-6' : 'bg-white/50'}`}
-                  />
+            {/* Latest News Sidebar (Right) */}
+            <div className="lg:col-span-4 flex flex-col gap-4">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-black uppercase tracking-widest text-[#333] border-l-4 border-primary pl-3">Últimas Notícias</h3>
+                <div className="flex gap-1">
+                  {featuredArticles.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => emblaApi?.scrollTo(index)}
+                      className={`h-1 rounded-full transition-all ${selectedIndex === index ? 'bg-primary w-4' : 'bg-gray-200 w-2'}`}
+                    />
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-4 flex-grow">
+                {sidebarArticles.map((article) => (
+                  <article key={article.id} className="group border-b border-gray-100 pb-4 last:border-0 last:pb-0">
+                    <Link to={`/${currentLang}/article/${article.slug || article.id}`} className="flex gap-4">
+                      <div className="w-24 h-24 flex-shrink-0 overflow-hidden rounded-sm">
+                        <img 
+                          src={article.featured_image_url} 
+                          alt={article.title}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        />
+                      </div>
+                      <div className="flex flex-col justify-center">
+                        <span className="text-[10px] font-bold text-primary uppercase mb-1">{article.category || 'Geral'}</span>
+                        <h4 className="text-sm font-bold leading-tight group-hover:text-primary transition-colors line-clamp-3 text-[#333]">
+                          {article.title}
+                        </h4>
+                      </div>
+                    </Link>
+                  </article>
                 ))}
               </div>
-            </>
-          )}
+              <AdPlaceholder className="w-full h-[150px] bg-gray-50 mt-auto" />
+            </div>
+          </div>
         </section>
 
         {/* Dynamic Category Blocks */}
