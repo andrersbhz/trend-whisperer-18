@@ -1,15 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useI18n, languages } from '@/hooks/useI18n';
+import { useI18n } from '@/hooks/useI18n';
 import BlogHeader from '@/components/blog/BlogHeader';
 import BlogFooter from '@/components/blog/BlogFooter';
 import NewsImage from '@/components/blog/NewsImage';
 import { Helmet } from 'react-helmet-async';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Clock, TrendingUp, ChevronRight, Newspaper, ArrowRight, Share2, Facebook, Instagram, Twitter } from 'lucide-react';
+import { ChevronRight, ChevronLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Preloader from '@/components/Preloader';
+import useEmblaCarousel from 'embla-carousel-react';
 
 const AdPlaceholder = ({ className }: { className?: string }) => (
   <div className={`bg-muted/30 border border-dashed border-border flex items-center justify-center text-[10px] font-bold text-muted-foreground uppercase tracking-widest ${className}`}>
@@ -21,8 +20,24 @@ const BlogHome = () => {
   const { currentLang } = useI18n();
   const [featuredArticles, setFeaturedArticles] = useState<any[]>([]);
   const [categoriesData, setCategoriesData] = useState<any>({});
-  const [latestArticles, setLatestArticles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, duration: 30 });
+  const [selectedIndex, setSelectedIndex] = useState(0);
+
+  const onSelect = useCallback(() => {
+    if (!emblaApi) return;
+    setSelectedIndex(emblaApi.selectedScrollSnap());
+  }, [emblaApi]);
+
+  useEffect(() => {
+    if (!emblaApi) return;
+    onSelect();
+    emblaApi.on('select', onSelect);
+  }, [emblaApi, onSelect]);
+
+  const scrollPrev = useCallback(() => emblaApi && emblaApi.scrollPrev(), [emblaApi]);
+  const scrollNext = useCallback(() => emblaApi && emblaApi.scrollNext(), [emblaApi]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -40,10 +55,9 @@ const BlogHome = () => {
         }
 
         if (articles) {
-          setFeaturedArticles(articles.slice(0, 5));
-          setLatestArticles(articles.slice(5, 15));
+          // The banner will show the 4 latest articles in a slider
+          setFeaturedArticles(articles.slice(0, 4));
           
-          // Group by category accurately based on your system categories
           const grouped = articles.reduce((acc: any, article) => {
             const cat = article.category || 'Geral';
             if (!acc[cat]) acc[cat] = [];
@@ -75,85 +89,71 @@ const BlogHome = () => {
         <meta name="description" content={siteDesc} />
         <meta name="keywords" content={siteKeywords} />
         <link rel="canonical" href={window.location.origin + window.location.pathname} />
-        <link rel="alternate" hrefLang="pt-br" href={`${window.location.origin}/pt-br`} />
-        <link rel="alternate" hrefLang="en" href={`${window.location.origin}/eng`} />
-        <link rel="alternate" hrefLang="es" href={`${window.location.origin}/es`} />
       </Helmet>
       
       <BlogHeader />
       
       <main className="max-w-[1200px] mx-auto px-4 lg:px-0 py-4">
-        {/* Main Highlight Section (Globo.com style) */}
-        <section className="mb-12">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* BIG Highlight */}
-            {featuredArticles[0] && (
-              <div className="lg:col-span-8 group">
-                <Link to={`/${currentLang}/article/${featuredArticles[0].slug || featuredArticles[0].id}`} className="block">
-                  <div className="relative mb-3 overflow-hidden">
-                    <NewsImage 
-                      src={featuredArticles[0].featured_image_url || 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d'} 
-                      alt={featuredArticles[0].title}
-                      aspectRatio="hero"
-                      className="group-hover:scale-105 transition-transform duration-500"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <span className="text-[#C4170C] font-black uppercase text-[11px] tracking-tight">
-                      {featuredArticles[0].category || 'Notícias'}
-                    </span>
-                    <h1 className="text-3xl sm:text-4xl lg:text-[42px] font-extrabold mb-2 leading-[1.1] text-[#333] group-hover:text-primary transition-colors tracking-tighter">
-                      {featuredArticles[0].title}
-                    </h1>
-                    <p className="text-[#666] text-lg leading-snug line-clamp-2 font-medium">
-                      {featuredArticles[0].meta_description}
-                    </p>
-                  </div>
-                </Link>
-                
-                {/* Secondary Highlight under main */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8 pt-8 border-t border-gray-100">
-                   {featuredArticles.slice(1, 3).map((article) => (
-                     <div key={article.id} className="group">
-                        <Link to={`/${currentLang}/article/${article.slug || article.id}`}>
-                          <h3 className="text-xl font-bold leading-tight text-[#333] group-hover:text-primary transition-colors mb-2">
-                            {article.title}
-                          </h3>
-                          <p className="text-sm text-[#888] line-clamp-2">{article.meta_description}</p>
-                        </Link>
-                     </div>
-                   ))}
-                </div>
-              </div>
-            )}
-
-            {/* Sidebar Highlights */}
-            <div className="lg:col-span-4 flex flex-col gap-8">
-              {featuredArticles.slice(3, 6).map((article) => (
-                <div key={article.id} className="group pb-6 border-b border-gray-100 last:border-0">
-                  <Link to={`/${currentLang}/article/${article.slug || article.id}`} className="flex flex-col gap-3">
-                    <div className="relative overflow-hidden">
-                      <NewsImage 
+        {/* Banner Slider Section */}
+        <section className="mb-12 relative -mx-4 lg:-mx-0">
+          <div className="overflow-hidden lg:rounded-sm" ref={emblaRef}>
+            <div className="flex">
+              {featuredArticles.map((article, index) => (
+                <div key={article.id} className="flex-[0_0_100%] min-w-0 relative group">
+                  <Link to={`/${currentLang}/article/${article.slug || article.id}`} className="block relative">
+                    <div className="relative h-[400px] sm:h-[500px] lg:h-[600px] overflow-hidden">
+                      <img 
                         src={article.featured_image_url || 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d'} 
                         alt={article.title}
-                        aspectRatio="video"
-                        className="group-hover:scale-105 transition-transform duration-500"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                       />
-                    </div>
-                    <div>
-                      <span className="text-[#06AA48] font-black uppercase text-[11px] tracking-tight mb-1 block">
-                        {article.category || 'ge'}
-                      </span>
-                      <h3 className="text-lg font-bold leading-tight text-[#333] group-hover:text-primary transition-colors line-clamp-3">
-                        {article.title}
-                      </h3>
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+                      
+                      <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-10 text-white">
+                        <span className="inline-block px-3 py-1 bg-primary text-white text-[10px] font-bold uppercase tracking-widest mb-4">
+                          {article.category || 'Destaque'}
+                        </span>
+                        <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black mb-4 leading-[1.05] tracking-tighter max-w-4xl group-hover:underline underline-offset-4 decoration-primary">
+                          {article.title}
+                        </h2>
+                        <p className="text-gray-200 text-lg sm:text-xl line-clamp-2 max-w-2xl font-medium hidden sm:block">
+                          {article.meta_description}
+                        </p>
+                      </div>
                     </div>
                   </Link>
                 </div>
               ))}
-              <AdPlaceholder className="w-full h-[250px] bg-gray-50 mt-auto" />
             </div>
           </div>
+
+          {/* Slider Controls */}
+          {featuredArticles.length > 1 && (
+            <>
+              <button 
+                onClick={scrollPrev}
+                className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md flex items-center justify-center text-white transition-all z-10"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+              <button 
+                onClick={scrollNext}
+                className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md flex items-center justify-center text-white transition-all z-10"
+              >
+                <ChevronRight className="w-6 h-6" />
+              </button>
+
+              <div className="absolute bottom-6 right-10 flex gap-2 z-10">
+                {featuredArticles.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => emblaApi?.scrollTo(index)}
+                    className={`w-2 h-2 rounded-full transition-all ${selectedIndex === index ? 'bg-primary w-6' : 'bg-white/50'}`}
+                  />
+                ))}
+              </div>
+            </>
+          )}
         </section>
 
         {/* Dynamic Category Blocks */}
