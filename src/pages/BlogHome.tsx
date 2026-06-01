@@ -110,7 +110,7 @@ const BlogHome = () => {
                   {featuredArticles.map((article, index) => (
                     <div key={article.id} className="flex-[0_0_100%] min-w-0 relative group">
                       <Link to={`/${currentLang}/article/${article.slug || article.id}`} className="block relative">
-                        <div className="relative aspect-[1350/1080] lg:h-[600px] overflow-hidden">
+                        <div className="relative h-[400px] sm:h-[600px] lg:h-[800px] overflow-hidden">
                           <img 
                             src={article.featured_image_url || 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d'} 
                             alt={article.title}
