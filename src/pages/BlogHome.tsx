@@ -146,7 +146,7 @@ const BlogHome = () => {
               </div>
 
               {/* Slider Controls (Internal) */}
-              {featuredArticles.length > 1 && (
+              {validArticles.length > 1 && (
                 <>
                   <button 
                     onClick={scrollPrev}
