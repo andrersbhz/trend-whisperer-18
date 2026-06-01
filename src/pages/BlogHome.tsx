@@ -25,7 +25,7 @@ const BlogHome = () => {
   const [categoriesData, setCategoriesData] = useState<any>({});
   const [loading, setLoading] = useState(true);
   
-  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, duration: 30 });
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, duration: 30 }, [Autoplay({ delay: 5000 })]);
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   const onSelect = useCallback(() => {
