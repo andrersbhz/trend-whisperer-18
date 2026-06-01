@@ -9,6 +9,7 @@ import { ChevronRight, ChevronLeft } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import Preloader from '@/components/Preloader';
 import useEmblaCarousel from 'embla-carousel-react';
+import Autoplay from 'embla-carousel-autoplay';
 
 const AdPlaceholder = ({ className }: { className?: string }) => (
   <div className={`bg-muted/30 border border-dashed border-border flex items-center justify-center text-[10px] font-bold text-muted-foreground uppercase tracking-widest ${className}`}>
