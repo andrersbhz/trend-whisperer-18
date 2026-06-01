@@ -27,9 +27,13 @@ const NewsImage = ({ src, alt, className, aspectRatio = 'video' }: NewsImageProp
     )}>
       {/* Main Image */}
       <img
-        src={src}
+        src={src || 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d'}
         alt={alt}
         onLoad={() => setIsLoaded(true)}
+        onError={(e) => {
+          const target = e.target as HTMLImageElement;
+          target.src = 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d';
+        }}
         className={cn(
           "w-full h-full object-cover transition-all duration-700",
           !isLoaded ? "scale-105 blur-sm" : "scale-100 blur-0"
