@@ -6,7 +6,7 @@ import BlogFooter from '@/components/blog/BlogFooter';
 import NewsImage from '@/components/blog/NewsImage';
 import { Helmet } from 'react-helmet-async';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import Preloader from '@/components/Preloader';
 import useEmblaCarousel from 'embla-carousel-react';
 
