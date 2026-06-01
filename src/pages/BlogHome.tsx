@@ -95,8 +95,8 @@ const BlogHome = () => {
       
       <main className="max-w-[1200px] mx-auto px-4 lg:px-0 py-4">
         {/* Banner Slider Section */}
-        <section className="mb-12 relative">
-          <div className="overflow-hidden" ref={emblaRef}>
+        <section className="mb-12 relative -mx-4 lg:-mx-0">
+          <div className="overflow-hidden lg:rounded-sm" ref={emblaRef}>
             <div className="flex">
               {featuredArticles.map((article, index) => (
                 <div key={article.id} className="flex-[0_0_100%] min-w-0 relative group">
@@ -107,16 +107,16 @@ const BlogHome = () => {
                         alt={article.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
                       
                       <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-10 text-white">
                         <span className="inline-block px-3 py-1 bg-primary text-white text-[10px] font-bold uppercase tracking-widest mb-4">
                           {article.category || 'Destaque'}
                         </span>
-                        <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black mb-4 leading-[1.05] tracking-tighter max-w-4xl">
+                        <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black mb-4 leading-[1.05] tracking-tighter max-w-4xl group-hover:underline underline-offset-4 decoration-primary">
                           {article.title}
                         </h2>
-                        <p className="text-gray-200 text-lg sm:text-xl line-clamp-2 max-w-2xl font-medium">
+                        <p className="text-gray-200 text-lg sm:text-xl line-clamp-2 max-w-2xl font-medium hidden sm:block">
                           {article.meta_description}
                         </p>
                       </div>
