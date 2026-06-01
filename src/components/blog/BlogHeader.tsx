@@ -18,26 +18,18 @@ const BlogHeader = () => {
 
   useEffect(() => {
     const fetchCategories = async () => {
-      console.log('BlogHeader: Fetching categories...');
       const { data, error } = await supabase
         .from('articles')
         .select('category')
         .eq('status', 'published')
         .not('category', 'is', null);
       
-      if (error) {
-        console.error('BlogHeader: Error fetching categories:', error);
-        return;
-      }
-
       if (data) {
-        console.log('BlogHeader: Categories data received:', data);
         const uniqueCategories = Array.from(new Set(data.map(item => item.category)))
           .map(cat => ({
             id: cat.toLowerCase().replace(/\s+/g, '-'),
             label: cat
           }));
-        console.log('BlogHeader: Unique categories:', uniqueCategories);
         setDynamicCategories(uniqueCategories);
       }
     };
