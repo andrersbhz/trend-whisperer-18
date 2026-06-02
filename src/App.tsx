@@ -55,7 +55,7 @@ const CategoryPageWrapper = () => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <HelmetProvider>
-      <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+      <ThemeProvider defaultTheme="dark" storageKey="a3-dashboard-theme">
         <TooltipProvider>
         <Toaster />
         <Sonner />
