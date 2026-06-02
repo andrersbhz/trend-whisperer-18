@@ -6,21 +6,22 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// O prompt da imagem é composto OBRIGATORIAMENTE pelo prompt configurado e o título da notícia.
+// O prompt da imagem é composto OBRIGATORIAMENTE pelo prompt configurado nas configurações e o título da notícia.
 function buildImagePrompt(title: string, content: string | null, visualElements: string | null | undefined, imagePrompt: string | null | undefined): string {
   if (!imagePrompt || imagePrompt.trim().length < 5) {
-    throw new Error("O 'Prompt de Imagem IA' não está configurado em Configurações > Geral.");
+    throw new Error("O 'Prompt de Imagem IA' não está configurado em Configurações > Geral. Este prompt é obrigatório.");
   }
 
-  return `DIRETRIZES OBRIGATÓRIAS DE ESTILO (USAR EXATAMENTE ESTE ESTILO):
+  return `DIRETRIZES OBRIGATÓRIAS DE ESTILO (DINÂMICO DAS CONFIGURAÇÕES):
 ${imagePrompt.trim()}
 
-ASSUNTO DA IMAGEM:
+ASSUNTO DA IMAGEM (DERIVADO DO TÍTULO DA NOTÍCIA):
 ${title}
 
-INSTRUÇÕES ADICIONAIS:
-- Não inclua textos longos ou marcas d'água.
-- Foque na representação visual fiel do título acima.
+INSTRUÇÕES DE QUALIDADE E VERACIDADE:
+- A imagem deve ser visualmente conectada e fiel ao título acima.
+- Não inclua textos longos, marcas d'água ou elementos desconexos.
+- Foque na representação visual fiel do assunto.
 - Se o estilo do usuário não especificar proporção, prefira 4:5 (1080x1350) para Instagram.`;
 }
 
