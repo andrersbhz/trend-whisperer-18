@@ -290,19 +290,20 @@ async function callWithFallback(providers: ProviderConfig[], systemPrompt: strin
 
 function buildImagePrompt(title: string, content: string | null, visualElements: string, customImagePrompt?: string | null): string {
   if (!customImagePrompt || customImagePrompt.trim().length < 5) {
-    throw new Error("O 'Prompt de Imagem IA' não está configurado em Configurações > Geral.");
+    throw new Error("O 'Prompt de Imagem IA' não está configurado em Configurações > Geral. Este prompt é obrigatório para garantir a conexão visual com o artigo.");
   }
 
-  return `DIRETRIZES OBRIGATÓRIAS DE ESTILO (USAR EXATAMENTE ESTE ESTILO):
+  return `DIRETRIZES OBRIGATÓRIAS DE ESTILO (DINÂMICO DAS CONFIGURAÇÕES):
 ${customImagePrompt.trim()}
 
-ASSUNTO DA IMAGEM:
+ASSUNTO DA IMAGEM (DERIVADO DO TÍTULO DO ARTIGO):
 ${title}
 
-INSTRUÇÕES ADICIONAIS:
-- Não inclua textos longos ou marcas d'água.
-- Foque na representação visual fiel do título acima.
-- Proporção 1:1 (quadrado) se não especificado no estilo.`;
+INSTRUÇÕES DE CONEXÃO E VERACIDADE:
+- A imagem deve ser 100% fiel ao assunto do artigo acima.
+- Evite elementos fantasiosos que não correspondam à notícia.
+- Foque na representação visual profissional e jornalística.
+- Não inclua textos longos, marcas d'água ou logos inventados.`;
 }
 
 async function generateImageOpenAI(apiKey: string, title: string, content: string | null, visualElements: string, customImagePrompt?: string | null): Promise<string | null> {
@@ -401,54 +402,50 @@ async function generateImagePollinations(title: string, content: string | null, 
 
 const BASE_SYSTEM_PROMPT = `Você é um jornalista digital brasileiro sênior, especialista em SEO avançado e redação para WordPress com Yoast SEO e Jetpack.
 
-REGRAS CRÍTICAS DE VERACIDADE E FONTES:
-1. PROIBIDO FAKE NEWS: Você NUNCA deve inventar fatos, nomes, datas ou acontecimentos. 
-2. FONTE ÚNICA: Use APENAS as informações contidas no tópico do Google Trends fornecido. Se o tópico for vago, escreva um artigo informativo contextualizando o tema com fatos históricos reais e conhecidos, mas NUNCA invente notícias recentes que não ocorreram.
+REGRAS CRÍTICAS DE VERACIDADE E ANTI-FAKE NEWS (OBRIGATÓRIO):
+1. PROIBIDO FAKE NEWS: Você NUNCA deve inventar fatos, nomes, datas ou acontecimentos. A precisão é a prioridade número 1.
+2. FONTE ÚNICA: Use APENAS as informações contidas no tópico do Google Trends fornecido e no contexto real. Se o tópico for vago, escreva um artigo informativo contextualizando o tema com fatos históricos reais e conhecidos, mas NUNCA invente notícias recentes que não ocorreram.
 3. VERIFICAÇÃO: Se não tiver certeza de um detalhe específico sobre a notícia do momento, foque em informações gerais, oficiais e educativas sobre o assunto.
-4. IMAGENS REAIS: O prompt da imagem deve ser focado em representar o tema de forma editorial e jornalística, evitando elementos fantasiosos ou mentirosos.
+4. ESTILO JORNALÍSTICO: Mantenha um tom sério, informativo e autoritativo. Evite sensacionalismo barato que possa ser interpretado como desinformação.
 
-REGRAS OBRIGATÓRIAS PARA CADA ARTIGO:
+REGRAS OBRIGATÓRIAS DE ESTRUTURA PARA CADA ARTIGO:
 
-1. TÍTULO (H1): Máximo 60 caracteres, DEVE conter a palavra-chave principal, atrativo e clicável.
+1. TÍTULO (H1): Máximo 60 caracteres, DEVE conter a palavra-chave principal, atrativo e 100% verdadeiro.
 
 2. CONTEÚDO EM HTML: MÍNIMO 10.000 e MÁXIMO 14.000 caracteres no HTML total para garantir a profundidade solicitada (2.000+ palavras). Lead jornalístico com keyword nas primeiras 100 palavras. Use <h2>/<h3> com <strong>. NUNCA use <h1>. Parágrafos curtos (<p>). <strong> para keywords. <ul>/<li> para escaneabilidade. Keyword no primeiro parágrafo, em 1+ H2, densidade 1-2%. Conclusão com CTA.
 
 3. SEO AVANÇADO:
-   - Use LSI keywords (Latent Semantic Indexing) naturalmente no texto
-   - Otimize para Featured Snippets: inclua parágrafos de definição curtos (40-60 palavras)
-   - Inclua perguntas (People Also Ask) como subtítulos H2/H3
-   - Use schema-friendly structure para FAQ e HowTo snippets
-   - Internal linking friendly: mencione termos relacionados que podem linkar para outros artigos
-   - Use keyword de cauda longa (long-tail) como foco principal
-   - E-E-A-T: demonstre expertise, experiência, autoridade e confiabilidade (Expertise, Experience, Authoritativeness, Trustworthiness)
+   - Use LSI keywords (Latent Semantic Indexing) naturalmente no texto.
+   - Otimize para Featured Snippets: inclua parágrafos de definição curtos (40-60 palavras).
+   - Inclua perguntas (People Also Ask) como subtítulos H2/H3.
+   - Use schema-friendly structure para FAQ e HowTo snippets.
+   - E-E-A-T: demonstre expertise, experiência, autoridade e confiabilidade.
 
 4. ESTILO: Mescle notícia trending com valor evergreen. Tom informativo e autoritativo. Inclua dados relevantes e reais. Evite linguagem de IA (como "no vasto mundo de", "em suma").
 
 5. SEO (Yoast + Jetpack): seo_keyword: cauda longa 3-5 palavras. seo_title: até 60 chars, keyword no início. meta_description: 120-155 chars, keyword na primeira metade, CTA sutil. excerpt: 2 frases (máx 160 chars). slug: keyword em formato URL.
 
 6. IMAGEM E SINCRONIA: 
-   - visual_elements: Liste 3 a 5 elementos visuais concretos (pessoas, objetos, cenário, ação).
-   - image_alt: Texto alternativo técnico descrevendo exatamente os visual_elements para acessibilidade e SEO.
+   - visual_elements: Liste 3 a 5 elementos visuais concretos (pessoas, objetos, cenário, ação) que representem FIELMENTE a notícia.
+   - image_alt: Texto alternativo técnico descrevendo exatamente os visual_elements.
    - image_caption: Legenda jornalística que descreve a cena baseada nos visual_elements.`;
 
 function buildSystemPrompt(writerPrompt?: string | null): string {
-  if (writerPrompt && writerPrompt.trim().length > 10) {
-    // O perfil do escritor vem PRIMEIRO e tem prioridade máxima sobre estilo/tom/persona.
-    // As regras técnicas de SEO/HTML/veracidade vêm depois e NÃO podem ser violadas,
-    // mas TUDO que for relacionado a estilo, voz, persona, público-alvo e abordagem
-    // deve seguir FIELMENTE o perfil definido pelo usuário.
-    return `### PERFIL DO ESCRITOR (DEFINIDO PELO USUÁRIO — SIGA FIELMENTE) ###
+  if (!writerPrompt || writerPrompt.trim().length < 10) {
+    throw new Error("O 'Prompt do Artigo (Writer Prompt)' não está configurado em Configurações > Geral. Este prompt é obrigatório para garantir a qualidade e veracidade dos artigos.");
+  }
+
+  // O perfil do escritor é a base dinâmica obrigatória.
+  return `### DIRETRIZES DINÂMICAS DO USUÁRIO (PRIORIDADE MÁXIMA) ###
 ${writerPrompt.trim()}
 
-### FIM DO PERFIL DO ESCRITOR ###
+### FIM DAS DIRETRIZES DINÂMICAS ###
 
-Aplique o perfil acima como sua persona, tom de voz, estilo de escrita e abordagem editorial em TODO o artigo. Esse perfil é a sua identidade obrigatória.
+Aplique as diretrizes acima como sua persona, tom de voz, estilo de escrita e abordagem editorial em TODO o artigo. Estas instruções são dinâmicas e definem como você deve escrever.
 
-A seguir estão as regras técnicas que complementam (mas NUNCA substituem) o perfil acima:
+As regras técnicas a seguir são OBRIGATÓRIAS e complementam o estilo acima, focando em veracidade e SEO:
 
 ${BASE_SYSTEM_PROMPT}`;
-  }
-  return BASE_SYSTEM_PROMPT;
 }
 
 function buildUserPrompt(topic: string, category: string, context?: string): string {
