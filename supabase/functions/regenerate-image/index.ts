@@ -6,31 +6,22 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// O prompt da imagem é DERIVADO do image_prompt configurado + conteúdo do artigo.
+// O prompt da imagem é composto OBRIGATORIAMENTE pelo prompt configurado e o título da notícia.
 function buildImagePrompt(title: string, content: string | null, visualElements: string | null | undefined, imagePrompt: string | null | undefined): string {
   if (!imagePrompt || imagePrompt.trim().length < 5) {
-    throw new Error("O 'Prompt de Imagem IA' não está configurado. Por favor, vá em Configurações e defina o estilo visual obrigatório.");
+    throw new Error("O 'Prompt de Imagem IA' não está configurado em Configurações > Geral.");
   }
 
-  // Prepara o conteúdo removendo HTML e limitando o tamanho
-  const cleanContent = content ? content.replace(/<[^>]*>/g, "").substring(0, 800) : "";
-
-  return `Você é um designer gráfico especializado em artes virais para Instagram. Sua tarefa é criar uma imagem de alta conversão (CTR) para um post.
-
-### DADOS DO ARTIGO (BASE PARA A CENA) ###
-TÍTULO: ${title}
-CONTEÚDO/CONTEXTO: ${cleanContent}
-ELEMENTOS VISUAIS SUGERIDOS: ${visualElements || "Uma cena dinâmica e impactante que represente o assunto principal"}
-
-### DIRETRIZES OBRIGATÓRIAS DE ESTILO ###
+  return `DIRETRIZES OBRIGATÓRIAS DE ESTILO (USAR EXATAMENTE ESTE ESTILO):
 ${imagePrompt.trim()}
 
-### REQUISITOS TÉCNICOS E DE COMPOSIÇÃO ###
-1. FORMATO: A imagem DEVE ser no formato 4:5 (1080x1350 pixels, retrato para Instagram).
-2. CHAMADA CTR: Escreva na imagem uma frase curta, poderosa e provocativa baseada no título, usando GATILHOS MENTAIS (curiosidade, urgência ou exclusividade).
-3. QUALIDADE: Estilo cinematográfico, iluminação profissional, realista (4k), pronta para ser postada no feed.
-4. FOCO: Retrate fielmente os elementos ou pessoas citados no TÍTULO. Evite bancos de imagem genéricos.
-5. PROPORÇÃO DA ARTE: Certifique-se de que o design preencha bem o formato 1080x1350.`;
+ASSUNTO DA IMAGEM:
+${title}
+
+INSTRUÇÕES ADICIONAIS:
+- Não inclua textos longos ou marcas d'água.
+- Foque na representação visual fiel do título acima.
+- Se o estilo do usuário não especificar proporção, prefira 4:5 (1080x1350) para Instagram.`;
 }
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -210,8 +201,11 @@ serve(async (req) => {
       .eq("user_id", userId)
       .single();
     
-    // Prioritize user-configured image_prompt, fallback to writer_prompt if missing, or use default
-    const imagePrompt: string = settings?.image_prompt?.trim() || settings?.writer_prompt?.trim() || "Fotografia realista de alta qualidade";
+    // O prompt de imagem é obrigatório vindo de image_prompt conforme solicitado pelo usuário.
+    const imagePrompt: string = settings?.image_prompt?.trim();
+    if (!imagePrompt && force) {
+      throw new Error("O 'Prompt de Imagem IA' não está configurado. Por favor, vá em Configurações > Geral.");
+    }
     const imageMode = settings?.image_mode || "ai";
 
     if (imageMode !== "ai" && !force) {

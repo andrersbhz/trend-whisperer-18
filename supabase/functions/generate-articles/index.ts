@@ -290,26 +290,19 @@ async function callWithFallback(providers: ProviderConfig[], systemPrompt: strin
 
 function buildImagePrompt(title: string, content: string | null, visualElements: string, customImagePrompt?: string | null): string {
   if (!customImagePrompt || customImagePrompt.trim().length < 5) {
-    throw new Error("O 'Prompt de Imagem IA' não está configurado. Por favor, vá em Configurações e defina o estilo visual obrigatório.");
+    throw new Error("O 'Prompt de Imagem IA' não está configurado em Configurações > Geral.");
   }
 
-  const userImageGuidance = `### DIRETRIZES OBRIGATÓRIAS DE ESTILO DO USUÁRIO ###\n${customImagePrompt.trim()}\n`;
-  const contentSnippet = content ? `\n### CONTEXTO DETALHADO DA HISTÓRIA (PESQUISA) ###\n${content.replace(/<[^>]*>/g, "").substring(0, 1500)}...` : "";
+  return `DIRETRIZES OBRIGATÓRIAS DE ESTILO (USAR EXATAMENTE ESTE ESTILO):
+${customImagePrompt.trim()}
 
-  return `${userImageGuidance}
+ASSUNTO DA IMAGEM:
+${title}
 
-### INSTRUÇÕES DE ANÁLISE E PESQUISA CONTEXTUAL ###
-1. IDENTIFICAÇÃO DE ENTIDADES: Analise o título e o contexto abaixo para identificar pessoas específicas (artistas, políticos, celebridades), locais, objetos ou eventos mencionados.
-2. REPRESENTAÇÃO FIEL: A imagem DEVE retratar os elementos centrais da história. Se o artigo é sobre um artista específico, a cena deve refletir o universo desse artista ou o evento descrito.
-3. HARMONIA OBRIGATÓRIA: Combine o ESTILO solicitado nas DIRETRIZES DO USUÁRIO com o ASSUNTO extraído dos DADOS DO ARTIGO.
-4. PROIBIÇÃO DE IMAGENS GENÉRICAS: Não ignore o contexto. Se o artigo é sobre futebol, não mostre apenas uma bola genérica; mostre a cena descrita no contexto.
-
-### DADOS DO ARTIGO PARA A CENA ###
-TÍTULO: ${title}${contentSnippet}
-ELEMENTOS VISUAIS DO CONTEÚDO: ${visualElements || "Cena dinâmica que ilustra o ponto principal do artigo"}.
-
-### REQUISITOS OBRIGATÓRIOS ###
-Sem texto, sem marcas d'água. Proporção 1:1, 1024x1024px. Estilo profissional.`;
+INSTRUÇÕES ADICIONAIS:
+- Não inclua textos longos ou marcas d'água.
+- Foque na representação visual fiel do título acima.
+- Proporção 1:1 (quadrado) se não especificado no estilo.`;
 }
 
 async function generateImageOpenAI(apiKey: string, title: string, content: string | null, visualElements: string, customImagePrompt?: string | null): Promise<string | null> {
