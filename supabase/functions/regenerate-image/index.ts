@@ -201,8 +201,11 @@ serve(async (req) => {
       .eq("user_id", userId)
       .single();
     
-    // Prioritize user-configured image_prompt, fallback to writer_prompt if missing, or use default
-    const imagePrompt: string = settings?.image_prompt?.trim() || settings?.writer_prompt?.trim() || "Fotografia realista de alta qualidade";
+    // O prompt de imagem é obrigatório vindo de image_prompt conforme solicitado pelo usuário.
+    const imagePrompt: string = settings?.image_prompt?.trim();
+    if (!imagePrompt && force) {
+      throw new Error("O 'Prompt de Imagem IA' não está configurado. Por favor, vá em Configurações > Geral.");
+    }
     const imageMode = settings?.image_mode || "ai";
 
     if (imageMode !== "ai" && !force) {
