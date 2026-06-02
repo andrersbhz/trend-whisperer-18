@@ -134,15 +134,17 @@ const AutomationSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChan
       </Card>
 
       {/* Writer Profile */}
-      <Card className="shadow-card">
+      <Card className="shadow-card border-l-4 border-l-primary">
         <CardHeader>
-          <div className="flex items-center gap-2">
-            <PenTool className="h-5 w-5 text-primary" />
-            <CardTitle className="text-lg">Perfil do Escritor</CardTitle>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <PenTool className="h-5 w-5 text-primary" />
+              <CardTitle className="text-lg">Perfil do Escritor (Obrigatório)</CardTitle>
+            </div>
+            <Badge variant="outline" className="text-[10px] bg-primary/10 text-primary border-primary/20">DINÂMICO & FORÇADO</Badge>
           </div>
           <CardDescription>
-            Defina como a IA deve escrever seus artigos. 
-            Este prompt define o estilo de escrita, tom e estrutura dos seus artigos.
+            Defina como a IA deve escrever seus artigos. Este prompt é o motor dinâmico do sistema.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -163,14 +165,17 @@ const AutomationSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChan
       </Card>
 
       {/* Image Prompt Profile */}
-      <Card className="shadow-card">
+      <Card className="shadow-card border-l-4 border-l-accent">
         <CardHeader>
-          <div className="flex items-center gap-2">
-            <ImageIcon className="h-5 w-5 text-primary" />
-            <CardTitle className="text-lg">Prompt de Imagem IA</CardTitle>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <ImageIcon className="h-5 w-5 text-accent" />
+              <CardTitle className="text-lg">Prompt de Imagem IA (Obrigatório)</CardTitle>
+            </div>
+            <Badge variant="outline" className="text-[10px] bg-accent/10 text-accent border-accent/20">DINÂMICO & FORÇADO</Badge>
           </div>
           <CardDescription>
-            Defina o estilo visual das imagens destacadas geradas pelo robô.
+            Defina o estilo visual obrigatório para todas as imagens geradas.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">

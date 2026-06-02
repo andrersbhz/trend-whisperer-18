@@ -183,26 +183,34 @@ const SettingsPage = () => {
   const handleSave = async () => {
     if (!user) return;
 
-    // Validation for Writer Prompt if it's being updated
-    if (settings.writer_prompt && settings.writer_prompt.trim().length > 0) {
-      if (settings.writer_prompt.trim().length < 50) {
-        toast({ 
-          title: 'Prompt inválido', 
-          description: 'O prompt do escritor deve ter pelo menos 50 caracteres.', 
-          variant: 'destructive' 
-        });
-        return;
-      }
-      const mandatoryKeywords = ['SEO', 'jornalista'];
-      const missingKeywords = mandatoryKeywords.filter(k => !settings.writer_prompt.toLowerCase().includes(k.toLowerCase()));
-      if (missingKeywords.length > 0) {
-        toast({ 
-          title: 'Prompt incompleto', 
-          description: `O prompt do escritor deve conter orientações sobre: ${missingKeywords.join(', ')}.`, 
-          variant: 'destructive' 
-        });
-        return;
-      }
+    // Validação rigorosa dos Prompts de IA conforme solicitado
+    if (!settings.writer_prompt || settings.writer_prompt.trim().length < 100) {
+      toast({ 
+        title: 'Perfil do Escritor Obrigatório', 
+        description: 'O "Perfil do Escritor" deve ser detalhado (mínimo 100 caracteres) para garantir a qualidade e evitar fake news.', 
+        variant: 'destructive' 
+      });
+      return;
+    }
+
+    if (!settings.image_prompt || settings.image_prompt.trim().length < 50) {
+      toast({ 
+        title: 'Prompt de Imagem Obrigatório', 
+        description: 'O "Prompt de Imagem IA" deve ser preenchido para evitar imagens desconexas.', 
+        variant: 'destructive' 
+      });
+      return;
+    }
+
+    const mandatoryKeywords = ['SEO', 'jornalista', 'verdade', 'fato'];
+    const missingKeywords = mandatoryKeywords.filter(k => !settings.writer_prompt.toLowerCase().includes(k.toLowerCase()));
+    if (missingKeywords.length > 0) {
+      toast({ 
+        title: 'Prompt sem diretrizes de veracidade', 
+        description: `Para evitar fake news, seu prompt deve conter termos como: ${missingKeywords.join(', ')}.`, 
+        variant: 'destructive' 
+      });
+      return;
     }
 
     setSaving(true);
