@@ -394,6 +394,39 @@ export type Database = {
         }
         Relationships: []
       }
+      online_users: {
+        Row: {
+          city: string | null
+          country: string | null
+          id: string
+          last_seen: string | null
+          latitude: number
+          longitude: number
+          state: string | null
+          user_id: string | null
+        }
+        Insert: {
+          city?: string | null
+          country?: string | null
+          id?: string
+          last_seen?: string | null
+          latitude: number
+          longitude: number
+          state?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          city?: string | null
+          country?: string | null
+          id?: string
+          last_seen?: string | null
+          latitude?: number
+          longitude?: number
+          state?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       publish_log: {
         Row: {
           article_id: string
@@ -837,6 +870,28 @@ export type Database = {
       }
       encrypt_credential: { Args: { val: string }; Returns: string }
       get_credentials_status: { Args: never; Returns: Json }
+      get_online_locations: {
+        Args: { p_minutes?: number }
+        Returns: {
+          city: string
+          country: string
+          id: string
+          latitude: number
+          longitude: number
+          state: string
+        }[]
+      }
+      update_online_status: {
+        Args: {
+          p_city?: string
+          p_country?: string
+          p_latitude: number
+          p_longitude: number
+          p_state?: string
+          p_user_id: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

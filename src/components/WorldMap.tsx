@@ -1,26 +1,19 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { ComposableMap, Geographies, Geography, Marker, ZoomableGroup } from 'react-simple-maps';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Maximize2, Minimize2 } from 'lucide-react';
+import { Maximize2, Minimize2, Radio } from 'lucide-react';
+import { fetchOnlineUsers, updateCurrentOnlineStatus, OnlineUser } from '@/services/onlineStatus';
 
 // URL for world map with countries and optionally states/regions
-// Using a higher resolution world map that includes more detail
 const worldGeoUrl = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
 // Brazil states GeoJSON for detailed view
 const brazilGeoUrl = "https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/brazil-states.geojson";
-
-interface OnlineUser {
-  id: string;
-  coordinates: [number, number]; // [longitude, latitude]
-  country: string;
-  city?: string;
-  state?: string;
-}
 
 const WorldMap = () => {
   const [users, setUsers] = useState<OnlineUser[]>([]);
   const [zoom, setZoom] = useState(1);
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const mapContainerRef = useRef<HTMLDivElement>(null);
 
   const toggleFullScreen = () => {
@@ -43,50 +36,30 @@ const WorldMap = () => {
   }, []);
 
   useEffect(() => {
-    const initialUsers: OnlineUser[] = [
-      { id: '1', coordinates: [-46.6333, -23.5505], country: 'Brasil', city: 'São Paulo', state: 'SP' },
-      { id: '3', coordinates: [-74.0060, 40.7128], country: 'EUA', city: 'New York' },
-      { id: '4', coordinates: [2.3522, 48.8566], country: 'França', city: 'Paris' },
-      { id: '5', coordinates: [139.6503, 35.6762], country: 'Japão', city: 'Tokyo' },
-      { id: '7', coordinates: [-9.1393, 38.7223], country: 'Portugal', city: 'Lisboa' },
-      { id: '8', coordinates: [-43.1729, -22.9068], country: 'Brasil', city: 'Rio de Janeiro', state: 'RJ' },
-    ];
-    setUsers(initialUsers);
+    // 1. Mark current user as online immediately
+    updateCurrentOnlineStatus();
 
-    const countryHubs: { name: string, coords: [number, number], states?: string[] }[] = [
-      { name: 'Brasil', coords: [-47.8825, -15.7942], states: ['SP', 'RJ', 'MG', 'BA', 'RS', 'PR', 'PE', 'AM'] },
-      { name: 'Portugal', coords: [-8.2245, 39.3999] },
-      { name: 'EUA', coords: [-95.7129, 37.0902] },
-      { name: 'Espanha', coords: [-3.7038, 40.4168] },
-      { name: 'Angola', coords: [17.8739, -11.2027] },
-      { name: 'Japão', coords: [138.2529, 36.2048] },
-      { name: 'Austrália', coords: [133.7751, -25.2744] },
-      { name: 'Canadá', coords: [-106.3468, 56.1304] },
-    ];
+    // 2. Initial fetch
+    const loadUsers = async () => {
+      const onlineUsers = await fetchOnlineUsers();
+      setUsers(onlineUsers);
+      setIsLoading(false);
+    };
 
-    const interval = setInterval(() => {
-      setUsers(prev => {
-        const next = [...prev];
-        if (next.length > 15) next.shift();
-        
-        const hub = countryHubs[Math.floor(Math.random() * countryHubs.length)];
-        const randomCoords: [number, number] = [
-          hub.coords[0] + (Math.random() - 0.5) * (hub.name === 'Brasil' ? 10 : 6),
-          hub.coords[1] + (Math.random() - 0.5) * (hub.name === 'Brasil' ? 10 : 6)
-        ];
+    loadUsers();
 
-        next.push({
-          id: Math.random().toString(),
-          coordinates: randomCoords,
-          country: hub.name,
-          state: hub.states ? hub.states[Math.floor(Math.random() * hub.states.length)] : undefined
-        });
-        return next;
-      });
-    }, 4000);
+    // 3. Poll for updates every 15 seconds to keep it dynamic and real
+    const pollInterval = setInterval(loadUsers, 15000);
 
-    return () => clearInterval(interval);
+    // 4. Update current status every minute to keep session alive in DB
+    const statusInterval = setInterval(updateCurrentOnlineStatus, 60000);
+
+    return () => {
+      clearInterval(pollInterval);
+      clearInterval(statusInterval);
+    };
   }, []);
+
 
   const continentMarkers = useMemo(() => [
     { name: "América do Sul", coords: [-60, -15] as [number, number] },
@@ -114,18 +87,22 @@ const WorldMap = () => {
             <div className="absolute inset-0 h-3 w-3 rounded-full bg-primary animate-ping opacity-75" />
           </div>
           <div>
-            <h3 className="text-[12px] font-black uppercase tracking-[0.3em] text-foreground leading-none text-glow-blue">Vortex Real-Time</h3>
+            <h3 className="text-[12px] font-black uppercase tracking-[0.3em] text-foreground leading-none text-glow-blue">Vortex Live Connect</h3>
             <p className="text-[8px] text-primary/80 uppercase font-black tracking-widest mt-1.5 flex items-center gap-2">
-              <span className="h-px w-6 bg-primary/50" /> Monitor de Tráfego 3D
+              <span className="h-px w-6 bg-primary/50" /> {isLoading ? 'Sincronizando...' : 'Dados Dinâmicos em Tempo Real'}
             </p>
           </div>
         </div>
+
         
         <div className="flex gap-4 items-center">
           <div className="hidden sm:flex flex-col items-end">
-            <span className="text-[7px] font-black text-primary/60 uppercase tracking-widest">Status da Rede</span>
-            <span className="text-[10px] font-black text-success uppercase tracking-tighter">Estável • {users.length + 312} Nodes</span>
+            <span className="text-[7px] font-black text-primary/60 uppercase tracking-widest">Acessos Reais</span>
+            <span className="text-[10px] font-black text-success uppercase tracking-tighter flex items-center gap-1">
+              <Radio size={10} className="animate-pulse" /> {users.length} Online Agora
+            </span>
           </div>
+
           <div className="h-8 w-[1px] bg-white/10 hidden sm:block" />
           <div className="flex items-center gap-1 bg-primary/10 px-3 py-1.5 border border-primary/20 rounded-sm skew-x-[-10deg]">
              <span className="text-[11px] font-black text-white tabular-nums skew-x-[10deg]">{zoom.toFixed(1)}x</span>
