@@ -97,9 +97,12 @@ const WorldMap = () => {
         
         <div className="flex gap-4 items-center">
           <div className="hidden sm:flex flex-col items-end">
-            <span className="text-[7px] font-black text-primary/60 uppercase tracking-widest">Status da Rede</span>
-            <span className="text-[10px] font-black text-success uppercase tracking-tighter">Estável • {users.length + 312} Nodes</span>
+            <span className="text-[7px] font-black text-primary/60 uppercase tracking-widest">Acessos Reais</span>
+            <span className="text-[10px] font-black text-success uppercase tracking-tighter flex items-center gap-1">
+              <Radio size={10} className="animate-pulse" /> {users.length} Online Agora
+            </span>
           </div>
+
           <div className="h-8 w-[1px] bg-white/10 hidden sm:block" />
           <div className="flex items-center gap-1 bg-primary/10 px-3 py-1.5 border border-primary/20 rounded-sm skew-x-[-10deg]">
              <span className="text-[11px] font-black text-white tabular-nums skew-x-[10deg]">{zoom.toFixed(1)}x</span>
