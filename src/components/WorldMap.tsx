@@ -207,22 +207,27 @@ const WorldMap = () => {
                       {/* Info label (Higher detail when zoomed) */}
                       <motion.g transform={`translate(0, -${20 / zoom})`}>
                          <rect 
-                           x={-20 / zoom} 
+                           x={-24 / zoom} 
                            y={-10 / zoom} 
-                           width={40 / zoom} 
+                           width={48 / zoom} 
                            height={12 / zoom} 
-                           fill="rgba(0,0,0,0.8)" 
-                           stroke="var(--primary)" 
+                           fill="rgba(0,0,0,0.9)" 
+                           stroke="rgba(57, 255, 20, 0.6)" 
                            strokeWidth={0.5 / zoom} 
                            rx={2 / zoom}
                          />
+                         
+                         {/* Neon green dot inside label */}
+                         <circle cx={-18 / zoom} cy={-4 / zoom} r={1.5 / zoom} fill="#39FF14" className="animate-pulse shadow-[0_0_5px_#39FF14]" />
+                         
                          <text
-                           textAnchor="middle"
+                           textAnchor="start"
+                           x={-14 / zoom}
                            y={-2 / zoom}
                            className="font-black uppercase tracking-tighter"
                            style={{ fontSize: `${6 / zoom}px`, fill: "#fff" }}
                          >
-                           {user.state ? `${user.state} • ` : ''}{user.country}
+                           {user.state ? `${user.state}` : user.country}
                          </text>
                       </motion.g>
                     </motion.g>
