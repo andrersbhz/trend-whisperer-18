@@ -124,7 +124,7 @@ const WorldMap = () => {
 
             {/* Continents Labels */}
             {continents.map((cont) => (
-              <Marker key={cont.name} coordinates={cont.coords}>
+              <Marker key={cont.name} coordinates={cont.coords as [number, number]}>
                 <text
                   textAnchor="middle"
                   className="text-[10px] font-black uppercase tracking-[0.2em] pointer-events-none fill-white/20 select-none"
