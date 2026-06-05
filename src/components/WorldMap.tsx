@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { ComposableMap, Geographies, Geography, Marker, ZoomableGroup } from 'react-simple-maps';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -66,14 +66,14 @@ const WorldMap = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const continents = [
-    { name: "América do Sul", coords: [-60, -15] },
-    { name: "América do Norte", coords: [-100, 40] },
-    { name: "Europa", coords: [15, 50] },
-    { name: "África", coords: [20, 0] },
-    { name: "Ásia", coords: [100, 35] },
-    { name: "Oceania", coords: [135, -25] },
-  ];
+  const continentMarkers = useMemo(() => [
+    { name: "América do Sul", coords: [-60, -15] as [number, number] },
+    { name: "América do Norte", coords: [-100, 40] as [number, number] },
+    { name: "Europa", coords: [15, 50] as [number, number] },
+    { name: "África", coords: [20, 0] as [number, number] },
+    { name: "Ásia", coords: [100, 35] as [number, number] },
+    { name: "Oceania", coords: [135, -25] as [number, number] },
+  ], []);
 
   return (
     <div className="w-full bg-[#020202] rounded-xl border border-primary/30 overflow-hidden shadow-[0_0_100px_rgba(0,100,255,0.2)] relative perspective-1000">
@@ -168,8 +168,8 @@ const WorldMap = () => {
 
               {/* Continents Labels (Fade out when zoomed in) */}
               <AnimatePresence>
-                {zoom < 3 && continents.map((cont) => (
-                  <Marker key={cont.name} coordinates={cont.coords as [number, number]}>
+                {zoom < 3 && continentMarkers.map((cont) => (
+                  <Marker key={cont.name} coordinates={cont.coords}>
                     <motion.text
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 0.15 }}

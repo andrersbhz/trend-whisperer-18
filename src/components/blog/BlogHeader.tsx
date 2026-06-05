@@ -18,7 +18,7 @@ const BlogHeader = () => {
 
   useEffect(() => {
     const fetchCategories = async () => {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('articles')
         .select('category')
         .eq('status', 'published')

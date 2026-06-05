@@ -20,6 +20,7 @@ const CategoryPage = ({ categoryId }: { categoryId: string }) => {
         const { data } = await supabase
           .from('articles')
           .select('*')
+          .eq('status', 'published')
           .ilike('category', categoryId.replace(/-/g, ' '))
           .order('created_at', { ascending: false });
         
