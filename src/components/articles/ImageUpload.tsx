@@ -27,6 +27,7 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
   const { toast } = useToast();
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentImageUrl || null);
+  const [isDragging, setIsDragging] = useState(false);
   
   // Cropping states
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -43,17 +44,48 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
     setCroppedAreaPixels(croppedAreaPixels);
   }, []);
 
+  const handleFile = (file: File) => {
+    const reader = new FileReader();
+    reader.addEventListener('load', () => {
+      setSelectedImage(reader.result as string);
+      setIsCropDialogOpen(true);
+    });
+    reader.readAsDataURL(file);
+  };
+
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
-      const file = event.target.files[0];
-      const reader = new FileReader();
-      reader.addEventListener('load', () => {
-        setSelectedImage(reader.result as string);
-        setIsCropDialogOpen(true);
-      });
-      reader.readAsDataURL(file);
+      handleFile(event.target.files[0]);
     }
   };
+
+  const onDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  }, []);
+
+  const onDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  }, []);
+
+  const onDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const file = e.dataTransfer.files[0];
+      if (file.type.startsWith('image/')) {
+        handleFile(file);
+      } else {
+        toast({
+          title: "Arquivo inválido",
+          description: "Por favor, arraste apenas arquivos de imagem.",
+          variant: "destructive",
+        });
+      }
+    }
+  }, [toast]);
 
   const handleUpload = async (imageToUpload?: string, areaPixels?: any) => {
     const sourceImage = imageToUpload || selectedImage;
@@ -272,7 +304,25 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
 
   return (
     <div className="space-y-4">
-      <div className="relative w-full aspect-[4/5] max-w-full mx-auto rounded-none border-2 border-dashed border-border overflow-hidden bg-muted/30 flex items-center justify-center">
+      <div 
+        className={cn(
+          "relative w-full aspect-[4/5] max-w-full mx-auto rounded-none border-2 border-dashed overflow-hidden bg-muted/30 flex items-center justify-center transition-all duration-200",
+          isDragging ? "border-primary bg-primary/5 scale-[1.01]" : "border-border",
+          !previewUrl && "cursor-pointer hover:border-primary/50 hover:bg-primary/5"
+        )}
+        onDragOver={onDragOver}
+        onDragLeave={onDragLeave}
+        onDrop={onDrop}
+        onClick={() => !previewUrl && document.getElementById(`image-input-${articleId}`)?.click()}
+      >
+        <input
+          id={`image-input-${articleId}`}
+          type="file"
+          className="hidden"
+          accept="image/*"
+          onChange={handleFileSelect}
+          disabled={uploading}
+        />
         {previewUrl ? (
           <>
             <img 
@@ -281,22 +331,30 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
               className="w-full h-full object-cover block" 
             />
             <button
-              onClick={handleRemoveImage}
-              className="absolute top-2 right-2 p-1 bg-background/80 rounded-full hover:bg-background text-destructive transition-colors"
+              onClick={(e) => { e.stopPropagation(); handleRemoveImage(); }}
+              className="absolute top-2 right-2 p-1 bg-background/80 rounded-full hover:bg-background text-destructive transition-colors z-10"
               disabled={uploading}
             >
               <X className="h-4 w-4" />
             </button>
           </>
         ) : (
-          <div className="flex flex-col items-center gap-2 text-muted-foreground">
-            <ImageIcon className="h-10 w-10 opacity-20" />
-            <p className="text-xs">Nenhuma imagem selecionada</p>
+          <div className="flex flex-col items-center gap-3 text-muted-foreground p-6 text-center">
+            <div className={cn(
+              "p-4 rounded-full bg-background/50 border border-border transition-all",
+              isDragging && "scale-110 border-primary text-primary"
+            )}>
+              <Upload className="h-8 w-8 opacity-60" />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Arraste sua imagem aqui</p>
+              <p className="text-[10px] opacity-70">Ou clique para selecionar um arquivo</p>
+            </div>
           </div>
         )}
         
         {uploading && (
-          <div className="absolute inset-0 bg-background/40 flex items-center justify-center backdrop-blur-sm">
+          <div className="absolute inset-0 bg-background/40 flex items-center justify-center backdrop-blur-sm z-20">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
         )}
