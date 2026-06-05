@@ -1,6 +1,7 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { ComposableMap, Geographies, Geography, Marker, ZoomableGroup } from 'react-simple-maps';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Maximize2, Minimize2 } from 'lucide-react';
 
 // URL for world map with countries and optionally states/regions
 // Using a higher resolution world map that includes more detail
@@ -19,6 +20,27 @@ interface OnlineUser {
 const WorldMap = () => {
   const [users, setUsers] = useState<OnlineUser[]>([]);
   const [zoom, setZoom] = useState(1);
+  const [isFullScreen, setIsFullScreen] = useState(false);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+
+  const toggleFullScreen = () => {
+    if (!document.fullscreenElement) {
+      mapContainerRef.current?.requestFullscreen().catch((err) => {
+        console.error(`Error attempting to enable full-screen mode: ${err.message}`);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  };
+
+  useEffect(() => {
+    const handleFullScreenChange = () => {
+      setIsFullScreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullScreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullScreenChange);
+  }, []);
 
   useEffect(() => {
     const initialUsers: OnlineUser[] = [
@@ -76,7 +98,12 @@ const WorldMap = () => {
   ], []);
 
   return (
-    <div className="w-full bg-[#020202] rounded-xl border border-primary/30 overflow-hidden shadow-[0_0_100px_rgba(0,100,255,0.2)] relative perspective-1000">
+    <div 
+      ref={mapContainerRef}
+      className={`w-full bg-[#020202] overflow-hidden relative perspective-1000 transition-all duration-500 ${
+        isFullScreen ? 'fixed inset-0 z-[9999] rounded-0' : 'rounded-xl border border-primary/30 shadow-[0_0_100px_rgba(0,100,255,0.2)]'
+      }`}
+    >
       {/* 3D Depth effect layers */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(0,150,255,0.1),transparent)] pointer-events-none z-10" />
       
@@ -103,10 +130,19 @@ const WorldMap = () => {
           <div className="flex items-center gap-1 bg-primary/10 px-3 py-1.5 border border-primary/20 rounded-sm skew-x-[-10deg]">
              <span className="text-[11px] font-black text-white tabular-nums skew-x-[10deg]">{zoom.toFixed(1)}x</span>
           </div>
+          <button 
+            onClick={toggleFullScreen}
+            className="flex items-center justify-center h-8 w-8 bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-sm transition-colors text-primary"
+            title={isFullScreen ? "Sair da Tela Cheia" : "Expandir para Tela Cheia"}
+          >
+            {isFullScreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+          </button>
         </div>
       </div>
       
-      <div className="h-[600px] w-full relative cursor-grab active:cursor-grabbing bg-[linear-gradient(rgba(0,150,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(0,150,255,0.05)_1px,transparent_1px)] [background-size:40px_40px] overflow-hidden">
+      <div className={`w-full relative cursor-grab active:cursor-grabbing bg-[linear-gradient(rgba(0,150,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(0,150,255,0.05)_1px,transparent_1px)] [background-size:40px_40px] overflow-hidden transition-all duration-500 ${
+        isFullScreen ? 'h-[calc(100vh-80px)]' : 'h-[600px]'
+      }`}>
         {/* Decorative 3D elements */}
         <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-primary/5 rounded-full blur-[100px] pointer-events-none animate-pulse" />
         <div className="absolute -top-20 -right-20 w-64 h-64 bg-accent/5 rounded-full blur-[100px] pointer-events-none animate-pulse" />
