@@ -87,12 +87,13 @@ const WorldMap = () => {
             <div className="absolute inset-0 h-3 w-3 rounded-full bg-primary animate-ping opacity-75" />
           </div>
           <div>
-            <h3 className="text-[12px] font-black uppercase tracking-[0.3em] text-foreground leading-none text-glow-blue">Vortex Real-Time</h3>
+            <h3 className="text-[12px] font-black uppercase tracking-[0.3em] text-foreground leading-none text-glow-blue">Vortex Live Connect</h3>
             <p className="text-[8px] text-primary/80 uppercase font-black tracking-widest mt-1.5 flex items-center gap-2">
-              <span className="h-px w-6 bg-primary/50" /> Monitor de Tráfego 3D
+              <span className="h-px w-6 bg-primary/50" /> {isLoading ? 'Sincronizando...' : 'Dados Dinâmicos em Tempo Real'}
             </p>
           </div>
         </div>
+
         
         <div className="flex gap-4 items-center">
           <div className="hidden sm:flex flex-col items-end">
