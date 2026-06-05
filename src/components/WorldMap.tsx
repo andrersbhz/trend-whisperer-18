@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ComposableMap, Geographies, Geography, Marker } from 'react-simple-maps';
+import { ComposableMap, Geographies, Geography, Marker, ZoomableGroup } from 'react-simple-maps';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // GeoJSON for the world map
@@ -18,11 +18,9 @@ const WorldMap = () => {
   useEffect(() => {
     const initialUsers: OnlineUser[] = [
       { id: '1', coordinates: [-46.6333, -23.5505], country: 'Brasil', city: 'São Paulo' },
-      { id: '2', coordinates: [-43.1729, -22.9068], country: 'Brasil', city: 'Rio de Janeiro' },
       { id: '3', coordinates: [-74.0060, 40.7128], country: 'EUA', city: 'New York' },
       { id: '4', coordinates: [2.3522, 48.8566], country: 'França', city: 'Paris' },
       { id: '5', coordinates: [139.6503, 35.6762], country: 'Japão', city: 'Tokyo' },
-      { id: '6', coordinates: [-0.1278, 51.5074], country: 'Reino Unido', city: 'London' },
       { id: '7', coordinates: [-9.1393, 38.7223], country: 'Portugal', city: 'Lisboa' },
     ];
     setUsers(initialUsers);
@@ -34,18 +32,19 @@ const WorldMap = () => {
       { name: 'Espanha', coords: [-3.7038, 40.4168] },
       { name: 'Angola', coords: [17.8739, -11.2027] },
       { name: 'Japão', coords: [138.2529, 36.2048] },
+      { name: 'Austrália', coords: [133.7751, -25.2744] },
+      { name: 'Canadá', coords: [-106.3468, 56.1304] },
     ];
 
     const interval = setInterval(() => {
       setUsers(prev => {
         const next = [...prev];
-        if (next.length > 12) next.shift();
+        if (next.length > 10) next.shift();
         
         const hub = countryHubs[Math.floor(Math.random() * countryHubs.length)];
-        // Add slight randomness to coordinates around the hub
         const randomCoords: [number, number] = [
-          hub.coords[0] + (Math.random() - 0.5) * 5,
-          hub.coords[1] + (Math.random() - 0.5) * 5
+          hub.coords[0] + (Math.random() - 0.5) * 4,
+          hub.coords[1] + (Math.random() - 0.5) * 4
         ];
 
         next.push({
@@ -55,125 +54,135 @@ const WorldMap = () => {
         });
         return next;
       });
-    }, 4000);
+    }, 5000);
 
     return () => clearInterval(interval);
   }, []);
 
+  const continents = [
+    { name: "América do Sul", coords: [-60, -15] },
+    { name: "América do Norte", coords: [-100, 40] },
+    { name: "Europa", coords: [15, 50] },
+    { name: "África", coords: [20, 0] },
+    { name: "Ásia", coords: [100, 35] },
+    { name: "Oceania", coords: [135, -25] },
+  ];
+
   return (
-    <div className="w-full bg-[#050505] rounded-xl border border-white/10 overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] relative">
-      {/* Glow effect in background */}
-      <div className="absolute inset-0 bg-gradient-to-tr from-primary/5 via-transparent to-accent/5 pointer-events-none" />
+    <div className="w-full bg-[#030303] rounded-xl border border-primary/20 overflow-hidden shadow-[0_0_80px_rgba(0,100,255,0.15)] relative">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(0,150,255,0.05),transparent)] pointer-events-none" />
       
-      <div className="p-5 border-b border-white/5 flex items-center justify-between relative z-10 bg-black/40 backdrop-blur-sm">
+      <div className="p-5 border-b border-primary/20 flex items-center justify-between relative z-20 bg-black/60 backdrop-blur-md">
         <div className="flex items-center gap-3">
           <div className="relative">
-            <div className="h-2.5 w-2.5 rounded-full bg-success animate-pulse shadow-[0_0_10px_#10b981]" />
-            <div className="absolute inset-0 h-2.5 w-2.5 rounded-full bg-success animate-ping opacity-75" />
+            <div className="h-2.5 w-2.5 rounded-full bg-primary animate-pulse shadow-[0_0_15px_#0096ff]" />
+            <div className="absolute inset-0 h-2.5 w-2.5 rounded-full bg-primary animate-ping opacity-75" />
           </div>
           <div>
-            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-foreground leading-none">Global Network</h3>
-            <p className="text-[9px] text-muted-foreground uppercase tracking-widest mt-1">Visitantes em tempo real</p>
+            <h3 className="text-[11px] font-black uppercase tracking-[0.25em] text-foreground leading-none">Vortex Network</h3>
+            <p className="text-[8px] text-primary/70 uppercase font-bold tracking-widest mt-1.5 flex items-center gap-2">
+              <span className="h-px w-4 bg-primary/30" /> Painel Interativo
+            </p>
           </div>
         </div>
         
-        <div className="flex flex-wrap gap-2 justify-end max-w-[50%]">
-          <AnimatePresence mode="popLayout">
-            {Array.from(new Set(users.map(u => u.country))).slice(-4).map((country) => (
-              <motion.span
-                key={country}
-                initial={{ opacity: 0, y: 5 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                className="text-[9px] font-bold px-2.5 py-1 bg-white/5 border border-white/10 rounded-full text-primary shadow-neon-blue backdrop-blur-md uppercase tracking-tighter"
-              >
-                {country}
-              </motion.span>
-            ))}
-          </AnimatePresence>
+        <div className="hidden sm:flex gap-1.5 items-center bg-primary/5 px-3 py-1.5 border border-primary/10 rounded-full">
+          <span className="text-[8px] font-black text-primary/80 uppercase tracking-widest">Ativos Agora</span>
+          <span className="h-1 w-1 rounded-full bg-primary/50" />
+          <span className="text-[10px] font-black text-white tabular-nums">{users.length + 245}</span>
         </div>
       </div>
       
-      <div className="h-[450px] w-full relative bg-[radial-gradient(#1a1a1a_1px,transparent_1px)] [background-size:20px_20px]">
+      <div className="h-[500px] w-full relative cursor-grab active:cursor-grabbing bg-[linear-gradient(rgba(0,150,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,150,255,0.03)_1px,transparent_1px)] [background-size:30px_30px]">
         <ComposableMap
           projection="geoMercator"
           projectionConfig={{
-            scale: 150,
-            center: [0, 25]
+            scale: 140,
+            center: [0, 15]
           }}
-          className="w-full h-full filter drop-shadow-[0_0_30px_rgba(0,150,255,0.1)]"
+          className="w-full h-full"
         >
-          <Geographies geography={geoUrl}>
-            {({ geographies }) =>
-              geographies.map((geo) => (
-                <Geography
-                  key={geo.rsmKey}
-                  geography={geo}
-                  fill="#111"
-                  stroke="#222"
-                  strokeWidth={0.5}
-                  style={{
-                    default: { outline: "none", transition: "all 300ms" },
-                    hover: { fill: "#1a1a1a", outline: "none" },
-                    pressed: { outline: "none" },
-                  }}
-                />
-              ))
-            }
-          </Geographies>
+          <ZoomableGroup zoom={1} minZoom={1} maxZoom={4}>
+            <Geographies geography={geoUrl}>
+              {({ geographies }) =>
+                geographies.map((geo) => (
+                  <Geography
+                    key={geo.rsmKey}
+                    geography={geo}
+                    fill="#0a0a0a"
+                    stroke="rgba(0, 150, 255, 0.4)"
+                    strokeWidth={0.6}
+                    style={{
+                      default: { outline: "none", filter: "drop-shadow(0 0 2px rgba(0,150,255,0.2))" },
+                      hover: { fill: "#111", stroke: "#00f6ff", strokeWidth: 0.8, outline: "none" },
+                      pressed: { outline: "none" },
+                    }}
+                  />
+                ))
+              }
+            </Geographies>
 
-          <AnimatePresence>
-            {users.map((user) => (
-              <Marker key={user.id} coordinates={user.coordinates}>
-                <motion.g
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0, opacity: 0 }}
-                  transition={{ type: "spring", stiffness: 260, damping: 20 }}
+            {/* Continents Labels */}
+            {continents.map((cont) => (
+              <Marker key={cont.name} coordinates={cont.coords}>
+                <text
+                  textAnchor="middle"
+                  className="text-[10px] font-black uppercase tracking-[0.2em] pointer-events-none fill-white/20 select-none"
+                  style={{ fontSize: '7px' }}
                 >
-                  {/* Outer waves */}
-                  <circle r="8" fill="var(--primary)" opacity="0.3">
-                    <animate attributeName="r" from="2" to="20" dur="2s" repeatCount="indefinite" />
-                    <animate attributeName="opacity" from="0.4" to="0" dur="2s" repeatCount="indefinite" />
-                  </circle>
-                  
-                  {/* Point */}
-                  <circle r="3.5" fill="var(--primary)" className="shadow-neon-blue" />
-                  <circle r="1.5" fill="#fff" />
-
-                  {/* Floating label */}
-                  <motion.text
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: -12 }}
-                    className="text-[8px] font-black uppercase tracking-tighter"
-                    style={{ fill: "#fff", textShadow: "0 0 5px rgba(0,0,0,0.8)" }}
-                    textAnchor="middle"
-                  >
-                    {user.country}
-                  </motion.text>
-                </motion.g>
+                  {cont.name}
+                </text>
               </Marker>
             ))}
-          </AnimatePresence>
+
+            <AnimatePresence>
+              {users.map((user) => (
+                <Marker key={user.id} coordinates={user.coordinates}>
+                  <motion.g
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0, opacity: 0 }}
+                  >
+                    <circle r="4" fill="var(--primary)" className="shadow-neon-blue" />
+                    <circle r="12" fill="var(--primary)" opacity="0.2">
+                      <animate attributeName="r" from="2" to="18" dur="1.5s" repeatCount="indefinite" />
+                      <animate attributeName="opacity" from="0.3" to="0" dur="1.5s" repeatCount="indefinite" />
+                    </circle>
+                    <motion.text
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: -10 }}
+                      className="text-[7px] font-bold uppercase tracking-tighter fill-primary"
+                      textAnchor="middle"
+                    >
+                      {user.country}
+                    </motion.text>
+                  </motion.g>
+                </Marker>
+              ))}
+            </AnimatePresence>
+          </ZoomableGroup>
         </ComposableMap>
 
-        {/* Dashboard Stat Overlay */}
-        <div className="absolute bottom-6 right-6 flex flex-col items-end">
-          <div className="bg-black/80 backdrop-blur-xl p-5 border border-white/10 rounded-lg shadow-2xl relative overflow-hidden group">
-            <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
-            <p className="text-[32px] font-black text-white tabular-nums leading-none tracking-tighter">
-              {users.length + 158}
-            </p>
-            <p className="text-[10px] font-bold text-primary uppercase tracking-[0.2em] mt-2">Audiência Global</p>
-            
-            <div className="mt-4 flex gap-3">
-              <div className="h-1 w-12 bg-white/5 rounded-full overflow-hidden">
-                <div className="h-full bg-primary w-2/3 animate-pulse" />
+        {/* Legend Overlay - Positioned outside the map path */}
+        <div className="absolute top-6 right-6 z-30 pointer-events-none">
+          <div className="bg-black/90 backdrop-blur-xl p-4 border border-primary/20 rounded-lg shadow-[0_0_30px_rgba(0,0,0,0.5)]">
+            <p className="text-[9px] font-black text-primary uppercase tracking-[0.3em] mb-3">Cobertura Global</p>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-8">
+                <span className="text-[10px] font-bold text-white/50 uppercase">Dispositivos</span>
+                <span className="text-[11px] font-black text-white">4.2k</span>
               </div>
-              <div className="h-1 w-8 bg-white/5 rounded-full overflow-hidden">
-                <div className="h-full bg-accent w-1/2 animate-pulse" />
+              <div className="h-0.5 w-full bg-white/5 rounded-full">
+                <div className="h-full bg-primary w-4/5 shadow-neon-blue" />
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Zoom Help */}
+        <div className="absolute bottom-6 left-6 z-30">
+          <div className="text-[8px] font-bold text-primary/40 uppercase tracking-widest bg-black/40 px-3 py-1.5 rounded-full border border-primary/10">
+            Scroll para Zoom • Arraste para Mover
           </div>
         </div>
       </div>
@@ -182,4 +191,5 @@ const WorldMap = () => {
 };
 
 export default WorldMap;
+
 
