@@ -47,31 +47,35 @@ const BlogHome = () => {
       setLoading(true);
       try {
         console.log('Fetching articles for lang:', lang);
+        
+        // Fetch published articles
         const { data: articles, error } = await supabase
           .from('articles')
           .select('*')
+          .eq('status', 'published') // Only show published
           .order('created_at', { ascending: false });
 
         if (error) {
           console.error('Supabase error:', error);
-          setLoading(false);
           return;
         }
 
-        if (articles) {
+        if (articles && articles.length > 0) {
           console.log('Total articles found:', articles.length);
-          // The banner will show the 4 latest articles in a slider
           setFeaturedArticles(articles.slice(0, 4));
-          // Sidebar shows the next 6
           setSidebarArticles(articles.slice(4, 10));
           
-          const grouped = articles.reduce((acc: any, article) => {
+          const grouped = articles.reduce((acc: Record<string, any[]>, article) => {
             const cat = article.category || 'Geral';
             if (!acc[cat]) acc[cat] = [];
             acc[cat].push(article);
             return acc;
           }, {});
           setCategoriesData(grouped);
+        } else {
+          setFeaturedArticles([]);
+          setSidebarArticles([]);
+          setCategoriesData({});
         }
       } catch (error) {
         console.error('Error fetching blog data:', error);
