@@ -23,6 +23,7 @@ import AuthorsPage from "@/pages/AuthorsPage";
 import TermsPage from "@/pages/TermsPage";
 import CategoryPage from "@/pages/CategoryPage";
 import NotFound from "./pages/NotFound";
+import MapPage from "@/pages/MapPage";
 
 const queryClient = new QueryClient();
 
@@ -83,6 +84,7 @@ const App = () => (
               <Route path="/meta" element={<ProtectedRoute><MetaPage /></ProtectedRoute>} />
             <Route path="/authors" element={<ProtectedRoute><AuthorsPage /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+            <Route path="/map" element={<ProtectedRoute><MapPage /></ProtectedRoute>} />
               
               <Route path="*" element={<NotFound />} />
             </Routes>
