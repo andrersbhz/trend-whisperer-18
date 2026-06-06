@@ -18,8 +18,9 @@ const CategoryPage = ({ categoryId }: { categoryId: string }) => {
       setLoading(true);
       try {
         const { data } = await supabase
-          .from('public_articles')
+          .from('articles')
           .select('*')
+          .eq('status', 'published')
           .ilike('category', categoryId.replace(/-/g, ' '))
           .order('created_at', { ascending: false });
         
