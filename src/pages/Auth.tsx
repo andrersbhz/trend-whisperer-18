@@ -27,7 +27,7 @@ const Auth = () => {
     try {
       if (isLogin) {
         await signIn(email, password);
-        navigate('/');
+        navigate('/admin', { replace: true });
       } else {
         await signUp(email, password);
         toast({ title: 'Conta criada!', description: 'Verifique seu email para confirmar.' });
