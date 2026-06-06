@@ -62,7 +62,7 @@ const Auth = () => {
       }
       
       console.log('[Auth] Sign in successful without redirect, navigating home');
-      navigate('/');
+      navigate('/admin', { replace: true });
     } catch (error: any) {
       console.error('[Auth] Google sign in exception:', error);
       toast({ title: 'Erro', description: error.message, variant: 'destructive' });
