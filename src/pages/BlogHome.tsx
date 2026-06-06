@@ -48,11 +48,10 @@ const BlogHome = () => {
       try {
         console.log('Fetching articles for lang:', lang);
         
-        // Fetch published articles
+        // Fetch articles that are ready to be displayed on the public blog.
         const { data: articles, error } = await supabase
-          .from('articles')
+          .from('public_articles')
           .select('*')
-          .eq('status', 'published') // Only show published
           .order('created_at', { ascending: false });
 
         if (error) {
