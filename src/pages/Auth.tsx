@@ -27,7 +27,7 @@ const Auth = () => {
     try {
       if (isLogin) {
         await signIn(email, password);
-        navigate('/');
+        navigate('/admin', { replace: true });
       } else {
         await signUp(email, password);
         toast({ title: 'Conta criada!', description: 'Verifique seu email para confirmar.' });
@@ -62,7 +62,7 @@ const Auth = () => {
       }
       
       console.log('[Auth] Sign in successful without redirect, navigating home');
-      navigate('/');
+      navigate('/admin', { replace: true });
     } catch (error: any) {
       console.error('[Auth] Google sign in exception:', error);
       toast({ title: 'Erro', description: error.message, variant: 'destructive' });
