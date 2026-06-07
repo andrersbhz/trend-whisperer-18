@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext } from 'react';
+import { startTransition, useState, useEffect, createContext, useContext } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -26,9 +26,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const finishAuthLoading = (nextSession: Session | null) => {
       if (!isMounted) return;
       hasResolvedInitialSession = true;
-      setSession(nextSession);
-      setUser(nextSession?.user ?? null);
-      setLoading(false);
+      startTransition(() => {
+        setSession(nextSession);
+        setUser(nextSession?.user ?? null);
+        setLoading(false);
+      });
     };
 
     const timeoutId = window.setTimeout(() => {
