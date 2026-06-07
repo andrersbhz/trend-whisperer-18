@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Globe, RefreshCw, Loader2, ExternalLink, BarChart3, TrendingUp, Search } from 'lucide-react';
+import { Globe, TrendingUp, Search } from 'lucide-react';
 import Preloader from '@/components/Preloader';
 
 const withTimeout = async <T,>(promise: PromiseLike<T>, fallback: T, timeoutMs = 6500): Promise<T> => {
