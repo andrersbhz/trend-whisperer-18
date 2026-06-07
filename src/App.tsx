@@ -43,21 +43,21 @@ const RouteFallback = () => <Preloader message="carregando painel" />;
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
-  if (loading) return <div className="flex items-center justify-center min-h-screen"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>;
+  if (loading) return <RouteFallback />;
   if (!user) return <Navigate to="/auth" replace />;
   return <DashboardLayout>{children}</DashboardLayout>;
 };
 
 const AuthRoute = () => {
   const { user, loading } = useAuth();
-  if (loading) return null;
+  if (loading) return <RouteFallback />;
   if (user) return <Navigate to="/admin" replace />;
   return <Auth />;
 };
 
 const RootRoute = () => {
   const { user, loading } = useAuth();
-  if (loading) return null;
+  if (loading) return <RouteFallback />;
   if (user) return <Navigate to="/admin" replace />;
   return <Navigate to="/pt-br" replace />;
 };
@@ -76,6 +76,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
+            <Suspense fallback={<RouteFallback />}>
             <Routes>
               {/* Redirect root based on auth status */}
               <Route path="/" element={<RootRoute />} />
@@ -102,6 +103,7 @@ const App = () => (
               
               <Route path="*" element={<NotFound />} />
             </Routes>
+            </Suspense>
           </AuthProvider>
         </BrowserRouter>
         </TooltipProvider>
