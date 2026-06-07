@@ -1,4 +1,4 @@
-import { useEffect, useState, Suspense } from 'react';
+import { lazy, useEffect, useState, Suspense } from 'react';
 import Preloader from '@/components/Preloader';
 
 
@@ -23,8 +23,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { getErrorMessage } from '@/lib/backend';
 import { format } from 'date-fns';
-import AnalyticsPage from '@/pages/AnalyticsPage';
 import { useNavigate } from 'react-router-dom';
+
+const AnalyticsPage = lazy(() => import('@/pages/AnalyticsPage'));
 
 const Dashboard = () => {
   const { user } = useAuth();
