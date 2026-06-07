@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
-  FileText, TrendingUp, CheckCircle, Clock, Sparkles, RefreshCw, ChevronDown, Facebook, Instagram, ExternalLink, BarChart3, X, Eye, MessageSquare, Bot, UserCheck, ArrowRight
+  FileText, TrendingUp, CheckCircle, Clock, Sparkles, RefreshCw, ChevronDown, Facebook, Instagram, ExternalLink, BarChart3, Bot, UserCheck, ArrowRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import AIProvidersPanel from '@/components/dashboard/AIProvidersPanel';
@@ -40,7 +40,6 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ total: 0, published: 0, pending: 0, trending: 0, failed: 0 });
-  const [allArticles, setAllArticles] = useState<any[]>([]);
   const [recentArticles, setRecentArticles] = useState<any[]>([]);
   const [recentErrors, setRecentErrors] = useState<any[]>([]);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
@@ -53,7 +52,6 @@ const Dashboard = () => {
   const [metaMetrics, setMetaMetrics] = useState<any[] | null>(null);
   const [loadingMeta, setLoadingMeta] = useState(false);
   const [interactions, setInteractions] = useState<any[]>([]);
-  const [loadingInteractions, setLoadingInteractions] = useState(false);
   const [processingInteractions, setProcessingInteractions] = useState(false);
   const [refreshInterval, setRefreshInterval] = useState(30);
   const [widgets, setWidgets] = useState({
@@ -68,7 +66,7 @@ const Dashboard = () => {
     });
     const [widgetOrder, setWidgetOrder] = useState<string[]>(['stats', 'meta', 'alternate_stats', 'robot', 'trends', 'categories', 'audit']);
   const [jetpackSummary, setJetpackSummary] = useState<any>(null);
-  const [loadingJetpack, setLoadingJetpack] = useState(false);
+  const [, setLoadingJetpack] = useState(false);
 
   const fetchStats = async (forceRefresh = false) => {
     if (!user) {
