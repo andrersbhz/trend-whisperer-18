@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, Suspense } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import Preloader from '@/components/Preloader';
 
 
@@ -21,32 +21,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { getErrorMessage, runBackendQuery } from '@/lib/backend';
-import { format, subDays, startOfDay, isSameDay } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { getErrorMessage } from '@/lib/backend';
+import { format } from 'date-fns';
 import AnalyticsPage from '@/pages/AnalyticsPage';
 import { useNavigate } from 'react-router-dom';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogClose,
-} from "@/components/ui/dialog";
-import {
-  AreaChart,
-  Area,
-  BarChart,
-  Bar,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend
-} from 'recharts';
 
 const Dashboard = () => {
   const { user } = useAuth();
