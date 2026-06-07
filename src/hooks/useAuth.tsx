@@ -20,27 +20,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     let isMounted = true;
+    let hasResolvedInitialSession = false;
 
     const finishAuthLoading = (nextSession: Session | null) => {
       if (!isMounted) return;
+      hasResolvedInitialSession = true;
       setSession(nextSession);
       setUser(nextSession?.user ?? null);
       setLoading(false);
     };
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      console.log('[useAuth] Auth state changed:', _event);
-      finishAuthLoading(session);
-    });
-
-    // Timeout safety
     const timeoutId = window.setTimeout(() => {
-      if (loading) {
+      if (!hasResolvedInitialSession) {
         console.warn('[useAuth] Auth timeout reached, forcing loading state to false');
         finishAuthLoading(null);
       }
-    }, 5000);
+    }, 3500);
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (import.meta.env.DEV) console.log('[useAuth] Auth state changed:', _event);
+      finishAuthLoading(session);
+    });
 
     const initializeAuth = async () => {
       try {
