@@ -27,6 +27,13 @@ import { useNavigate } from 'react-router-dom';
 
 const AnalyticsPage = lazy(() => import('@/pages/AnalyticsPage'));
 
+const timeoutResult = <T,>(promise: PromiseLike<T>, fallback: T, timeoutMs = 6500): Promise<T> => {
+  return Promise.race([
+    Promise.resolve(promise).catch(() => fallback),
+    new Promise<T>((resolve) => window.setTimeout(() => resolve(fallback), timeoutMs)),
+  ]);
+};
+
 const Dashboard = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -64,7 +71,11 @@ const Dashboard = () => {
   const [loadingJetpack, setLoadingJetpack] = useState(false);
 
   const fetchStats = async (forceRefresh = false) => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      setLoadingTrends(false);
+      return;
+    }
     setLoadingTrends(true);
     
     try {
@@ -72,13 +83,13 @@ const Dashboard = () => {
       const dashboardData = await withCache(cacheKey, forceRefresh ? 0 : 60, async () => {
         return monitorPerformance('Dashboard Full Load', async () => {
           const [articles, trendingTopics, recent, errors, logs, topTrends, categoriesData] = await Promise.all([
-            supabase.from('articles').select('id, status, category, created_at').eq('user_id', user.id),
-            supabase.from('trending_topics').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('used', false),
-            supabase.from('articles').select('id, title, category, seo_keyword, status').eq('user_id', user.id).order('created_at', { ascending: false }).limit(50),
-            supabase.from('publish_log').select('id, article_id, error_message, created_at, status').eq('user_id', user.id).eq('status', 'failed').order('created_at', { ascending: false }).limit(5),
-            supabase.from('audit_logs').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(10),
-            supabase.from('trending_topics').select('*').eq('user_id', user.id).eq('used', false).order('fetched_at', { ascending: false }).limit(10),
-            supabase.from('user_settings').select('categories, dashboard_widgets, dashboard_order').eq('user_id', user.id).maybeSingle(),
+            timeoutResult(supabase.from('articles').select('id, status, category, created_at').eq('user_id', user.id), { data: [] } as any),
+            timeoutResult(supabase.from('trending_topics').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('used', false), { count: 0 } as any),
+            timeoutResult(supabase.from('articles').select('id, title, category, seo_keyword, status').eq('user_id', user.id).order('created_at', { ascending: false }).limit(20), { data: [] } as any),
+            timeoutResult(supabase.from('publish_log').select('id, article_id, error_message, created_at, status').eq('user_id', user.id).eq('status', 'failed').order('created_at', { ascending: false }).limit(5), { data: [] } as any),
+            timeoutResult(supabase.from('audit_logs').select('id, action, details, created_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(10), { data: [] } as any),
+            timeoutResult(supabase.from('trending_topics').select('id, topic, category, source_name').eq('user_id', user.id).eq('used', false).order('fetched_at', { ascending: false }).limit(10), { data: [] } as any),
+            timeoutResult(supabase.from('user_settings').select('categories, dashboard_widgets, dashboard_order').eq('user_id', user.id).maybeSingle(), { data: null } as any),
           ]);
 
           return {
@@ -101,7 +112,7 @@ const Dashboard = () => {
       if (data_settings?.dashboard_widgets) setWidgets(data_settings.dashboard_widgets as any);
       if (data_settings?.dashboard_order) setWidgetOrder(data_settings.dashboard_order as string[]);
       setLoadingTrends(false);
-      setTimeout(() => setLoading(false), 800);
+      setLoading(false);
 
       setStats({
         total: articles.length,
