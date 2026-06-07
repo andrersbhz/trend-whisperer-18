@@ -27,7 +27,8 @@ const Auth = () => {
     try {
       if (isLogin) {
         await signIn(email, password);
-        navigate('/admin', { replace: true });
+        // AuthRoute redirects to /admin automatically when user state updates
+        window.location.replace('/admin');
       } else {
         await signUp(email, password);
         toast({ title: 'Conta criada!', description: 'Verifique seu email para confirmar.' });
