@@ -7,6 +7,13 @@ import { Facebook, Instagram, Share2, Users, MessageSquare, Heart, RefreshCw } f
 import { useToast } from '@/hooks/use-toast';
 import Preloader from '@/components/Preloader';
 
+const withTimeout = async <T,>(promise: PromiseLike<T>, fallback: T, timeoutMs = 6500): Promise<T> => {
+  return Promise.race([
+    Promise.resolve(promise).catch(() => fallback),
+    new Promise<T>((resolve) => window.setTimeout(() => resolve(fallback), timeoutMs)),
+  ]);
+};
+
 const MetaPage = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -14,16 +21,19 @@ const MetaPage = () => {
   const [metaMetrics, setMetaMetrics] = useState<any[] | null>(null);
 
   const fetchMetrics = async () => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     try {
-      const { data } = await supabase.functions.invoke('fetch-meta-metrics', { 
+      const { data } = await withTimeout(supabase.functions.invoke('fetch-meta-metrics', { 
         body: { userId: user.id } 
-      });
+      }), { data: null } as any);
       if (data?.pages) setMetaMetrics(data.pages.length > 0 ? data.pages : null);
     } catch (error) {
       console.error(error);
     } finally {
-      setTimeout(() => setLoading(false), 800);
+      setLoading(false);
     }
   };
 
