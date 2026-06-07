@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext } from 'react';
+import { startTransition, useState, useEffect, createContext, useContext } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -20,31 +20,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     let isMounted = true;
+    let hasResolvedInitialSession = false;
+    let subscription: { unsubscribe: () => void } | null = null;
 
     const finishAuthLoading = (nextSession: Session | null) => {
       if (!isMounted) return;
-      setSession(nextSession);
-      setUser(nextSession?.user ?? null);
-      setLoading(false);
+      hasResolvedInitialSession = true;
+      startTransition(() => {
+        setSession(nextSession);
+        setUser(nextSession?.user ?? null);
+        setLoading(false);
+      });
     };
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      console.log('[useAuth] Auth state changed:', _event);
-      finishAuthLoading(session);
-    });
-
-    // Timeout safety
     const timeoutId = window.setTimeout(() => {
-      if (loading) {
+      if (!hasResolvedInitialSession) {
         console.warn('[useAuth] Auth timeout reached, forcing loading state to false');
         finishAuthLoading(null);
       }
-    }, 5000);
+    }, 3500);
 
     const initializeAuth = async () => {
       try {
-        // Optimized check: getSession is faster than full user load initially
         const { data, error } = await supabase.auth.getSession();
 
         if (error) {
@@ -54,12 +51,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           return;
         }
 
-        if (data.session) {
-          finishAuthLoading(data.session);
-        } else {
-          // If no session found quickly, don't wait forever
-          finishAuthLoading(null);
-        }
+        finishAuthLoading(data.session ?? null);
+
+        const authListener = supabase.auth.onAuthStateChange((_event, nextSession) => {
+          if (import.meta.env.DEV) console.log('[useAuth] Auth state changed:', _event);
+          finishAuthLoading(nextSession);
+        });
+        subscription = authListener.data.subscription;
       } catch (err) {
         console.error('[useAuth] Init error:', err);
         finishAuthLoading(null);
@@ -73,13 +71,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => {
       isMounted = false;
       window.clearTimeout(timeoutId);
-      subscription.unsubscribe();
+      subscription?.unsubscribe();
     };
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
+    setSession(data.session);
+    setUser(data.session?.user ?? null);
+    setLoading(false);
   };
 
   const signUp = async (email: string, password: string) => {
@@ -96,6 +97,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
+    setSession(null);
+    setUser(null);
   };
 
   return (
