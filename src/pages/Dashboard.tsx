@@ -44,14 +44,10 @@ const Dashboard = () => {
   const [userCategories, setUserCategories] = useState<string[]>([]);
   const [metaMetrics, setMetaMetrics] = useState<any[] | null>(null);
   const [loadingMeta, setLoadingMeta] = useState(false);
-  const [selectedPageForMetrics, setSelectedPageForMetrics] = useState<string | null>(null);
-  const [isMetricsModalOpen, setIsMetricsModalOpen] = useState(false);
   const [interactions, setInteractions] = useState<any[]>([]);
   const [loadingInteractions, setLoadingInteractions] = useState(false);
   const [processingInteractions, setProcessingInteractions] = useState(false);
   const [refreshInterval, setRefreshInterval] = useState(30);
-  const [chartType, setChartType] = useState<'area' | 'bar' | 'line'>('area');
-  const [nextRefresh, setNextRefresh] = useState<Date | null>(null);
   const [widgets, setWidgets] = useState({
     stats: true,
     meta: true,
@@ -131,6 +127,8 @@ const Dashboard = () => {
       setAuditLogs(data_logs);
     } catch (error) {
       toast({ title: 'Erro ao carregar painel', description: getErrorMessage(error), variant: 'destructive' });
+      setLoadingTrends(false);
+      setLoading(false);
     }
   };
 
@@ -204,8 +202,7 @@ const Dashboard = () => {
   useEffect(() => {
     if (!user || refreshInterval <= 0) return;
     const intervalMs = refreshInterval * 60 * 1000;
-    setNextRefresh(new Date(Date.now() + intervalMs));
-    const interval = setInterval(() => { fetchMetaMetrics(); setNextRefresh(new Date(Date.now() + intervalMs)); }, intervalMs);
+    const interval = setInterval(() => { fetchMetaMetrics(); }, intervalMs);
     return () => clearInterval(interval);
   }, [user, refreshInterval]);
 
@@ -238,22 +235,6 @@ const Dashboard = () => {
     { icon: TrendingUp, label: 'Tendências', value: stats.trending, color: 'text-accent', accent: 'from-accent/10', glow: 'neon-border-blue' },
   ];
   
-  const chartData = useMemo(() => {
-    if (!allArticles.length) return [];
-    const last7Days = Array.from({ length: 7 }, (_, i) => startOfDay(subDays(new Date(), i))).reverse();
-    return last7Days.map(day => ({
-      name: format(day, 'dd/MM'),
-      posts: allArticles.filter(a => isSameDay(new Date(a.created_at), day)).length
-    }));
-  }, [allArticles]);
-
-  const customTooltipStyle = {
-    backgroundColor: 'hsl(230, 25%, 6%)',
-    border: '1px solid hsl(230, 20%, 20%)',
-    borderRadius: '0px',
-    color: 'hsl(210, 20%, 98%)',
-  };
-
   if (loading) return <Preloader message="carregando dados aguarde" />;
 
   return (
