@@ -105,7 +105,6 @@ const Dashboard = () => {
       const { articles, trendingCount, recent: data_recent, errors: data_errors, logs: data_logs, topTrends: data_topTrends, settings: data_settings } = dashboardData;
 
       setTrendingList(data_topTrends);
-      setAllArticles(articles);
       setUserCategories(data_settings?.categories || ['policia', 'celebridades', 'politica', 'esportes', 'saude', 'financas']);
       if (data_settings?.dashboard_widgets) setWidgets(data_settings.dashboard_widgets as any);
       if (data_settings?.dashboard_order) setWidgetOrder(data_settings.dashboard_order as string[]);
@@ -159,11 +158,10 @@ const Dashboard = () => {
 
   const fetchInteractions = async () => {
     if (!user) return;
-    setLoadingInteractions(true);
     try {
       const { data } = await supabase.from('social_interactions').select('*').order('created_at', { ascending: false }).limit(5);
       setInteractions(data || []);
-    } catch (error) { console.error(error); } finally { setLoadingInteractions(false); }
+    } catch (error) { console.error(error); }
   };
 
   const handleProcessInteractions = async () => {
