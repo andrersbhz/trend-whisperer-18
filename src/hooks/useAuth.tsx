@@ -21,6 +21,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     let isMounted = true;
     let hasResolvedInitialSession = false;
+    let subscription: { unsubscribe: () => void } | null = null;
 
     const finishAuthLoading = (nextSession: Session | null) => {
       if (!isMounted) return;
@@ -37,14 +38,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     }, 3500);
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (import.meta.env.DEV) console.log('[useAuth] Auth state changed:', _event);
-      finishAuthLoading(session);
-    });
-
     const initializeAuth = async () => {
       try {
-        // Optimized check: getSession is faster than full user load initially
         const { data, error } = await supabase.auth.getSession();
 
         if (error) {
@@ -54,12 +49,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           return;
         }
 
-        if (data.session) {
-          finishAuthLoading(data.session);
-        } else {
-          // If no session found quickly, don't wait forever
-          finishAuthLoading(null);
-        }
+        finishAuthLoading(data.session ?? null);
+
+        const authListener = supabase.auth.onAuthStateChange((_event, nextSession) => {
+          if (import.meta.env.DEV) console.log('[useAuth] Auth state changed:', _event);
+          finishAuthLoading(nextSession);
+        });
+        subscription = authListener.data.subscription;
       } catch (err) {
         console.error('[useAuth] Init error:', err);
         finishAuthLoading(null);
@@ -73,7 +69,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => {
       isMounted = false;
       window.clearTimeout(timeoutId);
-      subscription.unsubscribe();
+      subscription?.unsubscribe();
     };
   }, []);
 
