@@ -148,7 +148,25 @@ const BlogHome = () => {
   }, [lang, currentLang]);
 
   const featured = useMemo(() => articles.slice(0, 5), [articles]);
-  const sidebar = useMemo(() => articles.slice(5, 10), [articles]);
+  const sidebar = useMemo(() => {
+    const featuredIds = new Set(articles.slice(0, 5).map((a) => a.id));
+    const rest = articles.filter((a) => !featuredIds.has(a.id));
+    const pool = rest.length > 0 ? rest : articles;
+    // pick latest across all categories, ensuring variety when possible
+    const seenCats = new Set<string>();
+    const varied: any[] = [];
+    const leftover: any[] = [];
+    for (const a of pool) {
+      const cat = (a.category || 'Geral').toLowerCase();
+      if (!seenCats.has(cat)) {
+        seenCats.add(cat);
+        varied.push(a);
+      } else {
+        leftover.push(a);
+      }
+    }
+    return [...varied, ...leftover].slice(0, 6);
+  }, [articles]);
   const grouped = useMemo(() => {
     return articles.reduce<Record<string, any[]>>((acc, a) => {
       const cat = a.category || 'Geral';
