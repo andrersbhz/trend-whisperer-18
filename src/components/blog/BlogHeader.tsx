@@ -9,6 +9,7 @@ import AdminMenu from './AdminMenu';
 import LanguageSwitcher from './LanguageSwitcher';
 import BlogCategoryNav from './BlogCategoryNav';
 import BlogMobileMenu from './BlogMobileMenu';
+import AutoTranslate from './AutoTranslate';
 
 const BlogHeader = () => {
   const { currentLang } = useI18n();
@@ -31,6 +32,7 @@ const BlogHeader = () => {
 
   return (
     <>
+      <AutoTranslate currentLang={currentLang as any} />
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:bg-[hsl(var(--news-accent))] focus:text-white focus:px-4 focus:py-2"

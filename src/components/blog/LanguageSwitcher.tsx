@@ -5,6 +5,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useI18n } from '@/hooks/useI18n';
+import { setStoredLang } from '@/lib/geo-language';
 
 const LanguageSwitcher = () => {
   const { currentLang, changeLanguage, languages } = useI18n();
@@ -21,7 +22,7 @@ const LanguageSwitcher = () => {
         {languages.map((lang) => (
           <DropdownMenuItem
             key={lang.code}
-            onClick={() => changeLanguage(lang.code)}
+            onClick={() => { setStoredLang(lang.code); changeLanguage(lang.code); }}
             className="flex items-center gap-3 cursor-pointer hover:bg-gray-800 focus:bg-gray-800 text-white px-4 py-2"
           >
             <span className="text-lg">{lang.flag}</span>

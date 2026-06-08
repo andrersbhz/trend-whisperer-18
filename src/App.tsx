@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, Navigate, useParams } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -50,9 +51,23 @@ const AuthRoute = () => {
 
 const RootRoute = () => {
   const { user, loading } = useAuth();
+  const [target, setTarget] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (user) return;
+    let cancelled = false;
+    import('@/lib/geo-language').then(({ detectLanguage }) => {
+      detectLanguage().then((lang) => {
+        if (!cancelled) setTarget(`/${lang}`);
+      });
+    });
+    return () => { cancelled = true; };
+  }, [user]);
+
   if (loading) return null;
   if (user) return <Navigate to="/admin" replace />;
-  return <Navigate to="/pt-br" replace />;
+  if (!target) return null;
+  return <Navigate to={target} replace />;
 };
 
 const CategoryPageWrapper = () => {
