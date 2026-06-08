@@ -218,7 +218,7 @@ const BlogHome = () => {
                               tabIndex={active ? 0 : -1}
                               className="block relative focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[hsl(var(--news-accent))] focus-visible:ring-inset"
                             >
-                              <div className="relative aspect-[9/16] overflow-hidden">
+                              <div className="relative w-full bg-[hsl(var(--news-navy-deep))] flex items-center justify-center overflow-hidden max-h-[80vh]">
                                 <img
                                   src={
                                     article.featured_image_url ||
@@ -226,7 +226,7 @@ const BlogHome = () => {
                                   }
                                   alt={article.title}
                                   loading={i === 0 ? 'eager' : 'lazy'}
-                                  className="w-full h-full object-cover object-top news-card-img"
+                                  className="w-full h-auto max-h-[80vh] object-contain news-card-img"
                                   onError={(e) => {
                                     (e.target as HTMLImageElement).src =
                                       'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d';
