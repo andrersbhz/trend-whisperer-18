@@ -871,7 +871,7 @@ export type Database = {
       encrypt_credential: { Args: { val: string }; Returns: string }
       get_credentials_status: { Args: never; Returns: Json }
       get_online_locations: {
-        Args: { p_minutes?: number }
+        Args: { p_minutes: number }
         Returns: {
           city: string
           country: string
@@ -883,11 +883,11 @@ export type Database = {
       }
       update_online_status: {
         Args: {
-          p_city?: string
-          p_country?: string
+          p_city: string
+          p_country: string
           p_latitude: number
           p_longitude: number
-          p_state?: string
+          p_state: string
           p_user_id: string
         }
         Returns: undefined
