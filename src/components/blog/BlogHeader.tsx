@@ -1,157 +1,75 @@
 import { Link } from 'react-router-dom';
-import { useI18n } from '@/hooks/useI18n';
-import { Search, Menu, X, Globe, LayoutDashboard, FileText, TrendingUp, Bot, Activity, Clock, Settings, User as UserIcon, Search as SearchIcon, Facebook } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { Search, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/integrations/supabase/client';
+import { useI18n } from '@/hooks/useI18n';
 import { useAuth } from '@/hooks/useAuth';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-
-const ADMIN_NAV = [
-  { icon: LayoutDashboard, label: 'Dashboard', path: '/admin' },
-  { icon: FileText, label: 'Artigos', path: '/articles' },
-  { icon: UserIcon, label: 'Autores', path: '/authors' },
-  { icon: SearchIcon, label: 'Google', path: '/google' },
-  { icon: Facebook, label: 'Meta', path: '/meta' },
-  { icon: TrendingUp, label: 'Tendências', path: '/trends' },
-  { icon: Bot, label: 'Robô Social', path: '/robot' },
-  { icon: Activity, label: 'Analytics', path: '/analytics' },
-  { icon: Globe, label: 'Mapa Live', path: '/map' },
-  { icon: Clock, label: 'Agendamentos', path: '/schedule' },
-  { icon: Settings, label: 'Configurações', path: '/settings' },
-];
+import { useBlogCategories } from '@/hooks/useBlogCategories';
+import AdminMenu from './AdminMenu';
+import LanguageSwitcher from './LanguageSwitcher';
+import BlogCategoryNav from './BlogCategoryNav';
+import BlogMobileMenu from './BlogMobileMenu';
 
 const BlogHeader = () => {
-  const { currentLang, changeLanguage, languages } = useI18n();
+  const { currentLang } = useI18n();
   const { user } = useAuth();
+  const categories = useBlogCategories();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [dynamicCategories, setDynamicCategories] = useState<{id: string, label: string}[]>([]);
-
-  useEffect(() => {
-    const fetchCategories = async () => {
-      const { data } = await supabase
-        .from('articles')
-        .select('category')
-        .eq('status', 'published')
-        .not('category', 'is', null);
-      
-      if (data) {
-        const uniqueCategories = Array.from(new Set(data.map(item => item.category)))
-          .map(cat => ({
-            id: cat.toLowerCase().replace(/\s+/g, '-'),
-            label: cat
-          }));
-        setDynamicCategories(uniqueCategories);
-      }
-    };
-    fetchCategories();
-  }, []);
-
-  const currentFlag = languages.find(l => l.code === currentLang)?.flag || '🇧🇷';
 
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
-      {/* Top Bar for Navigation */}
+      {/* Top Bar (Desktop) */}
       <div className="bg-[#f2f2f2] border-b border-gray-200 py-2 hidden lg:block">
         <div className="max-w-[1200px] mx-auto px-4 flex items-center justify-between text-[11px] font-bold uppercase tracking-tight text-[#444]">
-          <div className="flex items-center gap-6">
-            <span className="text-[#000] font-black mr-2">A3 BLOG</span>
-            {dynamicCategories.slice(0, 6).map((cat) => (
-              <Link 
-                key={cat.id} 
-                to={`/${currentLang}/category/${cat.id}`}
-                className="hover:opacity-70 transition-opacity text-[#444] hover:text-primary"
-              >
-                {cat.label}
-              </Link>
-            ))}
-          </div>
+          <BlogCategoryNav
+            categories={categories}
+            currentLang={currentLang}
+            limit={6}
+            withBrand
+            className="flex items-center gap-6"
+          />
           <div className="flex items-center gap-4">
-             <button className="flex items-center gap-1.5 px-3 py-1 bg-white/50 hover:bg-white hover:shadow-sm rounded-full transition-all duration-200 text-black/80 hover:text-black border border-black/5">
-               <Search className="h-3.5 w-3.5" /> BUSCAR
-             </button>
-             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-               <button className="flex items-center gap-1.5 px-3 py-1 bg-white/50 hover:bg-white hover:shadow-sm rounded-full transition-all duration-200 text-black/80 hover:text-black border border-black/5 uppercase">
-                 {currentFlag} {currentLang}
-               </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-gray-900 border border-gray-800 shadow-2xl z-[100] min-w-[120px]">
-                {languages.map((lang) => (
-                  <DropdownMenuItem 
-                    key={lang.code}
-                    onClick={() => changeLanguage(lang.code as any)}
-                    className="flex items-center gap-3 cursor-pointer hover:bg-gray-800 focus:bg-gray-800 text-white px-4 py-2"
-                  >
-                    <span className="text-lg">{lang.flag}</span>
-                    <span className="text-xs font-extrabold uppercase tracking-wider text-white">{lang.label}</span>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-             {user ? (
-               <DropdownMenu>
-                 <DropdownMenuTrigger asChild>
-                   <button className="flex items-center gap-1.5 px-4 py-1.5 bg-[#0669B2] text-white rounded-full font-black text-[10px] hover:bg-[#055a9a] hover:shadow-md transition-all duration-200 active:scale-95 uppercase">
-                     <LayoutDashboard className="h-3 w-3" /> Painel Admin
-                   </button>
-                 </DropdownMenuTrigger>
-                 <DropdownMenuContent align="end" className="bg-gray-900 border border-gray-800 shadow-2xl z-[100] min-w-[220px]">
-                   <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-gray-400">{user.email}</DropdownMenuLabel>
-                   <DropdownMenuSeparator className="bg-gray-800" />
-                   {ADMIN_NAV.map((item) => (
-                     <DropdownMenuItem key={item.path} asChild className="cursor-pointer hover:bg-gray-800 focus:bg-gray-800 text-white px-3 py-2">
-                       <Link to={item.path} className="flex items-center gap-2.5">
-                         <item.icon className="h-3.5 w-3.5 text-[#0669B2]" />
-                         <span className="text-xs font-bold uppercase tracking-wider">{item.label}</span>
-                       </Link>
-                     </DropdownMenuItem>
-                   ))}
-                 </DropdownMenuContent>
-               </DropdownMenu>
-             ) : (
-               <Link to="/auth" className="px-4 py-1.5 bg-[#0669B2] text-white rounded-full font-black text-[10px] hover:bg-[#055a9a] hover:shadow-md transition-all duration-200 active:scale-95">MINHA CONTA</Link>
-             )}
+            <button className="flex items-center gap-1.5 px-3 py-1 bg-white/50 hover:bg-white hover:shadow-sm rounded-full transition-all duration-200 text-black/80 hover:text-black border border-black/5">
+              <Search className="h-3.5 w-3.5" /> BUSCAR
+            </button>
+            <LanguageSwitcher />
+            {user ? (
+              <AdminMenu user={user} />
+            ) : (
+              <Link
+                to="/auth"
+                className="px-4 py-1.5 bg-[#0669B2] text-white rounded-full font-black text-[10px] hover:bg-[#055a9a] hover:shadow-md transition-all duration-200 active:scale-95"
+              >
+                MINHA CONTA
+              </Link>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Main Brand Area (Mobile & Sticky Desktop) */}
+      {/* Main Brand Area */}
       <div className="max-w-[1200px] mx-auto px-4 h-14 flex items-center justify-between lg:h-12 lg:border-t lg:border-gray-100">
         <div className="flex items-center gap-4">
-          <Button 
-            variant="ghost" 
-            size="icon" 
+          <Button
+            variant="ghost"
+            size="icon"
             className="text-[#444] h-10 w-10 p-0 hover:bg-transparent"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            onClick={() => setIsMenuOpen((v) => !v)}
           >
             {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </Button>
           <Link to={`/${currentLang}`} className="flex items-center">
-              <span className="font-black text-2xl tracking-tighter text-[#0669B2] lg:hidden">
-                A3 BLOG
-              </span>
+            <span className="font-black text-2xl tracking-tighter text-[#0669B2] lg:hidden">A3 BLOG</span>
           </Link>
         </div>
 
-        <div className="hidden lg:flex items-center gap-6 text-[11px] font-bold uppercase text-[#333]">
-           {dynamicCategories.slice(0, 5).map(cat => (
-             <Link 
-               key={cat.id} 
-               to={`/${currentLang}/category/${cat.id}`} 
-               className="hover:text-primary transition-colors"
-             >
-               {cat.label}
-             </Link>
-           ))}
-        </div>
+        <BlogCategoryNav
+          categories={categories}
+          currentLang={currentLang}
+          limit={5}
+          className="hidden lg:flex items-center gap-6 text-[11px] font-bold uppercase text-[#333]"
+          itemClassName="hover:text-primary transition-colors"
+        />
 
         <div className="lg:hidden">
           <Button variant="ghost" size="icon" className="text-[#444] h-10 w-10 p-0 hover:bg-transparent">
@@ -160,45 +78,13 @@ const BlogHeader = () => {
         </div>
       </div>
 
-      {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="absolute top-full left-0 right-0 bg-white border-b border-gray-200 animate-in slide-in-from-top duration-200 z-40">
-          <div className="px-4 py-4 space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              {dynamicCategories.map((cat) => (
-                <Link 
-                  key={cat.id} 
-                  to={`/${currentLang}/category/${cat.id}`}
-                  className="text-xs font-bold uppercase tracking-widest p-2 border border-gray-100 rounded text-center text-gray-700 hover:text-primary hover:border-primary transition-colors"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  {cat.label}
-                </Link>
-              ))}
-            </div>
-            {user && (
-              <div className="border-t border-gray-100 pt-4">
-                <span className="text-[10px] font-black text-[#0669B2] uppercase tracking-widest block mb-2">Painel Admin</span>
-                <div className="grid grid-cols-2 gap-2">
-                  {ADMIN_NAV.map((item) => (
-                    <Link
-                      key={item.path}
-                      to={item.path}
-                      onClick={() => setIsMenuOpen(false)}
-                      className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide p-2 border border-[#0669B2]/20 rounded text-[#0669B2] hover:bg-[#0669B2] hover:text-white transition-colors"
-                    >
-                      <item.icon className="h-3.5 w-3.5" />
-                      {item.label}
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
-            <div className="border-t border-gray-100 pt-4 space-y-2 text-center">
-               <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Portal de Notícias</span>
-            </div>
-          </div>
-        </div>
+        <BlogMobileMenu
+          categories={categories}
+          currentLang={currentLang}
+          user={user}
+          onNavigate={() => setIsMenuOpen(false)}
+        />
       )}
     </header>
   );
