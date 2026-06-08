@@ -14,8 +14,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["Nunito", "sans-serif"],
-        nunito: ["Nunito", "sans-serif"],
+        sans: ["Montserrat", "sans-serif"],
+        nunito: ["Montserrat", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
