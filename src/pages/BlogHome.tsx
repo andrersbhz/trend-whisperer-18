@@ -226,7 +226,7 @@ const BlogHome = () => {
                                   }
                                   alt={article.title}
                                   loading={i === 0 ? 'eager' : 'lazy'}
-                                  className="w-full h-full object-cover news-card-img"
+                                  className="w-full h-full object-cover object-top news-card-img"
                                   onError={(e) => {
                                     (e.target as HTMLImageElement).src =
                                       'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d';
