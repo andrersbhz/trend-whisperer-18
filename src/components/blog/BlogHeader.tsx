@@ -176,6 +176,24 @@ const BlogHeader = () => {
                 </Link>
               ))}
             </div>
+            {user && (
+              <div className="border-t border-gray-100 pt-4">
+                <span className="text-[10px] font-black text-[#0669B2] uppercase tracking-widest block mb-2">Painel Admin</span>
+                <div className="grid grid-cols-2 gap-2">
+                  {ADMIN_NAV.map((item) => (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      onClick={() => setIsMenuOpen(false)}
+                      className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide p-2 border border-[#0669B2]/20 rounded text-[#0669B2] hover:bg-[#0669B2] hover:text-white transition-colors"
+                    >
+                      <item.icon className="h-3.5 w-3.5" />
+                      {item.label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="border-t border-gray-100 pt-4 space-y-2 text-center">
                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Portal de Notícias</span>
             </div>
