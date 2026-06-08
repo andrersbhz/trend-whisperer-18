@@ -96,7 +96,29 @@ const BlogHeader = () => {
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
-             <button className="px-4 py-1.5 bg-[#0669B2] text-white rounded-full font-black text-[10px] hover:bg-[#055a9a] hover:shadow-md transition-all duration-200 active:scale-95">MINHA CONTA</button>
+             {user ? (
+               <DropdownMenu>
+                 <DropdownMenuTrigger asChild>
+                   <button className="flex items-center gap-1.5 px-4 py-1.5 bg-[#0669B2] text-white rounded-full font-black text-[10px] hover:bg-[#055a9a] hover:shadow-md transition-all duration-200 active:scale-95 uppercase">
+                     <LayoutDashboard className="h-3 w-3" /> Painel Admin
+                   </button>
+                 </DropdownMenuTrigger>
+                 <DropdownMenuContent align="end" className="bg-gray-900 border border-gray-800 shadow-2xl z-[100] min-w-[220px]">
+                   <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-gray-400">{user.email}</DropdownMenuLabel>
+                   <DropdownMenuSeparator className="bg-gray-800" />
+                   {ADMIN_NAV.map((item) => (
+                     <DropdownMenuItem key={item.path} asChild className="cursor-pointer hover:bg-gray-800 focus:bg-gray-800 text-white px-3 py-2">
+                       <Link to={item.path} className="flex items-center gap-2.5">
+                         <item.icon className="h-3.5 w-3.5 text-[#0669B2]" />
+                         <span className="text-xs font-bold uppercase tracking-wider">{item.label}</span>
+                       </Link>
+                     </DropdownMenuItem>
+                   ))}
+                 </DropdownMenuContent>
+               </DropdownMenu>
+             ) : (
+               <Link to="/auth" className="px-4 py-1.5 bg-[#0669B2] text-white rounded-full font-black text-[10px] hover:bg-[#055a9a] hover:shadow-md transition-all duration-200 active:scale-95">MINHA CONTA</Link>
+             )}
           </div>
         </div>
       </div>
