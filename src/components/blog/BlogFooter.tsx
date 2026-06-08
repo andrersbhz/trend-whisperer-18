@@ -41,11 +41,13 @@ const BlogFooter = () => {
         <div>
           <h3 className="news-kicker text-white mb-4">Institucional</h3>
           <ul className="space-y-2 font-news text-sm">
-            <li><Link to="#" className="text-white/70 hover:text-[hsl(var(--news-accent))]">Princípios Editoriais</Link></li>
+            <li><Link to={`/${currentLang}/sobre`} className="text-white/70 hover:text-[hsl(var(--news-accent))]">Sobre</Link></li>
+            <li><Link to={`/${currentLang}/principios-editoriais`} className="text-white/70 hover:text-[hsl(var(--news-accent))]">Princípios Editoriais</Link></li>
             <li><Link to={`/${currentLang}/termos`} className="text-white/70 hover:text-[hsl(var(--news-accent))]">Termos de Uso</Link></li>
-            <li><Link to="#" className="text-white/70 hover:text-[hsl(var(--news-accent))]">Privacidade</Link></li>
-            <li><Link to="#" className="text-white/70 hover:text-[hsl(var(--news-accent))]">Contato</Link></li>
-            <li><Link to="#" className="text-white/70 hover:text-[hsl(var(--news-accent))]">Anuncie</Link></li>
+            <li><Link to={`/${currentLang}/privacidade`} className="text-white/70 hover:text-[hsl(var(--news-accent))]">Privacidade</Link></li>
+            <li><Link to={`/${currentLang}/contato`} className="text-white/70 hover:text-[hsl(var(--news-accent))]">Contato</Link></li>
+            <li><Link to={`/${currentLang}/anuncie`} className="text-white/70 hover:text-[hsl(var(--news-accent))]">Anuncie</Link></li>
+            <li><Link to={`/${currentLang}/newsletter`} className="text-white/70 hover:text-[hsl(var(--news-accent))]">Newsletter</Link></li>
           </ul>
         </div>
       </div>
