@@ -103,17 +103,17 @@ const NewsCard = ({
       <article className="group">
         <Link
           to={href}
-          className={`flex gap-3 p-3 sm:p-4 min-h-[72px] hover:bg-[hsl(var(--news-paper))] transition-colors ${focusRing} focus-visible:ring-inset`}
+          className={`flex gap-3 p-3 sm:p-4 min-h-[80px] hover:bg-[hsl(var(--news-paper))] transition-colors ${focusRing} focus-visible:ring-inset`}
         >
-          {typeof index === 'number' && (
-            <span
-              className="news-display text-2xl sm:text-3xl text-[hsl(var(--news-blue))]/60 leading-none w-6 flex-shrink-0"
-              aria-hidden="true"
-            >
-              {String(index + 1).padStart(2, '0')}
-            </span>
-          )}
-          <div className="flex-1 min-w-0">
+          <div className="w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0 overflow-hidden bg-[hsl(var(--news-paper))]">
+            <NewsImage
+              src={article.featured_image_url || ''}
+              alt={article.title}
+              aspectRatio="square"
+              className="news-card-img w-full h-full"
+            />
+          </div>
+          <div className="flex-1 min-w-0 flex flex-col justify-center">
             <span className="news-kicker" style={{ color: accentColor }}>
               {category}
             </span>
