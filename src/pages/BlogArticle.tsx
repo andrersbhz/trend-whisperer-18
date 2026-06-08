@@ -11,6 +11,7 @@ import Preloader from '@/components/Preloader';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import ReadingThemeToggle from '@/components/blog/ReadingThemeToggle';
 
 const BlogArticle = () => {
   const { articleId } = useParams<{ articleId: string }>();
@@ -44,7 +45,7 @@ const BlogArticle = () => {
   if (!article) return <div className="min-h-screen flex items-center justify-center">Artigo não encontrado.</div>;
 
   return (
-    <div className="min-h-screen bg-white text-[#1a1a1a] selection:bg-primary/30 font-sans">
+    <div className="min-h-screen reading-surface selection:bg-primary/30 font-sans">
       <Helmet>
         <title>{article.seo_title || article.title} | A3 BLOG</title>
         <meta name="description" content={article.meta_description} />
@@ -59,9 +60,12 @@ const BlogArticle = () => {
       <BlogHeader />
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 animate-fade-in">
-        <Link to={`/${currentLang}`} className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary mb-10 hover:translate-x-[-4px] transition-transform">
-          <ArrowLeft className="h-4 w-4" /> Início
-        </Link>
+        <div className="flex items-center justify-between gap-4 mb-8 flex-wrap">
+          <Link to={`/${currentLang}`} className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-widest text-[hsl(var(--reading-accent))] hover:translate-x-[-4px] transition-transform">
+            <ArrowLeft className="h-4 w-4" /> Início
+          </Link>
+          <ReadingThemeToggle />
+        </div>
 
         {/* Top Ad */}
         <div className="w-full h-24 bg-muted/30 border border-dashed border-border flex items-center justify-center text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-10">
@@ -69,10 +73,10 @@ const BlogArticle = () => {
         </div>
 
         <header className="mb-10 text-center">
-          <Badge className="mb-6 bg-primary text-white border-none rounded-none text-[10px] uppercase font-black tracking-[0.2em] px-4 py-1 mx-auto">
+          <Badge className="mb-6 bg-primary text-white border-none rounded-none text-[10px] uppercase font-bold tracking-[0.2em] px-4 py-1 mx-auto">
             {article.category}
           </Badge>
-          <h1 className="text-3xl sm:text-5xl md:text-6xl font-black leading-[1.1] mb-8 tracking-tighter">
+          <h1 className="news-headline news-headline-xl mb-6 text-[hsl(var(--reading-fg))]" style={{ textWrap: 'balance' as any }}>
             {article.title}
           </h1>
           
@@ -99,13 +103,9 @@ const BlogArticle = () => {
           </div>
         )}
 
-        <div 
-          className="prose prose-primary max-w-none 
-            prose-headings:font-black prose-headings:tracking-tighter 
-            prose-p:text-[#333] prose-p:leading-relaxed prose-p:text-lg prose-p:mb-6
-            prose-strong:text-[#1a1a1a] prose-strong:font-black
-            prose-a:text-primary prose-a:no-underline hover:prose-a:underline
-            animate-float-up font-sans"
+        <div
+          className="reading-content animate-float-up"
+          style={{ fontSize: 'calc(clamp(1.02rem, 0.95rem + 0.45vw, 1.18rem) * var(--reading-scale, 1))' }}
           dangerouslySetInnerHTML={{ __html: article.content }}
         />
 
