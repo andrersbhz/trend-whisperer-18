@@ -1,37 +1,29 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Facebook, Instagram, Users, RefreshCw } from 'lucide-react';
+import { Facebook, Instagram, Share2, Users, MessageSquare, Heart, RefreshCw } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import Preloader from '@/components/Preloader';
-
-const withTimeout = async <T,>(promise: PromiseLike<T>, fallback: T, timeoutMs = 6500): Promise<T> => {
-  return Promise.race([
-    Promise.resolve(promise).catch(() => fallback),
-    new Promise<T>((resolve) => window.setTimeout(() => resolve(fallback), timeoutMs)),
-  ]);
-};
 
 const MetaPage = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [metaMetrics, setMetaMetrics] = useState<any[] | null>(null);
 
   const fetchMetrics = async () => {
-    if (!user) {
-      setLoading(false);
-      return;
-    }
+    if (!user) return;
     try {
-      const { data } = await withTimeout(supabase.functions.invoke('fetch-meta-metrics', { 
+      const { data } = await supabase.functions.invoke('fetch-meta-metrics', { 
         body: { userId: user.id } 
-      }), { data: null } as any);
+      });
       if (data?.pages) setMetaMetrics(data.pages.length > 0 ? data.pages : null);
     } catch (error) {
       console.error(error);
     } finally {
-      setLoading(false);
+      setTimeout(() => setLoading(false), 800);
     }
   };
 

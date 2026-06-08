@@ -1,63 +1,49 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, Navigate, useParams } from "react-router-dom";
-import { lazy, Suspense } from "react";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { HelmetProvider } from "react-helmet-async";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
-import Preloader from "@/components/Preloader";
+import DashboardLayout from "@/components/DashboardLayout";
+import Auth from "@/pages/Auth";
+import Dashboard from "@/pages/Dashboard";
+import ArticlesPage from "@/pages/ArticlesPage";
+import TrendsPage from "@/pages/TrendsPage";
+import SchedulePage from "@/pages/SchedulePage";
+import SettingsPage from "@/pages/SettingsPage";
+import AnalyticsPage from "@/pages/AnalyticsPage";
+import SocialRobotPage from "@/pages/SocialRobotPage";
+import GooglePage from "@/pages/GooglePage";
+import MetaPage from "@/pages/MetaPage";
+import BlogHome from "@/pages/BlogHome";
+import BlogArticle from "@/pages/BlogArticle";
+import AuthorsPage from "@/pages/AuthorsPage";
+import TermsPage from "@/pages/TermsPage";
+import CategoryPage from "@/pages/CategoryPage";
+import NotFound from "./pages/NotFound";
+import MapPage from "@/pages/MapPage";
 
-const DashboardLayout = lazy(() => import("@/components/DashboardLayout"));
-const Auth = lazy(() => import("@/pages/Auth"));
-const Dashboard = lazy(() => import("@/pages/Dashboard"));
-const ArticlesPage = lazy(() => import("@/pages/ArticlesPage"));
-const TrendsPage = lazy(() => import("@/pages/TrendsPage"));
-const SchedulePage = lazy(() => import("@/pages/SchedulePage"));
-const SettingsPage = lazy(() => import("@/pages/SettingsPage"));
-const AnalyticsPage = lazy(() => import("@/pages/AnalyticsPage"));
-const SocialRobotPage = lazy(() => import("@/pages/SocialRobotPage"));
-const GooglePage = lazy(() => import("@/pages/GooglePage"));
-const MetaPage = lazy(() => import("@/pages/MetaPage"));
-const BlogHome = lazy(() => import("@/pages/BlogHome"));
-const BlogArticle = lazy(() => import("@/pages/BlogArticle"));
-const AuthorsPage = lazy(() => import("@/pages/AuthorsPage"));
-const TermsPage = lazy(() => import("@/pages/TermsPage"));
-const CategoryPage = lazy(() => import("@/pages/CategoryPage"));
-const NotFound = lazy(() => import("./pages/NotFound"));
-const MapPage = lazy(() => import("@/pages/MapPage"));
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 60_000,
-      gcTime: 5 * 60_000,
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
-
-const RouteFallback = () => <Preloader message="carregando painel" />;
+const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
-  if (loading) return <RouteFallback />;
+  if (loading) return <div className="flex items-center justify-center min-h-screen"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>;
   if (!user) return <Navigate to="/auth" replace />;
   return <DashboardLayout>{children}</DashboardLayout>;
 };
 
 const AuthRoute = () => {
   const { user, loading } = useAuth();
-  if (loading) return <RouteFallback />;
+  if (loading) return null;
   if (user) return <Navigate to="/admin" replace />;
   return <Auth />;
 };
 
 const RootRoute = () => {
   const { user, loading } = useAuth();
-  if (loading) return <RouteFallback />;
+  if (loading) return null;
   if (user) return <Navigate to="/admin" replace />;
   return <Navigate to="/pt-br" replace />;
 };
@@ -76,7 +62,6 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
-            <Suspense fallback={<RouteFallback />}>
             <Routes>
               {/* Redirect root based on auth status */}
               <Route path="/" element={<RootRoute />} />
@@ -103,7 +88,6 @@ const App = () => (
               
               <Route path="*" element={<NotFound />} />
             </Routes>
-            </Suspense>
           </AuthProvider>
         </BrowserRouter>
         </TooltipProvider>

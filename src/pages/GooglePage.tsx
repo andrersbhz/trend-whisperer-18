@@ -1,51 +1,44 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Globe, TrendingUp, Search } from 'lucide-react';
+import { Globe, RefreshCw, Loader2, ExternalLink, BarChart3, TrendingUp, Search } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { runBackendQuery } from '@/lib/backend';
 import Preloader from '@/components/Preloader';
-
-const withTimeout = async <T,>(promise: PromiseLike<T>, fallback: T, timeoutMs = 6500): Promise<T> => {
-  return Promise.race([
-    Promise.resolve(promise).catch(() => fallback),
-    new Promise<T>((resolve) => window.setTimeout(() => resolve(fallback), timeoutMs)),
-  ]);
-};
 
 const GooglePage = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [gaConnected, setGaConnected] = useState(false);
   const [analytics, setAnalytics] = useState<any>(null);
 
   useEffect(() => {
-    if (!user) {
-      setLoading(false);
-      return;
-    }
+    if (!user) return;
     
     const checkConnection = async () => {
       try {
-        const { data } = await withTimeout(supabase
+        const { data } = await supabase
           .from('user_settings')
           .select('google_analytics_property_id')
           .eq('user_id', user.id)
-          .maybeSingle(), { data: null } as any);
+          .maybeSingle();
         
         const connected = !!data?.google_analytics_property_id;
         setGaConnected(connected);
         
         if (connected) {
-          const res = await withTimeout(supabase.functions.invoke('fetch-analytics', {
+          const res = await supabase.functions.invoke('fetch-analytics', {
             body: { userId: user.id }
-          }), { data: null } as any);
+          });
           if (res.data?.analytics) setAnalytics(res.data.analytics);
         }
       } catch (error) {
         console.error(error);
       } finally {
-        setLoading(false);
+        setTimeout(() => setLoading(false), 800);
       }
     };
 

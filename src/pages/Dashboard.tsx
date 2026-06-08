@@ -1,4 +1,4 @@
-import { lazy, useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, useMemo, Suspense } from 'react';
 import Preloader from '@/components/Preloader';
 
 
@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
-  FileText, TrendingUp, CheckCircle, Clock, Sparkles, RefreshCw, ChevronDown, Facebook, Instagram, ExternalLink, BarChart3, Bot, UserCheck, ArrowRight
+  FileText, TrendingUp, CheckCircle, Clock, Sparkles, RefreshCw, ChevronDown, Facebook, Instagram, ExternalLink, BarChart3, X, Eye, MessageSquare, Bot, UserCheck, ArrowRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import AIProvidersPanel from '@/components/dashboard/AIProvidersPanel';
@@ -21,18 +21,32 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { getErrorMessage } from '@/lib/backend';
-import { format } from 'date-fns';
+import { getErrorMessage, runBackendQuery } from '@/lib/backend';
+import { format, subDays, startOfDay, isSameDay } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import AnalyticsPage from '@/pages/AnalyticsPage';
 import { useNavigate } from 'react-router-dom';
-
-const AnalyticsPage = lazy(() => import('@/pages/AnalyticsPage'));
-
-const timeoutResult = <T,>(promise: PromiseLike<T>, fallback: T, timeoutMs = 6500): Promise<T> => {
-  return Promise.race([
-    Promise.resolve(promise).catch(() => fallback),
-    new Promise<T>((resolve) => window.setTimeout(() => resolve(fallback), timeoutMs)),
-  ]);
-};
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogClose,
+} from "@/components/ui/dialog";
+import {
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend
+} from 'recharts';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -40,6 +54,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ total: 0, published: 0, pending: 0, trending: 0, failed: 0 });
+  const [allArticles, setAllArticles] = useState<any[]>([]);
   const [recentArticles, setRecentArticles] = useState<any[]>([]);
   const [recentErrors, setRecentErrors] = useState<any[]>([]);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
@@ -51,9 +66,14 @@ const Dashboard = () => {
   const [userCategories, setUserCategories] = useState<string[]>([]);
   const [metaMetrics, setMetaMetrics] = useState<any[] | null>(null);
   const [loadingMeta, setLoadingMeta] = useState(false);
+  const [selectedPageForMetrics, setSelectedPageForMetrics] = useState<string | null>(null);
+  const [isMetricsModalOpen, setIsMetricsModalOpen] = useState(false);
   const [interactions, setInteractions] = useState<any[]>([]);
+  const [loadingInteractions, setLoadingInteractions] = useState(false);
   const [processingInteractions, setProcessingInteractions] = useState(false);
   const [refreshInterval, setRefreshInterval] = useState(30);
+  const [chartType, setChartType] = useState<'area' | 'bar' | 'line'>('area');
+  const [nextRefresh, setNextRefresh] = useState<Date | null>(null);
   const [widgets, setWidgets] = useState({
     stats: true,
     meta: true,
@@ -66,14 +86,10 @@ const Dashboard = () => {
     });
     const [widgetOrder, setWidgetOrder] = useState<string[]>(['stats', 'meta', 'alternate_stats', 'robot', 'trends', 'categories', 'audit']);
   const [jetpackSummary, setJetpackSummary] = useState<any>(null);
-  const [, setLoadingJetpack] = useState(false);
+  const [loadingJetpack, setLoadingJetpack] = useState(false);
 
   const fetchStats = async (forceRefresh = false) => {
-    if (!user) {
-      setLoading(false);
-      setLoadingTrends(false);
-      return;
-    }
+    if (!user) return;
     setLoadingTrends(true);
     
     try {
@@ -81,13 +97,13 @@ const Dashboard = () => {
       const dashboardData = await withCache(cacheKey, forceRefresh ? 0 : 60, async () => {
         return monitorPerformance('Dashboard Full Load', async () => {
           const [articles, trendingTopics, recent, errors, logs, topTrends, categoriesData] = await Promise.all([
-            timeoutResult(supabase.from('articles').select('id, status, category, created_at').eq('user_id', user.id), { data: [] } as any),
-            timeoutResult(supabase.from('trending_topics').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('used', false), { count: 0 } as any),
-            timeoutResult(supabase.from('articles').select('id, title, category, seo_keyword, status').eq('user_id', user.id).order('created_at', { ascending: false }).limit(20), { data: [] } as any),
-            timeoutResult(supabase.from('publish_log').select('id, article_id, error_message, created_at, status').eq('user_id', user.id).eq('status', 'failed').order('created_at', { ascending: false }).limit(5), { data: [] } as any),
-            timeoutResult(supabase.from('audit_logs').select('id, action, details, created_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(10), { data: [] } as any),
-            timeoutResult(supabase.from('trending_topics').select('id, topic, category, source_name').eq('user_id', user.id).eq('used', false).order('fetched_at', { ascending: false }).limit(10), { data: [] } as any),
-            timeoutResult(supabase.from('user_settings').select('categories, dashboard_widgets, dashboard_order').eq('user_id', user.id).maybeSingle(), { data: null } as any),
+            supabase.from('articles').select('id, status, category, created_at').eq('user_id', user.id),
+            supabase.from('trending_topics').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('used', false),
+            supabase.from('articles').select('id, title, category, seo_keyword, status').eq('user_id', user.id).order('created_at', { ascending: false }).limit(50),
+            supabase.from('publish_log').select('id, article_id, error_message, created_at, status').eq('user_id', user.id).eq('status', 'failed').order('created_at', { ascending: false }).limit(5),
+            supabase.from('audit_logs').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(10),
+            supabase.from('trending_topics').select('*').eq('user_id', user.id).eq('used', false).order('fetched_at', { ascending: false }).limit(10),
+            supabase.from('user_settings').select('categories, dashboard_widgets, dashboard_order').eq('user_id', user.id).maybeSingle(),
           ]);
 
           return {
@@ -105,11 +121,12 @@ const Dashboard = () => {
       const { articles, trendingCount, recent: data_recent, errors: data_errors, logs: data_logs, topTrends: data_topTrends, settings: data_settings } = dashboardData;
 
       setTrendingList(data_topTrends);
+      setAllArticles(articles);
       setUserCategories(data_settings?.categories || ['policia', 'celebridades', 'politica', 'esportes', 'saude', 'financas']);
       if (data_settings?.dashboard_widgets) setWidgets(data_settings.dashboard_widgets as any);
       if (data_settings?.dashboard_order) setWidgetOrder(data_settings.dashboard_order as string[]);
       setLoadingTrends(false);
-      setLoading(false);
+      setTimeout(() => setLoading(false), 800);
 
       setStats({
         total: articles.length,
@@ -136,8 +153,6 @@ const Dashboard = () => {
       setAuditLogs(data_logs);
     } catch (error) {
       toast({ title: 'Erro ao carregar painel', description: getErrorMessage(error), variant: 'destructive' });
-      setLoadingTrends(false);
-      setLoading(false);
     }
   };
 
@@ -158,10 +173,11 @@ const Dashboard = () => {
 
   const fetchInteractions = async () => {
     if (!user) return;
+    setLoadingInteractions(true);
     try {
       const { data } = await supabase.from('social_interactions').select('*').order('created_at', { ascending: false }).limit(5);
       setInteractions(data || []);
-    } catch (error) { console.error(error); }
+    } catch (error) { console.error(error); } finally { setLoadingInteractions(false); }
   };
 
   const handleProcessInteractions = async () => {
@@ -210,7 +226,8 @@ const Dashboard = () => {
   useEffect(() => {
     if (!user || refreshInterval <= 0) return;
     const intervalMs = refreshInterval * 60 * 1000;
-    const interval = setInterval(() => { fetchMetaMetrics(); }, intervalMs);
+    setNextRefresh(new Date(Date.now() + intervalMs));
+    const interval = setInterval(() => { fetchMetaMetrics(); setNextRefresh(new Date(Date.now() + intervalMs)); }, intervalMs);
     return () => clearInterval(interval);
   }, [user, refreshInterval]);
 
@@ -243,6 +260,22 @@ const Dashboard = () => {
     { icon: TrendingUp, label: 'Tendências', value: stats.trending, color: 'text-accent', accent: 'from-accent/10', glow: 'neon-border-blue' },
   ];
   
+  const chartData = useMemo(() => {
+    if (!allArticles.length) return [];
+    const last7Days = Array.from({ length: 7 }, (_, i) => startOfDay(subDays(new Date(), i))).reverse();
+    return last7Days.map(day => ({
+      name: format(day, 'dd/MM'),
+      posts: allArticles.filter(a => isSameDay(new Date(a.created_at), day)).length
+    }));
+  }, [allArticles]);
+
+  const customTooltipStyle = {
+    backgroundColor: 'hsl(230, 25%, 6%)',
+    border: '1px solid hsl(230, 20%, 20%)',
+    borderRadius: '0px',
+    color: 'hsl(210, 20%, 98%)',
+  };
+
   if (loading) return <Preloader message="carregando dados aguarde" />;
 
   return (

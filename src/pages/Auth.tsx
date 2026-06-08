@@ -1,4 +1,4 @@
-import { startTransition, useState } from 'react';
+import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -27,7 +27,7 @@ const Auth = () => {
     try {
       if (isLogin) {
         await signIn(email, password);
-        startTransition(() => navigate('/admin', { replace: true }));
+        navigate('/');
       } else {
         await signUp(email, password);
         toast({ title: 'Conta criada!', description: 'Verifique seu email para confirmar.' });
@@ -46,7 +46,7 @@ const Auth = () => {
     try {
       console.log('[Auth] Starting Google sign in with origin:', window.location.origin);
       const result = await lovable.auth.signInWithOAuth('google', {
-        redirect_uri: `${window.location.origin}/admin`,
+        redirect_uri: window.location.origin,
       });
       
       console.log('[Auth] Google sign in result:', result);
@@ -62,7 +62,7 @@ const Auth = () => {
       }
       
       console.log('[Auth] Sign in successful without redirect, navigating home');
-      startTransition(() => navigate('/admin', { replace: true }));
+      navigate('/');
     } catch (error: any) {
       console.error('[Auth] Google sign in exception:', error);
       toast({ title: 'Erro', description: error.message, variant: 'destructive' });
