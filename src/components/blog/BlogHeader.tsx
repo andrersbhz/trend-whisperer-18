@@ -1,15 +1,32 @@
 import { Link } from 'react-router-dom';
 import { useI18n } from '@/hooks/useI18n';
-import { Search, Menu, X, Globe } from 'lucide-react';
+import { Search, Menu, X, Globe, LayoutDashboard, FileText, TrendingUp, Bot, Activity, Clock, Settings, User as UserIcon, Search as SearchIcon, Facebook } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+
+const ADMIN_NAV = [
+  { icon: LayoutDashboard, label: 'Dashboard', path: '/admin' },
+  { icon: FileText, label: 'Artigos', path: '/articles' },
+  { icon: UserIcon, label: 'Autores', path: '/authors' },
+  { icon: SearchIcon, label: 'Google', path: '/google' },
+  { icon: Facebook, label: 'Meta', path: '/meta' },
+  { icon: TrendingUp, label: 'Tendências', path: '/trends' },
+  { icon: Bot, label: 'Robô Social', path: '/robot' },
+  { icon: Activity, label: 'Analytics', path: '/analytics' },
+  { icon: Globe, label: 'Mapa Live', path: '/map' },
+  { icon: Clock, label: 'Agendamentos', path: '/schedule' },
+  { icon: Settings, label: 'Configurações', path: '/settings' },
+];
 
 const BlogHeader = () => {
   const { currentLang, changeLanguage, languages } = useI18n();
