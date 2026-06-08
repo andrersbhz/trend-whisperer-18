@@ -218,7 +218,7 @@ const BlogHome = () => {
                               tabIndex={active ? 0 : -1}
                               className="block relative focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[hsl(var(--news-accent))] focus-visible:ring-inset"
                             >
-                              <div className="relative aspect-[16/10] sm:aspect-[16/9] overflow-hidden">
+                              <div className="relative aspect-[16/8] sm:aspect-[16/7] overflow-hidden">
                                 <img
                                   src={
                                     article.featured_image_url ||
@@ -233,25 +233,16 @@ const BlogHome = () => {
                                   }}
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent" />
+                                <span
+                                  className="absolute top-[5px] left-[5px] news-kicker inline-block px-3 py-1.5 text-white z-10"
+                                  style={{ background: getAccent(article.category || '') }}
+                                >
+                                  {article.category || 'Destaque'}
+                                </span>
                                 <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-8 lg:p-10 text-white pr-14 sm:pr-20">
-                                  <span
-                                    className="news-kicker inline-block px-3 py-1.5 mb-3 sm:mb-4 text-white"
-                                    style={{ background: getAccent(article.category || '') }}
-                                  >
-                                    {article.category || 'Destaque'}
-                                  </span>
-                                  <h2 className="news-headline text-xl sm:text-3xl lg:text-5xl max-w-4xl mb-2 sm:mb-3 line-clamp-3">
+                                  <h2 className="news-headline text-xl sm:text-3xl lg:text-5xl max-w-4xl line-clamp-3">
                                     {article.title}
                                   </h2>
-                                  {article.meta_description && (
-                                    <p className="hidden sm:block text-white/85 line-clamp-2 max-w-2xl mb-3">
-                                      {article.meta_description}
-                                    </p>
-                                  )}
-                                  <div className="flex items-center gap-2 news-kicker text-white/70">
-                                    <Clock className="w-3 h-3" aria-hidden="true" />
-                                    <time>{formatRelative(article.created_at)}</time>
-                                  </div>
                                 </div>
                               </div>
                             </Link>
