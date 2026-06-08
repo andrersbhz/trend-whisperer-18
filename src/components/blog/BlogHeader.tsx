@@ -9,6 +9,7 @@ import AdminMenu from './AdminMenu';
 import LanguageSwitcher from './LanguageSwitcher';
 import BlogCategoryNav from './BlogCategoryNav';
 import BlogMobileMenu from './BlogMobileMenu';
+import AutoTranslate from './AutoTranslate';
 
 const BlogHeader = () => {
   const { currentLang } = useI18n();
