@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo, useRef } from 'react';
 import { ComposableMap, Geographies, Geography, Marker, ZoomableGroup } from 'react-simple-maps';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Maximize2, Minimize2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 // URL for world map with countries and optionally states/regions
 // Using a higher resolution world map that includes more detail
@@ -43,49 +44,39 @@ const WorldMap = () => {
   }, []);
 
   useEffect(() => {
-    const initialUsers: OnlineUser[] = [
-      { id: '1', coordinates: [-46.6333, -23.5505], country: 'Brasil', city: 'São Paulo', state: 'SP' },
-      { id: '3', coordinates: [-74.0060, 40.7128], country: 'EUA', city: 'New York' },
-      { id: '4', coordinates: [2.3522, 48.8566], country: 'França', city: 'Paris' },
-      { id: '5', coordinates: [139.6503, 35.6762], country: 'Japão', city: 'Tokyo' },
-      { id: '7', coordinates: [-9.1393, 38.7223], country: 'Portugal', city: 'Lisboa' },
-      { id: '8', coordinates: [-43.1729, -22.9068], country: 'Brasil', city: 'Rio de Janeiro', state: 'RJ' },
-    ];
-    setUsers(initialUsers);
+    let cancelled = false;
 
-    const countryHubs: { name: string, coords: [number, number], states?: string[] }[] = [
-      { name: 'Brasil', coords: [-47.8825, -15.7942], states: ['SP', 'RJ', 'MG', 'BA', 'RS', 'PR', 'PE', 'AM'] },
-      { name: 'Portugal', coords: [-8.2245, 39.3999] },
-      { name: 'EUA', coords: [-95.7129, 37.0902] },
-      { name: 'Espanha', coords: [-3.7038, 40.4168] },
-      { name: 'Angola', coords: [17.8739, -11.2027] },
-      { name: 'Japão', coords: [138.2529, 36.2048] },
-      { name: 'Austrália', coords: [133.7751, -25.2744] },
-      { name: 'Canadá', coords: [-106.3468, 56.1304] },
-    ];
+    const load = async () => {
+      const { data, error } = await supabase.rpc('get_online_locations', { p_minutes: 10 });
+      if (cancelled || error || !data) return;
+      const mapped: OnlineUser[] = (data as Array<{
+        id: string; longitude: number | null; latitude: number | null;
+        country: string | null; state: string | null; city: string | null;
+      }>)
+        .filter((row) => typeof row.longitude === 'number' && typeof row.latitude === 'number')
+        .map((row) => ({
+          id: row.id,
+          coordinates: [row.longitude as number, row.latitude as number],
+          country: row.country ?? 'Desconhecido',
+          state: row.state ?? undefined,
+          city: row.city ?? undefined,
+        }));
+      setUsers(mapped);
+    };
 
-    const interval = setInterval(() => {
-      setUsers(prev => {
-        const next = [...prev];
-        if (next.length > 15) next.shift();
-        
-        const hub = countryHubs[Math.floor(Math.random() * countryHubs.length)];
-        const randomCoords: [number, number] = [
-          hub.coords[0] + (Math.random() - 0.5) * (hub.name === 'Brasil' ? 10 : 6),
-          hub.coords[1] + (Math.random() - 0.5) * (hub.name === 'Brasil' ? 10 : 6)
-        ];
+    load();
+    const interval = window.setInterval(load, 20_000);
 
-        next.push({
-          id: Math.random().toString(),
-          coordinates: randomCoords,
-          country: hub.name,
-          state: hub.states ? hub.states[Math.floor(Math.random() * hub.states.length)] : undefined
-        });
-        return next;
-      });
-    }, 4000);
+    const channel = supabase
+      .channel('online_users_map')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'online_users' }, () => load())
+      .subscribe();
 
-    return () => clearInterval(interval);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const continentMarkers = useMemo(() => [
@@ -96,6 +87,18 @@ const WorldMap = () => {
     { name: "Ásia", coords: [100, 35] as [number, number] },
     { name: "Oceania", coords: [135, -25] as [number, number] },
   ], []);
+
+  const dominantRegion = useMemo(() => {
+    if (users.length === 0) return { name: 'Aguardando dados', percentage: 0 };
+    const tally = new Map<string, number>();
+    users.forEach((u) => tally.set(u.country, (tally.get(u.country) ?? 0) + 1));
+    let topName = 'Global';
+    let topCount = 0;
+    tally.forEach((count, name) => {
+      if (count > topCount) { topCount = count; topName = name; }
+    });
+    return { name: topName, percentage: Math.round((topCount / users.length) * 100) };
+  }, [users]);
 
   return (
     <div 
@@ -124,7 +127,7 @@ const WorldMap = () => {
         <div className="flex gap-4 items-center">
           <div className="hidden sm:flex flex-col items-end">
             <span className="text-[7px] font-black text-primary/60 uppercase tracking-widest">Status da Rede</span>
-            <span className="text-[10px] font-black text-success uppercase tracking-tighter">Estável • {users.length + 312} Nodes</span>
+            <span className="text-[10px] font-black text-success uppercase tracking-tighter">{users.length > 0 ? `Estável • ${users.length} Online` : 'Aguardando visitantes'}</span>
           </div>
           <div className="h-8 w-[1px] bg-white/10 hidden sm:block" />
           <div className="flex items-center gap-1 bg-primary/10 px-3 py-1.5 border border-primary/20 rounded-sm skew-x-[-10deg]">
@@ -279,11 +282,11 @@ const WorldMap = () => {
            <div className="bg-black/60 backdrop-blur-md p-4 border-l-2 border-primary space-y-4 shadow-2xl">
               <div className="space-y-1">
                  <p className="text-[8px] font-black text-primary uppercase tracking-[0.2em]">Região Dominante</p>
-                 <p className="text-[14px] font-black text-white uppercase tracking-tighter">América do Sul (68%)</p>
+                 <p className="text-[14px] font-black text-white uppercase tracking-tighter">{dominantRegion.name}{dominantRegion.percentage > 0 ? ` (${dominantRegion.percentage}%)` : ''}</p>
               </div>
               <div className="space-y-1">
-                 <p className="text-[8px] font-black text-primary uppercase tracking-[0.2em]">Latência Média</p>
-                 <p className="text-[14px] font-black text-success uppercase tracking-tighter">24ms</p>
+                 <p className="text-[8px] font-black text-primary uppercase tracking-[0.2em]">Visitantes Online</p>
+                 <p className="text-[14px] font-black text-success uppercase tracking-tighter">{users.length}</p>
               </div>
            </div>
         </div>

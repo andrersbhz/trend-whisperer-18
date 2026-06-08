@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import { useOnlinePresence } from "@/hooks/useOnlinePresence";
 import DashboardLayout from "@/components/DashboardLayout";
 import Auth from "@/pages/Auth";
 import Dashboard from "@/pages/Dashboard";
@@ -53,6 +54,11 @@ const CategoryPageWrapper = () => {
   return <CategoryPage categoryId={categoryId || ''} />;
 };
 
+const PresenceTracker = () => {
+  useOnlinePresence();
+  return null;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <HelmetProvider>
@@ -62,6 +68,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
+            <PresenceTracker />
             <Routes>
               {/* Redirect root based on auth status */}
               <Route path="/" element={<RootRoute />} />
