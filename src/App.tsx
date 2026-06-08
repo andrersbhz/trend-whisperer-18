@@ -23,6 +23,12 @@ import BlogArticle from "@/pages/BlogArticle";
 import AuthorsPage from "@/pages/AuthorsPage";
 import TermsPage from "@/pages/TermsPage";
 import CategoryPage from "@/pages/CategoryPage";
+import AboutPage from "@/pages/AboutPage";
+import ContactPage from "@/pages/ContactPage";
+import PrivacyPage from "@/pages/PrivacyPage";
+import EditorialPage from "@/pages/EditorialPage";
+import AdvertisePage from "@/pages/AdvertisePage";
+import NewsletterPage from "@/pages/NewsletterPage";
 import NotFound from "./pages/NotFound";
 import MapPage from "@/pages/MapPage";
 
@@ -78,6 +84,12 @@ const App = () => (
               <Route path="/:lang/category/:categoryId" element={<CategoryPageWrapper />} />
               <Route path="/:lang/article/:articleId" element={<BlogArticle />} />
               <Route path="/:lang/termos" element={<TermsPage />} />
+              <Route path="/:lang/sobre" element={<AboutPage />} />
+              <Route path="/:lang/contato" element={<ContactPage />} />
+              <Route path="/:lang/privacidade" element={<PrivacyPage />} />
+              <Route path="/:lang/principios-editoriais" element={<EditorialPage />} />
+              <Route path="/:lang/anuncie" element={<AdvertisePage />} />
+              <Route path="/:lang/newsletter" element={<NewsletterPage />} />
 
               {/* Admin Dashboard Routes (Protected) */}
               <Route path="/auth" element={<AuthRoute />} />
