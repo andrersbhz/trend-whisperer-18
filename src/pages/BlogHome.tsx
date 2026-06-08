@@ -148,7 +148,7 @@ const BlogHome = () => {
   }, [lang, currentLang]);
 
   const featured = useMemo(() => articles.slice(0, 5), [articles]);
-  const sidebar = useMemo(() => articles.slice(5, 11), [articles]);
+  const sidebar = useMemo(() => articles.slice(5, 10), [articles]);
   const grouped = useMemo(() => {
     return articles.reduce<Record<string, any[]>>((acc, a) => {
       const cat = a.category || 'Geral';
