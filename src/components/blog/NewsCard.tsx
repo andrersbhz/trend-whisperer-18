@@ -117,7 +117,7 @@ const NewsCard = ({
             <span className="news-kicker" style={{ color: accentColor }}>
               {category}
             </span>
-            <h4 className="news-headline text-sm mt-1 line-clamp-3 text-[hsl(var(--news-ink))] group-hover:text-[hsl(var(--news-navy))] transition-colors">
+            <h4 className="news-headline mt-1 line-clamp-3 text-[hsl(var(--news-ink))] group-hover:text-[hsl(var(--news-navy))] transition-colors" style={{ fontSize: '20px', lineHeight: 1.25 }}>
               {article.title}
             </h4>
             <time className="news-kicker text-[hsl(var(--news-muted))] mt-1 block">{date}</time>
