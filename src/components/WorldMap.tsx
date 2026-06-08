@@ -88,6 +88,18 @@ const WorldMap = () => {
     { name: "Oceania", coords: [135, -25] as [number, number] },
   ], []);
 
+  const dominantRegion = useMemo(() => {
+    if (users.length === 0) return { name: 'Aguardando dados', percentage: 0 };
+    const tally = new Map<string, number>();
+    users.forEach((u) => tally.set(u.country, (tally.get(u.country) ?? 0) + 1));
+    let topName = 'Global';
+    let topCount = 0;
+    tally.forEach((count, name) => {
+      if (count > topCount) { topCount = count; topName = name; }
+    });
+    return { name: topName, percentage: Math.round((topCount / users.length) * 100) };
+  }, [users]);
+
   return (
     <div 
       ref={mapContainerRef}
@@ -115,7 +127,7 @@ const WorldMap = () => {
         <div className="flex gap-4 items-center">
           <div className="hidden sm:flex flex-col items-end">
             <span className="text-[7px] font-black text-primary/60 uppercase tracking-widest">Status da Rede</span>
-            <span className="text-[10px] font-black text-success uppercase tracking-tighter">Estável • {users.length + 312} Nodes</span>
+            <span className="text-[10px] font-black text-success uppercase tracking-tighter">{users.length > 0 ? `Estável • ${users.length} Online` : 'Aguardando visitantes'}</span>
           </div>
           <div className="h-8 w-[1px] bg-white/10 hidden sm:block" />
           <div className="flex items-center gap-1 bg-primary/10 px-3 py-1.5 border border-primary/20 rounded-sm skew-x-[-10deg]">
@@ -270,11 +282,11 @@ const WorldMap = () => {
            <div className="bg-black/60 backdrop-blur-md p-4 border-l-2 border-primary space-y-4 shadow-2xl">
               <div className="space-y-1">
                  <p className="text-[8px] font-black text-primary uppercase tracking-[0.2em]">Região Dominante</p>
-                 <p className="text-[14px] font-black text-white uppercase tracking-tighter">América do Sul (68%)</p>
+                 <p className="text-[14px] font-black text-white uppercase tracking-tighter">{dominantRegion.name}{dominantRegion.percentage > 0 ? ` (${dominantRegion.percentage}%)` : ''}</p>
               </div>
               <div className="space-y-1">
-                 <p className="text-[8px] font-black text-primary uppercase tracking-[0.2em]">Latência Média</p>
-                 <p className="text-[14px] font-black text-success uppercase tracking-tighter">24ms</p>
+                 <p className="text-[8px] font-black text-primary uppercase tracking-[0.2em]">Visitantes Online</p>
+                 <p className="text-[14px] font-black text-success uppercase tracking-tighter">{users.length}</p>
               </div>
            </div>
         </div>
