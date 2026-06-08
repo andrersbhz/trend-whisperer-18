@@ -30,6 +30,7 @@ const ADMIN_NAV = [
 
 const BlogHeader = () => {
   const { currentLang, changeLanguage, languages } = useI18n();
+  const { user } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [dynamicCategories, setDynamicCategories] = useState<{id: string, label: string}[]>([]);
 
