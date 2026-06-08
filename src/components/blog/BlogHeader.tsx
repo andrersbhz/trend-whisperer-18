@@ -1,18 +1,36 @@
 import { Link } from 'react-router-dom';
 import { useI18n } from '@/hooks/useI18n';
-import { Search, Menu, X, Globe } from 'lucide-react';
+import { Search, Menu, X, Globe, LayoutDashboard, FileText, TrendingUp, Bot, Activity, Clock, Settings, User as UserIcon, Search as SearchIcon, Facebook } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+const ADMIN_NAV = [
+  { icon: LayoutDashboard, label: 'Dashboard', path: '/admin' },
+  { icon: FileText, label: 'Artigos', path: '/articles' },
+  { icon: UserIcon, label: 'Autores', path: '/authors' },
+  { icon: SearchIcon, label: 'Google', path: '/google' },
+  { icon: Facebook, label: 'Meta', path: '/meta' },
+  { icon: TrendingUp, label: 'Tendências', path: '/trends' },
+  { icon: Bot, label: 'Robô Social', path: '/robot' },
+  { icon: Activity, label: 'Analytics', path: '/analytics' },
+  { icon: Globe, label: 'Mapa Live', path: '/map' },
+  { icon: Clock, label: 'Agendamentos', path: '/schedule' },
+  { icon: Settings, label: 'Configurações', path: '/settings' },
+];
+
 const BlogHeader = () => {
   const { currentLang, changeLanguage, languages } = useI18n();
+  const { user } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [dynamicCategories, setDynamicCategories] = useState<{id: string, label: string}[]>([]);
 
@@ -78,7 +96,29 @@ const BlogHeader = () => {
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
-             <button className="px-4 py-1.5 bg-[#0669B2] text-white rounded-full font-black text-[10px] hover:bg-[#055a9a] hover:shadow-md transition-all duration-200 active:scale-95">MINHA CONTA</button>
+             {user ? (
+               <DropdownMenu>
+                 <DropdownMenuTrigger asChild>
+                   <button className="flex items-center gap-1.5 px-4 py-1.5 bg-[#0669B2] text-white rounded-full font-black text-[10px] hover:bg-[#055a9a] hover:shadow-md transition-all duration-200 active:scale-95 uppercase">
+                     <LayoutDashboard className="h-3 w-3" /> Painel Admin
+                   </button>
+                 </DropdownMenuTrigger>
+                 <DropdownMenuContent align="end" className="bg-gray-900 border border-gray-800 shadow-2xl z-[100] min-w-[220px]">
+                   <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-gray-400">{user.email}</DropdownMenuLabel>
+                   <DropdownMenuSeparator className="bg-gray-800" />
+                   {ADMIN_NAV.map((item) => (
+                     <DropdownMenuItem key={item.path} asChild className="cursor-pointer hover:bg-gray-800 focus:bg-gray-800 text-white px-3 py-2">
+                       <Link to={item.path} className="flex items-center gap-2.5">
+                         <item.icon className="h-3.5 w-3.5 text-[#0669B2]" />
+                         <span className="text-xs font-bold uppercase tracking-wider">{item.label}</span>
+                       </Link>
+                     </DropdownMenuItem>
+                   ))}
+                 </DropdownMenuContent>
+               </DropdownMenu>
+             ) : (
+               <Link to="/auth" className="px-4 py-1.5 bg-[#0669B2] text-white rounded-full font-black text-[10px] hover:bg-[#055a9a] hover:shadow-md transition-all duration-200 active:scale-95">MINHA CONTA</Link>
+             )}
           </div>
         </div>
       </div>
@@ -136,6 +176,24 @@ const BlogHeader = () => {
                 </Link>
               ))}
             </div>
+            {user && (
+              <div className="border-t border-gray-100 pt-4">
+                <span className="text-[10px] font-black text-[#0669B2] uppercase tracking-widest block mb-2">Painel Admin</span>
+                <div className="grid grid-cols-2 gap-2">
+                  {ADMIN_NAV.map((item) => (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      onClick={() => setIsMenuOpen(false)}
+                      className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide p-2 border border-[#0669B2]/20 rounded text-[#0669B2] hover:bg-[#0669B2] hover:text-white transition-colors"
+                    >
+                      <item.icon className="h-3.5 w-3.5" />
+                      {item.label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="border-t border-gray-100 pt-4 space-y-2 text-center">
                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Portal de Notícias</span>
             </div>
