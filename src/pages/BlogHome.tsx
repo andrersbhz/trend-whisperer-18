@@ -1,36 +1,62 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useI18n } from '@/hooks/useI18n';
 import BlogHeader from '@/components/blog/BlogHeader';
 import BlogFooter from '@/components/blog/BlogFooter';
 import NewsImage from '@/components/blog/NewsImage';
+import CategorySection from '@/components/blog/CategorySection';
+import NewsTicker, { useNewsTicker } from '@/components/blog/NewsTicker';
 import { Helmet } from 'react-helmet-async';
-import { ChevronRight, ChevronLeft } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Clock } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import Preloader from '@/components/Preloader';
 import useEmblaCarousel from 'embla-carousel-react';
 import Autoplay from 'embla-carousel-autoplay';
 
-const AdPlaceholder = ({ className }: { className?: string }) => (
-  <div className={`bg-muted/30 border border-dashed border-border flex items-center justify-center text-[10px] font-bold text-muted-foreground uppercase tracking-widest ${className}`}>
-    Espaço Publicitário (Google AdSense)
-  </div>
-);
+const CATEGORY_ACCENTS: Record<string, string> = {
+  default: 'hsl(var(--news-accent))',
+  notícias: '#C4170C',
+  noticias: '#C4170C',
+  esportes: '#06AA48',
+  entretenimento: '#FF8000',
+  tecnologia: '#0669B2',
+  saúde: '#00A1AB',
+  saude: '#00A1AB',
+};
+
+const getAccent = (cat: string) => {
+  const k = cat.toLowerCase();
+  return (
+    Object.entries(CATEGORY_ACCENTS).find(([key]) => k.includes(key))?.[1] ??
+    CATEGORY_ACCENTS.default
+  );
+};
+
+const formatRelative = (date: string) => {
+  try {
+    const diff = (Date.now() - new Date(date).getTime()) / 60000;
+    if (diff < 60) return `há ${Math.max(1, Math.round(diff))} min`;
+    if (diff < 1440) return `há ${Math.round(diff / 60)}h`;
+    return new Date(date).toLocaleDateString('pt-BR');
+  } catch {
+    return '';
+  }
+};
 
 const BlogHome = () => {
   const { lang } = useParams();
   const { currentLang } = useI18n();
-  const [featuredArticles, setFeaturedArticles] = useState<any[]>([]);
-  const [sidebarArticles, setSidebarArticles] = useState<any[]>([]);
-  const [categoriesData, setCategoriesData] = useState<any>({});
+  const [articles, setArticles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  
-  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, duration: 30 }, [Autoplay({ delay: 5000 })]);
+  const tickerItems = useNewsTicker(15);
+
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, duration: 30 }, [
+    Autoplay({ delay: 6000, stopOnInteraction: false }),
+  ]);
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   const onSelect = useCallback(() => {
-    if (!emblaApi) return;
-    setSelectedIndex(emblaApi.selectedScrollSnap());
+    if (emblaApi) setSelectedIndex(emblaApi.selectedScrollSnap());
   }, [emblaApi]);
 
   useEffect(() => {
@@ -39,246 +65,206 @@ const BlogHome = () => {
     emblaApi.on('select', onSelect);
   }, [emblaApi, onSelect]);
 
-  const scrollPrev = useCallback(() => emblaApi && emblaApi.scrollPrev(), [emblaApi]);
-  const scrollNext = useCallback(() => emblaApi && emblaApi.scrollNext(), [emblaApi]);
+  const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
+  const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
 
   useEffect(() => {
-    const fetchData = async () => {
+    let mounted = true;
+    (async () => {
       setLoading(true);
-      try {
-        console.log('Fetching articles for lang:', lang);
-        
-        // Fetch published articles
-        const { data: articles, error } = await supabase
-          .from('articles')
-          .select('*')
-          .eq('status', 'published') // Only show published
-          .order('created_at', { ascending: false });
-
-        if (error) {
-          console.error('Supabase error:', error);
-          return;
-        }
-
-        if (articles && articles.length > 0) {
-          console.log('Total articles found:', articles.length);
-          setFeaturedArticles(articles.slice(0, 4));
-          setSidebarArticles(articles.slice(4, 10));
-          
-          const grouped = articles.reduce((acc: Record<string, any[]>, article) => {
-            const cat = article.category || 'Geral';
-            if (!acc[cat]) acc[cat] = [];
-            acc[cat].push(article);
-            return acc;
-          }, {});
-          setCategoriesData(grouped);
-        } else {
-          setFeaturedArticles([]);
-          setSidebarArticles([]);
-          setCategoriesData({});
-        }
-      } catch (error) {
-        console.error('Error fetching blog data:', error);
-      } finally {
-        setLoading(false);
-      }
+      const { data, error } = await supabase
+        .from('articles')
+        .select('*')
+        .eq('status', 'published')
+        .order('created_at', { ascending: false });
+      if (!mounted) return;
+      if (error) console.error(error);
+      setArticles(data || []);
+      setLoading(false);
+    })();
+    return () => {
+      mounted = false;
     };
-
-    fetchData();
   }, [lang, currentLang]);
+
+  const featured = useMemo(() => articles.slice(0, 5), [articles]);
+  const sidebar = useMemo(() => articles.slice(5, 11), [articles]);
+  const grouped = useMemo(() => {
+    return articles.reduce<Record<string, any[]>>((acc, a) => {
+      const cat = a.category || 'Geral';
+      (acc[cat] ||= []).push(a);
+      return acc;
+    }, {});
+  }, [articles]);
 
   if (loading) return <Preloader message="Sincronizando as últimas notícias..." />;
 
-  // Filter out any articles that might not have a title or required content
-  const validArticles = featuredArticles.filter(a => a && a.title);
-  const validSidebar = sidebarArticles.filter(a => a && a.title);
-
-  const siteTitle = 'A3 BLOG - Absolutamente tudo sobre notícias, esportes e entretenimento';
-  const siteDesc = 'No A3 BLOG você encontra tudo sobre as últimas notícias, esportes, entretenimento e muito mais.';
-  const siteKeywords = 'notícias, esportes, entretenimento, a3 blog, brasil';
+  const siteTitle = 'A3 Portal — Notícias, Esportes e Entretenimento';
+  const siteDesc =
+    'Portal de notícias A3: últimas notícias, esportes, tecnologia, entretenimento e mais — atualizado em tempo real.';
 
   return (
-    <div className="min-h-screen bg-white text-black selection:bg-primary/20 font-sans antialiased">
+    <div className="min-h-dvh bg-[hsl(var(--news-paper))] text-[hsl(var(--news-ink))] font-news antialiased">
       <Helmet>
         <title>{siteTitle}</title>
         <meta name="description" content={siteDesc} />
-        <meta name="keywords" content={siteKeywords} />
         <link rel="canonical" href={window.location.origin + window.location.pathname} />
       </Helmet>
-      
+
       <BlogHeader />
-      
-      <main className="max-w-[1200px] mx-auto px-4 lg:px-0 py-4">
-        {/* Main Highlight Section with Sidebar */}
-        {validArticles.length === 0 && !loading ? (
-          <div className="py-20 text-center">
-            <h2 className="text-2xl font-bold text-gray-400">Nenhum artigo encontrado.</h2>
-            <p className="text-gray-500 mt-2">Os artigos aparecerão aqui assim que forem publicados.</p>
+      <NewsTicker items={tickerItems} currentLang={currentLang} />
+
+      <main id="main-content" className="news-container py-6 lg:py-10">
+        {articles.length === 0 ? (
+          <div className="py-24 text-center">
+            <h2 className="news-display text-5xl uppercase text-[hsl(var(--news-navy))]">
+              Sem manchetes no momento
+            </h2>
+            <p className="text-[hsl(var(--news-muted))] mt-3">
+              Novas notícias aparecerão aqui assim que publicadas.
+            </p>
           </div>
         ) : (
           <>
-        <section className="mb-12">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Main Slider (Left) */}
-            <div className="lg:col-span-8 relative">
-              <div className="overflow-hidden rounded-sm" ref={emblaRef}>
-                <div className="flex">
-                  {validArticles.map((article, index) => (
-                    <div key={article.id} className="flex-[0_0_100%] min-w-0 relative group">
-                      <Link to={`/${currentLang}/article/${article.slug || article.id}`} className="block relative">
-                        <div className="relative h-auto overflow-hidden bg-gray-100">
-                          <img 
-                            src={article.featured_image_url || 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d'} 
-                            alt={article.title}
-                            className="w-full h-auto object-contain group-hover:scale-105 transition-transform duration-700"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.src = 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d';
-                            }}
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
-                          
-                          <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-10 text-white">
-                            <span className="inline-block px-3 py-1 bg-primary text-white text-[10px] font-bold uppercase tracking-widest mb-4">
-                              {article.category || 'Destaque'}
-                            </span>
-                            <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black mb-4 leading-[1.05] tracking-tighter max-w-4xl group-hover:underline underline-offset-4 decoration-primary">
-                              {article.title}
-                            </h2>
-                            <p className="text-gray-200 text-sm sm:text-base line-clamp-2 max-w-2xl font-medium hidden sm:block">
-                              {article.meta_description}
-                            </p>
-                          </div>
+            {/* HERO: slider + sidebar */}
+            <section className="mb-12">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+                {/* Slider */}
+                <div className="lg:col-span-8 relative">
+                  <div className="overflow-hidden bg-[hsl(var(--news-navy-deep))]" ref={emblaRef}>
+                    <div className="flex">
+                      {featured.map((article) => (
+                        <div
+                          key={article.id}
+                          className="flex-[0_0_100%] min-w-0 relative group"
+                        >
+                          <Link
+                            to={`/${currentLang}/article/${article.slug || article.id}`}
+                            className="block relative focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[hsl(var(--news-accent))]"
+                          >
+                            <div className="relative aspect-[16/10] sm:aspect-[16/9] overflow-hidden">
+                              <img
+                                src={
+                                  article.featured_image_url ||
+                                  'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d'
+                                }
+                                alt={article.title}
+                                loading="eager"
+                                className="w-full h-full object-cover news-card-img"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src =
+                                    'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d';
+                                }}
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent" />
+                              <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-8 lg:p-10 text-white">
+                                <span
+                                  className="news-kicker inline-block px-3 py-1.5 mb-4 text-white"
+                                  style={{ background: getAccent(article.category || '') }}
+                                >
+                                  {article.category || 'Destaque'}
+                                </span>
+                                <h2 className="news-headline text-2xl sm:text-4xl lg:text-5xl max-w-4xl mb-3 group-hover:underline decoration-2 underline-offset-4">
+                                  {article.title}
+                                </h2>
+                                <p className="hidden sm:block text-white/85 line-clamp-2 max-w-2xl mb-3">
+                                  {article.meta_description}
+                                </p>
+                                <div className="flex items-center gap-2 news-kicker text-white/70">
+                                  <Clock className="w-3 h-3" />
+                                  {formatRelative(article.created_at)}
+                                </div>
+                              </div>
+                            </div>
+                          </Link>
                         </div>
-                      </Link>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </div>
+                  </div>
 
-              {/* Slider Controls (Internal) */}
-              {validArticles.length > 1 && (
-                <>
-                  <button 
-                    onClick={scrollPrev}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-sm flex items-center justify-center text-white transition-all z-10"
-                  >
-                    <ChevronLeft className="w-5 h-5" />
-                  </button>
-                  <button 
-                    onClick={scrollNext}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-sm flex items-center justify-center text-white transition-all z-10"
-                  >
-                    <ChevronRight className="w-5 h-5" />
-                  </button>
-                </>
-              )}
-            </div>
-
-            {/* Latest News Sidebar (Right) */}
-            <div className="lg:col-span-4 flex flex-col gap-4">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-black uppercase tracking-widest text-[#333] border-l-4 border-primary pl-3">Últimas Notícias</h3>
-                <div className="flex gap-1">
-                  {validArticles.map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={() => emblaApi?.scrollTo(index)}
-                      className={`h-1 rounded-full transition-all ${selectedIndex === index ? 'bg-primary w-4' : 'bg-gray-200 w-2'}`}
-                    />
-                  ))}
-                </div>
-              </div>
-              <div className="space-y-4 flex-grow">
-                {validSidebar.map((article) => (
-                  <article key={article.id} className="group border-b border-gray-100 pb-4 last:border-0 last:pb-0">
-                    <Link to={`/${currentLang}/article/${article.slug || article.id}`} className="flex gap-4">
-                      <div className="w-24 h-24 flex-shrink-0 overflow-hidden rounded-sm bg-gray-100">
-                        <img 
-                          src={article.featured_image_url || 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d'} 
-                          alt={article.title}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.src = 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d';
-                          }}
-                        />
+                  {featured.length > 1 && (
+                    <>
+                      <button
+                        onClick={scrollPrev}
+                        aria-label="Notícia anterior"
+                        className="absolute left-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/40 hover:bg-[hsl(var(--news-accent))] backdrop-blur flex items-center justify-center text-white transition-all z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                      >
+                        <ChevronLeft className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={scrollNext}
+                        aria-label="Próxima notícia"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/40 hover:bg-[hsl(var(--news-accent))] backdrop-blur flex items-center justify-center text-white transition-all z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                      >
+                        <ChevronRight className="w-5 h-5" />
+                      </button>
+                      <div className="absolute bottom-4 right-4 flex gap-1.5 z-10">
+                        {featured.map((_, i) => (
+                          <button
+                            key={i}
+                            onClick={() => emblaApi?.scrollTo(i)}
+                            aria-label={`Ir para slide ${i + 1}`}
+                            className={`h-1.5 rounded-full transition-all ${
+                              selectedIndex === i
+                                ? 'bg-white w-8'
+                                : 'bg-white/40 hover:bg-white/70 w-3'
+                            }`}
+                          />
+                        ))}
                       </div>
-                      <div className="flex flex-col justify-center">
-                        <span className="text-[10px] font-bold text-primary uppercase mb-1">{article.category || 'Geral'}</span>
-                        <h4 className="text-sm font-bold leading-tight group-hover:text-primary transition-colors line-clamp-3 text-[#333]">
-                          {article.title}
-                        </h4>
-                      </div>
-                    </Link>
-                  </article>
-                ))}
-              </div>
-              <AdPlaceholder className="w-full h-[150px] bg-gray-50 mt-auto" />
-            </div>
-          </div>
-        </section>
+                    </>
+                  )}
+                </div>
 
-        {/* Dynamic Category Blocks */}
-        <div className="mt-12 space-y-16">
-          {Object.entries(categoriesData)
-            .filter(([_, arts]: [any, any]) => arts.length >= 1)
-            .map(([category, articles]: [string, any]) => {
-              // Standard system colors/styles based on category
-              const getCategoryStyle = (cat: string) => {
-                const lowerCat = cat.toLowerCase();
-                if (lowerCat.includes('notícia') || lowerCat.includes('news')) return { color: '#C4170C', label: 'notícias' };
-                if (lowerCat.includes('esport') || lowerCat.includes('ge')) return { color: '#06AA48', label: 'esportes' };
-                if (lowerCat.includes('entreten') || lowerCat.includes('gshow')) return { color: '#FF8000', label: 'entretenimento' };
-                if (lowerCat.includes('tecnolog')) return { color: '#0669B2', label: 'tecnologia' };
-                if (lowerCat.includes('saúde') || lowerCat.includes('saude')) return { color: '#00A1AB', label: 'saúde' };
-                return { color: '#333333', label: lowerCat };
-              };
-
-              const style = getCategoryStyle(category);
-
-              return (
-                <section key={category} className="border-t border-gray-100 pt-10">
-                  <div className="flex items-center justify-between mb-8">
-                    <div className="flex items-center gap-2">
-                      <h2 style={{ color: style.color }} className="text-2xl font-black lowercase tracking-tighter">
-                        {style.label}
-                      </h2>
+                {/* Sidebar — Últimas Notícias */}
+                <aside className="lg:col-span-4">
+                  <div className="bg-white border border-[hsl(var(--news-line))] h-full">
+                    <div className="bg-[hsl(var(--news-navy))] text-white px-4 py-3 flex items-center justify-between">
+                      <h3 className="news-kicker text-sm">Últimas Notícias</h3>
+                      <span className="w-2 h-2 rounded-full bg-[hsl(var(--news-accent))] animate-pulse" />
                     </div>
-                    <Link 
-                      to={`/${currentLang}/category/${category.toLowerCase()}`} 
-                      className="text-xs font-bold text-gray-400 hover:text-primary transition-colors uppercase tracking-widest"
-                    >
-                      Ver tudo <ChevronRight className="inline-block w-3 h-3 ml-1" />
-                    </Link>
+                    <ul className="divide-y divide-[hsl(var(--news-line))]">
+                      {sidebar.map((article, idx) => (
+                        <li key={article.id}>
+                          <Link
+                            to={`/${currentLang}/article/${article.slug || article.id}`}
+                            className="flex gap-3 p-4 hover:bg-[hsl(var(--news-paper))] transition-colors group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--news-navy))] focus-visible:ring-inset"
+                          >
+                            <span className="news-display text-3xl text-[hsl(var(--news-blue))]/60 leading-none w-6 flex-shrink-0">
+                              {String(idx + 1).padStart(2, '0')}
+                            </span>
+                            <div className="flex-1 min-w-0">
+                              <span
+                                className="news-kicker"
+                                style={{ color: getAccent(article.category || '') }}
+                              >
+                                {article.category || 'Geral'}
+                              </span>
+                              <h4 className="news-headline text-sm mt-1 line-clamp-3 text-[hsl(var(--news-ink))] group-hover:text-[hsl(var(--news-navy))] transition-colors">
+                                {article.title}
+                              </h4>
+                            </div>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-                    {articles.slice(0, 3).map((article: any) => (
-                      <article key={article.id} className="group">
-                        <Link to={`/${currentLang}/article/${article.slug || article.id}`}>
-                          <div className="relative mb-4 overflow-hidden rounded-sm h-auto">
-                            <NewsImage 
-                              src={article.featured_image_url} 
-                              alt={article.title}
-                              aspectRatio="video"
-                              className="group-hover:scale-105 transition-transform duration-500"
-                            />
-                          </div>
-                          <h3 className="text-xl font-bold leading-tight group-hover:text-primary transition-colors mb-2 text-[#333] line-clamp-2">
-                            {article.title}
-                          </h3>
-                          <p className="text-[#666] leading-snug line-clamp-2 text-sm">
-                            {article.meta_description}
-                          </p>
-                        </Link>
-                      </article>
-                    ))}
-                  </div>
-                </section>
-              );
-            })}
-        </div>
+                </aside>
+              </div>
+            </section>
+
+            {/* Category sections */}
+            <div>
+              {Object.entries(grouped).map(([cat, arts]) => (
+                <CategorySection
+                  key={cat}
+                  category={cat}
+                  articles={arts}
+                  currentLang={currentLang}
+                  accentColor={getAccent(cat)}
+                />
+              ))}
+            </div>
           </>
         )}
       </main>
