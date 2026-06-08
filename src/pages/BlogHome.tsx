@@ -218,7 +218,7 @@ const BlogHome = () => {
                               tabIndex={active ? 0 : -1}
                               className="block relative focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[hsl(var(--news-accent))] focus-visible:ring-inset"
                             >
-                              <div className="relative aspect-[16/8] sm:aspect-[16/7] overflow-hidden">
+                              <div className="relative aspect-[9/16] overflow-hidden">
                                 <img
                                   src={
                                     article.featured_image_url ||
