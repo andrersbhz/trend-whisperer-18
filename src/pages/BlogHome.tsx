@@ -1,17 +1,18 @@
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useI18n } from '@/hooks/useI18n';
 import BlogHeader from '@/components/blog/BlogHeader';
 import BlogFooter from '@/components/blog/BlogFooter';
-import NewsImage from '@/components/blog/NewsImage';
 import CategorySection from '@/components/blog/CategorySection';
+import NewsCard from '@/components/blog/NewsCard';
 import NewsTicker, { useNewsTicker } from '@/components/blog/NewsTicker';
 import { Helmet } from 'react-helmet-async';
-import { ChevronRight, ChevronLeft, Clock } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Clock, Pause, Play } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import Preloader from '@/components/Preloader';
 import useEmblaCarousel from 'embla-carousel-react';
 import Autoplay from 'embla-carousel-autoplay';
+import { formatRelative } from '@/lib/date';
 
 const CATEGORY_ACCENTS: Record<string, string> = {
   default: 'hsl(var(--news-accent))',
@@ -32,17 +33,6 @@ const getAccent = (cat: string) => {
   );
 };
 
-const formatRelative = (date: string) => {
-  try {
-    const diff = (Date.now() - new Date(date).getTime()) / 60000;
-    if (diff < 60) return `há ${Math.max(1, Math.round(diff))} min`;
-    if (diff < 1440) return `há ${Math.round(diff / 60)}h`;
-    return new Date(date).toLocaleDateString('pt-BR');
-  } catch {
-    return '';
-  }
-};
-
 const BlogHome = () => {
   const { lang } = useParams();
   const { currentLang } = useI18n();
@@ -50,10 +40,24 @@ const BlogHome = () => {
   const [loading, setLoading] = useState(true);
   const tickerItems = useNewsTicker(15);
 
-  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, duration: 30 }, [
-    Autoplay({ delay: 6000, stopOnInteraction: false }),
-  ]);
+  // Respect prefers-reduced-motion: skip autoplay for those users.
+  const reducedMotion = useMemo(
+    () =>
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches,
+    [],
+  );
+  const autoplay = useRef(
+    Autoplay({ delay: 6000, stopOnInteraction: false, stopOnMouseEnter: true }),
+  );
+
+  const [emblaRef, emblaApi] = useEmblaCarousel(
+    { loop: true, duration: 30 },
+    reducedMotion ? [] : [autoplay.current],
+  );
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(!reducedMotion);
+  const sliderRef = useRef<HTMLDivElement>(null);
 
   const onSelect = useCallback(() => {
     if (emblaApi) setSelectedIndex(emblaApi.selectedScrollSnap());
@@ -63,10 +67,66 @@ const BlogHome = () => {
     if (!emblaApi) return;
     onSelect();
     emblaApi.on('select', onSelect);
+    emblaApi.on('reInit', onSelect);
   }, [emblaApi, onSelect]);
 
   const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
   const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
+  const scrollTo = useCallback((i: number) => emblaApi?.scrollTo(i), [emblaApi]);
+
+  const togglePlay = useCallback(() => {
+    if (!emblaApi) return;
+    const ap = emblaApi.plugins().autoplay;
+    if (!ap) return;
+    if (ap.isPlaying()) {
+      ap.stop();
+      setIsPlaying(false);
+    } else {
+      ap.play();
+      setIsPlaying(true);
+    }
+  }, [emblaApi]);
+
+  // Keyboard nav: left/right/home/end + space to toggle autoplay.
+  const handleKey = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        scrollPrev();
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        scrollNext();
+      } else if (e.key === 'Home') {
+        e.preventDefault();
+        scrollTo(0);
+      } else if (e.key === 'End') {
+        e.preventDefault();
+        scrollTo(Math.max(0, (emblaApi?.scrollSnapList().length ?? 1) - 1));
+      } else if (e.key === ' ' || e.code === 'Space') {
+        e.preventDefault();
+        togglePlay();
+      }
+    },
+    [emblaApi, scrollPrev, scrollNext, scrollTo, togglePlay],
+  );
+
+  // Pause autoplay when the slider area receives focus, resume on blur.
+  useEffect(() => {
+    const node = sliderRef.current;
+    if (!node || !emblaApi) return;
+    const ap = emblaApi.plugins().autoplay;
+    if (!ap) return;
+    const onFocusIn = () => ap.stop();
+    const onFocusOut = (e: FocusEvent) => {
+      if (!node.contains(e.relatedTarget as Node) && isPlaying) ap.play();
+    };
+    node.addEventListener('focusin', onFocusIn);
+    node.addEventListener('focusout', onFocusOut);
+    return () => {
+      node.removeEventListener('focusin', onFocusIn);
+      node.removeEventListener('focusout', onFocusOut);
+    };
+  }, [emblaApi, isPlaying]);
 
   useEffect(() => {
     let mounted = true;
@@ -102,6 +162,7 @@ const BlogHome = () => {
   const siteTitle = 'A3 Portal — Notícias, Esportes e Entretenimento';
   const siteDesc =
     'Portal de notícias A3: últimas notícias, esportes, tecnologia, entretenimento e mais — atualizado em tempo real.';
+  const totalSlides = featured.length;
 
   return (
     <div className="min-h-dvh bg-[hsl(var(--news-paper))] text-[hsl(var(--news-ink))] font-news antialiased">
@@ -127,124 +188,182 @@ const BlogHome = () => {
         ) : (
           <>
             {/* HERO: slider + sidebar */}
-            <section className="mb-12">
+            <section className="mb-10 sm:mb-12" aria-label="Manchetes em destaque">
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
-                {/* Slider */}
-                <div className="lg:col-span-8 relative">
+                {/* Accessible Slider */}
+                <div
+                  ref={sliderRef}
+                  className="lg:col-span-8 relative group"
+                  role="region"
+                  aria-roledescription="carrossel"
+                  aria-label="Notícias em destaque"
+                  tabIndex={0}
+                  onKeyDown={handleKey}
+                >
                   <div className="overflow-hidden bg-[hsl(var(--news-navy-deep))]" ref={emblaRef}>
-                    <div className="flex">
-                      {featured.map((article) => (
-                        <div
-                          key={article.id}
-                          className="flex-[0_0_100%] min-w-0 relative group"
-                        >
-                          <Link
-                            to={`/${currentLang}/article/${article.slug || article.id}`}
-                            className="block relative focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[hsl(var(--news-accent))]"
+                    <div className="flex" aria-live="polite" aria-atomic="false">
+                      {featured.map((article, i) => {
+                        const active = i === selectedIndex;
+                        return (
+                          <div
+                            key={article.id}
+                            role="group"
+                            aria-roledescription="slide"
+                            aria-label={`${i + 1} de ${totalSlides}: ${article.title}`}
+                            aria-hidden={!active}
+                            className="flex-[0_0_100%] min-w-0 relative"
                           >
-                            <div className="relative aspect-[16/10] sm:aspect-[16/9] overflow-hidden">
-                              <img
-                                src={
-                                  article.featured_image_url ||
-                                  'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d'
-                                }
-                                alt={article.title}
-                                loading="eager"
-                                className="w-full h-full object-cover news-card-img"
-                                onError={(e) => {
-                                  (e.target as HTMLImageElement).src =
-                                    'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d';
-                                }}
-                              />
-                              <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent" />
-                              <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-8 lg:p-10 text-white">
-                                <span
-                                  className="news-kicker inline-block px-3 py-1.5 mb-4 text-white"
-                                  style={{ background: getAccent(article.category || '') }}
-                                >
-                                  {article.category || 'Destaque'}
-                                </span>
-                                <h2 className="news-headline text-2xl sm:text-4xl lg:text-5xl max-w-4xl mb-3 group-hover:underline decoration-2 underline-offset-4">
-                                  {article.title}
-                                </h2>
-                                <p className="hidden sm:block text-white/85 line-clamp-2 max-w-2xl mb-3">
-                                  {article.meta_description}
-                                </p>
-                                <div className="flex items-center gap-2 news-kicker text-white/70">
-                                  <Clock className="w-3 h-3" />
-                                  {formatRelative(article.created_at)}
+                            <Link
+                              to={`/${currentLang}/article/${article.slug || article.id}`}
+                              tabIndex={active ? 0 : -1}
+                              className="block relative focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[hsl(var(--news-accent))] focus-visible:ring-inset"
+                            >
+                              <div className="relative aspect-[16/10] sm:aspect-[16/9] overflow-hidden">
+                                <img
+                                  src={
+                                    article.featured_image_url ||
+                                    'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d'
+                                  }
+                                  alt={article.title}
+                                  loading={i === 0 ? 'eager' : 'lazy'}
+                                  className="w-full h-full object-cover news-card-img"
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).src =
+                                      'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d';
+                                  }}
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent" />
+                                <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-8 lg:p-10 text-white pr-14 sm:pr-20">
+                                  <span
+                                    className="news-kicker inline-block px-3 py-1.5 mb-3 sm:mb-4 text-white"
+                                    style={{ background: getAccent(article.category || '') }}
+                                  >
+                                    {article.category || 'Destaque'}
+                                  </span>
+                                  <h2 className="news-headline text-xl sm:text-3xl lg:text-5xl max-w-4xl mb-2 sm:mb-3 line-clamp-3">
+                                    {article.title}
+                                  </h2>
+                                  {article.meta_description && (
+                                    <p className="hidden sm:block text-white/85 line-clamp-2 max-w-2xl mb-3">
+                                      {article.meta_description}
+                                    </p>
+                                  )}
+                                  <div className="flex items-center gap-2 news-kicker text-white/70">
+                                    <Clock className="w-3 h-3" aria-hidden="true" />
+                                    <time>{formatRelative(article.created_at)}</time>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          </Link>
-                        </div>
-                      ))}
+                            </Link>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
 
-                  {featured.length > 1 && (
+                  {/* SR-only live status */}
+                  <p className="sr-only" aria-live="polite">
+                    Slide {selectedIndex + 1} de {totalSlides}
+                  </p>
+
+                  {totalSlides > 1 && (
                     <>
                       <button
+                        type="button"
                         onClick={scrollPrev}
                         aria-label="Notícia anterior"
-                        className="absolute left-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/40 hover:bg-[hsl(var(--news-accent))] backdrop-blur flex items-center justify-center text-white transition-all z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                        aria-controls="hero-slider"
+                        className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/50 hover:bg-[hsl(var(--news-accent))] backdrop-blur flex items-center justify-center text-white transition-all z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black"
                       >
-                        <ChevronLeft className="w-5 h-5" />
+                        <ChevronLeft className="w-5 h-5" aria-hidden="true" />
                       </button>
                       <button
+                        type="button"
                         onClick={scrollNext}
                         aria-label="Próxima notícia"
-                        className="absolute right-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/40 hover:bg-[hsl(var(--news-accent))] backdrop-blur flex items-center justify-center text-white transition-all z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                        aria-controls="hero-slider"
+                        className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/50 hover:bg-[hsl(var(--news-accent))] backdrop-blur flex items-center justify-center text-white transition-all z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black"
                       >
-                        <ChevronRight className="w-5 h-5" />
+                        <ChevronRight className="w-5 h-5" aria-hidden="true" />
                       </button>
-                      <div className="absolute bottom-4 right-4 flex gap-1.5 z-10">
-                        {featured.map((_, i) => (
-                          <button
-                            key={i}
-                            onClick={() => emblaApi?.scrollTo(i)}
-                            aria-label={`Ir para slide ${i + 1}`}
-                            className={`h-1.5 rounded-full transition-all ${
-                              selectedIndex === i
-                                ? 'bg-white w-8'
-                                : 'bg-white/40 hover:bg-white/70 w-3'
-                            }`}
-                          />
-                        ))}
+
+                      {/* Play / Pause */}
+                      {!reducedMotion && (
+                        <button
+                          type="button"
+                          onClick={togglePlay}
+                          aria-pressed={!isPlaying}
+                          aria-label={isPlaying ? 'Pausar carrossel' : 'Reproduzir carrossel'}
+                          className="absolute top-3 right-3 w-9 h-9 rounded-full bg-black/50 hover:bg-[hsl(var(--news-accent))] backdrop-blur flex items-center justify-center text-white transition-all z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                        >
+                          {isPlaying ? (
+                            <Pause className="w-3.5 h-3.5" aria-hidden="true" />
+                          ) : (
+                            <Play className="w-3.5 h-3.5" aria-hidden="true" />
+                          )}
+                        </button>
+                      )}
+
+                      {/* Tab-style dots */}
+                      <div
+                        role="tablist"
+                        aria-label="Selecionar manchete"
+                        className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 flex gap-1.5 z-10 bg-black/30 backdrop-blur px-2 py-1.5 rounded-full"
+                      >
+                        {featured.map((_, i) => {
+                          const active = i === selectedIndex;
+                          return (
+                            <button
+                              key={i}
+                              type="button"
+                              role="tab"
+                              aria-selected={active}
+                              aria-label={`Ir para slide ${i + 1} de ${totalSlides}`}
+                              tabIndex={active ? 0 : -1}
+                              onClick={() => scrollTo(i)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'ArrowRight') {
+                                  e.preventDefault();
+                                  scrollTo((i + 1) % totalSlides);
+                                } else if (e.key === 'ArrowLeft') {
+                                  e.preventDefault();
+                                  scrollTo((i - 1 + totalSlides) % totalSlides);
+                                }
+                              }}
+                              className={`h-2 rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white ${
+                                active ? 'bg-white w-8' : 'bg-white/50 hover:bg-white/80 w-3'
+                              }`}
+                            />
+                          );
+                        })}
                       </div>
                     </>
                   )}
                 </div>
 
                 {/* Sidebar — Últimas Notícias */}
-                <aside className="lg:col-span-4">
-                  <div className="bg-white border border-[hsl(var(--news-line))] h-full">
-                    <div className="bg-[hsl(var(--news-navy))] text-white px-4 py-3 flex items-center justify-between">
+                <aside
+                  className="lg:col-span-4"
+                  aria-label="Últimas notícias"
+                >
+                  <div className="bg-white border border-[hsl(var(--news-line))] h-full flex flex-col">
+                    <div className="bg-[hsl(var(--news-navy))] text-white px-4 py-3 flex items-center justify-between flex-shrink-0">
                       <h3 className="news-kicker text-sm">Últimas Notícias</h3>
-                      <span className="w-2 h-2 rounded-full bg-[hsl(var(--news-accent))] animate-pulse" />
+                      <span
+                        className="w-2 h-2 rounded-full bg-[hsl(var(--news-accent))] animate-pulse"
+                        aria-hidden="true"
+                      />
                     </div>
-                    <ul className="divide-y divide-[hsl(var(--news-line))]">
+                    <ul className="divide-y divide-[hsl(var(--news-line))] flex-1">
                       {sidebar.map((article, idx) => (
                         <li key={article.id}>
-                          <Link
-                            to={`/${currentLang}/article/${article.slug || article.id}`}
-                            className="flex gap-3 p-4 hover:bg-[hsl(var(--news-paper))] transition-colors group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--news-navy))] focus-visible:ring-inset"
-                          >
-                            <span className="news-display text-3xl text-[hsl(var(--news-blue))]/60 leading-none w-6 flex-shrink-0">
-                              {String(idx + 1).padStart(2, '0')}
-                            </span>
-                            <div className="flex-1 min-w-0">
-                              <span
-                                className="news-kicker"
-                                style={{ color: getAccent(article.category || '') }}
-                              >
-                                {article.category || 'Geral'}
-                              </span>
-                              <h4 className="news-headline text-sm mt-1 line-clamp-3 text-[hsl(var(--news-ink))] group-hover:text-[hsl(var(--news-navy))] transition-colors">
-                                {article.title}
-                              </h4>
-                            </div>
-                          </Link>
+                          <NewsCard
+                            article={article}
+                            currentLang={currentLang}
+                            variant="sidebar"
+                            index={idx}
+                            accentColor={getAccent(article.category || '')}
+                          />
                         </li>
                       ))}
                     </ul>
