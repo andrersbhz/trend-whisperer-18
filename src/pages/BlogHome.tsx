@@ -132,11 +132,14 @@ const BlogHome = () => {
     let mounted = true;
     (async () => {
       setLoading(true);
+      // Only select columns needed for the home listing — avoid pulling the
+      // full article body for every card (huge payload). Limit to a sane size.
       const { data, error } = await supabase
         .from('articles')
-        .select('*')
+        .select('id, title, slug, excerpt, category, featured_image_url, created_at, published_at, author_id')
         .eq('status', 'published')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(80);
       if (!mounted) return;
       if (error) console.error(error);
       setArticles(data || []);
