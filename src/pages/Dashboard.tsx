@@ -34,20 +34,9 @@ import {
   DialogTitle,
   DialogClose,
 } from "@/components/ui/dialog";
-import {
-  AreaChart,
-  Area,
-  BarChart,
-  Bar,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend
-} from 'recharts';
+// NOTE: recharts is intentionally NOT imported here. The chart widget lives inside
+// AnalyticsPage (lazy-loaded above). Importing recharts at the top of Dashboard would
+// drag the entire ~244KB chart vendor into the initial admin bundle.
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -196,7 +185,12 @@ const Dashboard = () => {
     if (!user) return;
     setLoadingJetpack(true);
     try {
-      const { data } = await supabase.functions.invoke('fetch-jetpack-stats', { body: { userId: user.id } });
+      const cacheKey = `jetpack_summary_${user.id}`;
+      // Jetpack endpoint is slow (~3s) — cache aggressively (5 min) to avoid blocking dashboard.
+      const data = await withCache(cacheKey, 300, async () => {
+        const { data } = await supabase.functions.invoke('fetch-jetpack-stats', { body: { userId: user.id } });
+        return data;
+      });
       if (data?.jetpack?.summary) setJetpackSummary(data.jetpack.summary);
     } catch (error) { console.error(error); } finally { setLoadingJetpack(false); }
   };
