@@ -1,32 +1,66 @@
-const Preloader = ({ message }: { message?: string }) => {
+import { useEffect, useState } from 'react';
+
+interface PreloaderProps {
+  message?: string;
+  /** 0–100. If omitted, an indeterminate auto-advancing progress is shown. */
+  progress?: number;
+}
+
+const Preloader = ({ message, progress }: PreloaderProps) => {
+  const [autoProgress, setAutoProgress] = useState(0);
+  const isControlled = typeof progress === 'number';
+
+  useEffect(() => {
+    if (isControlled) return;
+    let raf = 0;
+    let start = performance.now();
+    const tick = (now: number) => {
+      const elapsed = now - start;
+      // Ease toward 95% over ~2.5s, never reaching 100% until unmount.
+      const target = Math.min(95, 95 * (1 - Math.exp(-elapsed / 900)));
+      setAutoProgress(target);
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [isControlled]);
+
+  const value = Math.round(isControlled ? Math.max(0, Math.min(100, progress!)) : autoProgress);
+
   return (
-    <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="flex flex-col items-center gap-5">
+    <div
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+      className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background/85 backdrop-blur-md animate-in fade-in duration-200"
+    >
+      <div className="flex flex-col items-center gap-4">
         {/* Subtle pulsing dot */}
         <div className="relative h-2 w-2">
           <span className="absolute inset-0 rounded-full bg-primary animate-ping opacity-75" />
           <span className="relative block h-2 w-2 rounded-full bg-primary" />
         </div>
 
-        {/* Thin progress bar */}
-        <div className="h-px w-32 overflow-hidden bg-foreground/10">
-          <div className="h-full w-1/3 bg-primary/80 animate-[slide_1.2s_ease-in-out_infinite]" 
-               style={{ animationName: 'preloader-slide' }} />
+        {/* Determinate progress bar */}
+        <div className="h-[3px] w-44 overflow-hidden rounded-full bg-foreground/10">
+          <div
+            className="h-full bg-primary transition-[width] duration-200 ease-out"
+            style={{ width: `${value}%` }}
+          />
+        </div>
+
+        {/* Percentage */}
+        <div className="flex items-baseline gap-2 tabular-nums">
+          <span className="text-2xl font-light text-foreground/90">{value}</span>
+          <span className="text-xs text-foreground/50">%</span>
         </div>
 
         {message && (
-          <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-muted-foreground/70">
+          <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-foreground/60">
             {message}
           </p>
         )}
       </div>
-
-      <style>{`
-        @keyframes preloader-slide {
-          0% { transform: translateX(-100%); }
-          100% { transform: translateX(400%); }
-        }
-      `}</style>
     </div>
   );
 };
