@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, Navigate, useParams } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -8,32 +8,48 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { useOnlinePresence } from "@/hooks/useOnlinePresence";
-import DashboardLayout from "@/components/DashboardLayout";
-import Auth from "@/pages/Auth";
-import Dashboard from "@/pages/Dashboard";
-import ArticlesPage from "@/pages/ArticlesPage";
-import TrendsPage from "@/pages/TrendsPage";
-import SchedulePage from "@/pages/SchedulePage";
-import SettingsPage from "@/pages/SettingsPage";
-import AnalyticsPage from "@/pages/AnalyticsPage";
-import SocialRobotPage from "@/pages/SocialRobotPage";
-import GooglePage from "@/pages/GooglePage";
-import MetaPage from "@/pages/MetaPage";
-import BlogHome from "@/pages/BlogHome";
-import BlogArticle from "@/pages/BlogArticle";
-import AuthorsPage from "@/pages/AuthorsPage";
-import TermsPage from "@/pages/TermsPage";
-import CategoryPage from "@/pages/CategoryPage";
-import AboutPage from "@/pages/AboutPage";
-import ContactPage from "@/pages/ContactPage";
-import PrivacyPage from "@/pages/PrivacyPage";
-import EditorialPage from "@/pages/EditorialPage";
-import AdvertisePage from "@/pages/AdvertisePage";
-import NewsletterPage from "@/pages/NewsletterPage";
-import NotFound from "./pages/NotFound";
-import MapPage from "@/pages/MapPage";
+import Preloader from "@/components/Preloader";
 
-const queryClient = new QueryClient();
+// Critical public route — keep eager so first paint is fast
+import BlogHome from "@/pages/BlogHome";
+
+// Lazy: admin/dashboard surface (heavy: recharts, etc.)
+const DashboardLayout = lazy(() => import("@/components/DashboardLayout"));
+const Auth = lazy(() => import("@/pages/Auth"));
+const Dashboard = lazy(() => import("@/pages/Dashboard"));
+const ArticlesPage = lazy(() => import("@/pages/ArticlesPage"));
+const TrendsPage = lazy(() => import("@/pages/TrendsPage"));
+const SchedulePage = lazy(() => import("@/pages/SchedulePage"));
+const SettingsPage = lazy(() => import("@/pages/SettingsPage"));
+const AnalyticsPage = lazy(() => import("@/pages/AnalyticsPage"));
+const SocialRobotPage = lazy(() => import("@/pages/SocialRobotPage"));
+const GooglePage = lazy(() => import("@/pages/GooglePage"));
+const MetaPage = lazy(() => import("@/pages/MetaPage"));
+const AuthorsPage = lazy(() => import("@/pages/AuthorsPage"));
+const MapPage = lazy(() => import("@/pages/MapPage"));
+
+// Lazy: public secondary pages
+const BlogArticle = lazy(() => import("@/pages/BlogArticle"));
+const CategoryPage = lazy(() => import("@/pages/CategoryPage"));
+const TermsPage = lazy(() => import("@/pages/TermsPage"));
+const AboutPage = lazy(() => import("@/pages/AboutPage"));
+const ContactPage = lazy(() => import("@/pages/ContactPage"));
+const PrivacyPage = lazy(() => import("@/pages/PrivacyPage"));
+const EditorialPage = lazy(() => import("@/pages/EditorialPage"));
+const AdvertisePage = lazy(() => import("@/pages/AdvertisePage"));
+const NewsletterPage = lazy(() => import("@/pages/NewsletterPage"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60_000,
+      gcTime: 5 * 60_000,
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
@@ -90,38 +106,40 @@ const App = () => (
         <BrowserRouter>
           <AuthProvider>
             <PresenceTracker />
-            <Routes>
-              {/* Redirect root based on auth status */}
-              <Route path="/" element={<RootRoute />} />
-              
-              {/* Public Blog Routes */}
-              <Route path="/:lang" element={<BlogHome />} />
-              <Route path="/:lang/category/:categoryId" element={<CategoryPageWrapper />} />
-              <Route path="/:lang/article/:articleId" element={<BlogArticle />} />
-              <Route path="/:lang/termos" element={<TermsPage />} />
-              <Route path="/:lang/sobre" element={<AboutPage />} />
-              <Route path="/:lang/contato" element={<ContactPage />} />
-              <Route path="/:lang/privacidade" element={<PrivacyPage />} />
-              <Route path="/:lang/principios-editoriais" element={<EditorialPage />} />
-              <Route path="/:lang/anuncie" element={<AdvertisePage />} />
-              <Route path="/:lang/newsletter" element={<NewsletterPage />} />
+            <Suspense fallback={<Preloader message="Carregando..." />}>
+              <Routes>
+                {/* Redirect root based on auth status */}
+                <Route path="/" element={<RootRoute />} />
 
-              {/* Admin Dashboard Routes (Protected) */}
-              <Route path="/auth" element={<AuthRoute />} />
-              <Route path="/admin" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-              <Route path="/articles" element={<ProtectedRoute><ArticlesPage /></ProtectedRoute>} />
-              <Route path="/trends" element={<ProtectedRoute><TrendsPage /></ProtectedRoute>} />
-              <Route path="/schedule" element={<ProtectedRoute><SchedulePage /></ProtectedRoute>} />
-              <Route path="/analytics" element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
-              <Route path="/robot" element={<ProtectedRoute><SocialRobotPage /></ProtectedRoute>} />
-              <Route path="/google" element={<ProtectedRoute><GooglePage /></ProtectedRoute>} />
-              <Route path="/meta" element={<ProtectedRoute><MetaPage /></ProtectedRoute>} />
-            <Route path="/authors" element={<ProtectedRoute><AuthorsPage /></ProtectedRoute>} />
-            <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
-            <Route path="/map" element={<ProtectedRoute><MapPage /></ProtectedRoute>} />
-              
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+                {/* Public Blog Routes */}
+                <Route path="/:lang" element={<BlogHome />} />
+                <Route path="/:lang/category/:categoryId" element={<CategoryPageWrapper />} />
+                <Route path="/:lang/article/:articleId" element={<BlogArticle />} />
+                <Route path="/:lang/termos" element={<TermsPage />} />
+                <Route path="/:lang/sobre" element={<AboutPage />} />
+                <Route path="/:lang/contato" element={<ContactPage />} />
+                <Route path="/:lang/privacidade" element={<PrivacyPage />} />
+                <Route path="/:lang/principios-editoriais" element={<EditorialPage />} />
+                <Route path="/:lang/anuncie" element={<AdvertisePage />} />
+                <Route path="/:lang/newsletter" element={<NewsletterPage />} />
+
+                {/* Admin Dashboard Routes (Protected) */}
+                <Route path="/auth" element={<AuthRoute />} />
+                <Route path="/admin" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                <Route path="/articles" element={<ProtectedRoute><ArticlesPage /></ProtectedRoute>} />
+                <Route path="/trends" element={<ProtectedRoute><TrendsPage /></ProtectedRoute>} />
+                <Route path="/schedule" element={<ProtectedRoute><SchedulePage /></ProtectedRoute>} />
+                <Route path="/analytics" element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
+                <Route path="/robot" element={<ProtectedRoute><SocialRobotPage /></ProtectedRoute>} />
+                <Route path="/google" element={<ProtectedRoute><GooglePage /></ProtectedRoute>} />
+                <Route path="/meta" element={<ProtectedRoute><MetaPage /></ProtectedRoute>} />
+                <Route path="/authors" element={<ProtectedRoute><AuthorsPage /></ProtectedRoute>} />
+                <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+                <Route path="/map" element={<ProtectedRoute><MapPage /></ProtectedRoute>} />
+
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
           </AuthProvider>
         </BrowserRouter>
         </TooltipProvider>
