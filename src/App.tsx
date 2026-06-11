@@ -100,6 +100,7 @@ const PresenceTracker = () => {
 };
 
 const App = () => (
+  <AppErrorBoundary>
   <QueryClientProvider client={queryClient}>
     <HelmetProvider>
       <ThemeProvider defaultTheme="dark" storageKey="a3-dashboard-theme">
@@ -149,6 +150,7 @@ const App = () => (
       </ThemeProvider>
     </HelmetProvider>
   </QueryClientProvider>
+  </AppErrorBoundary>
 );
 
 export default App;
