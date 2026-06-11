@@ -60,7 +60,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 const AuthRoute = () => {
   const { user, loading } = useAuth();
-  if (loading) return null;
+  if (loading) return <Preloader message="Carregando..." />;
   if (user) return <Navigate to="/admin" replace />;
   return <Auth />;
 };
@@ -70,19 +70,30 @@ const RootRoute = () => {
   const [target, setTarget] = useState<string | null>(null);
 
   useEffect(() => {
-    if (user) return;
+    if (loading || user) return;
     let cancelled = false;
+    // Safety fallback — if geo detection hangs, route after 1.5s with browser lang.
+    const fallback = setTimeout(() => {
+      if (!cancelled) {
+        const nav = typeof navigator !== 'undefined' ? navigator.language.toLowerCase() : 'en';
+        const lang = nav.startsWith('pt') ? 'pt-br' : nav.startsWith('es') ? 'es' : 'eng';
+        setTarget(`/${lang}`);
+      }
+    }, 1500);
     import('@/lib/geo-language').then(({ detectLanguage }) => {
       detectLanguage().then((lang) => {
-        if (!cancelled) setTarget(`/${lang}`);
-      });
-    });
-    return () => { cancelled = true; };
-  }, [user]);
+        if (!cancelled) {
+          clearTimeout(fallback);
+          setTarget(`/${lang}`);
+        }
+      }).catch(() => { /* fallback timer handles it */ });
+    }).catch(() => { /* fallback timer handles it */ });
+    return () => { cancelled = true; clearTimeout(fallback); };
+  }, [user, loading]);
 
-  if (loading) return null;
+  if (loading) return <Preloader message="Carregando..." />;
   if (user) return <Navigate to="/admin" replace />;
-  if (!target) return null;
+  if (!target) return <Preloader message="Carregando..." />;
   return <Navigate to={target} replace />;
 };
 
