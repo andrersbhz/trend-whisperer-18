@@ -20,23 +20,10 @@ export default defineConfig(({ mode }) => ({
     dedupe: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime", "@tanstack/react-query", "@tanstack/query-core"],
   },
   build: {
-    // Split heavy vendor libs into their own cacheable chunks so the initial
-    // page paint doesn't have to download everything at once.
-    rollupOptions: {
-      output: {
-        manualChunks: (id) => {
-          if (!id.includes("node_modules")) return;
-          if (id.includes("recharts") || id.includes("d3-")) return "vendor-charts";
-          if (id.includes("embla-carousel")) return "vendor-embla";
-          if (id.includes("@radix-ui")) return "vendor-radix";
-          if (id.includes("date-fns")) return "vendor-date";
-          if (id.includes("lucide-react")) return "vendor-icons";
-          if (id.includes("@supabase")) return "vendor-supabase";
-          if (id.includes("@tanstack")) return "vendor-tanstack";
-          if (id.includes("react-dom") || id.includes("react-router") || id.includes("/react/")) return "vendor-react";
-        },
-      },
-    },
-    chunkSizeWarningLimit: 800,
+    // IMPORTANT: do NOT use custom manualChunks here. Splitting React/recharts
+    // by hand caused "Cannot read properties of undefined (reading 'forwardRef')"
+    // in production because vendor-charts loaded before React was initialized.
+    // Vite's default code-splitting respects dependency order and is safer.
+    chunkSizeWarningLimit: 1200,
   },
 }));
