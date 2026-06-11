@@ -1,4 +1,4 @@
-import { useEffect, useState, lazy, Suspense } from "react";
+import { useEffect, lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, Navigate, useParams } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -9,36 +9,46 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { useOnlinePresence } from "@/hooks/useOnlinePresence";
 import Preloader from "@/components/Preloader";
+import AppErrorBoundary from "@/components/AppErrorBoundary";
+import { getInstantLang, refreshGeoLangInBackground } from "@/lib/geo-language";
+
+/** Lazy com 1 retry — evita tela branca quando um chunk falha por rede/deploy. */
+const lazyRetry = (factory: () => Promise<any>) =>
+  lazy(() =>
+    factory().catch(
+      () => new Promise((resolve) => setTimeout(resolve, 800)).then(factory)
+    )
+  );
 
 // Critical public route — keep eager so first paint is fast
 import BlogHome from "@/pages/BlogHome";
 
 // Lazy: admin/dashboard surface (heavy: recharts, etc.)
-const DashboardLayout = lazy(() => import("@/components/DashboardLayout"));
-const Auth = lazy(() => import("@/pages/Auth"));
-const Dashboard = lazy(() => import("@/pages/Dashboard"));
-const ArticlesPage = lazy(() => import("@/pages/ArticlesPage"));
-const TrendsPage = lazy(() => import("@/pages/TrendsPage"));
-const SchedulePage = lazy(() => import("@/pages/SchedulePage"));
-const SettingsPage = lazy(() => import("@/pages/SettingsPage"));
-const AnalyticsPage = lazy(() => import("@/pages/AnalyticsPage"));
-const SocialRobotPage = lazy(() => import("@/pages/SocialRobotPage"));
-const GooglePage = lazy(() => import("@/pages/GooglePage"));
-const MetaPage = lazy(() => import("@/pages/MetaPage"));
-const AuthorsPage = lazy(() => import("@/pages/AuthorsPage"));
-const MapPage = lazy(() => import("@/pages/MapPage"));
+const DashboardLayout = lazyRetry(() => import("@/components/DashboardLayout"));
+const Auth = lazyRetry(() => import("@/pages/Auth"));
+const Dashboard = lazyRetry(() => import("@/pages/Dashboard"));
+const ArticlesPage = lazyRetry(() => import("@/pages/ArticlesPage"));
+const TrendsPage = lazyRetry(() => import("@/pages/TrendsPage"));
+const SchedulePage = lazyRetry(() => import("@/pages/SchedulePage"));
+const SettingsPage = lazyRetry(() => import("@/pages/SettingsPage"));
+const AnalyticsPage = lazyRetry(() => import("@/pages/AnalyticsPage"));
+const SocialRobotPage = lazyRetry(() => import("@/pages/SocialRobotPage"));
+const GooglePage = lazyRetry(() => import("@/pages/GooglePage"));
+const MetaPage = lazyRetry(() => import("@/pages/MetaPage"));
+const AuthorsPage = lazyRetry(() => import("@/pages/AuthorsPage"));
+const MapPage = lazyRetry(() => import("@/pages/MapPage"));
 
 // Lazy: public secondary pages
-const BlogArticle = lazy(() => import("@/pages/BlogArticle"));
-const CategoryPage = lazy(() => import("@/pages/CategoryPage"));
-const TermsPage = lazy(() => import("@/pages/TermsPage"));
-const AboutPage = lazy(() => import("@/pages/AboutPage"));
-const ContactPage = lazy(() => import("@/pages/ContactPage"));
-const PrivacyPage = lazy(() => import("@/pages/PrivacyPage"));
-const EditorialPage = lazy(() => import("@/pages/EditorialPage"));
-const AdvertisePage = lazy(() => import("@/pages/AdvertisePage"));
-const NewsletterPage = lazy(() => import("@/pages/NewsletterPage"));
-const NotFound = lazy(() => import("./pages/NotFound"));
+const BlogArticle = lazyRetry(() => import("@/pages/BlogArticle"));
+const CategoryPage = lazyRetry(() => import("@/pages/CategoryPage"));
+const TermsPage = lazyRetry(() => import("@/pages/TermsPage"));
+const AboutPage = lazyRetry(() => import("@/pages/AboutPage"));
+const ContactPage = lazyRetry(() => import("@/pages/ContactPage"));
+const PrivacyPage = lazyRetry(() => import("@/pages/PrivacyPage"));
+const EditorialPage = lazyRetry(() => import("@/pages/EditorialPage"));
+const AdvertisePage = lazyRetry(() => import("@/pages/AdvertisePage"));
+const NewsletterPage = lazyRetry(() => import("@/pages/NewsletterPage"));
+const NotFound = lazyRetry(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -67,34 +77,16 @@ const AuthRoute = () => {
 
 const RootRoute = () => {
   const { user, loading } = useAuth();
-  const [target, setTarget] = useState<string | null>(null);
 
+  // Atualiza o cache de geolocalização em segundo plano (nunca bloqueia).
   useEffect(() => {
-    if (loading || user) return;
-    let cancelled = false;
-    // Safety fallback — if geo detection hangs, route after 1.5s with browser lang.
-    const fallback = setTimeout(() => {
-      if (!cancelled) {
-        const nav = typeof navigator !== 'undefined' ? navigator.language.toLowerCase() : 'en';
-        const lang = nav.startsWith('pt') ? 'pt-br' : nav.startsWith('es') ? 'es' : 'eng';
-        setTarget(`/${lang}`);
-      }
-    }, 1500);
-    import('@/lib/geo-language').then(({ detectLanguage }) => {
-      detectLanguage().then((lang) => {
-        if (!cancelled) {
-          clearTimeout(fallback);
-          setTarget(`/${lang}`);
-        }
-      }).catch(() => { /* fallback timer handles it */ });
-    }).catch(() => { /* fallback timer handles it */ });
-    return () => { cancelled = true; clearTimeout(fallback); };
-  }, [user, loading]);
+    refreshGeoLangInBackground();
+  }, []);
 
   if (loading) return <Preloader message="Carregando..." />;
   if (user) return <Navigate to="/admin" replace />;
-  if (!target) return <Preloader message="Carregando..." />;
-  return <Navigate to={target} replace />;
+  // Redirecionamento SÍNCRONO e instantâneo — sem espera por rede.
+  return <Navigate to={`/${getInstantLang()}`} replace />;
 };
 
 const CategoryPageWrapper = () => {
