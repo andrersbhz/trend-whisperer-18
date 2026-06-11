@@ -34,6 +34,31 @@ export const setStoredLang = (lang: Language) => {
   try { localStorage.setItem(STORAGE_KEY, lang); } catch { /* noop */ }
 };
 
+/**
+ * Resolução SÍNCRONA e instantânea do idioma — nunca bloqueia a renderização.
+ * Ordem: preferência salva → cache de detecção → idioma do navegador.
+ */
+export const getInstantLang = (): Language => {
+  const stored = getStoredLang();
+  if (stored) return stored;
+  try {
+    const cached = localStorage.getItem(DETECTED_KEY) as Language | null;
+    if (cached && SUPPORTED.includes(cached)) return cached;
+  } catch { /* noop */ }
+  return fromBrowser();
+};
+
+/**
+ * Detecção geográfica em SEGUNDO PLANO — apenas atualiza o cache para visitas
+ * futuras. Nunca deve ser aguardada para renderizar a UI.
+ */
+export const refreshGeoLangInBackground = (): void => {
+  try {
+    if (localStorage.getItem(DETECTED_KEY) || getStoredLang()) return;
+  } catch { /* noop */ }
+  detectLanguage().catch(() => { /* noop */ });
+};
+
 export const detectLanguage = async (): Promise<Language> => {
   // 1. Preferência salva pelo usuário
   const stored = getStoredLang();
