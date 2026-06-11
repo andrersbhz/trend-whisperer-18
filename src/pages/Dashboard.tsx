@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, Suspense } from 'react';
+import { useEffect, useState, useMemo, Suspense, lazy } from 'react';
 import Preloader from '@/components/Preloader';
 
 
@@ -24,7 +24,8 @@ import {
 import { getErrorMessage, runBackendQuery } from '@/lib/backend';
 import { format, subDays, startOfDay, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import AnalyticsPage from '@/pages/AnalyticsPage';
+// Lazy-load AnalyticsPage — it pulls in recharts (~244KB) and is only shown inside a widget/modal.
+const AnalyticsPage = lazy(() => import('@/pages/AnalyticsPage'));
 import { useNavigate } from 'react-router-dom';
 import {
   Dialog,

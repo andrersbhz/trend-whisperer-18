@@ -68,7 +68,8 @@
     --secondary-foreground: 210 40% 98%;
 
     --muted: 217.2 32.6% 12%;
-    --muted-foreground: 215 20.2% 65.1%;
+    /* Bumped from 65% → 78% lightness for stronger contrast on dark surfaces. */
+    --muted-foreground: 215 20% 78%;
 
     --accent: 217.2 32.6% 15%;
     --accent-foreground: 210 40% 98%;
