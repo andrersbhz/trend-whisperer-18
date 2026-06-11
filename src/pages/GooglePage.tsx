@@ -117,7 +117,7 @@ const GooglePage = () => {
              {analytics?.trafficSources?.slice(0, 5).map((source: any, i: number) => (
                <div key={i} className="flex items-center justify-between p-2 bg-white/5 rounded-sm">
                  <span className="text-xs">{source.source}</span>
-                 <span className="text-xs font-bold text-accent">{source.value}%</span>
+                 <span className="text-xs font-bold text-success">{source.value}%</span>
                </div>
              )) || <p className="text-xs text-muted-foreground italic text-center py-4">Nenhum dado disponível</p>}
           </div>
