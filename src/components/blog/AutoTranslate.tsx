@@ -65,9 +65,17 @@ const AutoTranslate = ({ currentLang }: Props) => {
       {/* O elemento é necessário para o widget inicializar, mas fica oculto */}
       <div id="google-translate-element" style={{ display: 'none' }} />
       <style>{`
-        .goog-te-banner-frame, .skiptranslate { display: none !important; }
-        body { top: 0 !important; }
+        /* Esconde a barra superior e qualquer overlay do Google Translate */
+        .goog-te-banner-frame,
+        .goog-te-banner-frame.skiptranslate,
+        .skiptranslate iframe,
+        #goog-gt-tt,
+        .goog-te-balloon-frame,
+        .goog-tooltip,
+        .goog-tooltip:hover { display: none !important; visibility: hidden !important; }
+        body { top: 0 !important; position: static !important; }
         font[style*="background-color"] { background: transparent !important; box-shadow: none !important; }
+        .goog-text-highlight { background: transparent !important; box-shadow: none !important; }
       `}</style>
     </>
   );
