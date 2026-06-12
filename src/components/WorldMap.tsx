@@ -113,12 +113,10 @@ const WorldMap = () => {
     }
     if (count === 0) return null;
     const intensity = count / maxCount;
-    // Green heatmap: low = dim, high = bright neon
-    const alpha = 0.25 + intensity * 0.65;
     return {
-      fill: `rgba(57, 255, 20, ${alpha})`,
+      fill: 'transparent',
       stroke: '#39FF14',
-      strokeWidth: 1,
+      strokeWidth: 1 + intensity * 1.5,
     };
   };
 
