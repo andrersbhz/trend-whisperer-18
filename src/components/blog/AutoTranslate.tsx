@@ -35,7 +35,7 @@ const AutoTranslate = ({ currentLang }: Props) => {
         document.cookie = `googtrans=${value};path=/;domain=.${host.split('.').slice(-2).join('.')}`;
       }
     };
-    setCookie(`/auto/${target}`);
+    if (target !== 'pt') setCookie(`/pt/${target}`);
 
     if (document.getElementById('google-translate-script')) return;
 
@@ -44,7 +44,7 @@ const AutoTranslate = ({ currentLang }: Props) => {
       // eslint-disable-next-line new-cap
       new window.google.translate.TranslateElement(
         {
-          pageLanguage: 'auto',
+          pageLanguage: 'pt',
           includedLanguages: 'pt,en,es',
           autoDisplay: false,
           layout: window.google.translate.TranslateElement.InlineLayout.SIMPLE,
@@ -63,7 +63,8 @@ const AutoTranslate = ({ currentLang }: Props) => {
   return (
     <>
       {/* O elemento é necessário para o widget inicializar, mas fica oculto */}
-      <div id="google-translate-element" style={{ display: 'none' }} />
+      <div id="google_translate_element" style={{ display: 'none' }} />
+
       <style>{`
         /* Esconde a barra superior e qualquer overlay do Google Translate */
         .goog-te-banner-frame,
