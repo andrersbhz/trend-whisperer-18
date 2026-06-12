@@ -53,27 +53,26 @@ export const setTranslateLang = (lang: Language) => {
   const target = LANG_MAP[lang] || SOURCE_LANG;
 
   if (target === SOURCE_LANG) {
-    // Voltar ao idioma original: remove o cookie e desfaz a tradução
+    // Voltar ao idioma original: remove o cookie e desfaz a tradução (sem reload)
     deleteCookie('googtrans');
-    if (!applyViaCombo(target)) {
-      setTimeout(() => { try { window.location.reload(); } catch { /* noop */ } }, 60);
-    }
+    let attempts = 0;
+    const tryRestore = () => {
+      if (applyViaCombo(target)) return;
+      attempts += 1;
+      if (attempts < 60) setTimeout(tryRestore, 250);
+    };
+    tryRestore();
     return;
   }
 
   setCookie('googtrans', `/${SOURCE_LANG}/${target}`);
 
-  // Tenta aplicar sem reload, com algumas tentativas enquanto o widget carrega
+  // Aplica via o select interno do widget — NUNCA recarrega a página
   let attempts = 0;
   const tryApply = () => {
     if (applyViaCombo(target)) return;
     attempts += 1;
-    if (attempts < 20) {
-      setTimeout(tryApply, 250);
-    } else {
-      // Widget não carregou — recarrega para o cookie ser aplicado no boot
-      try { window.location.reload(); } catch { /* noop */ }
-    }
+    if (attempts < 60) setTimeout(tryApply, 250);
   };
   tryApply();
 };
