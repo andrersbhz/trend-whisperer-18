@@ -201,20 +201,23 @@ const WorldMap = () => {
             >
               <Geographies geography={worldGeoUrl}>
                 {({ geographies }) =>
-                  geographies.map((geo) => (
-                    <Geography
-                      key={geo.rsmKey}
-                      geography={geo}
-                      fill="#050505"
-                      stroke="rgba(0, 150, 255, 0.5)"
-                      strokeWidth={0.8 / zoom}
-                      style={{
-                        default: { outline: "none", transition: "all 300ms" },
-                        hover: { fill: "#111", stroke: "#00f6ff", strokeWidth: 1 / zoom, outline: "none" },
-                        pressed: { outline: "none" },
-                      }}
-                    />
-                  ))
+                  geographies.map((geo) => {
+                    const heat = getCountryHeat(geo.properties?.name ?? '');
+                    return (
+                      <Geography
+                        key={geo.rsmKey}
+                        geography={geo}
+                        fill={heat?.fill ?? "#050505"}
+                        stroke={heat?.stroke ?? "rgba(0, 150, 255, 0.5)"}
+                        strokeWidth={(heat?.strokeWidth ?? 0.8) / zoom}
+                        style={{
+                          default: { outline: "none", transition: "all 300ms", filter: heat ? `drop-shadow(0 0 ${4 + (heat.strokeWidth * 4)}px #39FF14)` : 'none' },
+                          hover: { fill: heat?.fill ?? "#111", stroke: "#00f6ff", strokeWidth: 1 / zoom, outline: "none" },
+                          pressed: { outline: "none" },
+                        }}
+                      />
+                    );
+                  })
                 }
               </Geographies>
 
