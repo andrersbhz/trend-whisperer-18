@@ -88,6 +88,40 @@ const WorldMap = () => {
     { name: "Oceania", coords: [135, -25] as [number, number] },
   ], []);
 
+  const countryStats = useMemo(() => {
+    const tally = new Map<string, number>();
+    users.forEach((u) => tally.set(u.country, (tally.get(u.country) ?? 0) + 1));
+    return tally;
+  }, [users]);
+
+  const maxCount = useMemo(() => {
+    let m = 0;
+    countryStats.forEach((c) => { if (c > m) m = c; });
+    return m;
+  }, [countryStats]);
+
+  const getCountryHeat = (geoName: string): { fill: string; stroke: string; strokeWidth: number } | null => {
+    if (!geoName || maxCount === 0) return null;
+    // Try direct match and common variants
+    let count = countryStats.get(geoName) ?? 0;
+    if (count === 0) {
+      countryStats.forEach((c, name) => {
+        if (name && (name.toLowerCase() === geoName.toLowerCase() || geoName.toLowerCase().includes(name.toLowerCase()) || name.toLowerCase().includes(geoName.toLowerCase()))) {
+          count = Math.max(count, c);
+        }
+      });
+    }
+    if (count === 0) return null;
+    const intensity = count / maxCount;
+    // Green heatmap: low = dim, high = bright neon
+    const alpha = 0.25 + intensity * 0.65;
+    return {
+      fill: `rgba(57, 255, 20, ${alpha})`,
+      stroke: '#39FF14',
+      strokeWidth: 1,
+    };
+  };
+
   const dominantRegion = useMemo(() => {
     if (users.length === 0) return { name: 'Aguardando dados', percentage: 0 };
     const tally = new Map<string, number>();
@@ -167,20 +201,23 @@ const WorldMap = () => {
             >
               <Geographies geography={worldGeoUrl}>
                 {({ geographies }) =>
-                  geographies.map((geo) => (
-                    <Geography
-                      key={geo.rsmKey}
-                      geography={geo}
-                      fill="#050505"
-                      stroke="rgba(0, 150, 255, 0.5)"
-                      strokeWidth={0.8 / zoom}
-                      style={{
-                        default: { outline: "none", transition: "all 300ms" },
-                        hover: { fill: "#111", stroke: "#00f6ff", strokeWidth: 1 / zoom, outline: "none" },
-                        pressed: { outline: "none" },
-                      }}
-                    />
-                  ))
+                  geographies.map((geo) => {
+                    const heat = getCountryHeat(geo.properties?.name ?? '');
+                    return (
+                      <Geography
+                        key={geo.rsmKey}
+                        geography={geo}
+                        fill={heat?.fill ?? "#050505"}
+                        stroke={heat?.stroke ?? "rgba(0, 150, 255, 0.5)"}
+                        strokeWidth={(heat?.strokeWidth ?? 0.8) / zoom}
+                        style={{
+                          default: { outline: "none", transition: "all 300ms", filter: heat ? `drop-shadow(0 0 ${4 + (heat.strokeWidth * 4)}px #39FF14)` : 'none' },
+                          hover: { fill: heat?.fill ?? "#111", stroke: "#00f6ff", strokeWidth: 1 / zoom, outline: "none" },
+                          pressed: { outline: "none" },
+                        }}
+                      />
+                    );
+                  })
                 }
               </Geographies>
 
