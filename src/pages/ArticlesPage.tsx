@@ -33,6 +33,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ImageUpload } from '@/components/articles/ImageUpload';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { ManualArticleDialog } from '@/components/articles/ManualArticleDialog';
 import { Plus } from 'lucide-react';
 
@@ -59,6 +60,8 @@ const ArticlesPage = () => {
   const [diagMetrics, setDiagMetrics] = useState<any[]>([]);
   const [showDiagnostics, setShowDiagnostics] = useState(false);
   const [manualDialogOpen, setManualDialogOpen] = useState(false);
+  const [titleInput, setTitleInput] = useState('');
+  const [generatingByTitle, setGeneratingByTitle] = useState(false);
 
   const PAGE_SIZE = 20;
 
@@ -246,6 +249,33 @@ const ArticlesPage = () => {
       toast({ title: 'Erro ao gerar artigos', description: getErrorMessage(error), variant: 'destructive' });
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const handleGenerateByTitle = async () => {
+    if (!user) return;
+    const title = titleInput.trim();
+    if (title.length < 5) {
+      toast({ title: 'Título muito curto', description: 'Digite um título com pelo menos 5 caracteres.', variant: 'destructive' });
+      return;
+    }
+    setGeneratingByTitle(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-articles', {
+        body: { userId: user.id, topics: [title] },
+      });
+      if (error) throw error;
+      toast({
+        title: data?.success ? 'Artigo sendo gerado!' : 'Atenção',
+        description: data?.message || `Geração iniciada para: "${title}"`,
+        variant: data?.success ? 'default' : 'destructive',
+      });
+      setTitleInput('');
+      fetchArticles();
+    } catch (error) {
+      toast({ title: 'Erro ao gerar artigo', description: getErrorMessage(error), variant: 'destructive' });
+    } finally {
+      setGeneratingByTitle(false);
     }
   };
 
@@ -710,6 +740,36 @@ const ArticlesPage = () => {
           </Button>
         </div>
       </div>
+
+      <Card className="glass-card border-primary/30">
+        <CardContent className="p-4">
+          <Label htmlFor="title-input" className="text-xs uppercase tracking-widest font-bold text-primary mb-2 block">
+            Gerar Artigo por Título
+          </Label>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Input
+              id="title-input"
+              placeholder="Digite o título do artigo (ex: Nova lei do trânsito 2026 muda regras)"
+              value={titleInput}
+              onChange={(e) => setTitleInput(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter' && !generatingByTitle) handleGenerateByTitle(); }}
+              disabled={generatingByTitle}
+              className="flex-1"
+            />
+            <Button
+              onClick={handleGenerateByTitle}
+              disabled={generatingByTitle || titleInput.trim().length < 5}
+              className="gradient-primary gap-2 shadow-neon-lilac whitespace-nowrap"
+            >
+              {generatingByTitle ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+              {generatingByTitle ? 'Gerando...' : 'Gerar Artigo por Título'}
+            </Button>
+          </div>
+          <p className="text-[11px] text-muted-foreground mt-2">
+            A IA criará o conteúdo completo, imagem e SEO com base no título informado.
+          </p>
+        </CardContent>
+      </Card>
 
       <Tabs defaultValue="todos" className="w-full">
         <TabsList className="mb-6 grid w-full max-w-md grid-cols-4 bg-secondary/50 p-1">
