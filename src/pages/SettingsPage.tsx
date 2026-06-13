@@ -18,6 +18,7 @@ import FacebookSettings from '@/components/settings/FacebookSettings';
 import { getErrorMessage, runBackendMutation, runBackendQuery } from '@/lib/backend';
 import DashboardWidgetSettings from '@/components/settings/DashboardWidgetSettings';
 import InstagramDirectSettings from '@/components/settings/InstagramDirectSettings';
+import YouTubeSettings from '@/components/settings/YouTubeSettings';
 
 export interface UserSettings {
   wordpress_url: string;
@@ -34,6 +35,7 @@ export interface UserSettings {
   azure_openai_endpoint: string;
   azure_openai_deployment_name: string;
   groq_api_key: string;
+  youtube_api_key: string;
   categories: string[];
   articles_per_day: number;
   auto_publish: boolean;
@@ -71,6 +73,7 @@ const defaultSettings: UserSettings = {
   azure_openai_endpoint: '',
   azure_openai_deployment_name: '',
   groq_api_key: '',
+  youtube_api_key: '',
   categories: ['esportes', 'politica', 'policia', 'saude', 'celebridades', 'financas'],
   articles_per_day: 3,
   auto_publish: false,
@@ -100,6 +103,7 @@ interface CredentialsStatus {
   has_groq_key: boolean;
   has_linkedin_token: boolean;
   has_google_indexing_key: boolean;
+  has_youtube_key: boolean;
 }
 
 const SettingsPage = () => {
@@ -117,7 +121,8 @@ const SettingsPage = () => {
     has_azure_key: false, 
     has_groq_key: false,
     has_linkedin_token: false,
-    has_google_indexing_key: false
+    has_google_indexing_key: false,
+    has_youtube_key: false
   });
 
   useEffect(() => {
@@ -154,6 +159,7 @@ const SettingsPage = () => {
             azure_openai_endpoint: userData.azure_openai_endpoint || '',
             azure_openai_deployment_name: userData.azure_openai_deployment_name || '',
             groq_api_key: '',
+            youtube_api_key: '',
             categories: userData.categories || defaultSettings.categories,
             articles_per_day: userData.articles_per_day || 3,
             auto_publish: userData.auto_publish || false,
@@ -253,6 +259,9 @@ const SettingsPage = () => {
       if (settings.groq_api_key) {
         payload.groq_api_key = settings.groq_api_key;
       }
+      if (settings.youtube_api_key) {
+        payload.youtube_api_key = settings.youtube_api_key;
+      }
 
       const { data: existing } = await supabase
         .from('user_settings')
@@ -278,7 +287,7 @@ const SettingsPage = () => {
       const status = await runBackendQuery(() => supabase.rpc('get_credentials_status'));
       if (status) setCredStatus(status as unknown as CredentialsStatus);
 
-      setSettings(prev => ({ ...prev, wordpress_app_password: '', facebook_access_token: '', gemini_api_key: '', openai_api_key: '', azure_openai_api_key: '', groq_api_key: '', google_indexing_key: '' }));
+      setSettings(prev => ({ ...prev, wordpress_app_password: '', facebook_access_token: '', gemini_api_key: '', openai_api_key: '', azure_openai_api_key: '', groq_api_key: '', google_indexing_key: '', youtube_api_key: '' }));
     } catch (error) {
       if (getErrorMessage(error).includes('duplicate key')) {
         // Retry with update if insert failed due to race condition
@@ -401,6 +410,7 @@ const SettingsPage = () => {
         <TabsContent value="social" className="space-y-6 mt-0 animate-in fade-in-50 duration-300">
           <FacebookSettings settings={settings} onChange={updateSettings} />
           <InstagramDirectSettings />
+          <YouTubeSettings settings={settings} onChange={updateSettings} hasYoutubeKey={credStatus.has_youtube_key} onDisconnect={() => disconnectCredential({ youtube_api_key: '' }, 'YouTube')} />
         </TabsContent>
 
         <TabsContent value="appearance" className="space-y-6 mt-0 animate-in fade-in-50 duration-300">
