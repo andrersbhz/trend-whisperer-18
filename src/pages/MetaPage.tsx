@@ -41,8 +41,8 @@ const MetaPage = () => {
             <Facebook className="h-6 w-6 text-accent" />
           </div>
           <div>
-            <h1 className="text-xl font-black uppercase tracking-tighter">Meta Ecosystem</h1>
-            <p className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Facebook & Instagram Management</p>
+            <h1 className="text-xl font-black uppercase tracking-tighter">Facebook</h1>
+            <p className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Páginas e métricas do Facebook</p>
           </div>
         </div>
         <Button variant="ghost" size="sm" onClick={() => { setLoading(true); fetchMetrics(); }} className="text-[10px] font-bold uppercase tracking-widest">
@@ -52,16 +52,13 @@ const MetaPage = () => {
 
       {!metaMetrics ? (
         <Card className="glass-card border-dashed border-accent/30 p-12 text-center">
-          <div className="flex justify-center gap-4 mb-4">
-            <Facebook className="h-10 w-10 text-accent/40" />
-            <Instagram className="h-10 w-10 text-primary/40" />
-          </div>
-          <h3 className="text-lg font-bold mb-2">Contas Meta não vinculadas</h3>
+          <Facebook className="h-10 w-10 text-accent/40 mx-auto mb-4" />
+          <h3 className="text-lg font-bold mb-2">Nenhuma página do Facebook conectada</h3>
           <p className="text-muted-foreground text-sm max-w-md mx-auto mb-6">
-            Conecte suas páginas do Facebook e perfis comerciais do Instagram para automatizar postagens e acompanhar métricas de engajamento.
+            Conecte suas páginas do Facebook para automatizar postagens e acompanhar métricas de engajamento.
           </p>
           <Button onClick={() => window.location.href='/settings'} className="bg-accent hover:bg-accent/80 text-white uppercase tracking-widest text-[10px] font-bold">
-            Configurar Conexões
+            Configurar Conexão
           </Button>
         </Card>
       ) : (
@@ -78,24 +75,17 @@ const MetaPage = () => {
                     <p className="text-[10px] text-muted-foreground">ID: {pg.page_id}</p>
                   </div>
                 </div>
-                <div className="flex gap-2">
-                   {pg.facebook && <Facebook className="h-4 w-4 text-accent" />}
-                   {pg.instagram && <Instagram className="h-4 w-4 text-primary" />}
-                </div>
+                <Facebook className="h-4 w-4 text-accent" />
               </div>
               <CardContent className="p-6">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                    <div className="text-center">
-                     <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Seguidores FB</p>
+                     <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Seguidores</p>
                      <p className="text-xl font-black text-accent">{pg.facebook?.followers_count || pg.facebook?.fan_count || 0}</p>
                    </div>
                    <div className="text-center">
-                     <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Seguidores IG</p>
-                     <p className="text-xl font-black text-primary">{pg.instagram?.followers_count || 0}</p>
-                   </div>
-                   <div className="text-center">
-                     <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Posts IG</p>
-                     <p className="text-xl font-black text-foreground">{pg.instagram?.media_count || 0}</p>
+                     <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Curtidas</p>
+                     <p className="text-xl font-black text-foreground">{pg.facebook?.fan_count || 0}</p>
                    </div>
                    <div className="text-center">
                      <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Engajamento</p>
