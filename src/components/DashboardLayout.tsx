@@ -20,6 +20,7 @@ import {
   Download,
   Search,
   Facebook,
+  Instagram,
   User,
   Sun,
   Moon,
