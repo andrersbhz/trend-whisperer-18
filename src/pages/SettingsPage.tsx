@@ -156,6 +156,7 @@ const SettingsPage = () => {
             azure_openai_endpoint: userData.azure_openai_endpoint || '',
             azure_openai_deployment_name: userData.azure_openai_deployment_name || '',
             groq_api_key: '',
+            youtube_api_key: '',
             categories: userData.categories || defaultSettings.categories,
             articles_per_day: userData.articles_per_day || 3,
             auto_publish: userData.auto_publish || false,
