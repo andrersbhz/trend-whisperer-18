@@ -410,6 +410,7 @@ const SettingsPage = () => {
         <TabsContent value="social" className="space-y-6 mt-0 animate-in fade-in-50 duration-300">
           <FacebookSettings settings={settings} onChange={updateSettings} />
           <InstagramDirectSettings />
+          <YouTubeSettings settings={settings} onChange={updateSettings} hasYoutubeKey={credStatus.has_youtube_key} onDisconnect={() => disconnectCredential({ youtube_api_key: '' }, 'YouTube')} />
         </TabsContent>
 
         <TabsContent value="appearance" className="space-y-6 mt-0 animate-in fade-in-50 duration-300">
