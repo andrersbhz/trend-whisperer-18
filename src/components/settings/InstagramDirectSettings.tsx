@@ -95,10 +95,14 @@ const InstagramDirectSettings = () => {
       description="Gerencie postagens via login e senha"
       connected={connected}
       connectedInfo={connected ? `${accounts.length} conta(s) configurada(s)` : undefined}
+      onConnect={!connected ? () => setShowAdd(true) : undefined}
       onDisconnect={connected ? async () => {
         if (confirm('Tem certeza que deseja remover todas as conexões diretas do Instagram?')) {
           const { error } = await supabase.from('instagram_accounts_direct').delete().eq('user_id', user?.id);
-          if (!error) fetchAccounts();
+          if (!error) {
+            toast({ title: 'Desconectado', description: 'Todas as contas foram removidas.' });
+            fetchAccounts();
+          }
         }
       } : undefined}
     >
