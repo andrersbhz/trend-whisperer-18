@@ -98,10 +98,17 @@ const InstagramPage = () => {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => { setLoading(true); fetchMetrics(); }}
+          disabled={refreshing}
+          onClick={fetchFresh}
           className="text-[10px] font-bold uppercase tracking-widest"
         >
-          <RefreshCw className="h-3.5 w-3.5 mr-2" /> Atualizar
+          <RefreshCw className={`h-3.5 w-3.5 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+          {refreshing ? 'Atualizando...' : 'Atualizar'}
+          {lastUpdated && !refreshing && (
+            <span className="ml-2 text-muted-foreground normal-case font-normal tracking-normal">
+              · {new Date(lastUpdated).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
+            </span>
+          )}
         </Button>
       </div>
 
