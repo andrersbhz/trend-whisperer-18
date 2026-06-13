@@ -120,7 +120,8 @@ const SettingsPage = () => {
     has_azure_key: false, 
     has_groq_key: false,
     has_linkedin_token: false,
-    has_google_indexing_key: false
+    has_google_indexing_key: false,
+    has_youtube_key: false
   });
 
   useEffect(() => {
