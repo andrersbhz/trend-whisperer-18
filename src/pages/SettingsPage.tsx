@@ -72,6 +72,7 @@ const defaultSettings: UserSettings = {
   azure_openai_endpoint: '',
   azure_openai_deployment_name: '',
   groq_api_key: '',
+  youtube_api_key: '',
   categories: ['esportes', 'politica', 'policia', 'saude', 'celebridades', 'financas'],
   articles_per_day: 3,
   auto_publish: false,
