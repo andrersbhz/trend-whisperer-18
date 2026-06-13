@@ -35,6 +35,7 @@ const AnalyticsPage = lazyRetry(() => import("@/pages/AnalyticsPage"));
 const SocialRobotPage = lazyRetry(() => import("@/pages/SocialRobotPage"));
 const GooglePage = lazyRetry(() => import("@/pages/GooglePage"));
 const MetaPage = lazyRetry(() => import("@/pages/MetaPage"));
+const InstagramPage = lazyRetry(() => import("@/pages/InstagramPage"));
 const AuthorsPage = lazyRetry(() => import("@/pages/AuthorsPage"));
 const MapPage = lazyRetry(() => import("@/pages/MapPage"));
 
@@ -137,6 +138,7 @@ const App = () => (
                 <Route path="/robot" element={<ProtectedRoute><SocialRobotPage /></ProtectedRoute>} />
                 <Route path="/google" element={<ProtectedRoute><GooglePage /></ProtectedRoute>} />
                 <Route path="/meta" element={<ProtectedRoute><MetaPage /></ProtectedRoute>} />
+                <Route path="/instagram" element={<ProtectedRoute><InstagramPage /></ProtectedRoute>} />
                 <Route path="/authors" element={<ProtectedRoute><AuthorsPage /></ProtectedRoute>} />
                 <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
                 <Route path="/map" element={<ProtectedRoute><MapPage /></ProtectedRoute>} />
