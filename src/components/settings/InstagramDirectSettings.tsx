@@ -105,8 +105,11 @@ const InstagramDirectSettings = () => {
       <div className="space-y-4">
         <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3 text-xs text-muted-foreground flex items-start gap-2">
           <ShieldCheck className="h-4 w-4 text-yellow-500 shrink-0 mt-0.5" />
-          <div>
-            Esta conexão utiliza credenciais diretas. Certifique-se de que a conta não possui autenticação de dois fatores (2FA) ativa para permitir a automação.
+          <div className="space-y-1">
+            <p className="font-bold text-yellow-500">Não suportamos 2FA na conexão direta.</p>
+            <p>
+              Se sua conta tem autenticação de dois fatores ativa, o login direto irá falhar. Para contas com 2FA, use a <strong>conexão oficial via Facebook (Graph API)</strong> na seção "Facebook" acima — o Instagram Business vinculado à sua página é detectado automaticamente e o Meta cuida do 2FA por você.
+            </p>
           </div>
         </div>
 
