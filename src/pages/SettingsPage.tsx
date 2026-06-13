@@ -18,6 +18,7 @@ import FacebookSettings from '@/components/settings/FacebookSettings';
 import { getErrorMessage, runBackendMutation, runBackendQuery } from '@/lib/backend';
 import DashboardWidgetSettings from '@/components/settings/DashboardWidgetSettings';
 import InstagramDirectSettings from '@/components/settings/InstagramDirectSettings';
+import YouTubeSettings from '@/components/settings/YouTubeSettings';
 
 export interface UserSettings {
   wordpress_url: string;
