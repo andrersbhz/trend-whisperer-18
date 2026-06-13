@@ -572,9 +572,12 @@ serve(async (req) => {
       console.log(`[Pipeline] Auto-generating from ${topics.length} topics in marked categories: ${userCategoriesToSearch.join(", ")}`);
     }
 
+    const manualCategories: string[] = (manualTopics && Array.isArray(manualTopics) && manualTopics.length > 0)
+      ? Array.from(new Set(topics.map((t: any) => t.category).filter(Boolean)))
+      : [];
     const userCategories: string[] = forceCategory 
       ? [forceCategory] 
-      : userCategoriesToSearch;
+      : (manualCategories.length > 0 ? Array.from(new Set([...manualCategories, ...userCategoriesToSearch])) : userCategoriesToSearch);
 
     // Conta artigos criados nas últimas 24h por categoria para priorizar as mais defasadas
     const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();

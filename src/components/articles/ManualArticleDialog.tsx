@@ -63,15 +63,23 @@ export const ManualArticleDialog = ({ open, onOpenChange, categories, onSuccess 
   useEffect(() => {
     const fetchAuthorForCategory = async () => {
       if (!formData.category || !user) return;
-      const { data } = await supabase
-        .from('authors')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('category', formData.category)
-        .maybeSingle();
-      
-      if (data) setAuthorId(data.id);
-      else setAuthorId(null);
+      try {
+        const { data, error } = await supabase
+          .from('authors')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('category', formData.category)
+          .maybeSingle();
+        if (error) {
+          console.warn('[ManualArticleDialog] author lookup error:', error);
+          setAuthorId(null);
+          return;
+        }
+        setAuthorId(data?.id ?? null);
+      } catch (e) {
+        console.warn('[ManualArticleDialog] author lookup exception:', e);
+        setAuthorId(null);
+      }
     };
     fetchAuthorForCategory();
   }, [formData.category, user]);
