@@ -256,6 +256,9 @@ const SettingsPage = () => {
       if (settings.groq_api_key) {
         payload.groq_api_key = settings.groq_api_key;
       }
+      if (settings.youtube_api_key) {
+        payload.youtube_api_key = settings.youtube_api_key;
+      }
 
       const { data: existing } = await supabase
         .from('user_settings')
