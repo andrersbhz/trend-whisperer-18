@@ -102,6 +102,7 @@ interface CredentialsStatus {
   has_groq_key: boolean;
   has_linkedin_token: boolean;
   has_google_indexing_key: boolean;
+  has_youtube_key: boolean;
 }
 
 const SettingsPage = () => {
