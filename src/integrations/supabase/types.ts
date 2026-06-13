@@ -672,6 +672,7 @@ export type Database = {
           wordpress_url: string | null
           wordpress_username: string | null
           writer_prompt: string | null
+          youtube_api_key: string | null
         }
         Insert: {
           articles_per_day?: number | null
@@ -719,6 +720,7 @@ export type Database = {
           wordpress_url?: string | null
           wordpress_username?: string | null
           writer_prompt?: string | null
+          youtube_api_key?: string | null
         }
         Update: {
           articles_per_day?: number | null
@@ -766,6 +768,7 @@ export type Database = {
           wordpress_url?: string | null
           wordpress_username?: string | null
           writer_prompt?: string | null
+          youtube_api_key?: string | null
         }
         Relationships: []
       }
