@@ -13,25 +13,68 @@ import Preloader from '@/components/Preloader';
 const InstagramPage = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [pages, setPages] = useState<any[] | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 
-  const fetchMetrics = async () => {
+  // Carrega métricas do cache (instantâneo)
+  const loadCached = async () => {
+    if (!user) return false;
+    const { data } = await supabase
+      .from('facebook_accounts')
+      .select('last_metrics, metrics_updated_at')
+      .eq('user_id', user.id)
+      .eq('is_active', true)
+      .not('last_metrics', 'is', null);
+
+    const igPages = (data || [])
+      .map((row: any) => row.last_metrics)
+      .filter((m: any) => m && m.instagram);
+
+    if (igPages.length > 0) {
+      setPages(igPages);
+      const latest = (data || [])
+        .map((r: any) => r.metrics_updated_at)
+        .filter(Boolean)
+        .sort()
+        .pop();
+      setLastUpdated(latest || null);
+      return true;
+    }
+    return false;
+  };
+
+  // Busca métricas frescas da API Meta (lento)
+  const fetchFresh = async () => {
     if (!user) return;
+    setRefreshing(true);
     try {
       const { data } = await supabase.functions.invoke('fetch-meta-metrics', {
         body: { userId: user.id },
       });
       const igPages = (data?.pages || []).filter((p: any) => p.instagram);
-      setPages(igPages.length > 0 ? igPages : null);
+      if (igPages.length > 0) {
+        setPages(igPages);
+        setLastUpdated(new Date().toISOString());
+      } else if (!pages) {
+        setPages(null);
+      }
     } catch (error) {
       console.error(error);
     } finally {
-      setTimeout(() => setLoading(false), 600);
+      setRefreshing(false);
     }
   };
 
   useEffect(() => {
-    fetchMetrics();
+    if (!user) return;
+    (async () => {
+      const hasCache = await loadCached();
+      setLoading(false);
+      // Se não havia cache, busca da API automaticamente
+      if (!hasCache) fetchFresh();
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   if (loading) return <Preloader message="carregando dados aguarde" />;
