@@ -317,11 +317,15 @@ const InstagramPage = () => {
                   {posts.length > 0 && (
                     <div>
                       <h4 className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
-                        <ImageIcon className="h-3 w-3" /> Posts Recentes (top 12 por engajamento)
+                        <ImageIcon className="h-3 w-3" /> Posts Recentes (12 mais novos)
                       </h4>
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
                         {[...posts]
-                          .sort((a: any, b: any) => (b.likes + b.comments) - (a.likes + a.comments))
+                          .sort((a: any, b: any) => {
+                            const ta = new Date(a.timestamp || a.created_time || 0).getTime();
+                            const tb = new Date(b.timestamp || b.created_time || 0).getTime();
+                            return tb - ta;
+                          })
                           .slice(0, 12)
                           .map((p: any) => (
                             <a
