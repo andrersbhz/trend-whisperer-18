@@ -1,34 +1,59 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Facebook, Instagram, Share2, Users, MessageSquare, Heart, RefreshCw } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Facebook, Users, RefreshCw, Loader2 } from 'lucide-react';
 import Preloader from '@/components/Preloader';
 
 const MetaPage = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [metaMetrics, setMetaMetrics] = useState<any[] | null>(null);
 
-  const fetchMetrics = async () => {
+  // Load cached metrics instantly from DB
+  const loadCached = async () => {
     if (!user) return;
+    const { data } = await supabase
+      .from('facebook_accounts')
+      .select('page_id, page_name, picture_url, last_metrics')
+      .eq('user_id', user.id)
+      .eq('is_active', true);
+
+    if (data && data.length > 0) {
+      const pages = data.map((acc: any) => ({
+        page_id: acc.page_id,
+        page_name: acc.page_name,
+        page_picture: acc.picture_url,
+        facebook: acc.last_metrics?.facebook || { fan_count: 0, followers_count: 0 },
+      }));
+      setMetaMetrics(pages);
+    }
+    setLoading(false);
+  };
+
+  // Refresh from Meta API in background
+  const refreshMetrics = async () => {
+    if (!user) return;
+    setRefreshing(true);
     try {
-      const { data } = await supabase.functions.invoke('fetch-meta-metrics', { 
-        body: { userId: user.id } 
+      const { data } = await supabase.functions.invoke('fetch-meta-metrics', {
+        body: { userId: user.id },
       });
-      if (data?.pages) setMetaMetrics(data.pages.length > 0 ? data.pages : null);
+      if (data?.pages?.length > 0) setMetaMetrics(data.pages);
     } catch (error) {
       console.error(error);
     } finally {
-      setTimeout(() => setLoading(false), 800);
+      setRefreshing(false);
     }
   };
 
   useEffect(() => {
-    fetchMetrics();
+    loadCached().then(() => {
+      // Auto-refresh in background after showing cache
+      refreshMetrics();
+    });
   }, [user]);
 
   if (loading) return <Preloader message="carregando dados aguarde" />;
@@ -45,8 +70,9 @@ const MetaPage = () => {
             <p className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Páginas e métricas do Facebook</p>
           </div>
         </div>
-        <Button variant="ghost" size="sm" onClick={() => { setLoading(true); fetchMetrics(); }} className="text-[10px] font-bold uppercase tracking-widest">
-           <RefreshCw className="h-3.5 w-3.5 mr-2" /> Atualizar
+        <Button variant="ghost" size="sm" onClick={refreshMetrics} disabled={refreshing} className="text-[10px] font-bold uppercase tracking-widest">
+          {refreshing ? <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5 mr-2" />}
+          {refreshing ? 'Atualizando...' : 'Atualizar'}
         </Button>
       </div>
 
