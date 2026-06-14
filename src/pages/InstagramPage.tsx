@@ -318,6 +318,44 @@ const InstagramPage = () => {
                     </div>
                   )}
 
+                  {/* Mais engajados */}
+                  {posts.length > 0 && (
+                    <div>
+                      <h4 className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
+                        <TrendingUp className="h-3 w-3 text-success" /> Mais Engajados (top 12)
+                      </h4>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                        {[...posts]
+                          .sort((a: any, b: any) => ((b.likes || 0) + (b.comments || 0)) - ((a.likes || 0) + (a.comments || 0)))
+                          .slice(0, 12)
+                          .map((p: any) => (
+                            <a
+                              key={`eng-${p.id}`}
+                              href={p.permalink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="group relative aspect-square overflow-hidden rounded bg-secondary border border-success/30 hover:border-success transition-colors"
+                            >
+                              {p.media_url ? (
+                                <img src={p.media_url} alt="" className="h-full w-full object-cover" />
+                              ) : (
+                                <div className="h-full w-full flex items-center justify-center">
+                                  <Instagram className="h-6 w-6 text-muted-foreground" />
+                                </div>
+                              )}
+                              <div className="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-success text-black text-[9px] font-black uppercase">
+                                {fmt((p.likes || 0) + (p.comments || 0))}
+                              </div>
+                              <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 text-white text-[10px] font-bold">
+                                <div className="flex items-center gap-1"><Heart className="h-3 w-3" /> {fmt(p.likes)}</div>
+                                <div className="flex items-center gap-1"><MessageCircle className="h-3 w-3" /> {fmt(p.comments)}</div>
+                              </div>
+                            </a>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Posts recentes */}
                   {posts.length > 0 && (
                     <div>
