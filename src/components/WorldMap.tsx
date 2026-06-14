@@ -278,32 +278,20 @@ const WorldMap = () => {
                         <animate attributeName="opacity" from="0.4" to="0" dur="2s" repeatCount="indefinite" />
                       </circle>
 
-                      {/* Info label (Higher detail when zoomed) */}
+                      {/* Info label - apenas bolinha verde + nome da cidade, sem box */}
                       <motion.g transform={`translate(0, -${20 / zoom})`}>
-                         <rect 
-                           x={-24 / zoom} 
-                           y={-10 / zoom} 
-                           width={48 / zoom} 
-                           height={12 / zoom} 
-                           fill="rgba(0,0,0,0.9)" 
-                           stroke="rgba(57, 255, 20, 0.6)" 
-                           strokeWidth={0.5 / zoom} 
-                           rx={2 / zoom}
-                         />
-                         
-                         {/* Neon green dot inside label */}
-                         <circle cx={-18 / zoom} cy={-4 / zoom} r={1.5 / zoom} fill="#39FF14" className="animate-pulse shadow-[0_0_5px_#39FF14]" />
-                         
+                         <circle cx={-10 / zoom} cy={-3 / zoom} r={1.8 / zoom} fill="#39FF14" style={{ filter: `drop-shadow(0 0 ${3 / zoom}px #39FF14)` }} className="animate-pulse" />
                          <text
                            textAnchor="start"
-                           x={-14 / zoom}
-                           y={-2 / zoom}
+                           x={-6 / zoom}
+                           y={-1 / zoom}
                            className="font-black uppercase tracking-tighter"
-                           style={{ fontSize: `${6 / zoom}px`, fill: "#fff" }}
+                           style={{ fontSize: `${6 / zoom}px`, fill: "#fff", paintOrder: 'stroke', stroke: 'rgba(0,0,0,0.85)', strokeWidth: `${1.2 / zoom}px`, strokeLinejoin: 'round' }}
                          >
-                           {user.state ? `${user.state}` : user.country}
+                           {user.city || user.state || user.country}
                          </text>
                       </motion.g>
+
                     </motion.g>
                   </Marker>
                 ))}
