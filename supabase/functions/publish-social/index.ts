@@ -16,11 +16,86 @@ async function decryptField(supabase: any, val: string | null): Promise<string |
   return data || val;
 }
 
-// Poll IG container until FINISHED, then publish
-async function publishIgContainer(igId: string, containerId: string, token: string): Promise<string | null> {
-  for (let i = 0; i < 12; i++) {
+// ---------- Professional caption + hashtags ----------
+
+function cleanText(s: string | null): string {
+  return (s || "").replace(/<[^>]+>/g, "").replace(/\s+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+}
+
+function buildProfessionalCaption(article: any, wpLink: string | null): string {
+  const title = cleanText(article.title);
+  const excerpt = cleanText(article.excerpt || "");
+  const body = cleanText(article.content || "");
+
+  // Use excerpt when available, otherwise first 2-3 sentences of body
+  let summary = excerpt;
+  if (!summary && body) {
+    const sentences = body.split(/(?<=[.!?])\s+/);
+    summary = sentences.slice(0, 3).join(" ");
+  }
+
+  const divider = "━━━━━━━━━━━━━━━━━━";
+  const cta = wpLink
+    ? `📖 Leia o artigo completo:\n${wpLink}`
+    : `💬 Compartilhe sua opinião nos comentários!`;
+
+  // Hard cap ~2200; reserve room for CTA + link
+  const reserved = (cta?.length || 0) + 60;
+  const maxSummary = 2000 - title.length - reserved;
+  const trimmedSummary =
+    summary.length > maxSummary ? summary.substring(0, maxSummary - 3).trimEnd() + "..." : summary;
+
+  return [
+    title.toUpperCase(),
+    divider,
+    trimmedSummary,
+    "",
+    cta,
+    "",
+    "👉 Siga para mais conteúdos como este.",
+  ]
+    .filter(Boolean)
+    .join("\n")
+    .trim();
+}
+
+async function generateHashtags(article: any): Promise<string> {
+  const apiKey = Deno.env.get("LOVABLE_API_KEY");
+  const fallback =
+    `#noticias #atualidades #${(article.category || "geral").toString().toLowerCase().replace(/\s+/g, "")} #brasil #news #trending #informacao #conteudo`;
+  if (!apiKey) return fallback;
+
+  try {
+    const prompt = `Gere EXATAMENTE 20 hashtags em português (pt-BR), relevantes ao tema do artigo, otimizadas para Instagram (mistura de hashtags amplas, médias e de nicho). Sem espaços, sem números no final, sem repetições. Responda APENAS com as hashtags separadas por espaço, começando cada uma com #.
+
+Título: ${article.title}
+Categoria: ${article.category || "geral"}
+Resumo: ${cleanText(article.excerpt || article.content || "").substring(0, 500)}`;
+
+    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [{ role: "user", content: prompt }],
+      }),
+    });
+    if (!resp.ok) return fallback;
+    const data = await resp.json();
+    const text: string = data?.choices?.[0]?.message?.content || "";
+    const tags = (text.match(/#[\p{L}0-9_]+/gu) || []).slice(0, 28).join(" ");
+    return tags || fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+// ---------- Instagram publishing ----------
+
+async function publishIgContainer(containerId: string, igId: string, token: string): Promise<string | null> {
+  for (let i = 0; i < 15; i++) {
     const statusResp = await fetch(
-      `${GRAPH_API}/${containerId}?fields=status_code&access_token=${encodeURIComponent(token)}`
+      `${GRAPH_API}/${containerId}?fields=status_code,status&access_token=${encodeURIComponent(token)}`
     );
     if (statusResp.ok) {
       const s = await statusResp.json();
@@ -45,33 +120,43 @@ async function publishIgContainer(igId: string, containerId: string, token: stri
   return data.id || null;
 }
 
-async function publishInstagramDirect(supabase: any, account: any, imageUrl: string, caption: string): Promise<{ ok: boolean; id?: string; error?: string }> {
+async function postFirstComment(mediaId: string, message: string, token: string): Promise<boolean> {
   try {
-    const encKey = Deno.env.get("DB_ENCRYPTION_KEY") || "";
-    const password = await decryptField(supabase, account.password) || account.password;
-    
-    console.log(`Attempting direct Instagram post for ${account.username}...`);
-    
-    // Using a mock implementation since a real headless browser or private API client would be needed
-    // In a real scenario, you'd use a service or a library that handles the Instagram private API/web automation
-    
-    // Simulate API call to a worker or service that handles direct login
-    // For now, we'll log the intention and return a simulated success if credentials exist
-    if (account.username && password) {
-       // Log that we are using direct connection
-       console.log(`Direct connection post simulated for ${account.username}`);
-       
-       return { 
-         ok: true, 
-         id: `direct_${Math.random().toString(36).substring(2, 10)}` 
-       };
+    const resp = await fetch(`${GRAPH_API}/${mediaId}/comments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message, access_token: token }),
+    });
+    if (!resp.ok) {
+      console.error("IG first comment failed:", await resp.text());
+      return false;
     }
-    
-    return { ok: false, error: "Credenciais incompletas" };
+    return true;
   } catch (e) {
-    console.error(`Direct IG publish error for ${account.username}:`, e);
-    return { ok: false, error: String(e) };
+    console.error("IG first comment error:", e);
+    return false;
   }
+}
+
+async function getInstagramPermalink(mediaId: string, token: string): Promise<string | null> {
+  try {
+    const r = await fetch(
+      `${GRAPH_API}/${mediaId}?fields=permalink&access_token=${encodeURIComponent(token)}`
+    );
+    if (!r.ok) return null;
+    const d = await r.json();
+    return d.permalink || null;
+  } catch {
+    return null;
+  }
+}
+
+async function publishInstagramDirect(
+  _supabase: any,
+  account: any
+): Promise<{ ok: boolean; id?: string; error?: string }> {
+  // Direct (login/password) posting not supported in edge runtime
+  return { ok: false, error: "Conexão direta via login/senha não publica de fato. Use a conta oficial (Graph API)." };
 }
 
 serve(async (req) => {
@@ -94,7 +179,6 @@ serve(async (req) => {
       .single();
     if (!article) throw new Error("Artigo não encontrado");
 
-    // Need an image URL (publicly fetchable) and a WP link
     const imageUrl = article.featured_image_url;
     const { data: lastLog } = await supabase
       .from("publish_log")
@@ -114,19 +198,12 @@ serve(async (req) => {
       );
     }
 
-    // Build full caption: title + excerpt/content trimmed + link at end
-    const cleanText = (s: string | null) =>
-      (s || "").replace(/<[^>]+>/g, "").replace(/\n{3,}/g, "\n\n").trim();
-    const title = cleanText(article.title);
-    const body = cleanText(article.excerpt || article.content || "");
-    // Instagram caption hard limit ~2200 chars; reserve ~200 for link/hashtags
-    const reserved = 250;
-    const maxBody = 2200 - title.length - reserved;
-    const trimmedBody = body.length > maxBody ? body.substring(0, maxBody - 3) + "..." : body;
-    const linkSuffix = wpLink ? `\n\nLeia o artigo completo: ${wpLink}` : "";
-    const caption = `${title}\n\n${trimmedBody}${linkSuffix}`.trim();
+    // Professional caption + hashtags (hashtags go in the FIRST COMMENT)
+    const caption = buildProfessionalCaption(article, wpLink);
+    const hashtags = await generateHashtags(article);
+    const altText = cleanText(article.title).substring(0, 240);
 
-    // 1. Collect Graph API Targets (Official)
+    // 1. Collect Graph API Targets
     const { data: settings } = await supabase
       .from("user_settings")
       .select("facebook_page_id, facebook_access_token, instagram_account_id")
@@ -165,47 +242,65 @@ serve(async (req) => {
       });
     }
 
-    // 2. Collect Direct Instagram Accounts
     const { data: directAccounts } = await supabase
       .from("instagram_accounts_direct")
       .select("*")
       .eq("user_id", userId)
       .eq("is_active", true);
 
-    const results: Array<{ target: string; channel: string; ok: boolean; id?: string; error?: string }> = [];
+    const results: Array<{ target: string; channel: string; ok: boolean; id?: string; error?: string; permalink?: string }> = [];
     const processedTargets = new Set<string>();
     let firstIgFeedId: string | null = null;
 
-    // Process Graph API Targets
     for (const t of targets) {
-      const targetKey = `${t.pageId}-${t.igId || 'no-ig'}`;
+      const targetKey = `${t.pageId}-${t.igId || "no-ig"}`;
       if (processedTargets.has(targetKey)) continue;
       processedTargets.add(targetKey);
 
-      // Official Instagram
+      // Official Instagram (Graph API) — PROFESSIONAL POSTING
       if (t.igId) {
         try {
           const containerResp = await fetch(`${GRAPH_API}/${t.igId}/media`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ image_url: imageUrl, caption, access_token: t.pageToken }),
+            body: JSON.stringify({
+              image_url: imageUrl,
+              caption,
+              alt_text: altText, // accessibility
+              access_token: t.pageToken,
+            }),
           });
           if (containerResp.ok) {
             const c = await containerResp.json();
-            const postId = await publishIgContainer(t.igId, c.id, t.pageToken);
+            const postId = await publishIgContainer(c.id, t.igId, t.pageToken);
             if (postId) {
               if (!firstIgFeedId) firstIgFeedId = postId;
-              results.push({ target: t.pageName, channel: "instagram_feed", ok: true, id: postId });
+
+              // Post hashtags as FIRST COMMENT (professional practice)
+              await postFirstComment(postId, hashtags, t.pageToken);
+
+              const permalink = await getInstagramPermalink(postId, t.pageToken);
+              results.push({
+                target: t.pageName,
+                channel: "instagram_feed",
+                ok: true,
+                id: postId,
+                permalink: permalink || undefined,
+              });
               await supabase.from("publish_log").insert({
-                user_id: userId, article_id: articleId, platform: "instagram", status: "success",
-                published_url: `https://www.instagram.com/p/${postId}`,
+                user_id: userId,
+                article_id: articleId,
+                platform: "instagram",
+                status: "success",
+                published_url: permalink || `https://www.instagram.com/p/${postId}`,
               });
             } else {
               results.push({ target: t.pageName, channel: "instagram_feed", ok: false, error: "publish failed" });
             }
           } else {
             const err = await containerResp.text();
-            results.push({ target: t.pageName, channel: "instagram_feed", ok: false, error: err.substring(0, 200) });
+            console.error("IG container failed:", err);
+            results.push({ target: t.pageName, channel: "instagram_feed", ok: false, error: err.substring(0, 300) });
           }
         } catch (e) {
           results.push({ target: t.pageName, channel: "instagram_feed", ok: false, error: String(e) });
@@ -223,27 +318,24 @@ serve(async (req) => {
           const pd = await fbPostResp.json();
           results.push({ target: t.pageName, channel: "facebook_feed", ok: true, id: pd.id });
           await supabase.from("publish_log").insert({
-            user_id: userId, article_id: articleId, platform: "facebook", status: "success",
+            user_id: userId,
+            article_id: articleId,
+            platform: "facebook",
+            status: "success",
             published_url: `https://www.facebook.com/${pd.id}`,
           });
+        } else {
+          const err = await fbPostResp.text();
+          results.push({ target: t.pageName, channel: "facebook_feed", ok: false, error: err.substring(0, 300) });
         }
       } catch (e) {
         results.push({ target: t.pageName, channel: "facebook_feed", ok: false, error: String(e) });
       }
     }
 
-    // Process Direct Instagram Accounts
     for (const acc of directAccounts || []) {
-      const res = await publishInstagramDirect(supabase, acc, imageUrl, caption);
+      const res = await publishInstagramDirect(supabase, acc);
       results.push({ target: acc.username, channel: "instagram_direct", ok: res.ok, id: res.id, error: res.error });
-      
-      if (res.ok && res.id) {
-        if (!firstIgFeedId) firstIgFeedId = res.id;
-        await supabase.from("publish_log").insert({
-          user_id: userId, article_id: articleId, platform: "instagram_direct", status: "success",
-          published_url: `https://www.instagram.com/${acc.username}`,
-        });
-      }
     }
 
     if (firstIgFeedId) {
@@ -255,6 +347,8 @@ serve(async (req) => {
       JSON.stringify({
         success: okCount > 0,
         message: `Publicado em ${okCount}/${results.length} canais sociais`,
+        caption_preview: caption.substring(0, 200),
+        hashtags_preview: hashtags,
         results,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
