@@ -19,7 +19,40 @@ const YouTubeSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChange,
   const connected = !!(settings.youtube_api_key || hasYoutubeKey);
   const { toast } = useToast();
   const [testing, setTesting] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message?: string; error?: string; data?: Record<string, string> } | null>(null);
+
+  const handleSave = async () => {
+    if (!settings.youtube_api_key) {
+      toast({ title: 'Informe a chave', description: 'Cole sua chave do YouTube antes de salvar.', variant: 'destructive' });
+      return;
+    }
+    setSaving(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Não autenticado');
+
+      const { data: existing } = await supabase
+        .from('user_settings')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      const { error } = existing
+        ? await supabase.from('user_settings').update({ youtube_api_key: settings.youtube_api_key } as any).eq('user_id', user.id)
+        : await supabase.from('user_settings').insert({ user_id: user.id, youtube_api_key: settings.youtube_api_key } as any);
+
+      if (error) throw error;
+
+      toast({ title: 'Chave salva!', description: 'YouTube API conectada e criptografada no banco.' });
+      onChange({ youtube_api_key: '' });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Erro ao salvar';
+      toast({ title: 'Erro ao salvar', description: msg, variant: 'destructive' });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleTest = async () => {
     setTesting(true);
