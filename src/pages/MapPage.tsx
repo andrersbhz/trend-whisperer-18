@@ -18,25 +18,26 @@ const MapPage = () => {
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
-      const { data, error } = await supabase.rpc('get_online_locations', { p_minutes: 60 });
-      if (cancelled || error || !data) return;
-      const tally = new Map<string, number>();
-      (data as Array<{ country: string | null }>).forEach((r) => {
-        const c = r.country || 'Desconhecido';
-        tally.set(c, (tally.get(c) ?? 0) + 1);
-      });
-      const total = Array.from(tally.values()).reduce((a, b) => a + b, 0);
-      const sorted = Array.from(tally.entries())
-        .map(([country, count]) => ({ country, count, percentage: total > 0 ? Math.round((count / total) * 100) : 0 }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 10);
-      setTopCountries(sorted);
-      setTotalOnline(total);
+      // Top 10 from permanent history
+      const { data: hist } = await supabase.rpc('get_top_countries_history', { p_limit: 10 });
+      if (!cancelled && hist) {
+        const rows = hist as Array<{ country: string; count: number }>;
+        const total = rows.reduce((a, b) => a + Number(b.count), 0);
+        setTopCountries(rows.map((r) => ({
+          country: r.country,
+          count: Number(r.count),
+          percentage: total > 0 ? Math.round((Number(r.count) / total) * 100) : 0,
+        })));
+      }
+      // Live online count
+      const { data: live } = await supabase.rpc('get_online_locations', { p_minutes: 60 });
+      if (!cancelled && live) setTotalOnline((live as unknown[]).length);
     };
     load();
     const interval = window.setInterval(load, 20_000);
     const channel = supabase
       .channel('map_top_countries')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'visitor_history' }, () => load())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'online_users' }, () => load())
       .subscribe();
     return () => {
