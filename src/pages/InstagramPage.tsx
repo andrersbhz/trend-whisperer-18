@@ -74,6 +74,11 @@ const InstagramPage = () => {
       // Se não havia cache, busca da API automaticamente
       if (!hasCache) fetchFresh();
     })();
+    // Auto-refresh silencioso a cada 60s para manter posts atualizados
+    const interval = window.setInterval(() => {
+      fetchFresh();
+    }, 60_000);
+    return () => window.clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
