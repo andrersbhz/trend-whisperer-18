@@ -1,11 +1,54 @@
+import { useEffect, useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import WorldMap from "@/components/WorldMap";
-import { Globe, Users, TrendingUp, ArrowUpRight } from "lucide-react";
+import { Globe, Users, TrendingUp, ArrowUpRight, Trophy } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { supabase } from "@/integrations/supabase/client";
+
+interface CountryStat {
+  country: string;
+  count: number;
+  percentage: number;
+}
 
 const MapPage = () => {
+  const [topCountries, setTopCountries] = useState<CountryStat[]>([]);
+  const [totalOnline, setTotalOnline] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      const { data, error } = await supabase.rpc('get_online_locations', { p_minutes: 60 });
+      if (cancelled || error || !data) return;
+      const tally = new Map<string, number>();
+      (data as Array<{ country: string | null }>).forEach((r) => {
+        const c = r.country || 'Desconhecido';
+        tally.set(c, (tally.get(c) ?? 0) + 1);
+      });
+      const total = Array.from(tally.values()).reduce((a, b) => a + b, 0);
+      const sorted = Array.from(tally.entries())
+        .map(([country, count]) => ({ country, count, percentage: total > 0 ? Math.round((count / total) * 100) : 0 }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10);
+      setTopCountries(sorted);
+      setTotalOnline(total);
+    };
+    load();
+    const interval = window.setInterval(load, 20_000);
+    const channel = supabase
+      .channel('map_top_countries')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'online_users' }, () => load())
+      .subscribe();
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   return (
     <DashboardLayout>
+
       <div className="space-y-6 lg:space-y-8 pb-10">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-3">
