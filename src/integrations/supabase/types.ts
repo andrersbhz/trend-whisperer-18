@@ -772,6 +772,39 @@ export type Database = {
         }
         Relationships: []
       }
+      visitor_history: {
+        Row: {
+          city: string | null
+          country: string | null
+          created_at: string
+          id: string
+          latitude: number | null
+          longitude: number | null
+          state: string | null
+          user_id: string | null
+        }
+        Insert: {
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          state?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          state?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       public_articles: {
@@ -883,6 +916,24 @@ export type Database = {
           longitude: number
           state: string
         }[]
+      }
+      get_top_countries_history: {
+        Args: { p_limit?: number }
+        Returns: {
+          count: number
+          country: string
+        }[]
+      }
+      record_visitor_history: {
+        Args: {
+          p_city: string
+          p_country: string
+          p_latitude: number
+          p_longitude: number
+          p_state: string
+          p_user_id: string
+        }
+        Returns: undefined
       }
       update_online_status: {
         Args: {
