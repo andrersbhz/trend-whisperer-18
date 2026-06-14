@@ -117,7 +117,17 @@ const YouTubeSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChange,
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <Button
+            type="button"
+            size="sm"
+            onClick={handleSave}
+            disabled={saving || !settings.youtube_api_key}
+            className="gap-2 gradient-primary"
+          >
+            {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
+            {saving ? 'Salvando...' : 'Salvar chave'}
+          </Button>
           <Button
             type="button"
             size="sm"
@@ -129,6 +139,13 @@ const YouTubeSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChange,
             {testing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wifi className="h-3.5 w-3.5" />}
             {testing ? 'Testando...' : 'Testar Conexão'}
           </Button>
+          {testResult && (
+            <div className={`flex items-center gap-1.5 text-xs ${testResult.success ? 'text-success' : 'text-destructive'}`}>
+              {testResult.success ? <CheckCircle2 className="h-3.5 w-3.5" /> : <XCircle className="h-3.5 w-3.5" />}
+              <span>{testResult.message || testResult.error}</span>
+            </div>
+          )}
+        </div>
           {testResult && (
             <div className={`flex items-center gap-1.5 text-xs ${testResult.success ? 'text-success' : 'text-destructive'}`}>
               {testResult.success ? <CheckCircle2 className="h-3.5 w-3.5" /> : <XCircle className="h-3.5 w-3.5" />}
