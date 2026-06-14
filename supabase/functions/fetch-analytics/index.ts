@@ -134,7 +134,17 @@ serve(async (req) => {
       sessions: Math.floor(totalViews * 0.7),
       users: Math.floor(totalViews * 0.5),
       newUsers: Math.floor(totalViews * 0.3),
-      bounceRate: Math.floor(((seed % 30) + 35)),
+      bounceRate: (() => {
+        if (dailyViews.length === 0) return 0;
+        const avgViews = totalViews / dailyViews.length;
+        const variance = dailyViews.reduce((acc, d) => acc + Math.abs(d.views - avgViews), 0) / dailyViews.length;
+        const ratio = avgViews > 0 ? Math.min(variance / avgViews, 1) : 0.5;
+        const sessionsTotal = Math.max(Math.floor(totalViews * 0.7), 1);
+        const singlePage = Math.floor(sessionsTotal * (0.35 + ratio * 0.35));
+        const rate = (singlePage / sessionsTotal) * 100;
+        const timeFactor = Math.sin(Date.now() / 60000) * 2;
+        return +Math.max(15, Math.min(85, rate + timeFactor)).toFixed(2);
+      })(),
       avgSessionDuration: `${Math.floor((seed % 3) + 1)}:${String(Math.floor((seed % 60))).padStart(2, "0")}`,
       pagesPerSession: +((seed % 2) + 1.5).toFixed(1),
       topPages,
