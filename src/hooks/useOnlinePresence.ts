@@ -64,6 +64,18 @@ export const useOnlinePresence = () => {
         p_state: geo.state ?? null,
         p_city: geo.city ?? null,
       });
+      const HISTORY_FLAG = "presence_history_saved";
+      if (!sessionStorage.getItem(HISTORY_FLAG)) {
+        await supabase.rpc("record_visitor_history", {
+          p_user_id: userId,
+          p_longitude: geo.longitude,
+          p_latitude: geo.latitude,
+          p_country: geo.country ?? null,
+          p_state: geo.state ?? null,
+          p_city: geo.city ?? null,
+        });
+        sessionStorage.setItem(HISTORY_FLAG, "1");
+      }
     };
 
     ping();
