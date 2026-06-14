@@ -146,13 +146,6 @@ const YouTubeSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChange,
             </div>
           )}
         </div>
-          {testResult && (
-            <div className={`flex items-center gap-1.5 text-xs ${testResult.success ? 'text-success' : 'text-destructive'}`}>
-              {testResult.success ? <CheckCircle2 className="h-3.5 w-3.5" /> : <XCircle className="h-3.5 w-3.5" />}
-              <span>{testResult.message || testResult.error}</span>
-            </div>
-          )}
-        </div>
 
         {testResult?.success && testResult.data && (
           <div className="p-2.5 rounded-lg bg-success/10 border border-success/30 text-xs space-y-1">
