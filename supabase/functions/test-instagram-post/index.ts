@@ -124,8 +124,8 @@ serve(async (req) => {
         .from("articles")
         .select("*")
         .eq("user_id", userId)
-        .eq("status", "published")
         .not("featured_image_url", "is", null)
+        .not("featured_image_url", "ilike", "data:%")
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
