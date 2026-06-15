@@ -13,6 +13,7 @@ import Preloader from '@/components/Preloader';
 import useEmblaCarousel from 'embla-carousel-react';
 import Autoplay from 'embla-carousel-autoplay';
 import { formatRelative } from '@/lib/date';
+import { isVideoUrl } from '@/lib/utils';
 
 const CATEGORY_ACCENTS: Record<string, string> = {
   default: 'hsl(var(--news-accent))',
