@@ -3,7 +3,10 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Upload, X, Image as ImageIcon, Crop, Sparkles, Film } from 'lucide-react';
+import { Loader2, Upload, X, Image as ImageIcon, Crop, Sparkles, Film, Link as LinkIcon } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { isVideoUrl } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import Cropper from 'react-easy-crop';
 import { getCroppedImg } from '@/lib/image-utils';
@@ -19,14 +22,25 @@ import { Slider } from '@/components/ui/slider';
 interface ImageUploadProps {
   articleId: string;
   currentImageUrl?: string;
+  currentThumbnailUrl?: string;
   onUploadSuccess: (url: string) => void;
+  onThumbnailChange?: (url: string) => void;
 }
 
-export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: ImageUploadProps) => {
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, onUploadSuccess, onThumbnailChange }: ImageUploadProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentImageUrl || null);
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(currentThumbnailUrl || null);
+
+  // Link-by-URL dialog
+  const [isLinkDialogOpen, setIsLinkDialogOpen] = useState(false);
+  const [linkType, setLinkType] = useState<'image' | 'video'>('image');
+  const [linkUrl, setLinkUrl] = useState('');
+  const [linkThumbUrl, setLinkThumbUrl] = useState('');
   
   // Cropping states
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -334,14 +348,80 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
     }
   };
 
+  const persistMedia = async (mediaUrl: string, thumb?: string | null) => {
+    if (articleId && UUID_RE.test(articleId)) {
+      const patch: Record<string, any> = { featured_image_url: mediaUrl };
+      if (thumb !== undefined) patch.video_thumbnail_url = thumb || null;
+      const { error } = await supabase.from('articles').update(patch).eq('id', articleId);
+      if (error) throw error;
+    }
+  };
+
+  const handleLinkSubmit = async () => {
+    if (!linkUrl.trim()) {
+      toast({ title: 'URL obrigatória', description: 'Informe o link da mídia.', variant: 'destructive' });
+      return;
+    }
+    try {
+      setUploading(true);
+      const url = linkUrl.trim();
+      const isVid = linkType === 'video' || isVideoUrl(url);
+
+      if (isVid && !linkThumbUrl.trim()) {
+        toast({ title: 'Thumbnail obrigatória', description: 'Para vídeo, informe a URL da capa (thumbnail).', variant: 'destructive' });
+        setUploading(false);
+        return;
+      }
+
+      const thumb = isVid ? linkThumbUrl.trim() : null;
+      await persistMedia(url, thumb);
+
+      setPreviewUrl(url);
+      setThumbnailUrl(thumb);
+      onUploadSuccess(url);
+      onThumbnailChange?.(thumb || '');
+
+      window.dispatchEvent(new CustomEvent('article-image-uploaded', {
+        detail: { articleId, url }
+      }));
+
+      toast({ title: 'Mídia vinculada', description: isVid ? 'Vídeo + thumbnail salvos.' : 'Imagem vinculada com sucesso.' });
+      setIsLinkDialogOpen(false);
+      setLinkUrl('');
+      setLinkThumbUrl('');
+    } catch (e: any) {
+      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleThumbnailUrlChange = async (val: string) => {
+    setThumbnailUrl(val || null);
+    try {
+      if (articleId && UUID_RE.test(articleId)) {
+        const { error } = await supabase.from('articles')
+          .update({ video_thumbnail_url: val || null })
+          .eq('id', articleId);
+        if (error) throw error;
+      }
+      onThumbnailChange?.(val);
+    } catch (e: any) {
+      toast({ title: 'Erro ao salvar thumbnail', description: e.message, variant: 'destructive' });
+    }
+  };
+
+  const isPreviewVideo = !!previewUrl && isVideoUrl(previewUrl);
+
   return (
     <div className="space-y-4">
       <div className="relative w-full aspect-[4/5] max-w-full mx-auto rounded-none border-2 border-dashed border-border overflow-hidden bg-muted/30 flex items-center justify-center">
         {previewUrl ? (
           <>
-            {/\.(mp4|webm|mov|m4v|ogg)(\?|#|$)/i.test(previewUrl) ? (
+            {isPreviewVideo ? (
               <video
                 src={previewUrl}
+                poster={thumbnailUrl || undefined}
                 autoPlay
                 loop
                 muted
@@ -377,7 +457,7 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
         )}
       </div>
 
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-4 gap-2">
         <Button
           variant="outline"
           size="sm"
@@ -420,7 +500,37 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
           {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
           IA
         </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full gap-2 border-primary/30"
+          onClick={() => { setLinkType('image'); setIsLinkDialogOpen(true); }}
+          disabled={uploading}
+        >
+          <LinkIcon className="h-4 w-4" />
+          Link
+        </Button>
       </div>
+
+      {isPreviewVideo && (
+        <div className="space-y-1.5 p-3 bg-muted/20 border border-primary/10 rounded-lg">
+          <Label htmlFor="video-thumb" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+            Thumbnail do Vídeo (capa)
+          </Label>
+          <Input
+            id="video-thumb"
+            type="url"
+            placeholder="https://.../thumb.jpg (1080x1350)"
+            value={thumbnailUrl || ''}
+            onChange={(e) => setThumbnailUrl(e.target.value)}
+            onBlur={(e) => handleThumbnailUrlChange(e.target.value)}
+            className="text-xs"
+          />
+          <p className="text-[10px] text-muted-foreground">
+            Usada como capa estática (poster) do vídeo nas redes e prévias.
+          </p>
+        </div>
+      )}
       <div className="flex flex-col gap-2 p-3 bg-muted/20 border border-primary/10 rounded-lg">
         <div className="flex items-center justify-between">
           <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Configurações de Exportação</span>
@@ -594,6 +704,76 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
             <Button onClick={() => handleUpload()} className="gap-2">
               <Crop className="h-4 w-4" />
               Cortar e Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isLinkDialogOpen} onOpenChange={setIsLinkDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <LinkIcon className="h-4 w-4 text-primary" />
+              Vincular mídia por link
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setLinkType('image')}
+                className={cn(
+                  "text-xs font-bold py-2 rounded transition-all border",
+                  linkType === 'image' ? "bg-primary text-white border-primary" : "bg-background border-border text-muted-foreground hover:border-primary/40"
+                )}
+              >
+                <ImageIcon className="h-3 w-3 inline mr-1" /> Imagem
+              </button>
+              <button
+                onClick={() => setLinkType('video')}
+                className={cn(
+                  "text-xs font-bold py-2 rounded transition-all border",
+                  linkType === 'video' ? "bg-primary text-white border-primary" : "bg-background border-border text-muted-foreground hover:border-primary/40"
+                )}
+              >
+                <Film className="h-3 w-3 inline mr-1" /> Vídeo
+              </button>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="link-url" className="text-xs">
+                URL da {linkType === 'video' ? 'mídia (vídeo)' : 'imagem'}
+              </Label>
+              <Input
+                id="link-url"
+                type="url"
+                placeholder={linkType === 'video' ? 'https://.../video.mp4' : 'https://.../image.jpg'}
+                value={linkUrl}
+                onChange={(e) => setLinkUrl(e.target.value)}
+              />
+              <p className="text-[10px] text-muted-foreground">Recomendado: formato 1080x1350 (4:5).</p>
+            </div>
+
+            {linkType === 'video' && (
+              <div className="space-y-1.5">
+                <Label htmlFor="link-thumb" className="text-xs">URL da Thumbnail (obrigatória)</Label>
+                <Input
+                  id="link-thumb"
+                  type="url"
+                  placeholder="https://.../thumb.jpg"
+                  value={linkThumbUrl}
+                  onChange={(e) => setLinkThumbUrl(e.target.value)}
+                />
+                <p className="text-[10px] text-muted-foreground">Capa estática exibida antes do play e usada nas publicações.</p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsLinkDialogOpen(false)} disabled={uploading}>
+              Cancelar
+            </Button>
+            <Button onClick={handleLinkSubmit} disabled={uploading} className="gap-2">
+              {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <LinkIcon className="h-4 w-4" />}
+              Vincular
             </Button>
           </DialogFooter>
         </DialogContent>

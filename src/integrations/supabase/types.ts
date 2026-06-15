@@ -60,6 +60,7 @@ export type Database = {
           trending_topic: string | null
           updated_at: string
           user_id: string
+          video_thumbnail_url: string | null
           visual_elements: Json | null
           wordpress_post_id: string | null
         }
@@ -93,6 +94,7 @@ export type Database = {
           trending_topic?: string | null
           updated_at?: string
           user_id: string
+          video_thumbnail_url?: string | null
           visual_elements?: Json | null
           wordpress_post_id?: string | null
         }
@@ -126,6 +128,7 @@ export type Database = {
           trending_topic?: string | null
           updated_at?: string
           user_id?: string
+          video_thumbnail_url?: string | null
           visual_elements?: Json | null
           wordpress_post_id?: string | null
         }
