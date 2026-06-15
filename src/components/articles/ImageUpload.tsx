@@ -457,7 +457,7 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
         )}
       </div>
 
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-4 gap-2">
         <Button
           variant="outline"
           size="sm"
