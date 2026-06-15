@@ -708,6 +708,76 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={isLinkDialogOpen} onOpenChange={setIsLinkDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <LinkIcon className="h-4 w-4 text-primary" />
+              Vincular mídia por link
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setLinkType('image')}
+                className={cn(
+                  "text-xs font-bold py-2 rounded transition-all border",
+                  linkType === 'image' ? "bg-primary text-white border-primary" : "bg-background border-border text-muted-foreground hover:border-primary/40"
+                )}
+              >
+                <ImageIcon className="h-3 w-3 inline mr-1" /> Imagem
+              </button>
+              <button
+                onClick={() => setLinkType('video')}
+                className={cn(
+                  "text-xs font-bold py-2 rounded transition-all border",
+                  linkType === 'video' ? "bg-primary text-white border-primary" : "bg-background border-border text-muted-foreground hover:border-primary/40"
+                )}
+              >
+                <Film className="h-3 w-3 inline mr-1" /> Vídeo
+              </button>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="link-url" className="text-xs">
+                URL da {linkType === 'video' ? 'mídia (vídeo)' : 'imagem'}
+              </Label>
+              <Input
+                id="link-url"
+                type="url"
+                placeholder={linkType === 'video' ? 'https://.../video.mp4' : 'https://.../image.jpg'}
+                value={linkUrl}
+                onChange={(e) => setLinkUrl(e.target.value)}
+              />
+              <p className="text-[10px] text-muted-foreground">Recomendado: formato 1080x1350 (4:5).</p>
+            </div>
+
+            {linkType === 'video' && (
+              <div className="space-y-1.5">
+                <Label htmlFor="link-thumb" className="text-xs">URL da Thumbnail (obrigatória)</Label>
+                <Input
+                  id="link-thumb"
+                  type="url"
+                  placeholder="https://.../thumb.jpg"
+                  value={linkThumbUrl}
+                  onChange={(e) => setLinkThumbUrl(e.target.value)}
+                />
+                <p className="text-[10px] text-muted-foreground">Capa estática exibida antes do play e usada nas publicações.</p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsLinkDialogOpen(false)} disabled={uploading}>
+              Cancelar
+            </Button>
+            <Button onClick={handleLinkSubmit} disabled={uploading} className="gap-2">
+              {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <LinkIcon className="h-4 w-4" />}
+              Vincular
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
