@@ -418,9 +418,10 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
       <div className="relative w-full aspect-[4/5] max-w-full mx-auto rounded-none border-2 border-dashed border-border overflow-hidden bg-muted/30 flex items-center justify-center">
         {previewUrl ? (
           <>
-            {/\.(mp4|webm|mov|m4v|ogg)(\?|#|$)/i.test(previewUrl) ? (
+            {isPreviewVideo ? (
               <video
                 src={previewUrl}
+                poster={thumbnailUrl || undefined}
                 autoPlay
                 loop
                 muted
