@@ -13,6 +13,9 @@ const LanguageSwitcher = () => {
   const current = languages.find((l) => l.code === currentLang) || languages[0];
 
   const handleSelect = (code: Language) => {
+    if (code === currentLang) return;
+    // 1) Persist preference   2) Apply Google Translate without reload
+    // 3) Update the :lang URL segment via React Router (SPA, no full reload)
     setStoredLang(code);
     setTranslateLang(code);
     changeLanguage(code);
