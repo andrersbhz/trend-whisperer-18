@@ -18,15 +18,18 @@ export const useI18n = () => {
 
   const changeLanguage = (newLang: Language) => {
     const segments = location.pathname.split('/').filter(Boolean);
-    
+
     // If first segment is a known language, replace it
     if (languages.some(l => l.code === segments[0])) {
       segments[0] = newLang;
     } else {
       segments.unshift(newLang);
     }
-    
-    navigate(`/${segments.join('/')}`);
+
+    const nextPath = `/${segments.join('/')}${location.search}${location.hash}`;
+    // Use replace to avoid polluting history and prevent any full reload behavior.
+    // Navigation stays within React Router (SPA) — no page reload.
+    navigate(nextPath, { replace: true });
   };
 
   return {
