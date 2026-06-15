@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Upload, X, Image as ImageIcon, Crop, Sparkles } from 'lucide-react';
+import { Loader2, Upload, X, Image as ImageIcon, Crop, Sparkles, Film } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import Cropper from 'react-easy-crop';
 import { getCroppedImg } from '@/lib/image-utils';
@@ -270,16 +270,91 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
     }
   };
 
+  const handleVideoSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    try {
+      setUploading(true);
+
+      // Validate dimensions ~ 4:5 (1080x1350)
+      const url = URL.createObjectURL(file);
+      const dims = await new Promise<{ w: number; h: number }>((resolve, reject) => {
+        const v = document.createElement('video');
+        v.preload = 'metadata';
+        v.onloadedmetadata = () => resolve({ w: v.videoWidth, h: v.videoHeight });
+        v.onerror = () => reject(new Error('Não foi possível ler o vídeo'));
+        v.src = url;
+      });
+      URL.revokeObjectURL(url);
+
+      const ratio = dims.w / dims.h;
+      const target = 1080 / 1350;
+      const tolerance = 0.03;
+      if (Math.abs(ratio - target) > tolerance) {
+        toast({
+          title: 'Formato inválido',
+          description: `O vídeo deve ser 1080x1350 (4:5). Detectado: ${dims.w}x${dims.h}.`,
+          variant: 'destructive',
+        });
+        setUploading(false);
+        return;
+      }
+
+      const ext = (file.name.split('.').pop() || 'mp4').toLowerCase();
+      const filePath = `${user.id}/${articleId}/${Math.random()}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('article-images')
+        .upload(filePath, file, { contentType: file.type || 'video/mp4', upsert: true });
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('article-images')
+        .getPublicUrl(filePath);
+
+      const { error: updateError } = await supabase
+        .from('articles')
+        .update({ featured_image_url: publicUrl })
+        .eq('id', articleId);
+      if (updateError) throw updateError;
+
+      setPreviewUrl(publicUrl);
+      onUploadSuccess(publicUrl);
+      window.dispatchEvent(new CustomEvent('article-image-uploaded', {
+        detail: { articleId, url: publicUrl }
+      }));
+
+      toast({ title: 'Sucesso', description: 'Vídeo (1080x1350) enviado!' });
+    } catch (e: any) {
+      toast({ title: 'Erro no upload do vídeo', description: e.message, variant: 'destructive' });
+    } finally {
+      setUploading(false);
+      if (event.target) event.target.value = '';
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="relative w-full aspect-[4/5] max-w-full mx-auto rounded-none border-2 border-dashed border-border overflow-hidden bg-muted/30 flex items-center justify-center">
         {previewUrl ? (
           <>
-            <img 
-              src={previewUrl} 
-              alt="Preview" 
-              className="w-full h-full object-cover block" 
-            />
+            {/\.(mp4|webm|mov|m4v|ogg)(\?|#|$)/i.test(previewUrl) ? (
+              <video
+                src={previewUrl}
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="w-full h-full object-cover block"
+              />
+            ) : (
+              <img
+                src={previewUrl}
+                alt="Preview"
+                className="w-full h-full object-cover block"
+              />
+            )}
             <button
               onClick={handleRemoveImage}
               className="absolute top-2 right-2 p-1 bg-background/80 rounded-full hover:bg-background text-destructive transition-colors"
@@ -291,7 +366,7 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
         ) : (
           <div className="flex flex-col items-center gap-2 text-muted-foreground">
             <ImageIcon className="h-10 w-10 opacity-20" />
-            <p className="text-xs">Nenhuma imagem selecionada</p>
+            <p className="text-xs">Nenhuma mídia selecionada</p>
           </div>
         )}
         
@@ -302,7 +377,7 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-3 gap-2">
         <Button
           variant="outline"
           size="sm"
@@ -310,7 +385,7 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
           disabled={uploading}
         >
           <Upload className="h-4 w-4" />
-          {previewUrl ? 'Alterar' : 'Upload'}
+          Imagem
           <input
             type="file"
             className="absolute inset-0 opacity-0 cursor-pointer"
@@ -322,12 +397,28 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
         <Button
           variant="outline"
           size="sm"
+          className="relative overflow-hidden w-full gap-2 border-primary/30"
+          disabled={uploading}
+        >
+          <Film className="h-4 w-4" />
+          Vídeo
+          <input
+            type="file"
+            className="absolute inset-0 opacity-0 cursor-pointer"
+            accept="video/mp4,video/webm,video/quicktime"
+            onChange={handleVideoSelect}
+            disabled={uploading}
+          />
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
           className="w-full gap-2 border-primary/30 text-primary hover:bg-primary/10"
           onClick={handleGenerateAI}
           disabled={uploading}
         >
           {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-          Gerar com IA
+          IA
         </Button>
       </div>
       <div className="flex flex-col gap-2 p-3 bg-muted/20 border border-primary/10 rounded-lg">

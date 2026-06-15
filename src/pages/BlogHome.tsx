@@ -13,6 +13,7 @@ import Preloader from '@/components/Preloader';
 import useEmblaCarousel from 'embla-carousel-react';
 import Autoplay from 'embla-carousel-autoplay';
 import { formatRelative } from '@/lib/date';
+import { isVideoUrl } from '@/lib/utils';
 
 const CATEGORY_ACCENTS: Record<string, string> = {
   default: 'hsl(var(--news-accent))',
@@ -240,19 +241,31 @@ const BlogHome = () => {
                               className="block relative focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[hsl(var(--news-accent))] focus-visible:ring-inset"
                             >
                               <div className="relative w-full bg-[hsl(var(--news-navy-deep))] flex items-center justify-center overflow-hidden max-h-[80vh]">
-                                <img
-                                  src={
-                                    article.featured_image_url ||
-                                    'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d'
-                                  }
-                                  alt={article.title}
-                                  loading={i === 0 ? 'eager' : 'lazy'}
-                                  className="w-full h-auto max-h-[80vh] object-contain news-card-img"
-                                  onError={(e) => {
-                                    (e.target as HTMLImageElement).src =
-                                      'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d';
-                                  }}
-                                />
+                                {isVideoUrl(article.featured_image_url) ? (
+                                  <video
+                                    src={article.featured_image_url}
+                                    autoPlay
+                                    loop
+                                    muted
+                                    playsInline
+                                    preload={i === 0 ? 'auto' : 'metadata'}
+                                    className="w-full h-auto max-h-[80vh] object-contain news-card-img"
+                                  />
+                                ) : (
+                                  <img
+                                    src={
+                                      article.featured_image_url ||
+                                      'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d'
+                                    }
+                                    alt={article.title}
+                                    loading={i === 0 ? 'eager' : 'lazy'}
+                                    className="w-full h-auto max-h-[80vh] object-contain news-card-img"
+                                    onError={(e) => {
+                                      (e.target as HTMLImageElement).src =
+                                        'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d';
+                                    }}
+                                  />
+                                )}
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent" />
                                 <span
                                   className="absolute top-[5px] left-[5px] news-kicker inline-block px-3 py-1.5 text-white z-10"
