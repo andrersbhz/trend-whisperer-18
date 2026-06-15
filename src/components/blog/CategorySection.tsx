@@ -119,8 +119,8 @@ const CategorySection = ({
   const sorted = [...articles].sort(
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
   );
-  const items = sorted.slice(0, 6);
-
+  const items = sorted.slice(0, 5);
+  const [lead, ...rest] = items;
   const slug = category.toLowerCase().replace(/\s+/g, '-');
 
   return (
@@ -152,17 +152,27 @@ const CategorySection = ({
         </Link>
       </div>
 
-      {/* Grid: 3 colunas × 2 linhas = 6 cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-        {items.map((article) => (
+      {/* Layout: 1 lead à esquerda + 2x2 grid à direita */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
+        <div className="lg:row-span-2">
           <SuperCard
-            key={article.id}
-            article={article}
+            article={lead}
             currentLang={currentLang}
             accentColor={accentColor}
-            size="small"
+            size="lead"
           />
-        ))}
+        </div>
+        <div className="grid grid-cols-2 gap-4 sm:gap-5 lg:col-start-2">
+          {rest.map((article) => (
+            <SuperCard
+              key={article.id}
+              article={article}
+              currentLang={currentLang}
+              accentColor={accentColor}
+              size="small"
+            />
+          ))}
+        </div>
       </div>
     </section>
   );
