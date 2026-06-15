@@ -270,6 +270,70 @@ export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: Ima
     }
   };
 
+  const handleVideoSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    try {
+      setUploading(true);
+
+      // Validate dimensions ~ 4:5 (1080x1350)
+      const url = URL.createObjectURL(file);
+      const dims = await new Promise<{ w: number; h: number }>((resolve, reject) => {
+        const v = document.createElement('video');
+        v.preload = 'metadata';
+        v.onloadedmetadata = () => resolve({ w: v.videoWidth, h: v.videoHeight });
+        v.onerror = () => reject(new Error('Não foi possível ler o vídeo'));
+        v.src = url;
+      });
+      URL.revokeObjectURL(url);
+
+      const ratio = dims.w / dims.h;
+      const target = 1080 / 1350;
+      const tolerance = 0.03;
+      if (Math.abs(ratio - target) > tolerance) {
+        toast({
+          title: 'Formato inválido',
+          description: `O vídeo deve ser 1080x1350 (4:5). Detectado: ${dims.w}x${dims.h}.`,
+          variant: 'destructive',
+        });
+        setUploading(false);
+        return;
+      }
+
+      const ext = (file.name.split('.').pop() || 'mp4').toLowerCase();
+      const filePath = `${user.id}/${articleId}/${Math.random()}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('article-images')
+        .upload(filePath, file, { contentType: file.type || 'video/mp4', upsert: true });
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('article-images')
+        .getPublicUrl(filePath);
+
+      const { error: updateError } = await supabase
+        .from('articles')
+        .update({ featured_image_url: publicUrl })
+        .eq('id', articleId);
+      if (updateError) throw updateError;
+
+      setPreviewUrl(publicUrl);
+      onUploadSuccess(publicUrl);
+      window.dispatchEvent(new CustomEvent('article-image-uploaded', {
+        detail: { articleId, url: publicUrl }
+      }));
+
+      toast({ title: 'Sucesso', description: 'Vídeo (1080x1350) enviado!' });
+    } catch (e: any) {
+      toast({ title: 'Erro no upload do vídeo', description: e.message, variant: 'destructive' });
+    } finally {
+      setUploading(false);
+      if (event.target) event.target.value = '';
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="relative w-full aspect-[4/5] max-w-full mx-auto rounded-none border-2 border-dashed border-border overflow-hidden bg-muted/30 flex items-center justify-center">
