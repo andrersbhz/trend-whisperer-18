@@ -348,6 +348,71 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
     }
   };
 
+  const persistMedia = async (mediaUrl: string, thumb?: string | null) => {
+    if (articleId && UUID_RE.test(articleId)) {
+      const patch: Record<string, any> = { featured_image_url: mediaUrl };
+      if (thumb !== undefined) patch.video_thumbnail_url = thumb || null;
+      const { error } = await supabase.from('articles').update(patch).eq('id', articleId);
+      if (error) throw error;
+    }
+  };
+
+  const handleLinkSubmit = async () => {
+    if (!linkUrl.trim()) {
+      toast({ title: 'URL obrigatória', description: 'Informe o link da mídia.', variant: 'destructive' });
+      return;
+    }
+    try {
+      setUploading(true);
+      const url = linkUrl.trim();
+      const isVid = linkType === 'video' || isVideoUrl(url);
+
+      if (isVid && !linkThumbUrl.trim()) {
+        toast({ title: 'Thumbnail obrigatória', description: 'Para vídeo, informe a URL da capa (thumbnail).', variant: 'destructive' });
+        setUploading(false);
+        return;
+      }
+
+      const thumb = isVid ? linkThumbUrl.trim() : null;
+      await persistMedia(url, thumb);
+
+      setPreviewUrl(url);
+      setThumbnailUrl(thumb);
+      onUploadSuccess(url);
+      onThumbnailChange?.(thumb || '');
+
+      window.dispatchEvent(new CustomEvent('article-image-uploaded', {
+        detail: { articleId, url }
+      }));
+
+      toast({ title: 'Mídia vinculada', description: isVid ? 'Vídeo + thumbnail salvos.' : 'Imagem vinculada com sucesso.' });
+      setIsLinkDialogOpen(false);
+      setLinkUrl('');
+      setLinkThumbUrl('');
+    } catch (e: any) {
+      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleThumbnailUrlChange = async (val: string) => {
+    setThumbnailUrl(val || null);
+    try {
+      if (articleId && UUID_RE.test(articleId)) {
+        const { error } = await supabase.from('articles')
+          .update({ video_thumbnail_url: val || null })
+          .eq('id', articleId);
+        if (error) throw error;
+      }
+      onThumbnailChange?.(val);
+    } catch (e: any) {
+      toast({ title: 'Erro ao salvar thumbnail', description: e.message, variant: 'destructive' });
+    }
+  };
+
+  const isPreviewVideo = !!previewUrl && isVideoUrl(previewUrl);
+
   return (
     <div className="space-y-4">
       <div className="relative w-full aspect-[4/5] max-w-full mx-auto rounded-none border-2 border-dashed border-border overflow-hidden bg-muted/30 flex items-center justify-center">
