@@ -119,8 +119,8 @@ const CategorySection = ({
   const sorted = [...articles].sort(
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
   );
-  const items = sorted.slice(0, 5);
-  const [lead, ...rest] = items;
+  const items = sorted.slice(0, 6);
+
   const slug = category.toLowerCase().replace(/\s+/g, '-');
 
   return (
