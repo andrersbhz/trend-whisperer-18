@@ -3,19 +3,51 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 import {
   Instagram, Users, Image as ImageIcon, RefreshCw, CheckCircle2,
   Eye, TrendingUp, UserPlus, Globe, MousePointerClick, Heart,
-  MessageCircle, BarChart3, MapPin, Activity
+  MessageCircle, BarChart3, MapPin, Activity, Send, Loader2
 } from 'lucide-react';
 import Preloader from '@/components/Preloader';
 
 const InstagramPage = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [pages, setPages] = useState<any[] | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [testingPageId, setTestingPageId] = useState<string | null>(null);
+
+  const handleTestPost = async (pageId: string, igUsername: string) => {
+    if (!user) return;
+    setTestingPageId(pageId);
+    try {
+      const { data, error } = await supabase.functions.invoke('test-instagram-post', {
+        body: { userId: user.id, pageId },
+      });
+      if (error) throw error;
+      if (data?.success) {
+        toast({
+          title: '✅ Postado no Instagram!',
+          description: `@${igUsername}: ${data.article_title}`,
+        });
+        if (data.permalink) window.open(data.permalink, '_blank');
+      } else {
+        toast({
+          title: 'Falha ao publicar',
+          description: data?.error || 'Erro desconhecido',
+          variant: 'destructive',
+        });
+      }
+    } catch (e: any) {
+      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+    } finally {
+      setTestingPageId(null);
+    }
+  };
+
 
   // Carrega métricas do cache (instantâneo)
   const loadCached = async () => {
@@ -168,10 +200,25 @@ const InstagramPage = () => {
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-success/10 border border-success/30">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-success" />
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-success">Conectado</span>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => handleTestPost(pg.page_id, ig.username || ig.name || '')}
+                      disabled={testingPageId === pg.page_id}
+                      className="bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] text-white text-[10px] font-bold uppercase tracking-widest h-8"
+                    >
+                      {testingPageId === pg.page_id ? (
+                        <><Loader2 className="h-3 w-3 mr-2 animate-spin" /> Postando...</>
+                      ) : (
+                        <><Send className="h-3 w-3 mr-2" /> Postar Agora</>
+                      )}
+                    </Button>
+                    <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-success/10 border border-success/30">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-success" />
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-success">Conectado</span>
+                    </div>
                   </div>
+
                 </div>
 
                 <CardContent className="p-6 space-y-6">
