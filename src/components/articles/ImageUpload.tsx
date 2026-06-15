@@ -22,14 +22,25 @@ import { Slider } from '@/components/ui/slider';
 interface ImageUploadProps {
   articleId: string;
   currentImageUrl?: string;
+  currentThumbnailUrl?: string;
   onUploadSuccess: (url: string) => void;
+  onThumbnailChange?: (url: string) => void;
 }
 
-export const ImageUpload = ({ articleId, currentImageUrl, onUploadSuccess }: ImageUploadProps) => {
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, onUploadSuccess, onThumbnailChange }: ImageUploadProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentImageUrl || null);
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(currentThumbnailUrl || null);
+
+  // Link-by-URL dialog
+  const [isLinkDialogOpen, setIsLinkDialogOpen] = useState(false);
+  const [linkType, setLinkType] = useState<'image' | 'video'>('image');
+  const [linkUrl, setLinkUrl] = useState('');
+  const [linkThumbUrl, setLinkThumbUrl] = useState('');
   
   // Cropping states
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
