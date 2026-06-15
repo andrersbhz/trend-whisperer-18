@@ -500,7 +500,37 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
           {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
           IA
         </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full gap-2 border-primary/30"
+          onClick={() => { setLinkType('image'); setIsLinkDialogOpen(true); }}
+          disabled={uploading}
+        >
+          <LinkIcon className="h-4 w-4" />
+          Link
+        </Button>
       </div>
+
+      {isPreviewVideo && (
+        <div className="space-y-1.5 p-3 bg-muted/20 border border-primary/10 rounded-lg">
+          <Label htmlFor="video-thumb" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+            Thumbnail do Vídeo (capa)
+          </Label>
+          <Input
+            id="video-thumb"
+            type="url"
+            placeholder="https://.../thumb.jpg (1080x1350)"
+            value={thumbnailUrl || ''}
+            onChange={(e) => setThumbnailUrl(e.target.value)}
+            onBlur={(e) => handleThumbnailUrlChange(e.target.value)}
+            className="text-xs"
+          />
+          <p className="text-[10px] text-muted-foreground">
+            Usada como capa estática (poster) do vídeo nas redes e prévias.
+          </p>
+        </div>
+      )}
       <div className="flex flex-col gap-2 p-3 bg-muted/20 border border-primary/10 rounded-lg">
         <div className="flex items-center justify-between">
           <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Configurações de Exportação</span>
