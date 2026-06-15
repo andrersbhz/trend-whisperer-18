@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Upload, X, Image as ImageIcon, Crop, Sparkles } from 'lucide-react';
+import { Loader2, Upload, X, Image as ImageIcon, Crop, Sparkles, Film } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import Cropper from 'react-easy-crop';
 import { getCroppedImg } from '@/lib/image-utils';
