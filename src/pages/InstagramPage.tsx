@@ -13,10 +13,41 @@ import Preloader from '@/components/Preloader';
 
 const InstagramPage = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [pages, setPages] = useState<any[] | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [testingPageId, setTestingPageId] = useState<string | null>(null);
+
+  const handleTestPost = async (pageId: string, igUsername: string) => {
+    if (!user) return;
+    setTestingPageId(pageId);
+    try {
+      const { data, error } = await supabase.functions.invoke('test-instagram-post', {
+        body: { userId: user.id, pageId },
+      });
+      if (error) throw error;
+      if (data?.success) {
+        toast({
+          title: '✅ Postado no Instagram!',
+          description: `@${igUsername}: ${data.article_title}`,
+        });
+        if (data.permalink) window.open(data.permalink, '_blank');
+      } else {
+        toast({
+          title: 'Falha ao publicar',
+          description: data?.error || 'Erro desconhecido',
+          variant: 'destructive',
+        });
+      }
+    } catch (e: any) {
+      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+    } finally {
+      setTestingPageId(null);
+    }
+  };
+
 
   // Carrega métricas do cache (instantâneo)
   const loadCached = async () => {
