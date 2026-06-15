@@ -20,8 +20,7 @@ const CategorySection = ({
   const sorted = [...articles].sort(
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
   );
-  const items = sorted.slice(0, 4);
-  const [lead, ...rest] = items;
+  const items = sorted.slice(0, 6);
   const slug = category.toLowerCase().replace(/\s+/g, '-');
 
   return (
@@ -52,22 +51,16 @@ const CategorySection = ({
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
-        <div className="lg:col-span-7">
-          <NewsCard article={lead} currentLang={currentLang} variant="lead" accentColor={accentColor} />
-        </div>
-        <div className="lg:col-span-5 flex flex-col divide-y divide-[hsl(var(--news-line))]">
-          {rest.map((article) => (
-            <div key={article.id} className="py-4 first:pt-0 last:pb-0">
-              <NewsCard
-                article={article}
-                currentLang={currentLang}
-                variant="list"
-                accentColor={accentColor}
-              />
-            </div>
-          ))}
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+        {items.map((article) => (
+          <NewsCard
+            key={article.id}
+            article={article}
+            currentLang={currentLang}
+            variant="grid"
+            accentColor={accentColor}
+          />
+        ))}
       </div>
     </section>
   );
