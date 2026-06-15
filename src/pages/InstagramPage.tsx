@@ -200,10 +200,25 @@ const InstagramPage = () => {
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-success/10 border border-success/30">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-success" />
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-success">Conectado</span>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => handleTestPost(pg.page_id, ig.username || ig.name || '')}
+                      disabled={testingPageId === pg.page_id}
+                      className="bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] text-white text-[10px] font-bold uppercase tracking-widest h-8"
+                    >
+                      {testingPageId === pg.page_id ? (
+                        <><Loader2 className="h-3 w-3 mr-2 animate-spin" /> Postando...</>
+                      ) : (
+                        <><Send className="h-3 w-3 mr-2" /> Postar Agora</>
+                      )}
+                    </Button>
+                    <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-success/10 border border-success/30">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-success" />
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-success">Conectado</span>
+                    </div>
                   </div>
+
                 </div>
 
                 <CardContent className="p-6 space-y-6">
