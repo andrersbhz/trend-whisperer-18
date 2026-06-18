@@ -221,7 +221,7 @@ const InstagramPage = () => {
 
                 </div>
 
-                <CardContent className="p-6 space-y-6">
+                <CardContent className="p-6 space-y-12">
                   {/* Perfil */}
                   <div>
                     <h3 className="text-2xl md:text-3xl uppercase font-black tracking-widest mb-4 flex items-center gap-3 text-[#00f0ff]" style={{ textShadow: '0 0 8px #00f0ff, 0 0 18px #00f0ff, 0 0 32px rgba(0,240,255,0.6)' }}>
