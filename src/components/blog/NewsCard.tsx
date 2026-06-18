@@ -131,7 +131,7 @@ const NewsCard = ({
   return (
     <article className="group news-card-hover flex flex-col h-full">
       <Link to={href} className={`flex flex-col h-full ${focusRing}`}>
-        <div className="relative aspect-video overflow-hidden bg-[hsl(var(--news-paper))] mb-3">
+        <div className="relative aspect-[4/5] overflow-hidden bg-[hsl(var(--news-paper))] mb-3">
           <NewsImage
             src={article.featured_image_url || ''}
             alt={article.title}
