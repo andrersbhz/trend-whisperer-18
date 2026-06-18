@@ -102,12 +102,7 @@ const NewsCardItem = ({
     );
   }
 
-  const aspect =
-    size === 'lead'
-      ? 'aspect-[16/10]'
-      : size === 'medium'
-        ? 'aspect-[4/3]'
-        : 'aspect-[4/3]';
+  const aspect = 'aspect-[4/5]';
 
   const titleSize =
     size === 'lead'
