@@ -13,11 +13,11 @@ const NewsImage = ({ src, alt, className, aspectRatio = 'video' }: NewsImageProp
   const video = isVideoUrl(src);
 
   const ratioClasses = {
-    video: 'aspect-video',
-    square: 'aspect-square',
-    wide: 'aspect-[21/9]',
-    tall: 'aspect-[3/4]',
-    hero: 'aspect-[16/10]',
+    video: 'aspect-[4/5]',
+    square: 'aspect-[4/5]',
+    wide: 'aspect-[4/5]',
+    tall: 'aspect-[4/5]',
+    hero: 'aspect-[4/5]',
   };
 
   return (

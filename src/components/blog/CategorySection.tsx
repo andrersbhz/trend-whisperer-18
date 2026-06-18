@@ -94,7 +94,7 @@ const NewsCardItem = ({
             <Media
               src={src}
               alt={article.title}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
             />
           </div>
         </Link>
@@ -102,12 +102,7 @@ const NewsCardItem = ({
     );
   }
 
-  const aspect =
-    size === 'lead'
-      ? 'aspect-[16/10]'
-      : size === 'medium'
-        ? 'aspect-[4/3]'
-        : 'aspect-[4/3]';
+  const aspect = 'aspect-[4/5]';
 
   const titleSize =
     size === 'lead'
@@ -128,7 +123,7 @@ const NewsCardItem = ({
           <Media
             src={src}
             alt={article.title}
-            className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            className="absolute inset-0 w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
           />
           {showBadge && (
             <span
