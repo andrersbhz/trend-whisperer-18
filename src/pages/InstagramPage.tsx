@@ -224,9 +224,9 @@ const InstagramPage = () => {
                 <CardContent className="p-6 space-y-6">
                   {/* Perfil */}
                   <div>
-                    <h4 className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
-                      <Users className="h-3 w-3" /> Perfil
-                    </h4>
+                    <h2 className="text-2xl md:text-3xl uppercase font-black tracking-widest mb-4 flex items-center gap-3 text-[#00f0ff]" style={{ textShadow: '0 0 8px #00f0ff, 0 0 18px #00f0ff, 0 0 32px rgba(0,240,255,0.6)' }}>
+                      <Users className="h-7 w-7" style={{ filter: 'drop-shadow(0 0 6px #00f0ff) drop-shadow(0 0 14px #00f0ff)' }} /> Perfil
+                    </h2>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div className="p-3 rounded bg-white/5 border border-white/10">
                         <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Seguidores</p>
