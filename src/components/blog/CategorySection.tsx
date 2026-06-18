@@ -208,11 +208,9 @@ const CategorySection = ({
   const sorted = [...articles].sort(
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
   );
-  // Up to 6 posts per category in G1 style; minimum 3 enforced by layout fallbacks.
   const items = sorted.slice(0, 6);
-  const [lead, ...rest] = items;
-  const mediums = rest.slice(0, 2); // top-right column
-  const lists = rest.slice(2, 5); // bottom row (3 list items)
+  const leftItems = items.slice(0, 4); // 2x2 grid on the left
+  const rightItems = items.slice(4, 6); // stacked column on the right
   const slug = category.toLowerCase().replace(/\s+/g, '-');
 
   return (
@@ -221,46 +219,37 @@ const CategorySection = ({
       aria-labelledby={`cat-${slug}`}
     >
       {/* Category header */}
-      <div className="flex items-end justify-between gap-4 mb-6 sm:mb-7 flex-wrap">
-        <div className="flex items-center gap-3 sm:gap-4">
-          <span
-            className="inline-block w-1.5 h-8 sm:h-9"
-            style={{ background: accentColor }}
-            aria-hidden="true"
-          />
-          <h2
-            id={`cat-${slug}`}
-            className="news-display text-3xl sm:text-4xl md:text-5xl uppercase text-[hsl(var(--news-ink))]"
-          >
-            {category}
-          </h2>
-        </div>
-        <Link
-          to={`/${currentLang}/category/${slug}`}
-          className="news-kicker hover:opacity-70 inline-flex items-center gap-1 transition-opacity min-h-11 px-2"
-          aria-label={`Ver todas as matérias de ${category}`}
-          style={{ color: accentColor }}
+      <div className="flex items-center gap-3 sm:gap-4 mb-6 sm:mb-7">
+        <span
+          className="inline-block w-1.5 h-8 sm:h-9"
+          style={{ background: accentColor }}
+          aria-hidden="true"
+        />
+        <h2
+          id={`cat-${slug}`}
+          className="news-display text-3xl sm:text-4xl md:text-5xl uppercase text-[hsl(var(--news-ink))]"
         >
-          Ver mais →
-        </Link>
+          {category}
+        </h2>
       </div>
 
-      {/* G1-style layout */}
+      {/* Layout: left = 2-col grid, right = stacked column */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
-        {/* Lead: spans 2 cols on desktop */}
-        <div className="lg:col-span-2">
-          <NewsCardItem
-            article={lead}
-            currentLang={currentLang}
-            accentColor={accentColor}
-            size="lead"
-          />
+        <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+          {leftItems.map((article) => (
+            <NewsCardItem
+              key={article.id}
+              article={article}
+              currentLang={currentLang}
+              accentColor={accentColor}
+              size="medium"
+            />
+          ))}
         </div>
 
-        {/* Right column: 2 medium cards stacked */}
-        {mediums.length > 0 && (
+        {rightItems.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4 sm:gap-5">
-            {mediums.map((article) => (
+            {rightItems.map((article) => (
               <NewsCardItem
                 key={article.id}
                 article={article}
@@ -271,21 +260,18 @@ const CategorySection = ({
             ))}
           </div>
         )}
+      </div>
 
-        {/* Bottom row: 3 list-style items, full width */}
-        {lists.length > 0 && (
-          <div className="lg:col-span-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-            {lists.map((article) => (
-              <NewsCardItem
-                key={article.id}
-                article={article}
-                currentLang={currentLang}
-                accentColor={accentColor}
-                size="list"
-              />
-            ))}
-          </div>
-        )}
+      {/* "Ver mais" at the bottom */}
+      <div className="mt-6 sm:mt-7 flex justify-center">
+        <Link
+          to={`/${currentLang}/category/${slug}`}
+          className="news-kicker inline-flex items-center gap-2 px-5 py-3 border-2 hover:bg-[hsl(var(--news-navy))] hover:text-white transition-colors min-h-11"
+          aria-label={`Ver todas as matérias de ${category}`}
+          style={{ color: accentColor, borderColor: accentColor }}
+        >
+          Ver mais de {category} →
+        </Link>
       </div>
     </section>
   );
