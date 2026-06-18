@@ -152,7 +152,7 @@ const InstagramPage = () => {
       {!pages ? (
         <Card className="glass-card border-dashed border-primary/30 p-12 text-center">
           <Instagram className="h-10 w-10 text-primary/40 mx-auto mb-4" />
-          <h3 className="text-lg font-bold mb-2">Nenhum Instagram Business vinculado</h4>
+          <h4 className="text-lg font-bold mb-2">Nenhum Instagram Business vinculado</h4>
           <p className="text-muted-foreground text-sm max-w-md mx-auto mb-6">
             Conecte uma página do Facebook que tenha uma conta Instagram Business vinculada.
           </p>
@@ -193,7 +193,7 @@ const InstagramPage = () => {
                       )}
                     </div>
                     <div>
-                      <h3 className="font-bold text-sm">@{ig.username || ig.name}</h4>
+                      <h4 className="font-bold text-sm">@{ig.username || ig.name}</h4>
                       <p className="text-[10px] text-muted-foreground">Vinculado: {pg.page_name}</p>
                       {ig.biography && (
                         <p className="text-[10px] text-muted-foreground/80 mt-0.5 max-w-md line-clamp-1">{ig.biography}</p>
