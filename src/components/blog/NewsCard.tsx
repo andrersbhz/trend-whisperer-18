@@ -39,7 +39,7 @@ const NewsCard = ({
     return (
       <article className="group news-card-hover h-full">
         <Link to={href} className={`block h-full ${focusRing}`}>
-          <div className="relative aspect-[16/10] overflow-hidden bg-[hsl(var(--news-paper))] mb-4">
+          <div className="relative aspect-[4/5] overflow-hidden bg-[hsl(var(--news-paper))] mb-4">
             <NewsImage
               src={article.featured_image_url || ''}
               alt={article.title}
