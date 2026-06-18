@@ -368,9 +368,9 @@ const InstagramPage = () => {
                   {/* Mais engajados */}
                   {posts.length > 0 && (
                     <div>
-                      <h4 className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
-                        <TrendingUp className="h-3 w-3 text-success" /> Mais Engajados (top 12)
-                      </h4>
+                      <h2 className="text-2xl md:text-3xl uppercase font-black tracking-widest mb-4 flex items-center gap-3 text-[#39ff14]" style={{ textShadow: '0 0 8px #39ff14, 0 0 18px #39ff14, 0 0 32px rgba(57,255,20,0.6)' }}>
+                        <TrendingUp className="h-7 w-7" style={{ filter: 'drop-shadow(0 0 6px #39ff14) drop-shadow(0 0 14px #39ff14)' }} /> Mais Engajados (top 12)
+                      </h2>
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
                         {[...posts]
                           .sort((a: any, b: any) => ((b.likes || 0) + (b.comments || 0)) - ((a.likes || 0) + (a.comments || 0)))
