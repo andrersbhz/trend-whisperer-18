@@ -406,9 +406,9 @@ const InstagramPage = () => {
                   {/* Posts recentes */}
                   {posts.length > 0 && (
                     <div>
-                      <h4 className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
-                        <ImageIcon className="h-3 w-3" /> Posts Recentes (12 mais novos)
-                      </h4>
+                      <h2 className="text-2xl md:text-3xl uppercase font-black tracking-widest mb-4 flex items-center gap-3 text-[#ff2bd6]" style={{ textShadow: '0 0 8px #ff2bd6, 0 0 18px #ff2bd6, 0 0 32px rgba(255,43,214,0.6)' }}>
+                        <ImageIcon className="h-7 w-7" style={{ filter: 'drop-shadow(0 0 6px #ff2bd6) drop-shadow(0 0 14px #ff2bd6)' }} /> Posts Recentes (12 mais novos)
+                      </h2>
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
                         {[...posts]
                           .sort((a: any, b: any) => {
