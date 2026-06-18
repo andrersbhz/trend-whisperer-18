@@ -224,9 +224,9 @@ const InstagramPage = () => {
                 <CardContent className="p-6 space-y-6">
                   {/* Perfil */}
                   <div>
-                    <h4 className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
-                      <Users className="h-3 w-3" /> Perfil
-                    </h4>
+                    <h2 className="text-2xl md:text-3xl uppercase font-black tracking-widest mb-4 flex items-center gap-3 text-[#00f0ff]" style={{ textShadow: '0 0 8px #00f0ff, 0 0 18px #00f0ff, 0 0 32px rgba(0,240,255,0.6)' }}>
+                      <Users className="h-7 w-7" style={{ filter: 'drop-shadow(0 0 6px #00f0ff) drop-shadow(0 0 14px #00f0ff)' }} /> Perfil
+                    </h2>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div className="p-3 rounded bg-white/5 border border-white/10">
                         <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Seguidores</p>
@@ -368,9 +368,9 @@ const InstagramPage = () => {
                   {/* Mais engajados */}
                   {posts.length > 0 && (
                     <div>
-                      <h4 className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
-                        <TrendingUp className="h-3 w-3 text-success" /> Mais Engajados (top 12)
-                      </h4>
+                      <h2 className="text-2xl md:text-3xl uppercase font-black tracking-widest mb-4 flex items-center gap-3 text-[#39ff14]" style={{ textShadow: '0 0 8px #39ff14, 0 0 18px #39ff14, 0 0 32px rgba(57,255,20,0.6)' }}>
+                        <TrendingUp className="h-7 w-7" style={{ filter: 'drop-shadow(0 0 6px #39ff14) drop-shadow(0 0 14px #39ff14)' }} /> Mais Engajados (top 12)
+                      </h2>
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
                         {[...posts]
                           .sort((a: any, b: any) => ((b.likes || 0) + (b.comments || 0)) - ((a.likes || 0) + (a.comments || 0)))
@@ -406,9 +406,9 @@ const InstagramPage = () => {
                   {/* Posts recentes */}
                   {posts.length > 0 && (
                     <div>
-                      <h4 className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
-                        <ImageIcon className="h-3 w-3" /> Posts Recentes (12 mais novos)
-                      </h4>
+                      <h2 className="text-2xl md:text-3xl uppercase font-black tracking-widest mb-4 flex items-center gap-3 text-[#ff2bd6]" style={{ textShadow: '0 0 8px #ff2bd6, 0 0 18px #ff2bd6, 0 0 32px rgba(255,43,214,0.6)' }}>
+                        <ImageIcon className="h-7 w-7" style={{ filter: 'drop-shadow(0 0 6px #ff2bd6) drop-shadow(0 0 14px #ff2bd6)' }} /> Posts Recentes (12 mais novos)
+                      </h2>
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
                         {[...posts]
                           .sort((a: any, b: any) => {
