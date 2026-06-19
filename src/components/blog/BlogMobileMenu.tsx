@@ -51,7 +51,7 @@ const BlogMobileMenu = ({ categories, currentLang, user, onNavigate, loading = f
             {categories.map((cat) => (
               <Link
                 key={cat.id}
-                to={`/${currentLang}/category/${cat.id}`}
+                to={`/${currentLang}/${cat.id}`}
                 className="text-xs font-bold uppercase tracking-widest p-2 border border-gray-100 rounded text-center text-gray-700 hover:text-primary hover:border-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 onClick={onNavigate}
               >
