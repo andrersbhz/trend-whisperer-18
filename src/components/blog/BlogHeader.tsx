@@ -125,19 +125,6 @@ const BlogHeader = () => {
             </Button>
           </div>
 
-          {/* Desktop category nav */}
-          <nav
-            aria-label="Categorias"
-            className="hidden lg:block border-t border-[hsl(var(--news-line))] bg-white"
-          >
-            <BlogCategoryNav
-              categories={categories}
-              currentLang={currentLang}
-              loading={loading}
-              className="news-container flex items-center gap-7 h-11 flex-wrap"
-              itemClassName="news-kicker text-[hsl(var(--news-ink))] hover:text-[hsl(var(--news-accent))] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--news-navy))] focus-visible:ring-offset-2 rounded"
-            />
-          </nav>
         </div>
 
         {isMenuOpen && (
