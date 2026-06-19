@@ -119,6 +119,7 @@ const App = () => (
                 {/* Public Blog Routes */}
                 <Route path="/:lang" element={<BlogHome />} />
                 <Route path="/:lang/category/:categoryId" element={<CategoryPageWrapper />} />
+                <Route path="/:lang/:categoryId" element={<CategoryPageWrapper />} />
                 <Route path="/:lang/article/:articleId" element={<BlogArticle />} />
                 <Route path="/:lang/termos" element={<TermsPage />} />
                 <Route path="/:lang/sobre" element={<AboutPage />} />
