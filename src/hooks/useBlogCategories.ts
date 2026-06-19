@@ -38,6 +38,7 @@ export const useBlogCategories = (): UseBlogCategoriesResult => {
 
         const fromPosts = (data ?? []).map((d) => d.category as string);
         const merged = Array.from(new Set([...DEFAULT_CATEGORIES, ...fromPosts]))
+          .filter((cat) => !EXCLUDED.has(cat.toLowerCase()))
           .map((cat) => ({ id: cat.toLowerCase().replace(/\s+/g, '-'), label: cat }));
         setCategories(merged);
       } catch (err) {
