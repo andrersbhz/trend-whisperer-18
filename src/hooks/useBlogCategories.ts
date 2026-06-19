@@ -9,7 +9,17 @@ interface UseBlogCategoriesResult {
 }
 
 export const useBlogCategories = (): UseBlogCategoriesResult => {
-  const [categories, setCategories] = useState<BlogCategory[]>([]);
+  const DEFAULT_CATEGORIES = [
+    'Notícias',
+    'Esportes',
+    'Entretenimento',
+    'Tecnologia',
+    'Saúde',
+  ];
+
+  const [categories, setCategories] = useState<BlogCategory[]>(
+    DEFAULT_CATEGORIES.map((cat) => ({ id: cat.toLowerCase().replace(/\s+/g, '-'), label: cat })),
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,9 +36,10 @@ export const useBlogCategories = (): UseBlogCategoriesResult => {
         if (!mounted) return;
         if (error) throw error;
 
-        const unique = Array.from(new Set((data ?? []).map((d) => d.category as string)))
+        const fromPosts = (data ?? []).map((d) => d.category as string);
+        const merged = Array.from(new Set([...DEFAULT_CATEGORIES, ...fromPosts]))
           .map((cat) => ({ id: cat.toLowerCase().replace(/\s+/g, '-'), label: cat }));
-        setCategories(unique);
+        setCategories(merged);
       } catch (err) {
         if (!mounted) return;
         setError(err instanceof Error ? err.message : 'Erro ao carregar categorias');
