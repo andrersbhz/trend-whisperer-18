@@ -203,9 +203,9 @@ const CategorySection = ({
   const sorted = [...articles].sort(
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
   );
-  const items = sorted.slice(0, 6);
+  const items = sorted.slice(0, 7);
   const leftItems = items.slice(0, 4); // 2x2 grid on the left
-  const rightItems = items.slice(4, 6); // stacked column on the right
+  const rightItems = items.slice(4, 7); // stacked column on the right (3 cards)
   const slug = category.toLowerCase().replace(/\s+/g, '-');
 
   return (
