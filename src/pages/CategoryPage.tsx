@@ -58,7 +58,7 @@ const CategoryPage = ({ categoryId }: { categoryId: string }) => {
 
   if (loading) return <Preloader message={`Carregando ${displayTitle}...`} />;
 
-  const [lead, ...rest] = articles;
+  
 
   return (
     <div className="min-h-dvh bg-[hsl(var(--news-paper))] text-[hsl(var(--news-ink))] font-news antialiased">
@@ -130,29 +130,20 @@ const CategoryPage = ({ categoryId }: { categoryId: string }) => {
             </Link>
           </div>
         ) : (
-          <>
-            {lead && (
-              <section className="mb-12" aria-label="Matéria em destaque">
-                <NewsCard article={lead} currentLang={currentLang} variant="lead" accentColor={accent} />
-              </section>
-            )}
-            {rest.length > 0 && (
-              <section
-                aria-label="Outras matérias"
-                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8"
-              >
-                {rest.map((article) => (
-                  <NewsCard
-                    key={article.id}
-                    article={article}
-                    currentLang={currentLang}
-                    variant="grid"
-                    accentColor={accent}
-                  />
-                ))}
-              </section>
-            )}
-          </>
+          <section
+            aria-label={`Matérias de ${displayTitle}`}
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8"
+          >
+            {articles.map((article) => (
+              <NewsCard
+                key={article.id}
+                article={article}
+                currentLang={currentLang}
+                variant="grid"
+                accentColor={accent}
+              />
+            ))}
+          </section>
         )}
       </main>
 
