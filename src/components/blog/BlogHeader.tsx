@@ -1,13 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
-import { Search, Menu, X, ChevronDown, LayoutGrid } from 'lucide-react';
+import { Search, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { useI18n } from '@/hooks/useI18n';
 import { useAuth } from '@/hooks/useAuth';
 import { useBlogCategories } from '@/hooks/useBlogCategories';
@@ -104,46 +98,14 @@ const BlogHeader = () => {
                 </span>
               </Link>
 
-              {/* Categorias dropdown - todas as categorias ao lado da marca */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    type="button"
-                    className="hidden md:inline-flex items-center gap-2 ml-2 px-3 h-10 news-kicker text-[hsl(var(--news-navy-deep))] border border-[hsl(var(--news-line))] hover:bg-[hsl(var(--news-paper))] hover:border-[hsl(var(--news-navy))] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--news-navy))]"
-                    aria-label="Abrir lista de categorias"
-                  >
-                    <LayoutGrid className="w-4 h-4" aria-hidden="true" />
-                    Categorias
-                    <ChevronDown className="w-4 h-4" aria-hidden="true" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="start"
-                  className="max-h-[70vh] overflow-y-auto w-64 bg-white border border-[hsl(var(--news-line))]"
-                >
-                  {loading && (
-                    <DropdownMenuItem disabled className="news-kicker text-[hsl(var(--news-muted))]">
-                      Carregando…
-                    </DropdownMenuItem>
-                  )}
-                  {!loading && categories.length === 0 && (
-                    <DropdownMenuItem disabled className="news-kicker text-[hsl(var(--news-muted))]">
-                      Nenhuma categoria
-                    </DropdownMenuItem>
-                  )}
-                  {!loading &&
-                    categories.map((cat) => (
-                      <DropdownMenuItem key={cat.id} asChild>
-                        <Link
-                          to={`/${currentLang}/category/${cat.id}`}
-                          className="news-kicker w-full cursor-pointer text-[hsl(var(--news-ink))] hover:text-[hsl(var(--news-accent))]"
-                        >
-                          {cat.label}
-                        </Link>
-                      </DropdownMenuItem>
-                    ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {/* Categorias inline - todas as categorias ao lado da marca */}
+              <BlogCategoryNav
+                categories={categories}
+                currentLang={currentLang}
+                loading={loading}
+                className="hidden md:flex items-center gap-x-5 gap-y-1 flex-wrap ml-2"
+                itemClassName="news-kicker text-[hsl(var(--news-ink))] hover:text-[hsl(var(--news-accent))] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--news-navy))] focus-visible:ring-offset-2 rounded whitespace-nowrap"
+              />
             </div>
 
             <button
