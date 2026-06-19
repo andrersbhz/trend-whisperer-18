@@ -49,9 +49,8 @@ const BlogHeader = () => {
             <BlogCategoryNav
               categories={categories}
               currentLang={currentLang}
-              limit={6}
               loading={loading}
-              className="flex items-center gap-5"
+              className="flex items-center gap-5 flex-wrap"
               itemClassName="news-kicker text-white/70 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded"
             />
             <div className="flex items-center gap-4">
