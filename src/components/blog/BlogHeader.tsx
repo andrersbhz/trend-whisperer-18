@@ -124,9 +124,8 @@ const BlogHeader = () => {
             <BlogCategoryNav
               categories={categories}
               currentLang={currentLang}
-              limit={8}
               loading={loading}
-              className="news-container flex items-center gap-7 h-11"
+              className="news-container flex items-center gap-7 h-11 flex-wrap"
               itemClassName="news-kicker text-[hsl(var(--news-ink))] hover:text-[hsl(var(--news-accent))] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--news-navy))] focus-visible:ring-offset-2 rounded"
             />
           </nav>
