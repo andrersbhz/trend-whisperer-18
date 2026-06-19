@@ -10,12 +10,12 @@ interface UseBlogCategoriesResult {
 
 export const useBlogCategories = (): UseBlogCategoriesResult => {
   const DEFAULT_CATEGORIES = [
-    'Notícias',
     'Esportes',
     'Entretenimento',
     'Tecnologia',
     'Saúde',
   ];
+  const EXCLUDED = new Set(['notícias', 'noticias']);
 
   const [categories, setCategories] = useState<BlogCategory[]>(
     DEFAULT_CATEGORIES.map((cat) => ({ id: cat.toLowerCase().replace(/\s+/g, '-'), label: cat })),
