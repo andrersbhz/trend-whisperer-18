@@ -58,7 +58,7 @@ const CategoryPage = ({ categoryId }: { categoryId: string }) => {
 
   if (loading) return <Preloader message={`Carregando ${displayTitle}...`} />;
 
-  const [lead, ...rest] = articles;
+  
 
   return (
     <div className="min-h-dvh bg-[hsl(var(--news-paper))] text-[hsl(var(--news-ink))] font-news antialiased">
