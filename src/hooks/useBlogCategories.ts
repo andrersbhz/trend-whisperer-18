@@ -10,12 +10,12 @@ interface UseBlogCategoriesResult {
 
 export const useBlogCategories = (): UseBlogCategoriesResult => {
   const DEFAULT_CATEGORIES = [
-    'Notícias',
     'Esportes',
     'Entretenimento',
     'Tecnologia',
     'Saúde',
   ];
+  const EXCLUDED = new Set(['notícias', 'noticias']);
 
   const [categories, setCategories] = useState<BlogCategory[]>(
     DEFAULT_CATEGORIES.map((cat) => ({ id: cat.toLowerCase().replace(/\s+/g, '-'), label: cat })),
@@ -38,6 +38,7 @@ export const useBlogCategories = (): UseBlogCategoriesResult => {
 
         const fromPosts = (data ?? []).map((d) => d.category as string);
         const merged = Array.from(new Set([...DEFAULT_CATEGORIES, ...fromPosts]))
+          .filter((cat) => !EXCLUDED.has(cat.toLowerCase()))
           .map((cat) => ({ id: cat.toLowerCase().replace(/\s+/g, '-'), label: cat }));
         setCategories(merged);
       } catch (err) {
