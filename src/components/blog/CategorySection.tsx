@@ -203,9 +203,7 @@ const CategorySection = ({
   const sorted = [...articles].sort(
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
   );
-  const items = sorted.slice(0, 7);
-  const leftItems = items.slice(0, 4); // 2x2 grid on the left
-  const rightItems = items.slice(4, 7); // stacked column on the right (3 cards)
+  const items = sorted.slice(0, 4);
   const slug = category.toLowerCase().replace(/\s+/g, '-');
 
   return (
@@ -228,33 +226,17 @@ const CategorySection = ({
         </h2>
       </div>
 
-      {/* Layout: left = 2-col grid, right = stacked column */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
-        <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-          {leftItems.map((article) => (
-            <NewsCardItem
-              key={article.id}
-              article={article}
-              currentLang={currentLang}
-              accentColor={accentColor}
-              size="medium"
-            />
-          ))}
-        </div>
-
-        {rightItems.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4 sm:gap-5">
-            {rightItems.map((article) => (
-              <NewsCardItem
-                key={article.id}
-                article={article}
-                currentLang={currentLang}
-                accentColor={accentColor}
-                size="medium"
-              />
-            ))}
-          </div>
-        )}
+      {/* 4 cards por linha */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+        {items.map((article) => (
+          <NewsCardItem
+            key={article.id}
+            article={article}
+            currentLang={currentLang}
+            accentColor={accentColor}
+            size="medium"
+          />
+        ))}
       </div>
 
       {/* "Ver mais" at the bottom */}
