@@ -28,7 +28,7 @@ const BlogFooter = () => {
             {categories.slice(0, 6).map((c) => (
               <li key={c.id}>
                 <Link
-                  to={`/${currentLang}/category/${c.id}`}
+                  to={`/${currentLang}/${c.id}`}
                   className="font-news text-sm text-white/70 hover:text-[hsl(var(--news-accent))] transition-colors"
                 >
                   {c.label}

@@ -260,7 +260,7 @@ const CategorySection = ({
       {/* "Ver mais" at the bottom */}
       <div className="mt-6 sm:mt-7 flex justify-center">
         <Link
-          to={`/${currentLang}/category/${slug}`}
+          to={`/${currentLang}/${slug}`}
           className="news-kicker inline-flex items-center gap-2 px-5 py-3 border-2 hover:bg-[hsl(var(--news-navy))] hover:text-white transition-colors min-h-11"
           aria-label={`Ver todas as matérias de ${category}`}
           style={{ color: accentColor, borderColor: accentColor }}
