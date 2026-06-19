@@ -57,7 +57,7 @@ const BlogCategoryNav = ({
     <nav className={className} aria-label="Categorias">
       {withBrand && <span className="text-[#000] font-black mr-2">A3 BLOG</span>}
       {items.map((cat) => (
-        <Link key={cat.id} to={`/${currentLang}/category/${cat.id}`} className={itemClassName}>
+        <Link key={cat.id} to={`/${currentLang}/${cat.id}`} className={itemClassName}>
           {cat.label}
         </Link>
       ))}
