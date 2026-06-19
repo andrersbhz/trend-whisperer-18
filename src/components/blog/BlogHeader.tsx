@@ -103,6 +103,47 @@ const BlogHeader = () => {
                   PORTAL
                 </span>
               </Link>
+
+              {/* Categorias dropdown - todas as categorias ao lado da marca */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="hidden md:inline-flex items-center gap-2 ml-2 px-3 h-10 news-kicker text-[hsl(var(--news-navy-deep))] border border-[hsl(var(--news-line))] hover:bg-[hsl(var(--news-paper))] hover:border-[hsl(var(--news-navy))] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--news-navy))]"
+                    aria-label="Abrir lista de categorias"
+                  >
+                    <LayoutGrid className="w-4 h-4" aria-hidden="true" />
+                    Categorias
+                    <ChevronDown className="w-4 h-4" aria-hidden="true" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="start"
+                  className="max-h-[70vh] overflow-y-auto w-64 bg-white border border-[hsl(var(--news-line))]"
+                >
+                  {loading && (
+                    <DropdownMenuItem disabled className="news-kicker text-[hsl(var(--news-muted))]">
+                      Carregando…
+                    </DropdownMenuItem>
+                  )}
+                  {!loading && categories.length === 0 && (
+                    <DropdownMenuItem disabled className="news-kicker text-[hsl(var(--news-muted))]">
+                      Nenhuma categoria
+                    </DropdownMenuItem>
+                  )}
+                  {!loading &&
+                    categories.map((cat) => (
+                      <DropdownMenuItem key={cat.id} asChild>
+                        <Link
+                          to={`/${currentLang}/category/${cat.id}`}
+                          className="news-kicker w-full cursor-pointer text-[hsl(var(--news-ink))] hover:text-[hsl(var(--news-accent))]"
+                        >
+                          {cat.label}
+                        </Link>
+                      </DropdownMenuItem>
+                    ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
             <button
