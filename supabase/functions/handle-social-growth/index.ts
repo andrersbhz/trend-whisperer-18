@@ -66,6 +66,13 @@ serve(async (req) => {
         // ou obrigatoriamente se passar do maxDays
         const targetDays = humanLike ? (Math.floor(Math.random() * (maxDays - minDays + 1)) + minDays) : minDays;
 
+        // Proteção: nunca deixar de seguir contas que já são conexões há mais de 6 meses (180 dias)
+        const LOYAL_THRESHOLD_DAYS = 180;
+        if (daysDiff >= LOYAL_THRESHOLD_DAYS) {
+          console.log(`[handle-social-growth] Mantendo ${follow.target_username} (conexão leal: ${daysDiff} dias)`);
+          continue;
+        }
+
         if (daysDiff >= targetDays) {
           console.log(`[handle-social-growth] Deixando de seguir: ${follow.target_username} (${daysDiff} dias)`);
           
