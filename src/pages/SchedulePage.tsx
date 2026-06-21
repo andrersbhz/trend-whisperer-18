@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, Clock, Calendar, Save, Bot, Trash2, CheckCircle, XCircle, Trash, Eye, FileEdit, Send, Image as ImageIcon, ImagePlus, ChevronDown, RefreshCw } from 'lucide-react';
+import { Loader2, Clock, Calendar, Save, Bot, Trash2, CheckCircle, XCircle, Trash, Eye, FileEdit, Send, Image as ImageIcon, ImagePlus, ChevronDown, RefreshCw, ArrowUp, ArrowDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
@@ -57,6 +57,15 @@ const SchedulePage = () => {
   const [isRescheduling, setIsRescheduling] = useState(false);
   const [rescheduleDialogOpen, setRescheduleDialogOpen] = useState(false);
   const [rescheduleType, setRescheduleType] = useState<'pending' | 'all'>('pending');
+  const [sortAsc, setSortAsc] = useState(true);
+
+  const sortedArticles = [...articles].sort((a: any, b: any) => {
+    const aPub = a.status === 'published';
+    const bPub = b.status === 'published';
+    if (aPub !== bPub) return aPub ? 1 : -1;
+    const diff = new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime();
+    return sortAsc ? diff : -diff;
+  });
 
   useEffect(() => {
     if (!user) return;
@@ -571,7 +580,19 @@ const SchedulePage = () => {
                 <Trash2 className="h-3.5 w-3.5" />
                 Apagar Publicados
               </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSortAsc(v => !v)}
+                className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1.5 h-7 px-2 rounded-none"
+                title={sortAsc ? 'Ordem crescente (mais antigos primeiro)' : 'Ordem decrescente (mais recentes primeiro)'}
+              >
+                {sortAsc ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />}
+                {sortAsc ? 'Crescente' : 'Decrescente'}
+              </Button>
             </div>
+            
             
             {selectedIds.length > 0 && (
               <div className="flex items-center gap-2 animate-in fade-in slide-in-from-right-2">
@@ -613,7 +634,7 @@ const SchedulePage = () => {
           </div>
 
           <div className="grid gap-3">
-            {articles.map((article) => (
+            {sortedArticles.map((article) => (
               <Card key={article.id} className={`shadow-none rounded-none border-b border-border/50 transition-colors ${selectedIds.includes(article.id) ? 'bg-primary/5 ring-0' : ''}`}>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
