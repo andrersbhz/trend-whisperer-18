@@ -375,24 +375,35 @@ const SchedulePage = () => {
     setIsRescheduling(true);
     try {
       const now = new Date();
-      // Garante que começamos do início do dia seguinte ou do momento atual
-      const startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 8, 0, 0);
+      const parseHM = (s: string): { h: number; m: number } | null => {
+        const m = /^(\d{1,2}):(\d{2})$/.exec(s.trim());
+        if (!m) return null;
+        const h = parseInt(m[1], 10);
+        const min = parseInt(m[2], 10);
+        if (h < 0 || h > 23 || min < 0 || min > 59) return null;
+        return { h, m: min };
+      };
+      const startHM = parseHM(rescheduleStart) || { h: 8, m: 0 };
+      const endHM = rescheduleEnd ? parseHM(rescheduleEnd) : null;
+      const startHour = startHM.h + startHM.m / 60;
+      const endHour = endHM ? endHM.h + endHM.m / 60 : 23;
+      const effectiveEnd = endHour > startHour ? endHour : startHour + 0.0001;
+
+      // Começa do horário definido (hoje se ainda não passou, senão amanhã)
+      const startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), startHM.h, startHM.m, 0);
       if (startDate < now) startDate.setDate(startDate.getDate() + 1);
 
       const updatedArticles = [];
-      
+
       for (let i = 0; i < targetArticles.length; i++) {
         const dayOffset = Math.floor(i / articlesPerDay);
         const articleInDayIndex = i % articlesPerDay;
-        
-        // Distribui os horários entre 08:00 e 22:00
-        const startHour = 8;
-        const endHour = 22;
-        const hourStep = articlesPerDay > 1 ? (endHour - startHour) / (articlesPerDay - 1) : 0;
-        
+
+        const hourStep = articlesPerDay > 1 ? (effectiveEnd - startHour) / (articlesPerDay - 1) : 0;
+
         const scheduledDate = new Date(startDate);
         scheduledDate.setDate(startDate.getDate() + dayOffset);
-        
+
         const hour = startHour + (articleInDayIndex * hourStep);
         scheduledDate.setHours(Math.floor(hour));
         scheduledDate.setMinutes(Math.floor((hour % 1) * 60));
