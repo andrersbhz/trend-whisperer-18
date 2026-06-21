@@ -3,11 +3,15 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { PasswordInput } from '@/components/ui/password-input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import {
   Instagram, Users, Image as ImageIcon, RefreshCw, CheckCircle2,
   Eye, TrendingUp, UserPlus, Globe, MousePointerClick, Heart,
-  MessageCircle, BarChart3, MapPin, Activity, Send, Loader2
+  MessageCircle, BarChart3, MapPin, Activity, Send, Loader2, KeyRound, Plus, ShieldAlert
 } from 'lucide-react';
 import Preloader from '@/components/Preloader';
 
@@ -19,6 +23,34 @@ const InstagramPage = () => {
   const [pages, setPages] = useState<any[] | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [testingPageId, setTestingPageId] = useState<string | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
+  const [addSaving, setAddSaving] = useState(false);
+  const [newAcc, setNewAcc] = useState({ username: '', password: '' });
+
+  const handleAddDirect = async () => {
+    if (!user) return;
+    if (!newAcc.username.trim() || !newAcc.password) {
+      toast({ title: 'Erro', description: 'Usuário e senha são obrigatórios', variant: 'destructive' });
+      return;
+    }
+    setAddSaving(true);
+    try {
+      const { error } = await supabase.from('instagram_accounts_direct').insert({
+        user_id: user.id,
+        username: newAcc.username.trim(),
+        password: newAcc.password,
+        is_active: true,
+      } as any);
+      if (error) throw error;
+      toast({ title: '✅ Conta adicionada', description: `@${newAcc.username} conectada via login direto.` });
+      setNewAcc({ username: '', password: '' });
+      setAddOpen(false);
+    } catch (e: any) {
+      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+    } finally {
+      setAddSaving(false);
+    }
+  };
 
   const handleTestPost = async (pageId: string, igUsername: string) => {
     if (!user) return;
@@ -132,22 +164,89 @@ const InstagramPage = () => {
             </p>
           </div>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          disabled={refreshing}
-          onClick={fetchFresh}
-          className="text-[10px] font-bold uppercase tracking-widest"
-        >
-          <RefreshCw className={`h-3.5 w-3.5 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-          {refreshing ? 'Atualizando...' : 'Atualizar'}
-          {lastUpdated && !refreshing && (
-            <span className="ml-2 text-muted-foreground normal-case font-normal tracking-normal">
-              · {new Date(lastUpdated).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
-            </span>
-          )}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            onClick={() => setAddOpen(true)}
+            className="bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] text-white text-[10px] font-bold uppercase tracking-widest hover:opacity-90"
+          >
+            <KeyRound className="h-3.5 w-3.5 mr-2" />
+            Adicionar (Login/Senha)
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={refreshing}
+            onClick={fetchFresh}
+            className="text-[10px] font-bold uppercase tracking-widest"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+            {refreshing ? 'Atualizando...' : 'Atualizar'}
+            {lastUpdated && !refreshing && (
+              <span className="ml-2 text-muted-foreground normal-case font-normal tracking-normal">
+                · {new Date(lastUpdated).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
+              </span>
+            )}
+          </Button>
+        </div>
       </div>
+
+      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Instagram className="h-5 w-5 text-[#ee2a7b]" />
+              Adicionar Instagram (Login direto)
+            </DialogTitle>
+            <DialogDescription>
+              Insira o usuário e senha do Instagram. A senha é criptografada antes de ser armazenada.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3 text-xs text-muted-foreground flex items-start gap-2">
+            <ShieldAlert className="h-4 w-4 text-yellow-500 shrink-0 mt-0.5" />
+            <p>
+              <strong className="text-yellow-500">Não suportamos 2FA.</strong> Se sua conta tem autenticação em
+              dois fatores, use a conexão oficial via Facebook (Graph API) em Configurações.
+            </p>
+          </div>
+
+          <div className="space-y-3 pt-1">
+            <div className="space-y-1.5">
+              <Label className="text-[10px] uppercase font-black tracking-widest text-muted-foreground">Usuário / Email</Label>
+              <Input
+                placeholder="seu_usuario"
+                value={newAcc.username}
+                onChange={(e) => setNewAcc({ ...newAcc, username: e.target.value })}
+                autoComplete="off"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-[10px] uppercase font-black tracking-widest text-muted-foreground">Senha</Label>
+              <PasswordInput
+                placeholder="••••••••"
+                value={newAcc.password}
+                onChange={(e) => setNewAcc({ ...newAcc, password: e.target.value })}
+                autoComplete="new-password"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setAddOpen(false)} disabled={addSaving}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleAddDirect}
+              disabled={addSaving}
+              className="bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] text-white"
+            >
+              {addSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Plus className="h-4 w-4 mr-2" />}
+              Salvar conta
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {!pages ? (
         <Card className="glass-card border-dashed border-primary/30 p-12 text-center">
