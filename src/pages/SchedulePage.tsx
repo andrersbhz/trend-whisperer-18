@@ -580,7 +580,19 @@ const SchedulePage = () => {
                 <Trash2 className="h-3.5 w-3.5" />
                 Apagar Publicados
               </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSortAsc(v => !v)}
+                className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1.5 h-7 px-2 rounded-none"
+                title={sortAsc ? 'Ordem crescente (mais antigos primeiro)' : 'Ordem decrescente (mais recentes primeiro)'}
+              >
+                {sortAsc ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />}
+                {sortAsc ? 'Crescente' : 'Decrescente'}
+              </Button>
             </div>
+            
             
             {selectedIds.length > 0 && (
               <div className="flex items-center gap-2 animate-in fade-in slide-in-from-right-2">
