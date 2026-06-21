@@ -23,6 +23,34 @@ const InstagramPage = () => {
   const [pages, setPages] = useState<any[] | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [testingPageId, setTestingPageId] = useState<string | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
+  const [addSaving, setAddSaving] = useState(false);
+  const [newAcc, setNewAcc] = useState({ username: '', password: '' });
+
+  const handleAddDirect = async () => {
+    if (!user) return;
+    if (!newAcc.username.trim() || !newAcc.password) {
+      toast({ title: 'Erro', description: 'Usuário e senha são obrigatórios', variant: 'destructive' });
+      return;
+    }
+    setAddSaving(true);
+    try {
+      const { error } = await supabase.from('instagram_accounts_direct').insert({
+        user_id: user.id,
+        username: newAcc.username.trim(),
+        password: newAcc.password,
+        is_active: true,
+      } as any);
+      if (error) throw error;
+      toast({ title: '✅ Conta adicionada', description: `@${newAcc.username} conectada via login direto.` });
+      setNewAcc({ username: '', password: '' });
+      setAddOpen(false);
+    } catch (e: any) {
+      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+    } finally {
+      setAddSaving(false);
+    }
+  };
 
   const handleTestPost = async (pageId: string, igUsername: string) => {
     if (!user) return;
