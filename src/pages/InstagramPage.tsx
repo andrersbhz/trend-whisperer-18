@@ -3,11 +3,15 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { PasswordInput } from '@/components/ui/password-input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import {
   Instagram, Users, Image as ImageIcon, RefreshCw, CheckCircle2,
   Eye, TrendingUp, UserPlus, Globe, MousePointerClick, Heart,
-  MessageCircle, BarChart3, MapPin, Activity, Send, Loader2
+  MessageCircle, BarChart3, MapPin, Activity, Send, Loader2, KeyRound, Plus, ShieldAlert
 } from 'lucide-react';
 import Preloader from '@/components/Preloader';
 
