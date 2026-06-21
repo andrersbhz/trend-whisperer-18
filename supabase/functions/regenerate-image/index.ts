@@ -216,7 +216,7 @@ serve(async (req) => {
     let openaiApiKey: string | null = null;
     const { data: settings } = await supabase
       .from("user_settings")
-      .select("gemini_api_key, openai_api_key, writer_prompt, image_mode, image_prompt")
+      .select("gemini_api_key, openai_api_key, writer_prompt, image_mode, image_prompt, image_format")
       .eq("user_id", userId)
       .single();
     
@@ -226,6 +226,7 @@ serve(async (req) => {
       throw new Error("O 'Prompt de Imagem IA' não está configurado. Por favor, vá em Configurações > Geral.");
     }
     const imageMode = settings?.image_mode || "ai";
+    const fmt = getImageFormat((settings as any)?.image_format);
 
     if (imageMode !== "ai" && !force) {
       throw new Error(`A regeneração por IA está desativada. Altere o Modo de Imagem para "Gerada por IA" nas configurações.`);
@@ -280,7 +281,7 @@ serve(async (req) => {
       // Prioridade absoluta: OpenAI (ChatGPT/DALL-E) conforme solicitado
       if (openaiApiKey) {
         try { 
-          imageUrl = await generateImageDallE(openaiApiKey, article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt); 
+          imageUrl = await generateImageDallE(openaiApiKey, article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt, fmt); 
         } catch (error) { 
           providerErrors.push(`OpenAI (ChatGPT): ${getErrorMessage(error)}`);
         }
@@ -288,14 +289,14 @@ serve(async (req) => {
       
       // Fallback para Gemini se OpenAI falhar ou não estiver configurado
       if (!imageUrl && geminiApiKey) {
-        try { imageUrl = await generateImageGemini(geminiApiKey, article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt); }
+        try { imageUrl = await generateImageGemini(geminiApiKey, article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt, fmt); }
         catch (error) { providerErrors.push(`Gemini: ${getErrorMessage(error)}`); }
       }
 
       // Fallback final: Pollinations (sempre funciona)
       if (!imageUrl) {
         try {
-          imageUrl = await generateImagePollinations(article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt);
+          imageUrl = await generateImagePollinations(article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt, fmt);
         } catch (error) {
           providerErrors.push(`Pollinations: ${getErrorMessage(error)}`);
         }
