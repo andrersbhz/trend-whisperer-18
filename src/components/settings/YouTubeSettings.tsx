@@ -92,6 +92,8 @@ const YouTubeSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChange,
         const el = document.getElementById('youtube-api-key-input');
         el?.focus();
       } : undefined}
+      onTest={handleTest}
+      testing={testing}
       onDisconnect={async () => { await onDisconnect?.(); onChange({ youtube_api_key: '' }); setTestResult(null); }}
     >
       <div className="space-y-3">
