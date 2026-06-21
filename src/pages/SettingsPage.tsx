@@ -37,6 +37,7 @@ export interface UserSettings {
   groq_api_key: string;
   youtube_api_key: string;
   categories: string[];
+  priority_categories: string[];
   articles_per_day: number;
   auto_publish: boolean;
   writer_prompt: string;
@@ -75,6 +76,7 @@ const defaultSettings: UserSettings = {
   groq_api_key: '',
   youtube_api_key: '',
   categories: ['esportes', 'politica', 'policia', 'saude', 'celebridades', 'financas'],
+  priority_categories: [],
   articles_per_day: 3,
   auto_publish: false,
   writer_prompt: '',
@@ -132,7 +134,7 @@ const SettingsPage = () => {
       try {
         const { data: userData, error: userError } = await supabase
           .from('user_settings')
-          .select('id, user_id, wordpress_url, wordpress_username, facebook_page_id, instagram_account_id, google_analytics_property_id, google_indexing_key, azure_openai_endpoint, azure_openai_deployment_name, categories, articles_per_day, auto_publish, writer_prompt, image_mode, image_prompt, interaction_mode, dashboard_widgets, dashboard_order')
+          .select('id, user_id, wordpress_url, wordpress_username, facebook_page_id, instagram_account_id, google_analytics_property_id, google_indexing_key, azure_openai_endpoint, azure_openai_deployment_name, categories, priority_categories, articles_per_day, auto_publish, writer_prompt, image_mode, image_prompt, interaction_mode, dashboard_widgets, dashboard_order')
           .eq('user_id', user.id)
           .maybeSingle();
 
@@ -161,6 +163,7 @@ const SettingsPage = () => {
             groq_api_key: '',
             youtube_api_key: '',
             categories: userData.categories || defaultSettings.categories,
+            priority_categories: (userData as any).priority_categories || [],
             articles_per_day: userData.articles_per_day || 3,
             auto_publish: userData.auto_publish || false,
             writer_prompt: userData.writer_prompt || '',
@@ -231,6 +234,7 @@ const SettingsPage = () => {
         azure_openai_endpoint: settings.azure_openai_endpoint,
         azure_openai_deployment_name: settings.azure_openai_deployment_name,
         categories: settings.categories,
+        priority_categories: settings.priority_categories,
         articles_per_day: settings.articles_per_day,
         auto_publish: settings.auto_publish,
         writer_prompt: settings.writer_prompt,
@@ -299,6 +303,7 @@ const SettingsPage = () => {
           google_analytics_property_id: settings.google_analytics_property_id,
           google_indexing_key: settings.google_indexing_key,
           categories: settings.categories,
+          priority_categories: settings.priority_categories,
           articles_per_day: settings.articles_per_day,
           auto_publish: settings.auto_publish,
           writer_prompt: settings.writer_prompt,
