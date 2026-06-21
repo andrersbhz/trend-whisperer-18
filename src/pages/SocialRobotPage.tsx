@@ -392,28 +392,141 @@ const SocialRobotPage = () => {
         )}
 
         {activeTab === 'growth' && (
-          <Card className="glass-card border-primary/20 overflow-hidden shadow-elevated">
-            <CardHeader className="p-6 border-b border-white/5 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 border border-primary/20"><UserPlus className="h-6 w-6 text-primary" /></div>
-                <div><CardTitle className="text-xl font-black uppercase">Conexões Ativas</CardTitle><CardDescription className="text-xs uppercase font-bold text-muted-foreground">Monitoramento de crescimento estratégico</CardDescription></div>
-              </div>
-              <Badge className="bg-primary/20 text-primary border-primary/40 font-black px-4 h-8">{activeFollows.length} NODOS</Badge>
-            </CardHeader>
-            <CardContent className="p-0 max-h-[500px] overflow-y-auto no-scrollbar">
-              <div className="divide-y divide-white/5">
-                {activeFollows.map(follow => (
-                  <div key={follow.id} className="p-6 flex items-center justify-between hover:bg-white/5 transition-colors">
-                    <div className="flex items-center gap-4">
-                      <div className="h-12 w-12 border border-primary/20 bg-primary/5 flex items-center justify-center overflow-hidden">{follow.target_avatar ? <img src={follow.target_avatar} className="h-full w-full object-cover" /> : <Bot className="h-6 w-6 text-primary" />}</div>
-                      <div><p className="text-sm font-black uppercase tracking-tighter">{follow.target_username || 'Seguidor'}</p><p className="text-[10px] text-muted-foreground font-bold">Seguido em {format(new Date(follow.followed_at), 'dd/MM/yyyy')}</p></div>
+          <div className="space-y-6">
+            {/* Painel de Controle de Expansão */}
+            <Card className="glass-card border-primary/20 overflow-hidden shadow-elevated">
+              <CardHeader className="p-6 border-b border-white/5">
+                <div className="flex items-center justify-between gap-4 flex-wrap">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary/10 border border-primary/20"><TrendingUp className="h-6 w-6 text-primary" /></div>
+                    <div>
+                      <CardTitle className="text-xl font-black uppercase">Motor de Expansão</CardTitle>
+                      <CardDescription className="text-xs uppercase font-bold text-muted-foreground">Atrair novos seguidores de forma orgânica e automática</CardDescription>
                     </div>
-                    <Badge variant="outline" className="text-[9px] font-black border-primary/30 text-primary uppercase">Unfollow em {format(addDays(new Date(follow.followed_at), growthSettings.durationMax), 'dd/MM')}</Badge>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge className={cn("font-black px-3 h-8 border", followerGrowthMode ? "bg-success/10 text-success border-success/40" : "bg-muted text-muted-foreground border-white/10")}>
+                      {followerGrowthMode ? "AUTO: ON" : "AUTO: OFF"}
+                    </Badge>
+                    <Button
+                      size="sm"
+                      onClick={async () => {
+                        if (!user) return;
+                        setProcessing(true);
+                        try {
+                          const { data, error } = await supabase.functions.invoke('handle-social-growth', { body: { userId: user.id } });
+                          if (error) throw error;
+                          toast({ title: 'Ciclo executado', description: `${data?.followed || 0} novos seguidos, ${data?.unfollowed || 0} unfollows. Meta hoje: ${data?.targetToday || 0}.` });
+                          fetchActiveFollows();
+                          fetchLogs();
+                        } catch (err) {
+                          toast({ title: 'Erro', description: getErrorMessage(err), variant: 'destructive' });
+                        } finally {
+                          setProcessing(false);
+                        }
+                      }}
+                      disabled={processing}
+                      className="bg-primary text-black font-black uppercase h-8 px-3 rounded-none text-[10px]"
+                    >
+                      {processing ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <UserPlus className="h-3 w-3 mr-1" />}
+                      Executar Ciclo
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-black/40 border border-primary/10 p-4">
+                  <p className="text-[9px] text-muted-foreground uppercase font-black tracking-widest">Seguindo</p>
+                  <p className="text-3xl font-black text-primary">{activeFollows.length}</p>
+                </div>
+                <div className="bg-black/40 border border-primary/10 p-4">
+                  <p className="text-[9px] text-muted-foreground uppercase font-black tracking-widest">Convites IA</p>
+                  <p className="text-3xl font-black text-primary">{invitedFollowers.length}</p>
+                </div>
+                <div className="bg-black/40 border border-primary/10 p-4">
+                  <p className="text-[9px] text-muted-foreground uppercase font-black tracking-widest">Meta/Dia</p>
+                  <p className="text-3xl font-black text-primary">{growthSettings.followsMin}-{growthSettings.followsMax}</p>
+                </div>
+                <div className="bg-black/40 border border-primary/10 p-4">
+                  <p className="text-[9px] text-muted-foreground uppercase font-black tracking-widest">Duração</p>
+                  <p className="text-3xl font-black text-primary">{growthSettings.durationMin}-{growthSettings.durationMax}d</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Guia: Como o robô traz novos seguidores */}
+            <Card className="glass-card border-white/5 overflow-hidden">
+              <CardHeader className="p-6 border-b border-white/5">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-[hsl(200_100%_60%)]/10 border border-[hsl(200_100%_60%)]/20"><Info className="h-5 w-5 text-[hsl(200_100%_60%)]" /></div>
+                  <div>
+                    <CardTitle className="text-lg font-black uppercase">Como Trazer Novos Seguidores</CardTitle>
+                    <CardDescription className="text-xs uppercase font-bold text-muted-foreground">Estratégia em 4 passos — totalmente automatizada</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                {[
+                  { n: '01', t: 'Mapear Audiência', d: 'O robô varre comentários e reações das suas páginas para identificar pessoas que já demonstraram interesse no seu nicho.' },
+                  { n: '02', t: 'Engajamento Humanizado', d: 'A IA responde comentários e reage a interações pendentes, criando reciprocidade — o gatilho psicológico mais poderoso do social media.' },
+                  { n: '03', t: 'Follow Estratégico', d: `Segue automaticamente entre ${growthSettings.followsMin} e ${growthSettings.followsMax} contas/dia entre os perfis mapeados, respeitando limites para evitar bloqueios.` },
+                  { n: '04', t: 'Unfollow Inteligente', d: `Após ${growthSettings.durationMin}-${growthSettings.durationMax} dias, deixa de seguir quem não retribuiu, mantendo sua proporção saudável e seu alcance alto.` },
+                ].map(step => (
+                  <div key={step.n} className="bg-black/30 border border-primary/10 p-4 hover:border-primary/30 transition-all">
+                    <div className="flex items-start gap-3">
+                      <div className="text-3xl font-black text-primary/40 leading-none">{step.n}</div>
+                      <div className="flex-1">
+                        <p className="text-sm font-black uppercase tracking-tighter text-primary">{step.t}</p>
+                        <p className="text-xs text-muted-foreground font-medium mt-1 leading-relaxed">{step.d}</p>
+                      </div>
+                    </div>
                   </div>
                 ))}
-              </div>
-            </CardContent>
-          </Card>
+                <div className="md:col-span-2 bg-primary/5 border border-primary/20 p-4 flex items-center justify-between gap-4 flex-wrap">
+                  <div className="flex items-center gap-3">
+                    <ShieldCheck className="h-5 w-5 text-primary shrink-0" />
+                    <div>
+                      <p className="text-xs font-black uppercase tracking-widest">Modo Automático 24/7</p>
+                      <p className="text-[10px] text-muted-foreground font-bold">Ative para o motor de crescimento rodar em segundo plano, sem precisar clicar em nada.</p>
+                    </div>
+                  </div>
+                  <Switch checked={followerGrowthMode} onCheckedChange={toggleFollowerGrowth} />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Conexões Ativas */}
+            <Card className="glass-card border-primary/20 overflow-hidden shadow-elevated">
+              <CardHeader className="p-6 border-b border-white/5 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 border border-primary/20"><UserPlus className="h-6 w-6 text-primary" /></div>
+                  <div><CardTitle className="text-xl font-black uppercase">Conexões Ativas</CardTitle><CardDescription className="text-xs uppercase font-bold text-muted-foreground">Monitoramento de crescimento estratégico</CardDescription></div>
+                </div>
+                <Badge className="bg-primary/20 text-primary border-primary/40 font-black px-4 h-8">{activeFollows.length} NODOS</Badge>
+              </CardHeader>
+              <CardContent className="p-0 max-h-[500px] overflow-y-auto no-scrollbar">
+                {activeFollows.length === 0 ? (
+                  <div className="p-12 text-center">
+                    <UserPlus className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
+                    <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Nenhuma conexão ativa ainda</p>
+                    <p className="text-[10px] text-muted-foreground/60 font-bold mt-1">Ative o modo automático ou execute um ciclo agora.</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-white/5">
+                    {activeFollows.map(follow => (
+                      <div key={follow.id} className="p-6 flex items-center justify-between hover:bg-white/5 transition-colors">
+                        <div className="flex items-center gap-4">
+                          <div className="h-12 w-12 border border-primary/20 bg-primary/5 flex items-center justify-center overflow-hidden">{follow.target_avatar ? <img src={follow.target_avatar} className="h-full w-full object-cover" /> : <Bot className="h-6 w-6 text-primary" />}</div>
+                          <div><p className="text-sm font-black uppercase tracking-tighter">{follow.target_username || 'Seguidor'}</p><p className="text-[10px] text-muted-foreground font-bold">Seguido em {format(new Date(follow.followed_at), 'dd/MM/yyyy')}</p></div>
+                        </div>
+                        <Badge variant="outline" className="text-[9px] font-black border-primary/30 text-primary uppercase">Unfollow em {format(addDays(new Date(follow.followed_at), growthSettings.durationMax), 'dd/MM')}</Badge>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         )}
 
         {activeTab === 'telemetry' && (
