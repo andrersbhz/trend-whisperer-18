@@ -7,10 +7,14 @@ const corsHeaders = {
 };
 
 // O prompt da imagem é composto OBRIGATORIAMENTE pelo prompt configurado nas configurações e o título da notícia.
-function buildImagePrompt(title: string, content: string | null, visualElements: string | null | undefined, imagePrompt: string | null | undefined): string {
+function buildImagePrompt(title: string, content: string | null, visualElements: string | null | undefined, imagePrompt: string | null | undefined, fmt?: { width: number; height: number; label: string }): string {
   if (!imagePrompt || imagePrompt.trim().length < 5) {
     throw new Error("O 'Prompt de Imagem IA' não está configurado em Configurações > Geral. Este prompt é obrigatório.");
   }
+
+  const fmtBlock = fmt
+    ? `\n\nFORMATO OBRIGATÓRIO DA IMAGEM: ${fmt.label} — proporção exata ${fmt.width}x${fmt.height}px. Componha o enquadramento para esta proporção.`
+    : `\n- Se o estilo do usuário não especificar proporção, prefira 4:5 (1080x1350) para Instagram.`;
 
   return `DIRETRIZES OBRIGATÓRIAS DE ESTILO (DINÂMICO DAS CONFIGURAÇÕES):
 ${imagePrompt.trim()}
@@ -21,8 +25,22 @@ ${title}
 INSTRUÇÕES DE QUALIDADE E VERACIDADE:
 - A imagem deve ser visualmente conectada e fiel ao título acima.
 - Não inclua textos longos, marcas d'água ou elementos desconexos.
-- Foque na representação visual fiel do assunto.
-- Se o estilo do usuário não especificar proporção, prefira 4:5 (1080x1350) para Instagram.`;
+- Foque na representação visual fiel do assunto.${fmtBlock}`;
+}
+
+const IMAGE_FORMATS: Record<string, { width: number; height: number; dalle: "1024x1024" | "1024x1792" | "1792x1024"; label: string }> = {
+  instagram_square:   { width: 1080, height: 1080, dalle: "1024x1024", label: "Instagram Feed Quadrado 1:1" },
+  instagram_portrait: { width: 1080, height: 1350, dalle: "1024x1792", label: "Instagram Feed Retrato 4:5" },
+  instagram_story:    { width: 1080, height: 1920, dalle: "1024x1792", label: "Instagram Story 9:16" },
+  facebook_post:      { width: 1200, height: 630,  dalle: "1792x1024", label: "Facebook Post 1.91:1" },
+  facebook_square:    { width: 1200, height: 1200, dalle: "1024x1024", label: "Facebook Quadrado 1:1" },
+  facebook_story:     { width: 1080, height: 1920, dalle: "1024x1792", label: "Facebook Story 9:16" },
+  linkedin_post:      { width: 1200, height: 627,  dalle: "1792x1024", label: "LinkedIn Post 1.91:1" },
+  linkedin_square:    { width: 1200, height: 1200, dalle: "1024x1024", label: "LinkedIn Quadrado 1:1" },
+};
+
+function getImageFormat(key?: string | null) {
+  return IMAGE_FORMATS[key || ""] || IMAGE_FORMATS.instagram_portrait;
 }
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
