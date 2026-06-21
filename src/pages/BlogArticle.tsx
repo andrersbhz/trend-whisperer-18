@@ -12,6 +12,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import ReadingThemeToggle from '@/components/blog/ReadingThemeToggle';
+import AdSlot from '@/components/blog/AdSlot';
+
 
 const BlogArticle = () => {
   const { articleId } = useParams<{ articleId: string }>();
@@ -68,9 +70,8 @@ const BlogArticle = () => {
         </div>
 
         {/* Top Ad */}
-        <div className="w-full h-24 bg-muted/30 border border-dashed border-border flex items-center justify-center text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-10">
-          Publicidade (AdSense)
-        </div>
+        <AdSlot slot={import.meta.env.VITE_ADSENSE_SLOT_ARTICLE_TOP} minHeight={120} className="mb-10" />
+
 
         <header className="mb-10 text-center">
           <Badge className="mb-6 bg-primary text-white border-none rounded-none text-[10px] uppercase font-bold tracking-[0.2em] px-4 py-1 mx-auto">
@@ -109,6 +110,10 @@ const BlogArticle = () => {
           dangerouslySetInnerHTML={{ __html: article.content }}
         />
 
+        {/* Mid-article Ad (in-feed) */}
+        <AdSlot slot={import.meta.env.VITE_ADSENSE_SLOT_ARTICLE_MID} minHeight={250} className="my-10" />
+
+
         {/* Author Bio Box */}
         {article.authors && (
           <div className="mt-16 p-8 border border-border bg-[#fafafa] flex flex-col sm:flex-row gap-6 items-center sm:items-start text-center sm:text-left">
@@ -126,9 +131,8 @@ const BlogArticle = () => {
           </div>
         )}
 
-        <div className="w-full h-32 bg-muted/30 border border-dashed border-border flex items-center justify-center text-[10px] font-bold text-muted-foreground uppercase tracking-widest my-12">
-          Publicidade (AdSense)
-        </div>
+        <AdSlot slot={import.meta.env.VITE_ADSENSE_SLOT_ARTICLE_BOTTOM} minHeight={250} className="my-12" />
+
         
         <footer className="mt-20 pt-12 border-t border-border">
           <div className="bg-[#f8f8f8] border border-border p-8 sm:p-12 text-center">
