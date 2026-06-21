@@ -623,15 +623,17 @@ serve(async (req) => {
     // mas penaliza significativamente categorias já saturadas nas últimas 24h para garantir equilíbrio.
     // O multiplicador 10 para 'peak' (volume) mantém a preferência por trends, 
     // mas o multiplicador 4 para 'recent' garante que após 2-3 posts a prioridade mude.
+    const priorityCategories: string[] = Array.isArray(settings?.priority_categories) ? settings.priority_categories : [];
     const categoryPriority = (cat: string): number => {
       const top = topicsByCategory[cat][0];
       const peak = top ? volumeScore(top.search_volume) : 0;
       const recent = countsByCategory[cat] || 0;
+      const priorityBoost = priorityCategories.includes(cat) ? 100 : 0;
       
-      // Prioridade: (Peso do Volume x 20) - (Peso da Saturação x 4)
-      // O multiplicador 20 garante que tópicos de 'alto' volume (3) sempre superem 
-      // tópicos de 'médio' (2) ou 'baixo' (1) mesmo se a categoria tiver 1-2 posts recentes.
-      return peak * 20 - recent * 4.0;
+      // Prioridade: (Boost manual) + (Peso do Volume x 20) - (Peso da Saturação x 4)
+      // O boost de 100 garante que categorias marcadas como prioritárias venham primeiro,
+      // mas ainda permite rotação para evitar saturação extrema.
+      return priorityBoost - recent * 6 + peak * 20 - recent * 4.0;
     };
 
     // Round-robin ponderado: a cada rodada reordena por prioridade atual,
