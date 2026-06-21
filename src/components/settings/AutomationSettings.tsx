@@ -10,7 +10,7 @@ import type { UserSettings } from '@/pages/SettingsPage';
 import { forwardRef } from 'react';
 
  import { useState, useMemo } from 'react';
- import { Plus, X, Users, Shuffle, ShieldCheck } from 'lucide-react';
+ import { Plus, X, Users, Shuffle, ShieldCheck, Star } from 'lucide-react';
  import { Button } from '@/components/ui/button';
  import { Badge } from '@/components/ui/badge';
  import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
