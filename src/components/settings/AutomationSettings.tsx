@@ -46,7 +46,16 @@ const AutomationSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChan
     const newCategories = settings.categories.includes(catId)
       ? settings.categories.filter((c) => c !== catId)
       : [...settings.categories, catId];
-    onChange({ categories: newCategories });
+    const newPriority = (settings.priority_categories || []).filter((c) => newCategories.includes(c));
+    onChange({ categories: newCategories, priority_categories: newPriority });
+  };
+
+  const togglePriority = (catId: string) => {
+    const current = settings.priority_categories || [];
+    const newPriority = current.includes(catId)
+      ? current.filter((c) => c !== catId)
+      : [...current, catId];
+    onChange({ priority_categories: newPriority });
   };
 
   const addCustomCategory = () => {
