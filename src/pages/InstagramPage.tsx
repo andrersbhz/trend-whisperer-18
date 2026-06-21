@@ -156,6 +156,7 @@ const InstagramPage = () => {
   useEffect(() => {
     if (!user) return;
     (async () => {
+      await fetchDirectAccounts();
       const hasCache = await loadCached();
       setLoading(false);
       // Se não havia cache, busca da API automaticamente
