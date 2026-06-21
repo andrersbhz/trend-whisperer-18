@@ -1,7 +1,7 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Unplug, ExternalLink } from 'lucide-react';
+import { Unplug, ExternalLink, Activity, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { forwardRef } from 'react';
 
@@ -14,6 +14,8 @@ interface ConnectionCardProps {
   onToggleStayConnected?: (checked: boolean) => void;
   onDisconnect?: () => void;
   onConnect?: () => void;
+  onTest?: () => void;
+  testing?: boolean;
   children?: React.ReactNode;
   connectedInfo?: string;
 }
@@ -27,6 +29,8 @@ const ConnectionCard = forwardRef<HTMLDivElement, ConnectionCardProps>(({
   onToggleStayConnected,
   onDisconnect,
   onConnect,
+  onTest,
+  testing = false,
   children,
   connectedInfo,
 }, ref) => {
@@ -37,7 +41,7 @@ const ConnectionCard = forwardRef<HTMLDivElement, ConnectionCardProps>(({
         connected ? 'bg-success' : 'bg-destructive'
       )} />
       <CardContent className="p-5">
-        <div className="flex items-start justify-between mb-4">
+        <div className="flex items-start justify-between mb-4 gap-2">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-muted">
               {icon}
@@ -53,12 +57,31 @@ const ConnectionCard = forwardRef<HTMLDivElement, ConnectionCardProps>(({
               <p className="text-xs text-muted-foreground">{description}</p>
             </div>
           </div>
-          {!connected && onConnect && (
-            <Button size="sm" onClick={onConnect} className="gradient-primary">
-              <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
-              Conectar
-            </Button>
-          )}
+          <div className="flex items-center gap-2 shrink-0">
+            {onTest && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={onTest}
+                disabled={testing}
+                className="h-8 text-[10px] font-bold uppercase tracking-widest"
+                title="Testar conexão"
+              >
+                {testing ? (
+                  <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                ) : (
+                  <Activity className="h-3.5 w-3.5 mr-1.5" />
+                )}
+                Testar
+              </Button>
+            )}
+            {!connected && onConnect && (
+              <Button size="sm" onClick={onConnect} className="gradient-primary">
+                <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
+                Conectar
+              </Button>
+            )}
+          </div>
         </div>
 
         {connectedInfo && connected && (
@@ -94,3 +117,4 @@ const ConnectionCard = forwardRef<HTMLDivElement, ConnectionCardProps>(({
 ConnectionCard.displayName = 'ConnectionCard';
 
 export default ConnectionCard;
+
