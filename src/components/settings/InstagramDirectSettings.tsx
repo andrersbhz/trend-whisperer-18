@@ -95,6 +95,17 @@ const InstagramDirectSettings = () => {
       description="Gerencie postagens via login e senha"
       connected={connected}
       connectedInfo={connected ? `${accounts.length} conta(s) configurada(s)` : undefined}
+      onTest={connected ? async () => {
+        const active = accounts.filter(a => a.is_active);
+        if (active.length === 0) {
+          toast({ title: '⚠️ Nenhuma conta ativa', description: 'Adicione ou ative ao menos uma conta.', variant: 'destructive' });
+          return;
+        }
+        toast({
+          title: '✅ Credenciais armazenadas',
+          description: `${active.length} conta(s) ativa(s): ${active.map(a => '@' + a.username).join(', ')}`,
+        });
+      } : undefined}
       onConnect={!connected ? () => setShowAdd(true) : undefined}
       onDisconnect={connected ? async () => {
         if (confirm('Tem certeza que deseja remover todas as conexões diretas do Instagram?')) {

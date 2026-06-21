@@ -85,6 +85,8 @@ const GoogleIndexingSettings = forwardRef<HTMLDivElement, Props>(({ settings, on
       description="Indexação imediata e monitoramento de novos posts no Google"
       connected={connected}
       connectedInfo={connected ? (hasGoogleToken ? "Conectado via Google OAuth" : "Configurado (Chave JSON)") : undefined}
+      onTest={handleGoogleConnect}
+      testing={oauthLoading}
       onDisconnect={async () => {
         if (hasGoogleToken) {
            await supabase.from('user_settings').update({ google_search_console_token: null } as any).eq('user_id', (await supabase.auth.getUser()).data.user?.id);

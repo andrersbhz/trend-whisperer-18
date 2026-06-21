@@ -62,6 +62,8 @@ const AzureCopilotSettings = forwardRef<HTMLDivElement, Props>(({ settings, onCh
       description="Redundância enterprise via Azure para garantir 100% de disponibilidade"
       connected={connected}
       connectedInfo={connected ? 'Azure Copilot configurado ✓' : undefined}
+      onTest={handleTest}
+      testing={testing}
       onDisconnect={async () => {
         await onDisconnect?.();
         onChange({ azure_openai_api_key: '', azure_openai_endpoint: '', azure_openai_deployment_name: '' });

@@ -59,6 +59,8 @@ const OpenAISettings = forwardRef<HTMLDivElement, Props>(({ settings, onChange, 
       description="Use sua própria chave da OpenAI como provedor alternativo de IA para gerar artigos"
       connected={connected}
       connectedInfo={connected ? 'Chave OpenAI configurada ✓' : undefined}
+      onTest={handleTest}
+      testing={testing}
       onDisconnect={async () => {
         await onDisconnect?.();
         onChange({ openai_api_key: '' });

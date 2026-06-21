@@ -85,6 +85,8 @@ const JetpackSettings = forwardRef<HTMLDivElement, Props>(({ settings, hasWpPass
       description="Conecte ao Jetpack para puxar métricas de compartilhamento e estatísticas do WordPress"
       connected={connected}
       connectedInfo={connected && jetpackInfo ? `Jetpack ativo — ${jetpackInfo.version || 'conectado'}` : undefined}
+      onTest={testJetpack}
+      testing={testing}
       onDisconnect={() => {
         setTestResult(null);
         setJetpackInfo(null);

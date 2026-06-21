@@ -286,6 +286,30 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
     fetchAccounts();
   };
 
+  const [testingConnection, setTestingConnection] = useState(false);
+  const handleTestConnection = async () => {
+    if (!user) return;
+    setTestingConnection(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('fetch-meta-metrics', {
+        body: { userId: user.id, dateRange: 'last_7d' },
+      });
+      if (error) throw error;
+      const ok = data && !data.error;
+      toast({
+        title: ok ? '✅ Conexão Facebook OK!' : '❌ Falha na conexão',
+        description: ok
+          ? `${(data?.pages || []).length} página(s) respondendo via Graph API.`
+          : (data?.error || 'Tokens podem estar expirados — reconecte.'),
+        variant: ok ? 'default' : 'destructive',
+      });
+    } catch (e: any) {
+      toast({ title: '❌ Falha na conexão', description: e.message, variant: 'destructive' });
+    } finally {
+      setTestingConnection(false);
+    }
+  };
+
   const connected = accounts.length > 0;
   const connectedPageIds = new Set(accounts.map((a) => a.page_id));
 
@@ -296,6 +320,8 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
       description="Postagem automática nas redes sociais"
       connected={connected}
       connectedInfo={connected ? `${accounts.length} conta(s) conectada(s)` : undefined}
+      onTest={connected ? handleTestConnection : undefined}
+      testing={testingConnection}
       onDisconnect={async () => {
         for (const acc of accounts) {
           await supabase.from('facebook_accounts').delete().eq('id', acc.id);
