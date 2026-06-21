@@ -43,6 +43,7 @@ export interface UserSettings {
   writer_prompt: string;
   image_mode: 'ai' | 'manual' | 'none';
   image_prompt: string;
+  image_format: string;
   interaction_mode: string;
   dashboard_widgets: {
     stats: boolean;
@@ -82,6 +83,7 @@ const defaultSettings: UserSettings = {
   writer_prompt: '',
   image_mode: 'ai',
   image_prompt: '',
+  image_format: 'instagram_portrait',
   interaction_mode: 'standard',
   dashboard_widgets: {
     stats: true,
@@ -134,7 +136,7 @@ const SettingsPage = () => {
       try {
         const { data: userData, error: userError } = await supabase
           .from('user_settings')
-          .select('id, user_id, wordpress_url, wordpress_username, facebook_page_id, instagram_account_id, google_analytics_property_id, google_indexing_key, azure_openai_endpoint, azure_openai_deployment_name, categories, priority_categories, articles_per_day, auto_publish, writer_prompt, image_mode, image_prompt, interaction_mode, dashboard_widgets, dashboard_order')
+          .select('id, user_id, wordpress_url, wordpress_username, facebook_page_id, instagram_account_id, google_analytics_property_id, google_indexing_key, azure_openai_endpoint, azure_openai_deployment_name, categories, priority_categories, articles_per_day, auto_publish, writer_prompt, image_mode, image_prompt, image_format, interaction_mode, dashboard_widgets, dashboard_order')
           .eq('user_id', user.id)
           .maybeSingle();
 
@@ -169,6 +171,7 @@ const SettingsPage = () => {
             writer_prompt: userData.writer_prompt || '',
             image_mode: (userData.image_mode as 'ai' | 'manual' | 'none') || 'ai',
             image_prompt: userData.image_prompt || '',
+            image_format: (userData as any).image_format || 'instagram_portrait',
             interaction_mode: userData.interaction_mode || 'standard',
             dashboard_widgets: (userData.dashboard_widgets as UserSettings['dashboard_widgets']) || defaultSettings.dashboard_widgets,
             dashboard_order: (userData.dashboard_order as string[]) || defaultSettings.dashboard_order,
@@ -240,6 +243,7 @@ const SettingsPage = () => {
         writer_prompt: settings.writer_prompt,
         image_mode: settings.image_mode,
         image_prompt: settings.image_prompt,
+        image_format: settings.image_format,
         interaction_mode: settings.interaction_mode,
         dashboard_widgets: settings.dashboard_widgets,
         dashboard_order: settings.dashboard_order,
@@ -309,6 +313,7 @@ const SettingsPage = () => {
           writer_prompt: settings.writer_prompt,
           image_mode: settings.image_mode,
           image_prompt: settings.image_prompt,
+          image_format: settings.image_format,
           dashboard_widgets: settings.dashboard_widgets,
           dashboard_order: settings.dashboard_order,
         };

@@ -7,10 +7,14 @@ const corsHeaders = {
 };
 
 // O prompt da imagem é composto OBRIGATORIAMENTE pelo prompt configurado nas configurações e o título da notícia.
-function buildImagePrompt(title: string, content: string | null, visualElements: string | null | undefined, imagePrompt: string | null | undefined): string {
+function buildImagePrompt(title: string, content: string | null, visualElements: string | null | undefined, imagePrompt: string | null | undefined, fmt?: { width: number; height: number; label: string }): string {
   if (!imagePrompt || imagePrompt.trim().length < 5) {
     throw new Error("O 'Prompt de Imagem IA' não está configurado em Configurações > Geral. Este prompt é obrigatório.");
   }
+
+  const fmtBlock = fmt
+    ? `\n\nFORMATO OBRIGATÓRIO DA IMAGEM: ${fmt.label} — proporção exata ${fmt.width}x${fmt.height}px. Componha o enquadramento para esta proporção.`
+    : `\n- Se o estilo do usuário não especificar proporção, prefira 4:5 (1080x1350) para Instagram.`;
 
   return `DIRETRIZES OBRIGATÓRIAS DE ESTILO (DINÂMICO DAS CONFIGURAÇÕES):
 ${imagePrompt.trim()}
@@ -21,8 +25,22 @@ ${title}
 INSTRUÇÕES DE QUALIDADE E VERACIDADE:
 - A imagem deve ser visualmente conectada e fiel ao título acima.
 - Não inclua textos longos, marcas d'água ou elementos desconexos.
-- Foque na representação visual fiel do assunto.
-- Se o estilo do usuário não especificar proporção, prefira 4:5 (1080x1350) para Instagram.`;
+- Foque na representação visual fiel do assunto.${fmtBlock}`;
+}
+
+const IMAGE_FORMATS: Record<string, { width: number; height: number; dalle: "1024x1024" | "1024x1792" | "1792x1024"; label: string }> = {
+  instagram_square:   { width: 1080, height: 1080, dalle: "1024x1024", label: "Instagram Feed Quadrado 1:1" },
+  instagram_portrait: { width: 1080, height: 1350, dalle: "1024x1792", label: "Instagram Feed Retrato 4:5" },
+  instagram_story:    { width: 1080, height: 1920, dalle: "1024x1792", label: "Instagram Story 9:16" },
+  facebook_post:      { width: 1200, height: 630,  dalle: "1792x1024", label: "Facebook Post 1.91:1" },
+  facebook_square:    { width: 1200, height: 1200, dalle: "1024x1024", label: "Facebook Quadrado 1:1" },
+  facebook_story:     { width: 1080, height: 1920, dalle: "1024x1792", label: "Facebook Story 9:16" },
+  linkedin_post:      { width: 1200, height: 627,  dalle: "1792x1024", label: "LinkedIn Post 1.91:1" },
+  linkedin_square:    { width: 1200, height: 1200, dalle: "1024x1024", label: "LinkedIn Quadrado 1:1" },
+};
+
+function getImageFormat(key?: string | null) {
+  return IMAGE_FORMATS[key || ""] || IMAGE_FORMATS.instagram_portrait;
 }
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -89,7 +107,7 @@ async function withRetry<T>(operation: () => Promise<T>, retries = 2, baseDelayM
   throw lastError instanceof Error ? lastError : new Error(String(lastError));
 }
 
-async function generateImageGemini(apiKey: string, title: string, content: string | null, visualElements: string | null, imagePrompt: string | null): Promise<string> {
+async function generateImageGemini(apiKey: string, title: string, content: string | null, visualElements: string | null, imagePrompt: string | null, fmt?: { width: number; height: number; label: string }): Promise<string> {
   // Modelos experimentais que podem suportar geração de imagem
   const models = ["gemini-2.0-flash-exp", "gemini-1.5-flash"];
   const errors: string[] = [];
@@ -102,7 +120,7 @@ async function generateImageGemini(apiKey: string, title: string, content: strin
           method: "POST",
           headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
           body: JSON.stringify({
-            contents: [{ parts: [{ text: buildImagePrompt(title, content, visualElements, imagePrompt) }] }],
+            contents: [{ parts: [{ text: buildImagePrompt(title, content, visualElements, imagePrompt, fmt) }] }],
             generationConfig: { 
               responseModalities: ["IMAGE"],
             },
@@ -133,18 +151,17 @@ async function generateImageGemini(apiKey: string, title: string, content: strin
   throw new ProviderError(errors.join(" | ") || "Falha ao gerar imagem com Gemini", 500, false, errors.some((message) => isBillingIssue(0, message)));
 }
 
-async function generateImageDallE(apiKey: string, title: string, content: string | null, visualElements: string | null, imagePrompt: string | null): Promise<string> {
-  // Nota: DALL-E 3 só aceita 1024x1024, 1024x1792 ou 1792x1024.
-  // Como o usuário quer 1350x1080 (quase 5:4), usaremos a mais próxima ou Pollinations para o tamanho exato.
+async function generateImageDallE(apiKey: string, title: string, content: string | null, visualElements: string | null, imagePrompt: string | null, fmt?: { width: number; height: number; label: string; dalle: string }): Promise<string> {
+  const dalleSize = (fmt?.dalle as "1024x1024" | "1024x1792" | "1792x1024") || "1024x1024";
   return await withRetry(async () => {
     const resp = await fetch("https://api.openai.com/v1/images/generations", {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         model: "dall-e-3",
-        prompt: buildImagePrompt(title, content, visualElements, imagePrompt),
+        prompt: buildImagePrompt(title, content, visualElements, imagePrompt, fmt),
         n: 1,
-        size: "1024x1024", // DALL-E 3 standard, will be resized by frontend to 1080x1350
+        size: dalleSize,
         quality: "hd"
       }),
     });
@@ -164,11 +181,12 @@ async function generateImageDallE(apiKey: string, title: string, content: string
 }
 
 // Fallback gratuito e resiliente usando Pollinations.ai
-async function generateImagePollinations(title: string, content: string | null, visualElements: string | null, imagePrompt: string | null): Promise<string> {
-  const prompt = buildImagePrompt(title, content, visualElements, imagePrompt);
+async function generateImagePollinations(title: string, content: string | null, visualElements: string | null, imagePrompt: string | null, fmt?: { width: number; height: number; label: string }): Promise<string> {
+  const f = fmt || { width: 1080, height: 1350, label: "Instagram Feed Retrato 4:5" };
+  const prompt = buildImagePrompt(title, content, visualElements, imagePrompt, f);
   const encodedPrompt = encodeURIComponent(prompt);
   const seed = Math.floor(Math.random() * 1000000);
-  const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1080&height=1350&nologo=true&seed=${seed}`;
+  const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${f.width}&height=${f.height}&nologo=true&seed=${seed}`;
   
   // Tenta validar se a URL está ok
   try {
@@ -198,7 +216,7 @@ serve(async (req) => {
     let openaiApiKey: string | null = null;
     const { data: settings } = await supabase
       .from("user_settings")
-      .select("gemini_api_key, openai_api_key, writer_prompt, image_mode, image_prompt")
+      .select("gemini_api_key, openai_api_key, writer_prompt, image_mode, image_prompt, image_format")
       .eq("user_id", userId)
       .single();
     
@@ -208,6 +226,7 @@ serve(async (req) => {
       throw new Error("O 'Prompt de Imagem IA' não está configurado. Por favor, vá em Configurações > Geral.");
     }
     const imageMode = settings?.image_mode || "ai";
+    const fmt = getImageFormat((settings as any)?.image_format);
 
     if (imageMode !== "ai" && !force) {
       throw new Error(`A regeneração por IA está desativada. Altere o Modo de Imagem para "Gerada por IA" nas configurações.`);
@@ -262,7 +281,7 @@ serve(async (req) => {
       // Prioridade absoluta: OpenAI (ChatGPT/DALL-E) conforme solicitado
       if (openaiApiKey) {
         try { 
-          imageUrl = await generateImageDallE(openaiApiKey, article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt); 
+          imageUrl = await generateImageDallE(openaiApiKey, article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt, fmt); 
         } catch (error) { 
           providerErrors.push(`OpenAI (ChatGPT): ${getErrorMessage(error)}`);
         }
@@ -270,14 +289,14 @@ serve(async (req) => {
       
       // Fallback para Gemini se OpenAI falhar ou não estiver configurado
       if (!imageUrl && geminiApiKey) {
-        try { imageUrl = await generateImageGemini(geminiApiKey, article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt); }
+        try { imageUrl = await generateImageGemini(geminiApiKey, article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt, fmt); }
         catch (error) { providerErrors.push(`Gemini: ${getErrorMessage(error)}`); }
       }
 
       // Fallback final: Pollinations (sempre funciona)
       if (!imageUrl) {
         try {
-          imageUrl = await generateImagePollinations(article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt);
+          imageUrl = await generateImagePollinations(article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt, fmt);
         } catch (error) {
           providerErrors.push(`Pollinations: ${getErrorMessage(error)}`);
         }

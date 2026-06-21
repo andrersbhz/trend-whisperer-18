@@ -650,6 +650,7 @@ export type Database = {
           google_search_console_token: string | null
           groq_api_key: string | null
           id: string
+          image_format: string
           image_mode: string
           image_prompt: string | null
           image_prompt_template: string | null
@@ -699,6 +700,7 @@ export type Database = {
           google_search_console_token?: string | null
           groq_api_key?: string | null
           id?: string
+          image_format?: string
           image_mode?: string
           image_prompt?: string | null
           image_prompt_template?: string | null
@@ -748,6 +750,7 @@ export type Database = {
           google_search_console_token?: string | null
           groq_api_key?: string | null
           id?: string
+          image_format?: string
           image_mode?: string
           image_prompt?: string | null
           image_prompt_template?: string | null
