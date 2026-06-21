@@ -57,6 +57,15 @@ const SchedulePage = () => {
   const [isRescheduling, setIsRescheduling] = useState(false);
   const [rescheduleDialogOpen, setRescheduleDialogOpen] = useState(false);
   const [rescheduleType, setRescheduleType] = useState<'pending' | 'all'>('pending');
+  const [sortAsc, setSortAsc] = useState(true);
+
+  const sortedArticles = [...articles].sort((a: any, b: any) => {
+    const aPub = a.status === 'published';
+    const bPub = b.status === 'published';
+    if (aPub !== bPub) return aPub ? 1 : -1;
+    const diff = new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime();
+    return sortAsc ? diff : -diff;
+  });
 
   useEffect(() => {
     if (!user) return;
