@@ -139,6 +139,33 @@ const AutomationSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChan
               </Label>
             </div>
           </RadioGroup>
+
+          {settings.image_mode === 'ai' && (
+            <div className="mt-6 space-y-2">
+              <Label htmlFor="image-format">Formato da imagem</Label>
+              <Select
+                value={settings.image_format || 'instagram_portrait'}
+                onValueChange={(val) => onChange({ image_format: val })}
+              >
+                <SelectTrigger id="image-format">
+                  <SelectValue placeholder="Selecione um formato" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="instagram_square">📷 Instagram Feed Quadrado — 1080×1080 (1:1)</SelectItem>
+                  <SelectItem value="instagram_portrait">📷 Instagram Feed Retrato — 1080×1350 (4:5)</SelectItem>
+                  <SelectItem value="instagram_story">📱 Instagram Story/Reels — 1080×1920 (9:16)</SelectItem>
+                  <SelectItem value="facebook_post">👍 Facebook Post — 1200×630 (1.91:1)</SelectItem>
+                  <SelectItem value="facebook_square">👍 Facebook Quadrado — 1200×1200 (1:1)</SelectItem>
+                  <SelectItem value="facebook_story">👍 Facebook Story — 1080×1920 (9:16)</SelectItem>
+                  <SelectItem value="linkedin_post">💼 LinkedIn Post — 1200×627 (1.91:1)</SelectItem>
+                  <SelectItem value="linkedin_square">💼 LinkedIn Quadrado — 1200×1200 (1:1)</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                O formato selecionado será usado pela IA ao gerar/regenerar imagens dos artigos.
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
