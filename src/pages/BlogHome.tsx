@@ -134,9 +134,10 @@ const BlogHome = () => {
   useEffect(() => {
     let mounted = true;
     (async () => {
-      setLoading(true);
-      // Only select columns needed for the home listing — avoid pulling the
-      // full article body for every card (huge payload). Limit to a sane size.
+      // Only show the full preloader on the very first load. When switching
+      // language via the flag selector, keep current articles visible so the
+      // UI doesn't flash like a full page reload.
+      setLoading((prev) => (prev ? true : false));
       const { data, error } = await supabase
         .from('articles')
         .select('id, title, slug, excerpt, category, featured_image_url, created_at, published_at, author_id')
@@ -153,6 +154,7 @@ const BlogHome = () => {
       mounted = false;
     };
   }, [lang, currentLang]);
+
 
   const featured = useMemo(() => articles.slice(0, 5), [articles]);
   const sidebar = useMemo(() => {
