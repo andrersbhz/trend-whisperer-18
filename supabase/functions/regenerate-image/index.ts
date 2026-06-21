@@ -107,7 +107,7 @@ async function withRetry<T>(operation: () => Promise<T>, retries = 2, baseDelayM
   throw lastError instanceof Error ? lastError : new Error(String(lastError));
 }
 
-async function generateImageGemini(apiKey: string, title: string, content: string | null, visualElements: string | null, imagePrompt: string | null): Promise<string> {
+async function generateImageGemini(apiKey: string, title: string, content: string | null, visualElements: string | null, imagePrompt: string | null, fmt?: { width: number; height: number; label: string }): Promise<string> {
   // Modelos experimentais que podem suportar geração de imagem
   const models = ["gemini-2.0-flash-exp", "gemini-1.5-flash"];
   const errors: string[] = [];
@@ -120,7 +120,7 @@ async function generateImageGemini(apiKey: string, title: string, content: strin
           method: "POST",
           headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
           body: JSON.stringify({
-            contents: [{ parts: [{ text: buildImagePrompt(title, content, visualElements, imagePrompt) }] }],
+            contents: [{ parts: [{ text: buildImagePrompt(title, content, visualElements, imagePrompt, fmt) }] }],
             generationConfig: { 
               responseModalities: ["IMAGE"],
             },
@@ -151,18 +151,17 @@ async function generateImageGemini(apiKey: string, title: string, content: strin
   throw new ProviderError(errors.join(" | ") || "Falha ao gerar imagem com Gemini", 500, false, errors.some((message) => isBillingIssue(0, message)));
 }
 
-async function generateImageDallE(apiKey: string, title: string, content: string | null, visualElements: string | null, imagePrompt: string | null): Promise<string> {
-  // Nota: DALL-E 3 só aceita 1024x1024, 1024x1792 ou 1792x1024.
-  // Como o usuário quer 1350x1080 (quase 5:4), usaremos a mais próxima ou Pollinations para o tamanho exato.
+async function generateImageDallE(apiKey: string, title: string, content: string | null, visualElements: string | null, imagePrompt: string | null, fmt?: { width: number; height: number; label: string; dalle: string }): Promise<string> {
+  const dalleSize = (fmt?.dalle as "1024x1024" | "1024x1792" | "1792x1024") || "1024x1024";
   return await withRetry(async () => {
     const resp = await fetch("https://api.openai.com/v1/images/generations", {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         model: "dall-e-3",
-        prompt: buildImagePrompt(title, content, visualElements, imagePrompt),
+        prompt: buildImagePrompt(title, content, visualElements, imagePrompt, fmt),
         n: 1,
-        size: "1024x1024", // DALL-E 3 standard, will be resized by frontend to 1080x1350
+        size: dalleSize,
         quality: "hd"
       }),
     });
@@ -182,11 +181,12 @@ async function generateImageDallE(apiKey: string, title: string, content: string
 }
 
 // Fallback gratuito e resiliente usando Pollinations.ai
-async function generateImagePollinations(title: string, content: string | null, visualElements: string | null, imagePrompt: string | null): Promise<string> {
-  const prompt = buildImagePrompt(title, content, visualElements, imagePrompt);
+async function generateImagePollinations(title: string, content: string | null, visualElements: string | null, imagePrompt: string | null, fmt?: { width: number; height: number; label: string }): Promise<string> {
+  const f = fmt || { width: 1080, height: 1350, label: "Instagram Feed Retrato 4:5" };
+  const prompt = buildImagePrompt(title, content, visualElements, imagePrompt, f);
   const encodedPrompt = encodeURIComponent(prompt);
   const seed = Math.floor(Math.random() * 1000000);
-  const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1080&height=1350&nologo=true&seed=${seed}`;
+  const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${f.width}&height=${f.height}&nologo=true&seed=${seed}`;
   
   // Tenta validar se a URL está ok
   try {
