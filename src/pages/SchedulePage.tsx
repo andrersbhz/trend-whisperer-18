@@ -57,6 +57,8 @@ const SchedulePage = () => {
   const [isRescheduling, setIsRescheduling] = useState(false);
   const [rescheduleDialogOpen, setRescheduleDialogOpen] = useState(false);
   const [rescheduleType, setRescheduleType] = useState<'pending' | 'all'>('pending');
+  const [rescheduleStart, setRescheduleStart] = useState('08:00');
+  const [rescheduleEnd, setRescheduleEnd] = useState('');
   const [sortAsc, setSortAsc] = useState(true);
 
   const sortedArticles = [...articles].sort((a: any, b: any) => {
@@ -373,24 +375,35 @@ const SchedulePage = () => {
     setIsRescheduling(true);
     try {
       const now = new Date();
-      // Garante que começamos do início do dia seguinte ou do momento atual
-      const startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 8, 0, 0);
+      const parseHM = (s: string): { h: number; m: number } | null => {
+        const m = /^(\d{1,2}):(\d{2})$/.exec(s.trim());
+        if (!m) return null;
+        const h = parseInt(m[1], 10);
+        const min = parseInt(m[2], 10);
+        if (h < 0 || h > 23 || min < 0 || min > 59) return null;
+        return { h, m: min };
+      };
+      const startHM = parseHM(rescheduleStart) || { h: 8, m: 0 };
+      const endHM = rescheduleEnd ? parseHM(rescheduleEnd) : null;
+      const startHour = startHM.h + startHM.m / 60;
+      const endHour = endHM ? endHM.h + endHM.m / 60 : 23;
+      const effectiveEnd = endHour > startHour ? endHour : startHour + 0.0001;
+
+      // Começa do horário definido (hoje se ainda não passou, senão amanhã)
+      const startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), startHM.h, startHM.m, 0);
       if (startDate < now) startDate.setDate(startDate.getDate() + 1);
 
       const updatedArticles = [];
-      
+
       for (let i = 0; i < targetArticles.length; i++) {
         const dayOffset = Math.floor(i / articlesPerDay);
         const articleInDayIndex = i % articlesPerDay;
-        
-        // Distribui os horários entre 08:00 e 22:00
-        const startHour = 8;
-        const endHour = 22;
-        const hourStep = articlesPerDay > 1 ? (endHour - startHour) / (articlesPerDay - 1) : 0;
-        
+
+        const hourStep = articlesPerDay > 1 ? (effectiveEnd - startHour) / (articlesPerDay - 1) : 0;
+
         const scheduledDate = new Date(startDate);
         scheduledDate.setDate(startDate.getDate() + dayOffset);
-        
+
         const hour = startHour + (articleInDayIndex * hourStep);
         scheduledDate.setHours(Math.floor(hour));
         scheduledDate.setMinutes(Math.floor((hour % 1) * 60));
@@ -526,12 +539,40 @@ const SchedulePage = () => {
           <DialogHeader>
             <DialogTitle>Confirmar Reagendamento</DialogTitle>
           </DialogHeader>
-          <div className="py-4">
+          <div className="py-4 space-y-4">
             <p className="text-foreground">
               Você deseja reagendar {rescheduleType === 'pending' ? 'somente as notícias pendentes' : 'todas as notícias agendadas (exceto publicadas)'}?
             </p>
-            <p className="text-sm text-muted-foreground mt-2">
-              As notícias serão reorganizadas com base em <strong>{articlesPerDay} postagens por dia</strong>, começando a partir de amanhã às 08:00.
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="resched-start" className="text-xs">Iniciar às</Label>
+                <Input
+                  id="resched-start"
+                  type="time"
+                  value={rescheduleStart}
+                  onChange={(e) => setRescheduleStart(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="resched-end" className="text-xs">
+                  Terminar às <span className="text-muted-foreground">(opcional)</span>
+                </Label>
+                <Input
+                  id="resched-end"
+                  type="time"
+                  value={rescheduleEnd}
+                  onChange={(e) => setRescheduleEnd(e.target.value)}
+                  placeholder="--:--"
+                />
+              </div>
+            </div>
+
+            <p className="text-sm text-muted-foreground">
+              {articlesPerDay} postagens por dia, iniciando às <strong>{rescheduleStart || '08:00'}</strong>
+              {rescheduleEnd
+                ? <> e terminando às <strong>{rescheduleEnd}</strong>.</>
+                : <> e seguindo sequencialmente até agendar o último artigo pronto.</>}
             </p>
           </div>
           <div className="flex justify-end gap-3">
