@@ -56,6 +56,8 @@ const GeminiSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChange, 
       connected={connected}
       connectedInfo={connected ? 'Chave Gemini configurada ✓' : undefined}
       onDisconnect={async () => { await onDisconnect?.(); onChange({ gemini_api_key: '' }); setTestResult(null); }}
+      onTest={handleTest}
+      testing={testing}
     >
       <div className="space-y-3">
         <div className="p-2.5 rounded-lg bg-accent/30 border border-accent/50 text-xs text-muted-foreground">
