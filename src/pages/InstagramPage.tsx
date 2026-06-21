@@ -272,20 +272,92 @@ const InstagramPage = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Perfis conectados — visão consolidada */}
+      <Card className="glass-card overflow-hidden">
+        <div className="p-4 border-b border-white/5 flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-black uppercase tracking-tighter">Perfis Conectados</h3>
+            <p className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">
+              {(pages?.length || 0) + directAccounts.length} conta(s) no total
+            </p>
+          </div>
+        </div>
+        <div className="divide-y divide-white/5">
+          {(pages || []).map((pg: any, i: number) => {
+            const ig = pg.instagram || {};
+            return (
+              <div key={`graph-${i}`} className="p-3 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="h-10 w-10 rounded-full bg-secondary flex items-center justify-center overflow-hidden border border-white/10 shrink-0">
+                    {ig.profile_picture_url ? (
+                      <img src={ig.profile_picture_url} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <Instagram className="h-5 w-5" />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold truncate">@{ig.username || ig.name || 'sem_nome'}</p>
+                    <p className="text-[10px] uppercase tracking-widest text-success">
+                      Graph API · {pg.page_name}
+                    </p>
+                  </div>
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-success bg-success/10 px-2 py-1 rounded">
+                  <CheckCircle2 className="h-3 w-3 inline mr-1" />Business
+                </span>
+              </div>
+            );
+          })}
+
+          {directAccounts.map((acc) => (
+            <div key={acc.id} className="p-3 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] flex items-center justify-center shrink-0">
+                  <Instagram className="h-5 w-5 text-white" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-bold truncate">@{acc.username}</p>
+                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                    Login direto · {acc.is_active ? 'Ativo' : 'Inativo'}
+                  </p>
+                </div>
+              </div>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-destructive hover:bg-destructive/10 h-8 w-8 p-0"
+                onClick={() => handleDeleteDirect(acc.id)}
+              >
+                <Loader2 className="hidden" />
+                ×
+              </Button>
+            </div>
+          ))}
+
+          {(!pages || pages.length === 0) && directAccounts.length === 0 && (
+            <div className="p-6 text-center text-xs text-muted-foreground">
+              Nenhum perfil conectado ainda. Use o botão "Adicionar (Login/Senha)" acima ou conecte sua página do Facebook em Configurações.
+            </div>
+          )}
+        </div>
+      </Card>
+
       {!pages ? (
-        <Card className="glass-card border-dashed border-primary/30 p-12 text-center">
-          <Instagram className="h-10 w-10 text-primary/40 mx-auto mb-4" />
-          <h4 className="text-lg font-bold mb-2">Nenhum Instagram Business vinculado</h4>
-          <p className="text-muted-foreground text-sm max-w-md mx-auto mb-6">
-            Conecte uma página do Facebook que tenha uma conta Instagram Business vinculada.
-          </p>
-          <Button
-            onClick={() => (window.location.href = '/settings')}
-            className="bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] text-white uppercase tracking-widest text-[10px] font-bold"
-          >
-            Conectar Facebook
-          </Button>
-        </Card>
+        directAccounts.length === 0 && (
+          <Card className="glass-card border-dashed border-primary/30 p-12 text-center">
+            <Instagram className="h-10 w-10 text-primary/40 mx-auto mb-4" />
+            <h4 className="text-lg font-bold mb-2">Nenhum Instagram Business vinculado</h4>
+            <p className="text-muted-foreground text-sm max-w-md mx-auto mb-6">
+              Para métricas completas (alcance, impressões, demografia), conecte uma página do Facebook que tenha uma conta Instagram Business vinculada.
+            </p>
+            <Button
+              onClick={() => (window.location.href = '/settings')}
+              className="bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] text-white uppercase tracking-widest text-[10px] font-bold"
+            >
+              Conectar Facebook
+            </Button>
+          </Card>
+        )
       ) : (
         <div className="space-y-8">
           {pages.map((pg, idx) => {
