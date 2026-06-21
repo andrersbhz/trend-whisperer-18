@@ -539,12 +539,40 @@ const SchedulePage = () => {
           <DialogHeader>
             <DialogTitle>Confirmar Reagendamento</DialogTitle>
           </DialogHeader>
-          <div className="py-4">
+          <div className="py-4 space-y-4">
             <p className="text-foreground">
               Você deseja reagendar {rescheduleType === 'pending' ? 'somente as notícias pendentes' : 'todas as notícias agendadas (exceto publicadas)'}?
             </p>
-            <p className="text-sm text-muted-foreground mt-2">
-              As notícias serão reorganizadas com base em <strong>{articlesPerDay} postagens por dia</strong>, começando a partir de amanhã às 08:00.
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="resched-start" className="text-xs">Iniciar às</Label>
+                <Input
+                  id="resched-start"
+                  type="time"
+                  value={rescheduleStart}
+                  onChange={(e) => setRescheduleStart(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="resched-end" className="text-xs">
+                  Terminar às <span className="text-muted-foreground">(opcional)</span>
+                </Label>
+                <Input
+                  id="resched-end"
+                  type="time"
+                  value={rescheduleEnd}
+                  onChange={(e) => setRescheduleEnd(e.target.value)}
+                  placeholder="--:--"
+                />
+              </div>
+            </div>
+
+            <p className="text-sm text-muted-foreground">
+              {articlesPerDay} postagens por dia, iniciando às <strong>{rescheduleStart || '08:00'}</strong>
+              {rescheduleEnd
+                ? <> e terminando às <strong>{rescheduleEnd}</strong>.</>
+                : <> e seguindo sequencialmente até agendar o último artigo pronto.</>}
             </p>
           </div>
           <div className="flex justify-end gap-3">
