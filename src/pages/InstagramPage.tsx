@@ -21,11 +21,33 @@ const InstagramPage = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [pages, setPages] = useState<any[] | null>(null);
+  const [directAccounts, setDirectAccounts] = useState<Array<{ id: string; username: string; is_active: boolean; created_at: string }>>([]);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [testingPageId, setTestingPageId] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [addSaving, setAddSaving] = useState(false);
   const [newAcc, setNewAcc] = useState({ username: '', password: '' });
+
+  const fetchDirectAccounts = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from('instagram_accounts_direct')
+      .select('id, username, is_active, created_at')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: true });
+    setDirectAccounts((data as any[]) || []);
+  };
+
+  const handleDeleteDirect = async (id: string) => {
+    if (!confirm('Remover esta conexão direta?')) return;
+    const { error } = await supabase.from('instagram_accounts_direct').delete().eq('id', id);
+    if (error) {
+      toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'Conta removida' });
+      fetchDirectAccounts();
+    }
+  };
 
   const handleAddDirect = async () => {
     if (!user) return;
