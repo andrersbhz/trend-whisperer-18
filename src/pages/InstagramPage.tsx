@@ -67,6 +67,7 @@ const InstagramPage = () => {
       toast({ title: '✅ Conta adicionada', description: `@${newAcc.username} conectada via login direto.` });
       setNewAcc({ username: '', password: '' });
       setAddOpen(false);
+      fetchDirectAccounts();
     } catch (e: any) {
       toast({ title: 'Erro', description: e.message, variant: 'destructive' });
     } finally {
