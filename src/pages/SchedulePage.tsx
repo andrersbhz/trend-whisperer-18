@@ -57,6 +57,8 @@ const SchedulePage = () => {
   const [isRescheduling, setIsRescheduling] = useState(false);
   const [rescheduleDialogOpen, setRescheduleDialogOpen] = useState(false);
   const [rescheduleType, setRescheduleType] = useState<'pending' | 'all'>('pending');
+  const [rescheduleStart, setRescheduleStart] = useState('08:00');
+  const [rescheduleEnd, setRescheduleEnd] = useState('');
   const [sortAsc, setSortAsc] = useState(true);
 
   const sortedArticles = [...articles].sort((a: any, b: any) => {
