@@ -665,6 +665,7 @@ export type Database = {
           linkedin_org_id: string | null
           metrics_refresh_interval: number | null
           openai_api_key: string | null
+          priority_categories: string[]
           social_posting_mode: string
           social_reply_prompt: string | null
           trends_refresh_interval: number | null
@@ -713,6 +714,7 @@ export type Database = {
           linkedin_org_id?: string | null
           metrics_refresh_interval?: number | null
           openai_api_key?: string | null
+          priority_categories?: string[]
           social_posting_mode?: string
           social_reply_prompt?: string | null
           trends_refresh_interval?: number | null
@@ -761,6 +763,7 @@ export type Database = {
           linkedin_org_id?: string | null
           metrics_refresh_interval?: number | null
           openai_api_key?: string | null
+          priority_categories?: string[]
           social_posting_mode?: string
           social_reply_prompt?: string | null
           trends_refresh_interval?: number | null

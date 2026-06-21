@@ -10,7 +10,7 @@ import type { UserSettings } from '@/pages/SettingsPage';
 import { forwardRef } from 'react';
 
  import { useState, useMemo } from 'react';
- import { Plus, X, Users, Shuffle, ShieldCheck } from 'lucide-react';
+ import { Plus, X, Users, Shuffle, ShieldCheck, Star } from 'lucide-react';
  import { Button } from '@/components/ui/button';
  import { Badge } from '@/components/ui/badge';
  import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -46,7 +46,16 @@ const AutomationSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChan
     const newCategories = settings.categories.includes(catId)
       ? settings.categories.filter((c) => c !== catId)
       : [...settings.categories, catId];
-    onChange({ categories: newCategories });
+    const newPriority = (settings.priority_categories || []).filter((c) => newCategories.includes(c));
+    onChange({ categories: newCategories, priority_categories: newPriority });
+  };
+
+  const togglePriority = (catId: string) => {
+    const current = settings.priority_categories || [];
+    const newPriority = current.includes(catId)
+      ? current.filter((c) => c !== catId)
+      : [...current, catId];
+    onChange({ priority_categories: newPriority });
   };
 
   const addCustomCategory = () => {
@@ -374,6 +383,43 @@ const AutomationSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChan
                   </Badge>
                 ))}
             </div>
+
+            {/* Categorias Prioritárias */}
+            {settings.categories.length > 0 && (
+              <div className="space-y-2 pt-3 border-t border-border/50">
+                <div className="flex items-center gap-2">
+                  <Star className="h-4 w-4 text-yellow-500" />
+                  <Label className="text-sm font-semibold">Categorias prioritárias</Label>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Marque as categorias que devem ter <strong>prioridade</strong> na criação de artigos. As notícias dessas categorias serão escolhidas primeiro.
+                </p>
+                <div className="flex flex-wrap gap-3 pt-1">
+                  {settings.categories.map((catId) => {
+                    const def = defaultCategories.find(d => d.id === catId);
+                    const label = def ? def.label : catId;
+                    const isPriority = (settings.priority_categories || []).includes(catId);
+                    return (
+                      <label
+                        key={catId}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-md border cursor-pointer text-xs transition-all ${
+                          isPriority
+                            ? 'border-yellow-500/50 bg-yellow-500/10'
+                            : 'border-border hover:bg-muted/50'
+                        }`}
+                      >
+                        <Checkbox
+                          checked={isPriority}
+                          onCheckedChange={() => togglePriority(catId)}
+                        />
+                        <span className="capitalize">{label}</span>
+                        {isPriority && <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />}
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {settings.categories.length === 0 && (
               <p className="text-xs text-destructive bg-destructive/5 p-2 rounded-md border border-destructive/10">
