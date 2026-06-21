@@ -71,6 +71,8 @@ const WordPressSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChang
       description="Publicação automática via REST API nativa do WordPress"
       connected={connected}
       connectedInfo={connected ? `Conectado a ${settings.wordpress_url}` : undefined}
+      onTest={testConnection}
+      testing={testing}
       onDisconnect={async () => { await onDisconnect?.(); onChange({ wordpress_url: '', wordpress_username: '', wordpress_app_password: '' }); }}
     >
       <div className="space-y-3">
