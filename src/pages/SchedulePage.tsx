@@ -62,10 +62,9 @@ const SchedulePage = () => {
   const [sortAsc, setSortAsc] = useState(true);
 
   const sortedArticles = [...articles].sort((a: any, b: any) => {
-    const aPub = a.status === 'published';
-    const bPub = b.status === 'published';
-    if (aPub !== bPub) return aPub ? 1 : -1;
-    const diff = new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime();
+    const aT = a.scheduled_at ? new Date(a.scheduled_at).getTime() : 0;
+    const bT = b.scheduled_at ? new Date(b.scheduled_at).getTime() : 0;
+    const diff = aT - bT;
     return sortAsc ? diff : -diff;
   });
 
