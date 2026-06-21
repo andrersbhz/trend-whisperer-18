@@ -55,6 +55,8 @@ const GroqSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChange, ha
       description="Use sua chave gratuita do Groq como provedor de IA adicional — modelos open-source ultrarrápidos"
       connected={connected}
       connectedInfo={connected ? 'Chave Groq configurada ✓' : undefined}
+      onTest={handleTest}
+      testing={testing}
       onDisconnect={async () => { await onDisconnect?.(); onChange({ groq_api_key: '' }); setTestResult(null); }}
     >
       <div className="space-y-3">
