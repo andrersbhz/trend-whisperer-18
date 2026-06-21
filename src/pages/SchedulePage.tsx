@@ -634,7 +634,7 @@ const SchedulePage = () => {
           </div>
 
           <div className="grid gap-3">
-            {articles.map((article) => (
+            {sortedArticles.map((article) => (
               <Card key={article.id} className={`shadow-none rounded-none border-b border-border/50 transition-colors ${selectedIds.includes(article.id) ? 'bg-primary/5 ring-0' : ''}`}>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
