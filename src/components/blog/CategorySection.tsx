@@ -203,7 +203,7 @@ const CategorySection = ({
   const sorted = [...articles].sort(
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
   );
-  const items = sorted.slice(0, 4);
+  const items = sorted.slice(0, 8);
   const slug = category.toLowerCase().replace(/\s+/g, '-');
 
   return (

@@ -4,6 +4,8 @@ import { useI18n } from '@/hooks/useI18n';
 import BlogHeader from '@/components/blog/BlogHeader';
 import BlogFooter from '@/components/blog/BlogFooter';
 import CategorySection from '@/components/blog/CategorySection';
+import AdSlot from '@/components/blog/AdSlot';
+
 import NewsCard from '@/components/blog/NewsCard';
 import NewsTicker, { useNewsTicker } from '@/components/blog/NewsTicker';
 import { Helmet } from 'react-helmet-async';
@@ -140,7 +142,8 @@ const BlogHome = () => {
         .select('id, title, slug, excerpt, category, featured_image_url, created_at, published_at, author_id')
         .eq('status', 'published')
         .order('created_at', { ascending: false })
-        .limit(80);
+        .limit(1000);
+
       if (!mounted) return;
       if (error) console.error(error);
       setArticles(data || []);
@@ -397,18 +400,32 @@ const BlogHome = () => {
               </div>
             </section>
 
-            {/* Category sections */}
+            {/* Ad after hero */}
+            <AdSlot slot={import.meta.env.VITE_ADSENSE_SLOT_HOME_TOP} minHeight={120} />
+
+            {/* Category sections with ads interleaved every 2 categories */}
             <div>
-              {Object.entries(grouped).map(([cat, arts]) => (
-                <CategorySection
-                  key={cat}
-                  category={cat}
-                  articles={arts}
-                  currentLang={currentLang}
-                  accentColor={getAccent(cat)}
-                />
+              {Object.entries(grouped).map(([cat, arts], idx, arr) => (
+                <div key={cat}>
+                  <CategorySection
+                    category={cat}
+                    articles={arts}
+                    currentLang={currentLang}
+                    accentColor={getAccent(cat)}
+                  />
+                  {idx < arr.length - 1 && (idx + 1) % 2 === 0 && (
+                    <AdSlot
+                      slot={import.meta.env.VITE_ADSENSE_SLOT_HOME_INLINE}
+                      minHeight={100}
+                    />
+                  )}
+                </div>
               ))}
             </div>
+
+            {/* Ad before footer */}
+            <AdSlot slot={import.meta.env.VITE_ADSENSE_SLOT_HOME_BOTTOM} minHeight={120} />
+
           </>
         )}
       </main>
