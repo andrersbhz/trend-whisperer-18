@@ -843,7 +843,9 @@ const SchedulePage = () => {
                 title: preview.title, 
                 content: preview.content,
                 meta_description: preview.meta_description,
-                seo_keyword: preview.seo_keyword
+                seo_keyword: preview.seo_keyword,
+                category: preview.category,
+                scheduled_at: preview.scheduled_at ? new Date(preview.scheduled_at).toISOString() : null,
               })}
               disabled={previewLoading}
               className="gradient-primary"
@@ -904,7 +906,19 @@ const SchedulePage = () => {
                         ))}
                       </SelectContent>
                     </Select>
-                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-xs font-bold uppercase text-muted-foreground mb-1 block">Data e Hora do Agendamento</Label>
+                  <Input
+                    type="datetime-local"
+                    value={preview?.scheduled_at ? format(new Date(preview.scheduled_at), "yyyy-MM-dd'T'HH:mm") : ''}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setPreview({ ...preview, scheduled_at: v ? new Date(v).toISOString() : null });
+                    }}
+                  />
+                </div>
                 </div>
 
                 <div>
