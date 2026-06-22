@@ -843,7 +843,9 @@ const SchedulePage = () => {
                 title: preview.title, 
                 content: preview.content,
                 meta_description: preview.meta_description,
-                seo_keyword: preview.seo_keyword
+                seo_keyword: preview.seo_keyword,
+                category: preview.category,
+                scheduled_at: preview.scheduled_at ? new Date(preview.scheduled_at).toISOString() : null,
               })}
               disabled={previewLoading}
               className="gradient-primary"
