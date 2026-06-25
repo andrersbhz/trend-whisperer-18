@@ -579,19 +579,59 @@ serve(async (req) => {
 
     let topics = [];
     const userCategoriesToSearch: string[] = settings?.categories || ["esportes", "politica", "policia", "saude", "celebridades", "financas"];
-    
+
+    // Janela das últimas 24h — usada para priorizar trends recentes e evitar repetição de assunto
+    const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+    // Carrega artigos das últimas 24h (para contagem por categoria + deduplicação de assunto)
+    const { data: recentArticlesFull } = await supabase
+      .from("articles")
+      .select("category, title, trending_topic, created_at")
+      .eq("user_id", userId)
+      .gte("created_at", since24h);
+
+    const normalize = (s: string) =>
+      (s || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9\s]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+
+    const usedTopicsSet = new Set<string>();
+    for (const a of (recentArticlesFull || [])) {
+      if (a.trending_topic) usedTopicsSet.add(normalize(a.trending_topic));
+      if (a.title) usedTopicsSet.add(normalize(a.title));
+    }
+
     if (manualTopics && Array.isArray(manualTopics) && manualTopics.length > 0) {
       topics = manualTopics.map(t => typeof t === "string" ? { topic: t, category: forceCategory || "geral" } : t);
       console.log(`[Pipeline] Using ${topics.length} manual topics`);
     } else {
+      // Apenas tópicos das últimas 24h, ainda não usados, em categorias marcadas
       const { data: dbTopics } = await supabase
         .from("trending_topics")
         .select("*")
         .eq("user_id", userId)
         .eq("used", false)
-        .in("category", userCategoriesToSearch); // Apenas categorias marcadas pelo usuário
+        .gte("fetched_at", since24h)
+        .in("category", userCategoriesToSearch)
+        .order("fetched_at", { ascending: false });
       topics = dbTopics || [];
-      console.log(`[Pipeline] Auto-generating from ${topics.length} topics in marked categories: ${userCategoriesToSearch.join(", ")}`);
+
+      // Remove tópicos cujo assunto já foi coberto por artigos das últimas 24h
+      const before = topics.length;
+      topics = topics.filter((t: any) => {
+        const key = normalize(t.topic);
+        if (!key) return false;
+        for (const used of usedTopicsSet) {
+          if (!used) continue;
+          if (used === key || used.includes(key) || key.includes(used)) return false;
+        }
+        return true;
+      });
+      console.log(`[Pipeline] Trends 24h: ${before} → ${topics.length} após remover assuntos já publicados`);
     }
 
     const manualCategories: string[] = (manualTopics && Array.isArray(manualTopics) && manualTopics.length > 0)
@@ -601,16 +641,9 @@ serve(async (req) => {
       ? [forceCategory] 
       : (manualCategories.length > 0 ? Array.from(new Set([...manualCategories, ...userCategoriesToSearch])) : userCategoriesToSearch);
 
-    // Conta artigos criados nas últimas 24h por categoria para priorizar as mais defasadas
-    const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    const { data: recentArticles } = await supabase
-      .from("articles")
-      .select("category")
-      .eq("user_id", userId)
-      .gte("created_at", since24h);
     const countsByCategory: Record<string, number> = {};
     for (const cat of userCategories) countsByCategory[cat] = 0;
-    for (const a of (recentArticles || [])) {
+    for (const a of (recentArticlesFull || [])) {
       if (a.category in countsByCategory) countsByCategory[a.category]++;
     }
     console.log(`[Pipeline] Artigos últimas 24h por categoria:`, countsByCategory);
