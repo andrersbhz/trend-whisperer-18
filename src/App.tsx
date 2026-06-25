@@ -144,6 +144,7 @@ const App = () => (
                 <Route path="/authors" element={<ProtectedRoute><AuthorsPage /></ProtectedRoute>} />
                 <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
                 <Route path="/map" element={<ProtectedRoute><MapPage /></ProtectedRoute>} />
+                <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
 
                 <Route path="*" element={<NotFound />} />
               </Routes>
