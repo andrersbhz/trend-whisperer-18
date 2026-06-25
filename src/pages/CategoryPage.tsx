@@ -41,7 +41,7 @@ const CategoryPage = ({ categoryId }: { categoryId: string }) => {
     (async () => {
       setLoading(true);
       const { data, error } = await supabase
-        .from('articles')
+        .from('public_articles')
         .select('*')
         .eq('status', 'published')
         .ilike('category', displayTitle)
