@@ -54,6 +54,7 @@ const navItems = [
   { icon: Globe, label: 'Mapa Live', path: '/map' },
   { icon: Clock, label: 'Agendamentos', path: '/schedule' },
   { icon: Newspaper, label: 'Ver Blog', path: '/pt-br' },
+  { icon: User, label: 'Meu Perfil', path: '/profile' },
   { icon: Settings, label: 'Configurações', path: '/settings' },
 ];
 
