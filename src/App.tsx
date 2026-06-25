@@ -38,6 +38,7 @@ const MetaPage = lazyRetry(() => import("@/pages/MetaPage"));
 const InstagramPage = lazyRetry(() => import("@/pages/InstagramPage"));
 const AuthorsPage = lazyRetry(() => import("@/pages/AuthorsPage"));
 const MapPage = lazyRetry(() => import("@/pages/MapPage"));
+const ProfilePage = lazyRetry(() => import("@/pages/ProfilePage"));
 
 // Lazy: public secondary pages
 const BlogArticle = lazyRetry(() => import("@/pages/BlogArticle"));
