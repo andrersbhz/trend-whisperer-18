@@ -9,13 +9,14 @@ export async function logAudit(params: {
 }) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return;
-  await supabase.from("nexa_audit_logs").insert({
-    organization_id: params.organizationId,
+  const row: Record<string, unknown> = {
     user_id: user.id,
     action: params.action,
-    entity_type: params.entityType ?? null,
-    entity_id: params.entityId ?? null,
     metadata: params.metadata ?? {},
     user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
-  });
+  };
+  if (params.organizationId) row.organization_id = params.organizationId;
+  if (params.entityType) row.entity_type = params.entityType;
+  if (params.entityId) row.entity_id = params.entityId;
+  await supabase.from("nexa_audit_logs").insert(row as never);
 }
