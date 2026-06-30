@@ -40,6 +40,18 @@ const AuthorsPage = lazyRetry(() => import("@/pages/AuthorsPage"));
 const MapPage = lazyRetry(() => import("@/pages/MapPage"));
 const ProfilePage = lazyRetry(() => import("@/pages/ProfilePage"));
 
+// NEXA Insight (Etapa 1 — fundação multiempresa)
+const NexaLogin = lazyRetry(() => import("@/nexa/pages/NexaLogin"));
+const NexaOnboarding = lazyRetry(() => import("@/nexa/pages/NexaOnboarding"));
+const NexaDashboard = lazyRetry(() => import("@/nexa/pages/NexaDashboard"));
+const NexaTeams = lazyRetry(() => import("@/nexa/pages/NexaTeams"));
+const NexaAgents = lazyRetry(() => import("@/nexa/pages/NexaAgents"));
+const NexaSettings = lazyRetry(() => import("@/nexa/pages/NexaSettings"));
+const NexaAudit = lazyRetry(() => import("@/nexa/pages/NexaAudit"));
+const NexaAdmin = lazyRetry(() => import("@/nexa/pages/NexaAdmin"));
+const NexaPlaceholder = lazyRetry(() => import("@/nexa/pages/NexaPlaceholder"));
+const ProtectedNexaRoute = lazyRetry(() => import("@/nexa/components/ProtectedNexaRoute"));
+
 // Lazy: public secondary pages
 const BlogArticle = lazyRetry(() => import("@/pages/BlogArticle"));
 const CategoryPage = lazyRetry(() => import("@/pages/CategoryPage"));
