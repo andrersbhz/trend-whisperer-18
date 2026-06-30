@@ -40,6 +40,18 @@ const AuthorsPage = lazyRetry(() => import("@/pages/AuthorsPage"));
 const MapPage = lazyRetry(() => import("@/pages/MapPage"));
 const ProfilePage = lazyRetry(() => import("@/pages/ProfilePage"));
 
+// NEXA Insight (Etapa 1 — fundação multiempresa)
+const NexaLogin = lazyRetry(() => import("@/nexa/pages/NexaLogin"));
+const NexaOnboarding = lazyRetry(() => import("@/nexa/pages/NexaOnboarding"));
+const NexaDashboard = lazyRetry(() => import("@/nexa/pages/NexaDashboard"));
+const NexaTeams = lazyRetry(() => import("@/nexa/pages/NexaTeams"));
+const NexaAgents = lazyRetry(() => import("@/nexa/pages/NexaAgents"));
+const NexaSettings = lazyRetry(() => import("@/nexa/pages/NexaSettings"));
+const NexaAudit = lazyRetry(() => import("@/nexa/pages/NexaAudit"));
+const NexaAdmin = lazyRetry(() => import("@/nexa/pages/NexaAdmin"));
+const NexaPlaceholder = lazyRetry(() => import("@/nexa/pages/NexaPlaceholder"));
+const ProtectedNexaRoute = lazyRetry(() => import("@/nexa/components/ProtectedNexaRoute"));
+
 // Lazy: public secondary pages
 const BlogArticle = lazyRetry(() => import("@/pages/BlogArticle"));
 const CategoryPage = lazyRetry(() => import("@/pages/CategoryPage"));
@@ -145,6 +157,29 @@ const App = () => (
                 <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
                 <Route path="/map" element={<ProtectedRoute><MapPage /></ProtectedRoute>} />
                 <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+
+                {/* NEXA Insight (multiempresa) */}
+                <Route path="/nexa" element={<Navigate to="/nexa/dashboard" replace />} />
+                <Route path="/nexa/login" element={<NexaLogin />} />
+                <Route path="/nexa/onboarding" element={<ProtectedNexaRoute><NexaOnboarding /></ProtectedNexaRoute>} />
+                <Route path="/nexa/dashboard" element={<ProtectedNexaRoute><NexaDashboard /></ProtectedNexaRoute>} />
+                <Route path="/nexa/teams" element={<ProtectedNexaRoute><NexaTeams /></ProtectedNexaRoute>} />
+                <Route path="/nexa/agents" element={<ProtectedNexaRoute><NexaAgents /></ProtectedNexaRoute>} />
+                <Route path="/nexa/settings" element={<ProtectedNexaRoute><NexaSettings /></ProtectedNexaRoute>} />
+                <Route path="/nexa/audit" element={<ProtectedNexaRoute roles={["org_admin","auditor"]}><NexaAudit /></ProtectedNexaRoute>} />
+                <Route path="/nexa/admin" element={<ProtectedNexaRoute roles={["super_admin"]}><NexaAdmin /></ProtectedNexaRoute>} />
+                <Route path="/nexa/interactions" element={<ProtectedNexaRoute><NexaPlaceholder title="Atendimentos" stage="Etapa 2" description="Upload de áudio/texto, central de interações, processamento assíncrono e player sincronizado com a transcrição." /></ProtectedNexaRoute>} />
+                <Route path="/nexa/customers" element={<ProtectedNexaRoute><NexaPlaceholder title="Clientes" stage="Etapa 2" description="Cadastro de clientes, histórico de contatos e visão consolidada por canal." /></ProtectedNexaRoute>} />
+                <Route path="/nexa/quality" element={<ProtectedNexaRoute><NexaPlaceholder title="Qualidade" stage="Etapa 3" description="Revisão humana de transcrições e análises da IA, comparação entre avaliação automática e manual." /></ProtectedNexaRoute>} />
+                <Route path="/nexa/scorecards" element={<ProtectedNexaRoute><NexaPlaceholder title="Scorecards" stage="Etapa 3" description="Construtor de critérios, pesos, falhas críticas e versionamento de scorecards por equipe ou canal." /></ProtectedNexaRoute>} />
+                <Route path="/nexa/health-score" element={<ProtectedNexaRoute><NexaPlaceholder title="Health Score" stage="Etapa 4" description="Indicador de saúde de cada cliente com histórico, fatores positivos e negativos." /></ProtectedNexaRoute>} />
+                <Route path="/nexa/alerts" element={<ProtectedNexaRoute><NexaPlaceholder title="Alertas" stage="Etapa 4" description="Motor de regras por empresa, equipe, atendente e severidade." /></ProtectedNexaRoute>} />
+                <Route path="/nexa/insights" element={<ProtectedNexaRoute><NexaPlaceholder title="Assistente Insight" stage="Etapa 5" description="Pesquisa semântica em linguagem natural, escopo limitado à sua empresa, com fontes citadas." /></ProtectedNexaRoute>} />
+                <Route path="/nexa/coaching" element={<ProtectedNexaRoute><NexaPlaceholder title="Coaching" stage="Etapa 4" description="Feedbacks, planos de melhoria, biblioteca de boas práticas." /></ProtectedNexaRoute>} />
+                <Route path="/nexa/knowledge" element={<ProtectedNexaRoute><NexaPlaceholder title="Base de conhecimento" stage="Etapa 5" description="Upload de scripts, manuais e políticas. Embeddings e controle de permissões." /></ProtectedNexaRoute>} />
+                <Route path="/nexa/reports" element={<ProtectedNexaRoute><NexaPlaceholder title="Relatórios" stage="Etapa 4" description="Relatórios executivos, por equipe, por atendente, por cliente e exportações." /></ProtectedNexaRoute>} />
+                <Route path="/nexa/integrations" element={<ProtectedNexaRoute><NexaPlaceholder title="Integrações" stage="Etapa 6" description="WhatsApp, e-mail, telefonia SIP, CRM, ERP e webhooks autenticados." /></ProtectedNexaRoute>} />
+
 
                 <Route path="*" element={<NotFound />} />
               </Routes>
