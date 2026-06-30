@@ -404,6 +404,260 @@ export type Database = {
         }
         Relationships: []
       }
+      nexa_audit_logs: {
+        Row: {
+          action: string
+          created_at: string
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          organization_id: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          organization_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          organization_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nexa_audit_logs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "nexa_organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nexa_organization_members: {
+        Row: {
+          created_at: string
+          id: string
+          invited_by: string | null
+          organization_id: string
+          role: Database["public"]["Enums"]["nexa_role"]
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invited_by?: string | null
+          organization_id: string
+          role?: Database["public"]["Enums"]["nexa_role"]
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invited_by?: string | null
+          organization_id?: string
+          role?: Database["public"]["Enums"]["nexa_role"]
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nexa_organization_members_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "nexa_organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nexa_organizations: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          logo_url: string | null
+          name: string
+          plan: string
+          segment: Database["public"]["Enums"]["nexa_segment"]
+          settings: Json
+          slug: string
+          status: Database["public"]["Enums"]["nexa_org_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          logo_url?: string | null
+          name: string
+          plan?: string
+          segment?: Database["public"]["Enums"]["nexa_segment"]
+          settings?: Json
+          slug: string
+          status?: Database["public"]["Enums"]["nexa_org_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+          plan?: string
+          segment?: Database["public"]["Enums"]["nexa_segment"]
+          settings?: Json
+          slug?: string
+          status?: Database["public"]["Enums"]["nexa_org_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      nexa_profiles: {
+        Row: {
+          active_organization_id: string | null
+          avatar_url: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          phone: string | null
+          preferences: Json
+          updated_at: string
+        }
+        Insert: {
+          active_organization_id?: string | null
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id: string
+          phone?: string | null
+          preferences?: Json
+          updated_at?: string
+        }
+        Update: {
+          active_organization_id?: string | null
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          preferences?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nexa_profiles_active_organization_id_fkey"
+            columns: ["active_organization_id"]
+            isOneToOne: false
+            referencedRelation: "nexa_organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nexa_team_members: {
+        Row: {
+          created_at: string
+          id: string
+          is_lead: boolean
+          organization_id: string
+          team_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_lead?: boolean
+          organization_id: string
+          team_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_lead?: boolean
+          organization_id?: string
+          team_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nexa_team_members_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "nexa_organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nexa_team_members_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "nexa_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nexa_teams: {
+        Row: {
+          color: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nexa_teams_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "nexa_organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       online_users: {
         Row: {
           city: string | null
@@ -1013,6 +1267,20 @@ export type Database = {
           country: string
         }[]
       }
+      nexa_has_org_role: {
+        Args: {
+          _org_id: string
+          _roles: Database["public"]["Enums"]["nexa_role"][]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      nexa_is_org_member: {
+        Args: { _org_id: string; _user_id: string }
+        Returns: boolean
+      }
+      nexa_is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      nexa_user_org_ids: { Args: { _user_id: string }; Returns: string[] }
       record_visitor_history: {
         Args: {
           p_city: string
@@ -1037,7 +1305,24 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      nexa_org_status: "active" | "suspended" | "trial" | "cancelled"
+      nexa_role:
+        | "super_admin"
+        | "org_admin"
+        | "manager"
+        | "supervisor"
+        | "quality_analyst"
+        | "agent"
+        | "auditor"
+      nexa_segment:
+        | "sales"
+        | "support"
+        | "collections"
+        | "finance"
+        | "health"
+        | "education"
+        | "telecom"
+        | "other"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1164,6 +1449,27 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      nexa_org_status: ["active", "suspended", "trial", "cancelled"],
+      nexa_role: [
+        "super_admin",
+        "org_admin",
+        "manager",
+        "supervisor",
+        "quality_analyst",
+        "agent",
+        "auditor",
+      ],
+      nexa_segment: [
+        "sales",
+        "support",
+        "collections",
+        "finance",
+        "health",
+        "education",
+        "telecom",
+        "other",
+      ],
+    },
   },
 } as const
