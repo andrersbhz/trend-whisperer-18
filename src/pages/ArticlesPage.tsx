@@ -556,8 +556,9 @@ const ArticlesPage = () => {
                 <DropdownMenu modal={false}>
                   <DropdownMenuTrigger asChild>
                     <button 
-                      className="inline-flex items-center rounded-lg border border-primary/30 px-2.5 py-1 text-[10px] sm:text-xs font-bold transition-colors hover:bg-primary/20 hover:text-primary capitalize outline-none"
+                      className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-[10px] sm:text-xs font-bold transition-colors capitalize outline-none hover:brightness-125 ${getCategoryColor(article.category).bg} ${getCategoryColor(article.category).text} ${getCategoryColor(article.category).border}`}
                     >
+                      <span className={`inline-block w-1.5 h-1.5 rounded-full mr-1.5 ${getCategoryColor(article.category).dot}`} />
                       {article.category || 'Geral'}
                       <ChevronDown className="ml-1 h-3 w-3 opacity-50" />
                     </button>
