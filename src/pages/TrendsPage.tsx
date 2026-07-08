@@ -64,13 +64,22 @@ const TrendsPage = () => {
       });
     }
 
+    const now = Date.now();
+    const DAY = 24 * 60 * 60 * 1000;
+    const isFresh = (t: any) => now - new Date(t.fetched_at || 0).getTime() <= DAY;
+
     result.sort((a, b) => {
+      // Prioridade absoluta: tendências das últimas 24h vêm primeiro
+      const freshA = isFresh(a);
+      const freshB = isFresh(b);
+      if (freshA !== freshB) return freshA ? -1 : 1;
+
       if (sortBy === "audience_desc" || sortBy === "audience_asc") {
         const volumeA = parseInt(a.search_volume?.replace(/[^0-9]/g, '') || '0');
         const volumeB = parseInt(b.search_volume?.replace(/[^0-9]/g, '') || '0');
         return sortBy === "audience_desc" ? volumeB - volumeA : volumeA - volumeB;
       }
-      
+
       const dateA = new Date(a.fetched_at || 0).getTime();
       const dateB = new Date(b.fetched_at || 0).getTime();
       return sortBy === "recent" ? dateB - dateA : dateA - dateB;
