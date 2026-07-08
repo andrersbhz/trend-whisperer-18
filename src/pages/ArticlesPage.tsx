@@ -867,29 +867,59 @@ const ArticlesPage = () => {
           )}
         </TabsContent>
         <TabsContent value="categorias">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {userCategories.map((category) => (
-              <Card key={category} className="glass-card hover-lift">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                      <Layers className="h-5 w-5 text-primary" />
-                      <h3 className="font-bold capitalize">{category}</h3>
-                    </div>
-                    <Badge variant="outline">{articles.filter(a => a.category === category).length} posts</Badge>
-                  </div>
-                  <Button 
-                    className="w-full gradient-primary" 
-                    onClick={() => handleGenerateByCategory(category)}
-                    disabled={generating}
-                  >
-                    {generating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
-                    Gerar para {category}
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          {(() => {
+            // Agrupa artigos por categoria (inclui categorias sem posts, e categorias "extras" fora da lista do usuário)
+            const knownCats = new Set(userCategories);
+            const extraCats = Array.from(new Set(articles.map(a => a.category).filter(c => c && !knownCats.has(c))));
+            const allCats = [...userCategories, ...extraCats];
+
+            return (
+              <div className="space-y-6">
+                {allCats.map((category) => {
+                  const catArticles = articles.filter(a => (a.category || 'geral') === category);
+                  const c = getCategoryColor(category);
+                  return (
+                    <section
+                      key={category}
+                      className={`rounded-2xl border ${c.border} ${c.bg} p-4 sm:p-5 backdrop-blur-sm animate-in fade-in slide-in-from-bottom-2 duration-300`}
+                    >
+                      <header className="flex items-center justify-between mb-4 flex-wrap gap-3">
+                        <div className="flex items-center gap-3">
+                          <span className={`inline-block w-3 h-3 rounded-full ${c.dot} ring-4 ${c.ring}`} />
+                          <h3 className={`text-lg sm:text-xl font-bold capitalize ${c.text}`}>{category}</h3>
+                          <Badge variant="outline" className={`${c.border} ${c.text} font-bold`}>
+                            {catArticles.length} {catArticles.length === 1 ? 'artigo' : 'artigos'}
+                          </Badge>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className={`gap-2 ${c.border} ${c.text} hover:brightness-125`}
+                          onClick={() => handleGenerateByCategory(category)}
+                          disabled={generating}
+                        >
+                          {generating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                          Gerar para {category}
+                        </Button>
+                      </header>
+
+                      {catArticles.length === 0 ? (
+                        <p className="text-xs text-muted-foreground italic px-1 py-6 text-center">
+                          Nenhum artigo nesta categoria ainda.
+                        </p>
+                      ) : (
+                        <div className="grid gap-3">
+                          {catArticles.map((article, idx) => (
+                            <ArticleCard key={article.id} article={article} idx={idx} />
+                          ))}
+                        </div>
+                      )}
+                    </section>
+                  );
+                })}
+              </div>
+            );
+          })()}
         </TabsContent>
       </Tabs>
 
