@@ -484,7 +484,22 @@ const ArticlesPage = () => {
     failed: 'Falhou',
   };
 
-  if (loading && articles.length === 0) return <Preloader message="Carregando biblioteca de artigos..." />;
+  // Paleta de cores por categoria (tokens semânticos + gradientes distintos)
+  const categoryColors: Record<string, { bg: string; text: string; border: string; dot: string; ring: string }> = {
+    policia:      { bg: 'bg-red-500/10',     text: 'text-red-400',     border: 'border-red-500/40',     dot: 'bg-red-500',     ring: 'ring-red-500/30' },
+    celebridades: { bg: 'bg-pink-500/10',    text: 'text-pink-400',    border: 'border-pink-500/40',    dot: 'bg-pink-500',    ring: 'ring-pink-500/30' },
+    politica:     { bg: 'bg-blue-500/10',    text: 'text-blue-400',    border: 'border-blue-500/40',    dot: 'bg-blue-500',    ring: 'ring-blue-500/30' },
+    esportes:     { bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/40', dot: 'bg-emerald-500', ring: 'ring-emerald-500/30' },
+    saude:        { bg: 'bg-teal-500/10',    text: 'text-teal-400',    border: 'border-teal-500/40',    dot: 'bg-teal-500',    ring: 'ring-teal-500/30' },
+    financas:     { bg: 'bg-amber-500/10',   text: 'text-amber-400',   border: 'border-amber-500/40',   dot: 'bg-amber-500',   ring: 'ring-amber-500/30' },
+    tecnologia:   { bg: 'bg-cyan-500/10',    text: 'text-cyan-400',    border: 'border-cyan-500/40',    dot: 'bg-cyan-500',    ring: 'ring-cyan-500/30' },
+    variedades:   { bg: 'bg-violet-500/10',  text: 'text-violet-400',  border: 'border-violet-500/40',  dot: 'bg-violet-500',  ring: 'ring-violet-500/30' },
+    geral:        { bg: 'bg-slate-500/10',   text: 'text-slate-300',   border: 'border-slate-500/40',   dot: 'bg-slate-400',   ring: 'ring-slate-500/30' },
+  };
+  const getCategoryColor = (cat?: string) =>
+    categoryColors[(cat || 'geral').toLowerCase()] || categoryColors.geral;
+
+
 
 
   if (errorState) {
@@ -541,8 +556,9 @@ const ArticlesPage = () => {
                 <DropdownMenu modal={false}>
                   <DropdownMenuTrigger asChild>
                     <button 
-                      className="inline-flex items-center rounded-lg border border-primary/30 px-2.5 py-1 text-[10px] sm:text-xs font-bold transition-colors hover:bg-primary/20 hover:text-primary capitalize outline-none"
+                      className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-[10px] sm:text-xs font-bold transition-colors capitalize outline-none hover:brightness-125 ${getCategoryColor(article.category).bg} ${getCategoryColor(article.category).text} ${getCategoryColor(article.category).border}`}
                     >
+                      <span className={`inline-block w-1.5 h-1.5 rounded-full mr-1.5 ${getCategoryColor(article.category).dot}`} />
                       {article.category || 'Geral'}
                       <ChevronDown className="ml-1 h-3 w-3 opacity-50" />
                     </button>
@@ -851,29 +867,59 @@ const ArticlesPage = () => {
           )}
         </TabsContent>
         <TabsContent value="categorias">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {userCategories.map((category) => (
-              <Card key={category} className="glass-card hover-lift">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                      <Layers className="h-5 w-5 text-primary" />
-                      <h3 className="font-bold capitalize">{category}</h3>
-                    </div>
-                    <Badge variant="outline">{articles.filter(a => a.category === category).length} posts</Badge>
-                  </div>
-                  <Button 
-                    className="w-full gradient-primary" 
-                    onClick={() => handleGenerateByCategory(category)}
-                    disabled={generating}
-                  >
-                    {generating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
-                    Gerar para {category}
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          {(() => {
+            // Agrupa artigos por categoria (inclui categorias sem posts, e categorias "extras" fora da lista do usuário)
+            const knownCats = new Set(userCategories);
+            const extraCats = Array.from(new Set(articles.map(a => a.category).filter(c => c && !knownCats.has(c))));
+            const allCats = [...userCategories, ...extraCats];
+
+            return (
+              <div className="space-y-6">
+                {allCats.map((category) => {
+                  const catArticles = articles.filter(a => (a.category || 'geral') === category);
+                  const c = getCategoryColor(category);
+                  return (
+                    <section
+                      key={category}
+                      className={`rounded-2xl border ${c.border} ${c.bg} p-4 sm:p-5 backdrop-blur-sm animate-in fade-in slide-in-from-bottom-2 duration-300`}
+                    >
+                      <header className="flex items-center justify-between mb-4 flex-wrap gap-3">
+                        <div className="flex items-center gap-3">
+                          <span className={`inline-block w-3 h-3 rounded-full ${c.dot} ring-4 ${c.ring}`} />
+                          <h3 className={`text-lg sm:text-xl font-bold capitalize ${c.text}`}>{category}</h3>
+                          <Badge variant="outline" className={`${c.border} ${c.text} font-bold`}>
+                            {catArticles.length} {catArticles.length === 1 ? 'artigo' : 'artigos'}
+                          </Badge>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className={`gap-2 ${c.border} ${c.text} hover:brightness-125`}
+                          onClick={() => handleGenerateByCategory(category)}
+                          disabled={generating}
+                        >
+                          {generating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                          Gerar para {category}
+                        </Button>
+                      </header>
+
+                      {catArticles.length === 0 ? (
+                        <p className="text-xs text-muted-foreground italic px-1 py-6 text-center">
+                          Nenhum artigo nesta categoria ainda.
+                        </p>
+                      ) : (
+                        <div className="grid gap-3">
+                          {catArticles.map((article, idx) => (
+                            <ArticleCard key={article.id} article={article} idx={idx} />
+                          ))}
+                        </div>
+                      )}
+                    </section>
+                  );
+                })}
+              </div>
+            );
+          })()}
         </TabsContent>
       </Tabs>
 
