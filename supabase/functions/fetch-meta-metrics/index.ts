@@ -208,7 +208,6 @@ serve(async (req) => {
 
             // Instagram insights
             const igInsightsMetrics = [
-              "impressions",
               "reach",
               "profile_views",
               "website_clicks",

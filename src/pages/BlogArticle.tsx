@@ -25,13 +25,14 @@ const BlogArticle = () => {
     const fetchArticle = async () => {
       setLoading(true);
       try {
-        const { data } = await supabase
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(articleId || '');
+        let query = supabase
           .from('public_articles')
           .select('*, authors(id, name, role, bio, avatar_url, category, created_at, updated_at)')
-          .eq('status', 'published')
-          .or(`id.eq.${articleId},slug.eq.${articleId}`)
-          .maybeSingle();
-
+          .eq('status', 'published');
+        query = isUuid ? query.eq('id', articleId!) : query.eq('slug', articleId!);
+        const { data, error } = await query.maybeSingle();
+        if (error) console.error('Error fetching article:', error);
         if (data) setArticle(data);
       } catch (error) {
         console.error('Error fetching article:', error);
