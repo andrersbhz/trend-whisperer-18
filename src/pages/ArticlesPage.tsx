@@ -484,7 +484,22 @@ const ArticlesPage = () => {
     failed: 'Falhou',
   };
 
-  if (loading && articles.length === 0) return <Preloader message="Carregando biblioteca de artigos..." />;
+  // Paleta de cores por categoria (tokens semânticos + gradientes distintos)
+  const categoryColors: Record<string, { bg: string; text: string; border: string; dot: string; ring: string }> = {
+    policia:      { bg: 'bg-red-500/10',     text: 'text-red-400',     border: 'border-red-500/40',     dot: 'bg-red-500',     ring: 'ring-red-500/30' },
+    celebridades: { bg: 'bg-pink-500/10',    text: 'text-pink-400',    border: 'border-pink-500/40',    dot: 'bg-pink-500',    ring: 'ring-pink-500/30' },
+    politica:     { bg: 'bg-blue-500/10',    text: 'text-blue-400',    border: 'border-blue-500/40',    dot: 'bg-blue-500',    ring: 'ring-blue-500/30' },
+    esportes:     { bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/40', dot: 'bg-emerald-500', ring: 'ring-emerald-500/30' },
+    saude:        { bg: 'bg-teal-500/10',    text: 'text-teal-400',    border: 'border-teal-500/40',    dot: 'bg-teal-500',    ring: 'ring-teal-500/30' },
+    financas:     { bg: 'bg-amber-500/10',   text: 'text-amber-400',   border: 'border-amber-500/40',   dot: 'bg-amber-500',   ring: 'ring-amber-500/30' },
+    tecnologia:   { bg: 'bg-cyan-500/10',    text: 'text-cyan-400',    border: 'border-cyan-500/40',    dot: 'bg-cyan-500',    ring: 'ring-cyan-500/30' },
+    variedades:   { bg: 'bg-violet-500/10',  text: 'text-violet-400',  border: 'border-violet-500/40',  dot: 'bg-violet-500',  ring: 'ring-violet-500/30' },
+    geral:        { bg: 'bg-slate-500/10',   text: 'text-slate-300',   border: 'border-slate-500/40',   dot: 'bg-slate-400',   ring: 'ring-slate-500/30' },
+  };
+  const getCategoryColor = (cat?: string) =>
+    categoryColors[(cat || 'geral').toLowerCase()] || categoryColors.geral;
+
+
 
 
   if (errorState) {
