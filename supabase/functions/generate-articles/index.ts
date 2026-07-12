@@ -325,40 +325,51 @@ function appendFormatHint(prompt: string, fmt: { width: number; height: number; 
   return `${prompt}\n\nFORMATO OBRIGATÓRIO DA IMAGEM: ${fmt.label} — proporção exata ${fmt.width}x${fmt.height}px. Componha o enquadramento para esta proporção.`;
 }
 
-async function generateImageOpenAI(apiKey: string, title: string, content: string | null, visualElements: string, customImagePrompt?: string | null, formatKey?: string | null): Promise<string | null> {
-  try {
-    const fmt = getImageFormat(formatKey);
-    const prompt = appendFormatHint(buildImagePrompt(title, content, visualElements, customImagePrompt), fmt);
-    console.log(`[Image] Calling DALL-E 3 (${fmt.label}) for: ${title.substring(0, 50)}...`);
+// Geração de imagem via Lovable AI Gateway (estilo chat, sem necessidade de API específica de imagens).
+// Usa LOVABLE_API_KEY (server-side) e o prompt configurado pelo usuário em Configurações > Prompt de Imagem IA.
+async function generateImageLovable(title: string, content: string | null, visualElements: string, customImagePrompt?: string | null, formatKey?: string | null): Promise<string | null> {
+  const lovableKey = Deno.env.get("LOVABLE_API_KEY");
+  if (!lovableKey) {
+    console.warn("[Image] LOVABLE_API_KEY não disponível no ambiente.");
+    return null;
+  }
+  const fmt = getImageFormat(formatKey);
+  const prompt = appendFormatHint(buildImagePrompt(title, content, visualElements, customImagePrompt), fmt);
+  const models = ["google/gemini-2.5-flash-image", "google/gemini-3-pro-image"];
 
-    const resp = await fetch("https://api.openai.com/v1/images/generations", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "dall-e-3",
-        prompt: prompt,
-        n: 1,
-        size: fmt.dalle,
-        response_format: "b64_json",
-      }),
-    });
+  for (const model of models) {
+    try {
+      console.log(`[Image] Lovable AI (${model}) para: ${title.substring(0, 50)}...`);
+      const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${lovableKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model,
+          messages: [{ role: "user", content: prompt }],
+          modalities: ["image", "text"],
+        }),
+      });
 
-    if (!resp.ok) {
-      const errText = await resp.text();
-      console.warn(`[Image] OpenAI DALL-E 3 failed (${resp.status}): ${errText.substring(0, 200)}`);
-      return null;
+      if (!resp.ok) {
+        const errText = await resp.text();
+        console.warn(`[Image] Lovable AI ${model} falhou (${resp.status}): ${errText.substring(0, 200)}`);
+        continue;
+      }
+
+      const data = await resp.json();
+      const msg = data.choices?.[0]?.message;
+      const imgUrl = msg?.images?.[0]?.image_url?.url;
+      if (imgUrl) {
+        console.log(`[Image] Sucesso via ${model}`);
+        return imgUrl;
+      }
+      console.warn(`[Image] ${model} não retornou imagem na resposta.`);
+    } catch (err) {
+      console.error(`[Image] Lovable AI ${model} erro:`, err);
     }
-
-    const data = await resp.json();
-    if (data.data?.[0]?.b64_json) {
-      console.log(`[Image] Success! Image generated with DALL-E 3`);
-      return `data:image/png;base64,${data.data[0].b64_json}`;
-    }
-  } catch (err) {
-    console.error(`[Image] OpenAI error:`, err);
   }
   return null;
 }
