@@ -278,21 +278,11 @@ serve(async (req) => {
       let imageUrl: string | null = null;
       const providerErrors: string[] = [];
 
-      // Geração EXCLUSIVA por ChatGPT (OpenAI DALL-E) usando o Prompt de Imagem IA das Configurações.
-      if (!openaiApiKey) {
-        failed++;
-        details.push({
-          articleId: article.id,
-          title: article.title,
-          reason: "OpenAI API Key não configurada. Configure em Configurações > OpenAI para gerar imagens via ChatGPT.",
-        });
-        continue;
-      }
-
+      // Geração via Lovable AI Gateway (estilo chat) usando o Prompt de Imagem IA das Configurações.
       try {
-        imageUrl = await generateImageDallE(openaiApiKey, article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt, fmt);
+        imageUrl = await generateImageLovable(article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt, fmt);
       } catch (error) {
-        providerErrors.push(`OpenAI (ChatGPT): ${getErrorMessage(error)}`);
+        providerErrors.push(`Lovable AI: ${getErrorMessage(error)}`);
       }
 
       if (!imageUrl) {
