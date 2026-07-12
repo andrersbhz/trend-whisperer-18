@@ -151,6 +151,37 @@ async function generateImageGemini(apiKey: string, title: string, content: strin
   throw new ProviderError(errors.join(" | ") || "Falha ao gerar imagem com Gemini", 500, false, errors.some((message) => isBillingIssue(0, message)));
 }
 
+async function generateImageLovable(title: string, content: string | null, visualElements: string | null, imagePrompt: string | null, fmt?: { width: number; height: number; label: string }): Promise<string> {
+  const lovableKey = Deno.env.get("LOVABLE_API_KEY");
+  if (!lovableKey) throw new ProviderError("LOVABLE_API_KEY não disponível no ambiente.", 500, false, false);
+  const prompt = buildImagePrompt(title, content, visualElements, imagePrompt, fmt);
+  const models = ["google/gemini-2.5-flash-image", "google/gemini-3-pro-image"];
+  const errs: string[] = [];
+  for (const model of models) {
+    try {
+      return await withRetry(async () => {
+        const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model,
+            messages: [{ role: "user", content: prompt }],
+            modalities: ["image", "text"],
+          }),
+        });
+        if (!resp.ok) throw createProviderError(`Lovable AI ${model}`, resp.status, await readResponseDetails(resp));
+        const data = await resp.json();
+        const imgUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+        if (!imgUrl) throw new ProviderError(`Lovable AI ${model} não retornou imagem.`, 500, false, false);
+        return imgUrl as string;
+      }, 1, 1500);
+    } catch (e) {
+      errs.push(getErrorMessage(e));
+    }
+  }
+  throw new ProviderError(errs.join(" | ") || "Falha ao gerar imagem via Lovable AI", 500, false, false);
+}
+
 async function generateImageDallE(apiKey: string, title: string, content: string | null, visualElements: string | null, imagePrompt: string | null, fmt?: { width: number; height: number; label: string; dalle: string }): Promise<string> {
   const dalleSize = (fmt?.dalle as "1024x1024" | "1024x1792" | "1792x1024") || "1024x1024";
   return await withRetry(async () => {
