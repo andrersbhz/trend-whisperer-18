@@ -66,7 +66,7 @@ async function callAI(providers: any[], systemPrompt: string, userPrompt: string
       console.log(`Trying ${p.name}`);
       let content = "";
       if (p.name === "Gemini") {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${p.key}`;
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${p.key}`;
         const resp = await fetch(url, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -83,7 +83,7 @@ async function callAI(providers: any[], systemPrompt: string, userPrompt: string
           method: "POST",
           headers: { Authorization: `Bearer ${p.key}`, "Content-Type": "application/json" },
           body: JSON.stringify({
-            model: "google/gemini-1.5-flash",
+            model: "google/gemini-2.5-flash",
             messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }],
           }),
         });

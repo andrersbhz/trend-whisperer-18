@@ -74,12 +74,12 @@ const ARTICLE_TOOL_PARAMS = {
 };
 
 async function callGeminiDirect(apiKey: string, systemPrompt: string, userPrompt: string): Promise<AIResponse> {
-  const model = "gemini-1.5-flash";
+  const model = "gemini-2.5-flash";
   let lastError: any = null;
 
   try {
     // Simple fetch with generic model for best compatibility
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
     const body = {
       contents: [{ 
         role: "user", 
@@ -226,7 +226,7 @@ async function callLovableGateway(apiKey: string, systemPrompt: string, userProm
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "google/gemini-1.5-flash",
+      model: "google/gemini-2.5-flash",
       messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }],
       tools: [{
         type: "function",
@@ -365,7 +365,7 @@ async function generateImageOpenAI(apiKey: string, title: string, content: strin
 
 async function generateImageGemini(apiKey: string, title: string, content: string | null, visualElements: string, customImagePrompt?: string | null, formatKey?: string | null): Promise<string | null> {
   const fmt = getImageFormat(formatKey);
-  const models = ["gemini-2.0-flash-exp", "gemini-1.5-flash"];
+  const models = ["gemini-2.0-flash-exp", "gemini-2.5-flash"];
   for (const model of models) {
     try {
       console.log(`[Image] Attempting generation with Gemini model: ${model}`);

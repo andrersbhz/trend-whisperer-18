@@ -109,7 +109,7 @@ async function withRetry<T>(operation: () => Promise<T>, retries = 2, baseDelayM
 
 async function generateImageGemini(apiKey: string, title: string, content: string | null, visualElements: string | null, imagePrompt: string | null, fmt?: { width: number; height: number; label: string }): Promise<string> {
   // Modelos experimentais que podem suportar geração de imagem
-  const models = ["gemini-2.0-flash-exp", "gemini-1.5-flash"];
+  const models = ["gemini-2.0-flash-exp", "gemini-2.5-flash"];
   const errors: string[] = [];
 
   for (const model of models) {

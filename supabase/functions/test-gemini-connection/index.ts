@@ -57,7 +57,7 @@ serve(async (req) => {
     if (resp.ok) {
       const data = await resp.json();
       const models = data.models || [];
-      const hasFlash = models.some((m: any) => m.name?.includes("gemini-1.5-flash") || m.name?.includes("gemini-2.0-flash"));
+      const hasFlash = models.some((m: any) => m.name?.includes("gemini-2.5-flash") || m.name?.includes("gemini-2.0-flash"));
       const hasPro = models.some((m: any) => m.name?.includes("gemini-1.5-pro"));
       return new Response(
         JSON.stringify({
