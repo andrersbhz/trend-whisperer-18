@@ -278,28 +278,21 @@ serve(async (req) => {
       let imageUrl: string | null = null;
       const providerErrors: string[] = [];
 
-      // Prioridade absoluta: OpenAI (ChatGPT/DALL-E) conforme solicitado
-      if (openaiApiKey) {
-        try { 
-          imageUrl = await generateImageDallE(openaiApiKey, article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt, fmt); 
-        } catch (error) { 
-          providerErrors.push(`OpenAI (ChatGPT): ${getErrorMessage(error)}`);
-        }
-      } 
-      
-      // Fallback para Gemini se OpenAI falhar ou não estiver configurado
-      if (!imageUrl && geminiApiKey) {
-        try { imageUrl = await generateImageGemini(geminiApiKey, article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt, fmt); }
-        catch (error) { providerErrors.push(`Gemini: ${getErrorMessage(error)}`); }
+      // Geração EXCLUSIVA por ChatGPT (OpenAI DALL-E) usando o Prompt de Imagem IA das Configurações.
+      if (!openaiApiKey) {
+        failed++;
+        details.push({
+          articleId: article.id,
+          title: article.title,
+          reason: "OpenAI API Key não configurada. Configure em Configurações > OpenAI para gerar imagens via ChatGPT.",
+        });
+        continue;
       }
 
-      // Fallback final: Pollinations (sempre funciona)
-      if (!imageUrl) {
-        try {
-          imageUrl = await generateImagePollinations(article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt, fmt);
-        } catch (error) {
-          providerErrors.push(`Pollinations: ${getErrorMessage(error)}`);
-        }
+      try {
+        imageUrl = await generateImageDallE(openaiApiKey, article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt, fmt);
+      } catch (error) {
+        providerErrors.push(`OpenAI (ChatGPT): ${getErrorMessage(error)}`);
       }
 
       if (!imageUrl) {
