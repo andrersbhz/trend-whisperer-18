@@ -851,19 +851,14 @@ serve(async (req) => {
         const imageFormatKey = (settings as any)?.image_format || "instagram_portrait";
 
         if (imageMode === "ai") {
-          // Imagens geradas EXCLUSIVAMENTE pelo ChatGPT (OpenAI DALL-E), conforme configuração do usuário.
-          if (!openaiApiKey) {
-            console.warn(`[Image] OpenAI API Key não configurada — imagem obrigatória por ChatGPT não pôde ser gerada para "${parsed.title}"`);
-          } else {
-            try {
-              featuredImageUrl = await generateImageOpenAI(openaiApiKey, parsed.title, parsed.content, parsed.visual_elements, customImagePrompt, imageFormatKey);
-            } catch (imgErr) {
-              console.warn(`[Image] ChatGPT (DALL-E) falhou para "${parsed.title}":`, imgErr);
-            }
+          // Imagens geradas via Lovable AI Gateway (estilo chat), usando o Prompt de Imagem IA das Configurações.
+          try {
+            featuredImageUrl = await generateImageLovable(parsed.title, parsed.content, parsed.visual_elements, customImagePrompt, imageFormatKey);
+          } catch (imgErr) {
+            console.warn(`[Image] Lovable AI falhou para "${parsed.title}":`, imgErr);
           }
-
           if (!featuredImageUrl) {
-            console.warn(`[Image] ChatGPT não gerou imagem para "${parsed.title}" — artigo criado sem imagem (fallbacks desativados por regra do usuário)`);
+            console.warn(`[Image] Não foi possível gerar imagem para "${parsed.title}" — artigo criado sem imagem.`);
           }
         } else if (imageMode === "manual") {
           console.log(`[Image] Modo manual detectado para "${parsed.title}" — aguardando upload.`);
