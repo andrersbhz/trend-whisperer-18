@@ -643,6 +643,10 @@ const ArticlesPage = () => {
     </Card>
   );
 
+  if (loading && articles.length === 0) {
+    return <Preloader message="Carregando biblioteca de artigos..." />;
+  }
+
   return (
     <div className="space-y-6">
       {/* Diagnostics Panel */}

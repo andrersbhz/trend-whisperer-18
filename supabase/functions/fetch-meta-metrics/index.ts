@@ -206,43 +206,64 @@ serve(async (req) => {
               pageMetrics.instagram = { ...(await igProfileResp.json()) };
             }
 
-            // Instagram insights
-            const igInsightsMetrics = [
-              "reach",
-              "profile_views",
-              "website_clicks",
-              "follower_count",
-            ].join(",");
+            // Instagram insights — split by metric_type requirements
+            // profile_views & website_clicks require metric_type=total_value (no time-series)
+            // reach & follower_count use period=day time-series
+            pageMetrics.instagram.insights = {};
 
-            const igInsightsResp = await fetch(
-              `${GRAPH_API}/${igId}/insights?metric=${igInsightsMetrics}&period=day&since=${getDateDaysAgo(28)}&until=${getDateDaysAgo(0)}&access_token=${page.accessToken}`
-            );
-            if (igInsightsResp.ok) {
-              const igInsights = await igInsightsResp.json();
-              pageMetrics.instagram.insights = {};
-              for (const metric of igInsights.data || []) {
-                const values = metric.values || [];
-                const total = values.reduce((sum: number, v: any) => sum + (typeof v.value === "number" ? v.value : 0), 0);
-                
-                // Calculate growth (last 7 days vs previous 7 days)
-                const last7 = values.slice(-7);
-                const prev7 = values.slice(-14, -7);
-                const last7Total = last7.reduce((sum: number, v: any) => sum + (typeof v.value === "number" ? v.value : 0), 0);
-                const prev7Total = prev7.reduce((sum: number, v: any) => sum + (typeof v.value === "number" ? v.value : 0), 0);
-                const growth = prev7Total > 0 ? ((last7Total - prev7Total) / prev7Total) * 100 : 0;
+            const processTimeSeries = (metric: any) => {
+              const values = metric.values || [];
+              const total = values.reduce((sum: number, v: any) => sum + (typeof v.value === "number" ? v.value : 0), 0);
+              const last7 = values.slice(-7);
+              const prev7 = values.slice(-14, -7);
+              const last7Total = last7.reduce((sum: number, v: any) => sum + (typeof v.value === "number" ? v.value : 0), 0);
+              const prev7Total = prev7.reduce((sum: number, v: any) => sum + (typeof v.value === "number" ? v.value : 0), 0);
+              const growth = prev7Total > 0 ? ((last7Total - prev7Total) / prev7Total) * 100 : 0;
+              pageMetrics.instagram.insights[metric.name] = {
+                total,
+                growth: Math.round(growth),
+                daily: values.map((v: any) => ({
+                  date: v.end_time?.split("T")[0],
+                  value: typeof v.value === "number" ? v.value : 0,
+                })),
+              };
+            };
 
-                pageMetrics.instagram.insights[metric.name] = {
-                  total,
-                  growth: Math.round(growth),
-                  daily: values.map((v: any) => ({
-                    date: v.end_time?.split("T")[0],
-                    value: typeof v.value === "number" ? v.value : 0,
-                  })),
-                };
+            try {
+              const daySeriesResp = await fetch(
+                `${GRAPH_API}/${igId}/insights?metric=reach,follower_count&period=day&since=${getDateDaysAgo(28)}&until=${getDateDaysAgo(0)}&access_token=${page.accessToken}`
+              );
+              if (daySeriesResp.ok) {
+                const data = await daySeriesResp.json();
+                for (const metric of data.data || []) processTimeSeries(metric);
+              } else {
+                console.error("IG day insights error:", await daySeriesResp.text());
               }
-            } else {
-              console.error("IG insights error:", await igInsightsResp.text());
+            } catch (e) {
+              console.error("IG day insights fetch failed:", e);
             }
+
+            try {
+              const totalValueResp = await fetch(
+                `${GRAPH_API}/${igId}/insights?metric=profile_views,website_clicks&metric_type=total_value&period=day&since=${getDateDaysAgo(28)}&until=${getDateDaysAgo(0)}&access_token=${page.accessToken}`
+              );
+              if (totalValueResp.ok) {
+                const data = await totalValueResp.json();
+                for (const metric of data.data || []) {
+                  const tv = metric.total_value?.value;
+                  pageMetrics.instagram.insights[metric.name] = {
+                    total: typeof tv === "number" ? tv : 0,
+                    growth: 0,
+                    daily: [],
+                  };
+                }
+              } else {
+                console.error("IG total_value insights error:", await totalValueResp.text());
+              }
+            } catch (e) {
+              console.error("IG total_value insights fetch failed:", e);
+            }
+
 
             // Instagram recent media
             const igMediaResp = await fetch(
