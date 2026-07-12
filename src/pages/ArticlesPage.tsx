@@ -988,7 +988,7 @@ const ArticlesPage = () => {
                   disabled={regeneratingImages}
                 >
                   {regeneratingImages ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
-                  Regenerar com IA (ChatGPT/DALL-E)
+                  Criar com IA (ChatGPT)
                 </Button>
               </div>
 
