@@ -840,35 +840,19 @@ serve(async (req) => {
         const imageFormatKey = (settings as any)?.image_format || "instagram_portrait";
 
         if (imageMode === "ai") {
-          // 1. ChatGPT (DALL-E 3) como principal para imagens
-          if (openaiApiKey) {
+          // Imagens geradas EXCLUSIVAMENTE pelo ChatGPT (OpenAI DALL-E), conforme configuração do usuário.
+          if (!openaiApiKey) {
+            console.warn(`[Image] OpenAI API Key não configurada — imagem obrigatória por ChatGPT não pôde ser gerada para "${parsed.title}"`);
+          } else {
             try {
               featuredImageUrl = await generateImageOpenAI(openaiApiKey, parsed.title, parsed.content, parsed.visual_elements, customImagePrompt, imageFormatKey);
             } catch (imgErr) {
-              console.warn(`[Image] DALL-E falhou para "${parsed.title}":`, imgErr);
-            }
-          }
-
-          // 2. Gemini como fallback para imagens
-          if (!featuredImageUrl && geminiApiKey) {
-            try {
-              featuredImageUrl = await generateImageGemini(geminiApiKey, parsed.title, parsed.content, parsed.visual_elements, customImagePrompt, imageFormatKey);
-            } catch (imgErr) {
-              console.warn(`[Image] Gemini fallback falhou para "${parsed.title}":`, imgErr);
-            }
-          }
-          
-          // 3. Pollinations como fallback final garantido
-          if (!featuredImageUrl) {
-            try {
-              featuredImageUrl = await generateImagePollinations(parsed.title, parsed.content, parsed.visual_elements, customImagePrompt, imageFormatKey);
-            } catch (imgErr) {
-              console.warn(`[Image] Pollinations fallback falhou para "${parsed.title}":`, imgErr);
+              console.warn(`[Image] ChatGPT (DALL-E) falhou para "${parsed.title}":`, imgErr);
             }
           }
 
           if (!featuredImageUrl) {
-            console.warn(`[Image] Nenhum provedor gerou imagem para "${parsed.title}" — artigo criado sem imagem`);
+            console.warn(`[Image] ChatGPT não gerou imagem para "${parsed.title}" — artigo criado sem imagem (fallbacks desativados por regra do usuário)`);
           }
         } else if (imageMode === "manual") {
           console.log(`[Image] Modo manual detectado para "${parsed.title}" — aguardando upload.`);
