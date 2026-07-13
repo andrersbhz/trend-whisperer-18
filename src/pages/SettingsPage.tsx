@@ -174,6 +174,7 @@ const SettingsPage = () => {
             image_mode: (userData.image_mode as 'ai' | 'manual' | 'none') || 'ai',
             image_prompt: userData.image_prompt || '',
             image_format: (userData as any).image_format || 'instagram_portrait',
+            image_knowledge_urls: ((userData as any).image_knowledge_urls as string[]) || [],
             interaction_mode: userData.interaction_mode || 'standard',
             dashboard_widgets: (userData.dashboard_widgets as UserSettings['dashboard_widgets']) || defaultSettings.dashboard_widgets,
             dashboard_order: (userData.dashboard_order as string[]) || defaultSettings.dashboard_order,
