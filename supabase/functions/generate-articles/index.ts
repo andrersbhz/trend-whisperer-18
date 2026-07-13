@@ -412,6 +412,35 @@ async function generateImageGemini(apiKey: string, title: string, content: strin
   return null;
 }
 
+// Redimensiona um data URL PNG para as dimensões EXATAS do formato (cover crop, mantém proporção).
+async function resizeDataUrlToExact(dataUrl: string, targetW: number, targetH: number): Promise<string> {
+  try {
+    if (!dataUrl.startsWith("data:image/")) return dataUrl;
+    const { Image } = await import("https://deno.land/x/imagescript@1.2.17/mod.ts");
+    const b64 = dataUrl.split(",")[1];
+    const bin = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+    const img = await Image.decode(bin);
+    // cover-crop: escala pelo maior lado e recorta o excesso
+    const scale = Math.max(targetW / img.width, targetH / img.height);
+    const scaledW = Math.round(img.width * scale);
+    const scaledH = Math.round(img.height * scale);
+    img.resize(scaledW, scaledH);
+    const cropX = Math.max(0, Math.floor((scaledW - targetW) / 2));
+    const cropY = Math.max(0, Math.floor((scaledH - targetH) / 2));
+    img.crop(cropX, cropY, targetW, targetH);
+    const out = await img.encode(); // PNG
+    let outB64 = "";
+    const CHUNK = 0x8000;
+    for (let i = 0; i < out.length; i += CHUNK) {
+      outB64 += String.fromCharCode(...out.subarray(i, i + CHUNK));
+    }
+    return `data:image/png;base64,${btoa(outB64)}`;
+  } catch (e) {
+    console.warn("[Image] Falha ao redimensionar para tamanho exato:", e);
+    return dataUrl;
+  }
+}
+
 // Geração via OpenAI (ChatGPT) usando gpt-image-1 — modelo que segue o prompt com precisão.
 // Suporta referências visuais (conhecimento) via endpoint /v1/images/edits multipart.
 async function generateImageOpenAI(
@@ -431,9 +460,10 @@ async function generateImageOpenAI(
   const basePrompt = appendFormatHint(buildImagePrompt(title, content, visualElements, customImagePrompt), fmt);
   const refs = (knowledgeUrls || []).slice(0, 10).filter((u) => typeof u === "string" && u.startsWith("http"));
 
+  const finalize = async (dataUrl: string) => await resizeDataUrlToExact(dataUrl, fmt.width, fmt.height);
+
   try {
     if (refs.length > 0) {
-      // /v1/images/edits com múltiplas referências (gpt-image-1)
       const form = new FormData();
       form.append("model", "gpt-image-1");
       form.append("prompt", `${basePrompt}\n\nUse as imagens anexadas como REFERÊNCIA VISUAL obrigatória de estilo, paleta, composição e identidade visual. Siga o prompt em conjunto com o estilo dessas referências.`);
@@ -447,10 +477,10 @@ async function generateImageOpenAI(
           const blob = await r.blob();
           form.append("image[]", blob, `ref-${added}.png`);
           added++;
-        } catch { /* ignora referência inválida */ }
+        } catch { /* ignora */ }
       }
       if (added > 0) {
-        console.log(`[Image] OpenAI gpt-image-1 (edits, refs=${added}) para: ${title.substring(0, 50)}...`);
+        console.log(`[Image] OpenAI gpt-image-1 (edits, refs=${added}) size=${size} → ${fmt.width}x${fmt.height}`);
         const resp = await fetch("https://api.openai.com/v1/images/edits", {
           method: "POST",
           headers: { Authorization: `Bearer ${apiKey}` },
@@ -462,22 +492,16 @@ async function generateImageOpenAI(
         } else {
           const data = await resp.json();
           const b64 = data.data?.[0]?.b64_json;
-          if (b64) return `data:image/png;base64,${b64}`;
+          if (b64) return await finalize(`data:image/png;base64,${b64}`);
         }
       }
     }
 
-    // /v1/images/generations sem referências (ou fallback do edits)
-    console.log(`[Image] OpenAI gpt-image-1 (generations, size=${size}) para: ${title.substring(0, 50)}...`);
+    console.log(`[Image] OpenAI gpt-image-1 (generations, size=${size}) → ${fmt.width}x${fmt.height}`);
     const resp = await fetch("https://api.openai.com/v1/images/generations", {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "gpt-image-1",
-        prompt: basePrompt,
-        size,
-        n: 1,
-      }),
+      body: JSON.stringify({ model: "gpt-image-1", prompt: basePrompt, size, n: 1 }),
     });
     if (!resp.ok) {
       const errText = await resp.text();
@@ -486,9 +510,21 @@ async function generateImageOpenAI(
     }
     const data = await resp.json();
     const b64 = data.data?.[0]?.b64_json;
+    if (b64) return await finalize(`data:image/png;base64,${b64}`);
     const url = data.data?.[0]?.url;
-    if (b64) return `data:image/png;base64,${b64}`;
-    if (url) return url;
+    if (url) {
+      // Baixa e converte para data URL para poder redimensionar
+      try {
+        const r = await fetch(url);
+        const buf = new Uint8Array(await r.arrayBuffer());
+        let s = "";
+        const CHUNK = 0x8000;
+        for (let i = 0; i < buf.length; i += CHUNK) s += String.fromCharCode(...buf.subarray(i, i + CHUNK));
+        return await finalize(`data:image/png;base64,${btoa(s)}`);
+      } catch {
+        return url;
+      }
+    }
     return null;
   } catch (err) {
     console.error("[Image] OpenAI gpt-image-1 erro:", err);
