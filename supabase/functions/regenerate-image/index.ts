@@ -12,20 +12,19 @@ function buildImagePrompt(title: string, content: string | null, visualElements:
     throw new Error("O 'Prompt de Imagem IA' não está configurado em Configurações > Geral. Este prompt é obrigatório.");
   }
 
-  const fmtBlock = fmt
-    ? `\n\nFORMATO OBRIGATÓRIO DA IMAGEM: ${fmt.label} — proporção exata ${fmt.width}x${fmt.height}px. Componha o enquadramento para esta proporção.`
-    : `\n- Se o estilo do usuário não especificar proporção, prefira 4:5 (1080x1350) para Instagram.`;
+  // Segue EXATAMENTE o Prompt de Imagem IA das configurações.
+  // Apenas injeta o título da notícia como assunto e o formato/proporção como requisito técnico.
+  const base = imagePrompt.trim().replace(/\{\{?\s*title\s*\}?\}/gi, title);
+  const hasTitleToken = base !== imagePrompt.trim();
 
-  return `DIRETRIZES OBRIGATÓRIAS DE ESTILO (DINÂMICO DAS CONFIGURAÇÕES):
-${imagePrompt.trim()}
-
-ASSUNTO DA IMAGEM (DERIVADO DO TÍTULO DA NOTÍCIA):
-${title}
-
-INSTRUÇÕES DE QUALIDADE E VERACIDADE:
-- A imagem deve ser visualmente conectada e fiel ao título acima.
-- Não inclua textos longos, marcas d'água ou elementos desconexos.
-- Foque na representação visual fiel do assunto.${fmtBlock}`;
+  const parts: string[] = [base];
+  if (!hasTitleToken) {
+    parts.push(`Título da notícia (assunto da imagem): ${title}`);
+  }
+  if (fmt) {
+    parts.push(`Proporção/formato obrigatório: ${fmt.label} (${fmt.width}x${fmt.height}px).`);
+  }
+  return parts.join("\n\n");
 }
 
 const IMAGE_FORMATS: Record<string, { width: number; height: number; dalle: "1024x1024" | "1024x1792" | "1792x1024"; label: string }> = {
