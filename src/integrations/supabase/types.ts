@@ -945,6 +945,7 @@ export type Database = {
           groq_api_key: string | null
           id: string
           image_format: string
+          image_knowledge_urls: string[]
           image_mode: string
           image_prompt: string | null
           image_prompt_template: string | null
@@ -995,6 +996,7 @@ export type Database = {
           groq_api_key?: string | null
           id?: string
           image_format?: string
+          image_knowledge_urls?: string[]
           image_mode?: string
           image_prompt?: string | null
           image_prompt_template?: string | null
@@ -1045,6 +1047,7 @@ export type Database = {
           groq_api_key?: string | null
           id?: string
           image_format?: string
+          image_knowledge_urls?: string[]
           image_mode?: string
           image_prompt?: string | null
           image_prompt_template?: string | null

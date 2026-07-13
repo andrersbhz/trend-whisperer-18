@@ -319,19 +319,25 @@ function appendFormatHint(prompt: string, fmt: { width: number; height: number; 
 
 // Geração de imagem via Lovable AI Gateway (estilo chat, sem necessidade de API específica de imagens).
 // Usa LOVABLE_API_KEY (server-side) e o prompt configurado pelo usuário em Configurações > Prompt de Imagem IA.
-async function generateImageLovable(title: string, content: string | null, visualElements: string, customImagePrompt?: string | null, formatKey?: string | null): Promise<string | null> {
+async function generateImageLovable(title: string, content: string | null, visualElements: string, customImagePrompt?: string | null, formatKey?: string | null, knowledgeUrls: string[] = []): Promise<string | null> {
   const lovableKey = Deno.env.get("LOVABLE_API_KEY");
   if (!lovableKey) {
     console.warn("[Image] LOVABLE_API_KEY não disponível no ambiente.");
     return null;
   }
   const fmt = getImageFormat(formatKey);
-  const prompt = appendFormatHint(buildImagePrompt(title, content, visualElements, customImagePrompt), fmt);
+  const basePrompt = appendFormatHint(buildImagePrompt(title, content, visualElements, customImagePrompt), fmt);
+  const refs = (knowledgeUrls || []).slice(0, 10).filter((u) => typeof u === "string" && u.startsWith("http"));
+  const promptText = refs.length
+    ? `${basePrompt}\n\nCONHECIMENTO VISUAL DE REFERÊNCIA: Você recebeu ${refs.length} imagem(ns) de referência anexadas nesta mensagem. Analise cuidadosamente o estilo visual, paleta de cores, composição, iluminação, tipografia e elementos gráficos delas e SE INSPIRE nesses modelos ao gerar a nova arte. A nova imagem deve seguir o prompt acima em conjunto com o estilo/identidade visual demonstrado nas referências.`
+    : basePrompt;
+  const userContent: any[] = [{ type: "text", text: promptText }];
+  for (const url of refs) userContent.push({ type: "image_url", image_url: { url } });
   const models = ["google/gemini-2.5-flash-image", "google/gemini-3-pro-image"];
 
   for (const model of models) {
     try {
-      console.log(`[Image] Lovable AI (${model}) para: ${title.substring(0, 50)}...`);
+      console.log(`[Image] Lovable AI (${model}) para: ${title.substring(0, 50)}... (refs: ${refs.length})`);
       const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -340,7 +346,7 @@ async function generateImageLovable(title: string, content: string | null, visua
         },
         body: JSON.stringify({
           model,
-          messages: [{ role: "user", content: prompt }],
+          messages: [{ role: "user", content: userContent }],
           modalities: ["image", "text"],
         }),
       });
@@ -841,11 +847,12 @@ serve(async (req) => {
         let featuredImageUrl: string | null = null;
         const customImagePrompt = settings?.image_prompt || null;
         const imageFormatKey = (settings as any)?.image_format || "instagram_portrait";
+        const imageKnowledgeUrls: string[] = Array.isArray((settings as any)?.image_knowledge_urls) ? (settings as any).image_knowledge_urls : [];
 
         if (imageMode === "ai") {
-          // Imagens geradas via Lovable AI Gateway (estilo chat), usando o Prompt de Imagem IA das Configurações.
+          // Imagens geradas via Lovable AI Gateway (estilo chat), usando o Prompt de Imagem IA das Configurações + conhecimento visual.
           try {
-            featuredImageUrl = await generateImageLovable(parsed.title, parsed.content, parsed.visual_elements, customImagePrompt, imageFormatKey);
+            featuredImageUrl = await generateImageLovable(parsed.title, parsed.content, parsed.visual_elements, customImagePrompt, imageFormatKey, imageKnowledgeUrls);
           } catch (imgErr) {
             console.warn(`[Image] Lovable AI falhou para "${parsed.title}":`, imgErr);
           }

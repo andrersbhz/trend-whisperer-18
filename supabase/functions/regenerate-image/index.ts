@@ -150,10 +150,20 @@ async function generateImageGemini(apiKey: string, title: string, content: strin
   throw new ProviderError(errors.join(" | ") || "Falha ao gerar imagem com Gemini", 500, false, errors.some((message) => isBillingIssue(0, message)));
 }
 
-async function generateImageLovable(title: string, content: string | null, visualElements: string | null, imagePrompt: string | null, fmt?: { width: number; height: number; label: string }): Promise<string> {
+async function generateImageLovable(title: string, content: string | null, visualElements: string | null, imagePrompt: string | null, fmt?: { width: number; height: number; label: string }, knowledgeUrls: string[] = []): Promise<string> {
   const lovableKey = Deno.env.get("LOVABLE_API_KEY");
   if (!lovableKey) throw new ProviderError("LOVABLE_API_KEY não disponível no ambiente.", 500, false, false);
-  const prompt = buildImagePrompt(title, content, visualElements, imagePrompt, fmt);
+  const basePrompt = buildImagePrompt(title, content, visualElements, imagePrompt, fmt);
+  const refs = (knowledgeUrls || []).slice(0, 10).filter((u) => typeof u === "string" && u.startsWith("http"));
+  const promptText = refs.length
+    ? `${basePrompt}\n\nCONHECIMENTO VISUAL DE REFERÊNCIA: Você recebeu ${refs.length} imagem(ns) de referência anexadas nesta mensagem. Analise cuidadosamente o estilo visual, paleta de cores, composição, iluminação, tipografia e elementos gráficos delas e SE INSPIRE nesses modelos ao gerar a nova arte. A nova imagem deve seguir o prompt acima em conjunto com o estilo/identidade visual demonstrado nas referências.`
+    : basePrompt;
+
+  const userContent: any[] = [{ type: "text", text: promptText }];
+  for (const url of refs) {
+    userContent.push({ type: "image_url", image_url: { url } });
+  }
+
   const models = ["google/gemini-2.5-flash-image", "google/gemini-3-pro-image"];
   const errs: string[] = [];
   for (const model of models) {
@@ -164,7 +174,7 @@ async function generateImageLovable(title: string, content: string | null, visua
           headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },
           body: JSON.stringify({
             model,
-            messages: [{ role: "user", content: prompt }],
+            messages: [{ role: "user", content: userContent }],
             modalities: ["image", "text"],
           }),
         });
@@ -246,7 +256,7 @@ serve(async (req) => {
     let openaiApiKey: string | null = null;
     const { data: settings } = await supabase
       .from("user_settings")
-      .select("gemini_api_key, openai_api_key, writer_prompt, image_mode, image_prompt, image_format")
+      .select("gemini_api_key, openai_api_key, writer_prompt, image_mode, image_prompt, image_format, image_knowledge_urls")
       .eq("user_id", userId)
       .single();
     
@@ -257,6 +267,7 @@ serve(async (req) => {
     }
     const imageMode = settings?.image_mode || "ai";
     const fmt = getImageFormat((settings as any)?.image_format);
+    const knowledgeUrls: string[] = Array.isArray((settings as any)?.image_knowledge_urls) ? (settings as any).image_knowledge_urls : [];
 
     if (imageMode !== "ai" && !force) {
       throw new Error(`A regeneração por IA está desativada. Altere o Modo de Imagem para "Gerada por IA" nas configurações.`);
@@ -310,7 +321,7 @@ serve(async (req) => {
 
       // Geração via Lovable AI Gateway (estilo chat) usando o Prompt de Imagem IA das Configurações.
       try {
-        imageUrl = await generateImageLovable(article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt, fmt);
+        imageUrl = await generateImageLovable(article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt, fmt, knowledgeUrls);
       } catch (error) {
         providerErrors.push(`Lovable AI: ${getErrorMessage(error)}`);
       }

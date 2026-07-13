@@ -44,6 +44,7 @@ export interface UserSettings {
   image_mode: 'ai' | 'manual' | 'none';
   image_prompt: string;
   image_format: string;
+  image_knowledge_urls: string[];
   interaction_mode: string;
   dashboard_widgets: {
     stats: boolean;
@@ -84,6 +85,7 @@ const defaultSettings: UserSettings = {
   image_mode: 'ai',
   image_prompt: '',
   image_format: 'instagram_portrait',
+  image_knowledge_urls: [],
   interaction_mode: 'standard',
   dashboard_widgets: {
     stats: true,
@@ -136,7 +138,7 @@ const SettingsPage = () => {
       try {
         const { data: userData, error: userError } = await supabase
           .from('user_settings')
-          .select('id, user_id, wordpress_url, wordpress_username, facebook_page_id, instagram_account_id, google_analytics_property_id, google_indexing_key, azure_openai_endpoint, azure_openai_deployment_name, categories, priority_categories, articles_per_day, auto_publish, writer_prompt, image_mode, image_prompt, image_format, interaction_mode, dashboard_widgets, dashboard_order')
+          .select('id, user_id, wordpress_url, wordpress_username, facebook_page_id, instagram_account_id, google_analytics_property_id, google_indexing_key, azure_openai_endpoint, azure_openai_deployment_name, categories, priority_categories, articles_per_day, auto_publish, writer_prompt, image_mode, image_prompt, image_format, image_knowledge_urls, interaction_mode, dashboard_widgets, dashboard_order')
           .eq('user_id', user.id)
           .maybeSingle();
 
@@ -172,6 +174,7 @@ const SettingsPage = () => {
             image_mode: (userData.image_mode as 'ai' | 'manual' | 'none') || 'ai',
             image_prompt: userData.image_prompt || '',
             image_format: (userData as any).image_format || 'instagram_portrait',
+            image_knowledge_urls: ((userData as any).image_knowledge_urls as string[]) || [],
             interaction_mode: userData.interaction_mode || 'standard',
             dashboard_widgets: (userData.dashboard_widgets as UserSettings['dashboard_widgets']) || defaultSettings.dashboard_widgets,
             dashboard_order: (userData.dashboard_order as string[]) || defaultSettings.dashboard_order,
@@ -244,6 +247,7 @@ const SettingsPage = () => {
         image_mode: settings.image_mode,
         image_prompt: settings.image_prompt,
         image_format: settings.image_format,
+        image_knowledge_urls: settings.image_knowledge_urls,
         interaction_mode: settings.interaction_mode,
         dashboard_widgets: settings.dashboard_widgets,
         dashboard_order: settings.dashboard_order,
@@ -314,6 +318,7 @@ const SettingsPage = () => {
           image_mode: settings.image_mode,
           image_prompt: settings.image_prompt,
           image_format: settings.image_format,
+          image_knowledge_urls: settings.image_knowledge_urls,
           dashboard_widgets: settings.dashboard_widgets,
           dashboard_order: settings.dashboard_order,
         };

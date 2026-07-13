@@ -8,6 +8,7 @@ import { Settings, PenTool, Image as ImageIcon } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import type { UserSettings } from '@/pages/SettingsPage';
 import { forwardRef } from 'react';
+import ImageKnowledgeUpload from '@/components/settings/ImageKnowledgeUpload';
 
  import { useState, useMemo } from 'react';
  import { Plus, X, Users, Shuffle, ShieldCheck, Star } from 'lucide-react';
@@ -228,6 +229,13 @@ const AutomationSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChan
           <p className="text-xs text-muted-foreground">
             Este prompt será usado em conjunto com o assunto do artigo para criar a imagem destacada.
           </p>
+
+          <div className="pt-4 border-t border-border/60">
+            <ImageKnowledgeUpload
+              urls={settings.image_knowledge_urls || []}
+              onChange={(urls) => onChange({ image_knowledge_urls: urls })}
+            />
+          </div>
         </CardContent>
       </Card>
 
