@@ -12,19 +12,22 @@ function buildImagePrompt(title: string, content: string | null, visualElements:
     throw new Error("O 'Prompt de Imagem IA' não está configurado em Configurações > Geral. Este prompt é obrigatório.");
   }
 
-  // Segue EXATAMENTE o Prompt de Imagem IA das configurações.
-  // Apenas injeta o título da notícia como assunto e o formato/proporção como requisito técnico.
+  // REGRA: o Prompt de Imagem IA das configurações é a ÚNICA fonte de verdade para estilo/composição.
+  // Deve ser seguido À RISCA. Título e formato entram apenas como metadados auxiliares.
   const base = imagePrompt.trim().replace(/\{\{?\s*title\s*\}?\}/gi, title);
   const hasTitleToken = base !== imagePrompt.trim();
 
-  const parts: string[] = [base];
+  const header = `INSTRUÇÕES DE IMAGEM (SIGA À RISCA, SEM DESVIOS — esta é a especificação obrigatória vinda das Configurações > Prompt de Imagem IA):\n\n${base}`;
+
+  const meta: string[] = [];
   if (!hasTitleToken) {
-    parts.push(`Título da notícia (assunto da imagem): ${title}`);
+    meta.push(`Assunto da imagem (apenas tema, NÃO altere o estilo definido acima): ${title}`);
   }
   if (fmt) {
-    parts.push(`Proporção/formato obrigatório: ${fmt.label} (${fmt.width}x${fmt.height}px).`);
+    meta.push(`Proporção/formato obrigatório: ${fmt.label} (${fmt.width}x${fmt.height}px).`);
   }
-  return parts.join("\n\n");
+
+  return meta.length ? `${header}\n\n---\n${meta.join("\n")}` : header;
 }
 
 const IMAGE_FORMATS: Record<string, { width: number; height: number; dalle: "1024x1024" | "1024x1792" | "1792x1024"; label: string }> = {

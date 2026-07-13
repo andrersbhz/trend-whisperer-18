@@ -292,10 +292,12 @@ function buildImagePrompt(title: string, content: string | null, visualElements:
   if (!customImagePrompt || customImagePrompt.trim().length < 5) {
     throw new Error("O 'Prompt de Imagem IA' não está configurado em Configurações > Geral. Este prompt é obrigatório.");
   }
-  // Segue EXATAMENTE o prompt das configurações. Injeta o título somente como assunto.
+  // REGRA: o Prompt de Imagem IA das configurações é a ÚNICA fonte de verdade para estilo/composição.
+  // Deve ser seguido À RISCA. O título entra apenas como assunto/tema.
   const base = customImagePrompt.trim().replace(/\{\{?\s*title\s*\}?\}/gi, title);
   const hasTitleToken = base !== customImagePrompt.trim();
-  return hasTitleToken ? base : `${base}\n\nTítulo da notícia (assunto da imagem): ${title}`;
+  const header = `INSTRUÇÕES DE IMAGEM (SIGA À RISCA, SEM DESVIOS — especificação obrigatória vinda das Configurações > Prompt de Imagem IA):\n\n${base}`;
+  return hasTitleToken ? header : `${header}\n\n---\nAssunto da imagem (apenas tema, NÃO altere o estilo definido acima): ${title}`;
 }
 
 const IMAGE_FORMATS: Record<string, { width: number; height: number; dalle: "1024x1024" | "1024x1792" | "1792x1024"; label: string }> = {
