@@ -138,7 +138,7 @@ const SettingsPage = () => {
       try {
         const { data: userData, error: userError } = await supabase
           .from('user_settings')
-          .select('id, user_id, wordpress_url, wordpress_username, facebook_page_id, instagram_account_id, google_analytics_property_id, google_indexing_key, azure_openai_endpoint, azure_openai_deployment_name, categories, priority_categories, articles_per_day, auto_publish, writer_prompt, image_mode, image_prompt, image_format, interaction_mode, dashboard_widgets, dashboard_order')
+          .select('id, user_id, wordpress_url, wordpress_username, facebook_page_id, instagram_account_id, google_analytics_property_id, google_indexing_key, azure_openai_endpoint, azure_openai_deployment_name, categories, priority_categories, articles_per_day, auto_publish, writer_prompt, image_mode, image_prompt, image_format, image_knowledge_urls, interaction_mode, dashboard_widgets, dashboard_order')
           .eq('user_id', user.id)
           .maybeSingle();
 
