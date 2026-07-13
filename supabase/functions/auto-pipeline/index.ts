@@ -80,33 +80,46 @@ serve(async (req) => {
         results.push({ userId, step: "auto-publish", result: `error: ${err}` });
       }
 
-      // Step 2: Reagendar apenas itens vencidos que não estão prontos para publicar
+      // Step 2: Reagendar TODOS os itens vencidos ainda não publicados
+      // (inclui 'ready' que falharam ao publicar, 'draft', 'scheduled', etc.)
+      // Reconsulta após a etapa de publicação para pegar apenas os que sobraram.
       try {
         const { data: pendingArticles } = await supabase
           .from("articles")
           .select("id, scheduled_at, created_at, status")
           .eq("user_id", userId)
           .neq("status", "published")
-          .neq("status", "ready")
           .not("scheduled_at", "is", null)
           .order("scheduled_at", { ascending: true })
           .order("created_at", { ascending: true });
 
-        const overdue = (pendingArticles || []).filter((article: any) => article.scheduled_at && new Date(article.scheduled_at).getTime() < now.getTime());
-        const future = (pendingArticles || []).filter((article: any) => article.scheduled_at && new Date(article.scheduled_at).getTime() >= now.getTime());
+        const nowTs = Date.now();
+        const overdue = (pendingArticles || []).filter((a: any) => a.scheduled_at && new Date(a.scheduled_at).getTime() < nowTs);
+        const future = (pendingArticles || []).filter((a: any) => a.scheduled_at && new Date(a.scheduled_at).getTime() >= nowTs);
 
         let queueCursor = future.length > 0
           ? new Date(future[future.length - 1].scheduled_at)
-          : new Date(now);
+          : new Date(nowTs);
 
+        let rescheduled = 0;
         for (const article of overdue) {
-          queueCursor = new Date(Math.max(queueCursor.getTime(), now.getTime()) + intervalMs);
-          await supabase.from("articles").update({ scheduled_at: queueCursor.toISOString() }).eq("id", article.id);
+          queueCursor = new Date(Math.max(queueCursor.getTime(), nowTs) + intervalMs);
+          const { error: updErr } = await supabase
+            .from("articles")
+            .update({ scheduled_at: queueCursor.toISOString() })
+            .eq("id", article.id);
+          if (updErr) {
+            console.error(`[Pipeline] Reschedule update failed for ${article.id}:`, updErr);
+          } else {
+            rescheduled++;
+          }
         }
 
         if (overdue.length > 0) {
-          console.log(`[Pipeline] Reagendados ${overdue.length} artigos vencidos para ${userId}`);
-          results.push({ userId, step: "reschedule-overdue", result: `${overdue.length} reagendados` });
+          console.log(`[Pipeline] Reagendados ${rescheduled}/${overdue.length} artigos vencidos para ${userId}`);
+          results.push({ userId, step: "reschedule-overdue", result: `${rescheduled}/${overdue.length} reagendados` });
+        } else {
+          results.push({ userId, step: "reschedule-overdue", result: "nenhum vencido" });
         }
       } catch (err) {
         console.error(`[Pipeline] Reschedule error for ${userId}:`, err);
