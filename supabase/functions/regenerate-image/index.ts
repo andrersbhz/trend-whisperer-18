@@ -191,32 +191,62 @@ async function generateImageLovable(title: string, content: string | null, visua
   throw new ProviderError(errs.join(" | ") || "Falha ao gerar imagem via Lovable AI", 500, false, false);
 }
 
-async function generateImageDallE(apiKey: string, title: string, content: string | null, visualElements: string | null, imagePrompt: string | null, fmt?: { width: number; height: number; label: string; dalle: string }): Promise<string> {
-  const dalleSize = (fmt?.dalle as "1024x1024" | "1024x1792" | "1792x1024") || "1024x1024";
+async function generateImageOpenAI(apiKey: string, title: string, content: string | null, visualElements: string | null, imagePrompt: string | null, fmt: { width: number; height: number; label: string }, knowledgeUrls: string[] = []): Promise<string> {
+  const ratio = fmt.width / fmt.height;
+  const size: "1024x1024" | "1024x1536" | "1536x1024" =
+    ratio > 1.15 ? "1536x1024" : ratio < 0.85 ? "1024x1536" : "1024x1024";
+  const basePrompt = buildImagePrompt(title, content, visualElements, imagePrompt, fmt);
+  const refs = (knowledgeUrls || []).slice(0, 10).filter((u) => typeof u === "string" && u.startsWith("http"));
+
   return await withRetry(async () => {
+    // Com referências: /v1/images/edits (multipart)
+    if (refs.length > 0) {
+      const form = new FormData();
+      form.append("model", "gpt-image-1");
+      form.append("prompt", `${basePrompt}\n\nUse as imagens anexadas como REFERÊNCIA VISUAL obrigatória de estilo, paleta, composição e identidade visual. Siga o prompt em conjunto com o estilo dessas referências.`);
+      form.append("size", size);
+      form.append("n", "1");
+      let added = 0;
+      for (const url of refs) {
+        try {
+          const r = await fetch(url);
+          if (!r.ok) continue;
+          const blob = await r.blob();
+          form.append("image[]", blob, `ref-${added}.png`);
+          added++;
+        } catch { /* ignora */ }
+      }
+      if (added > 0) {
+        const resp = await fetch("https://api.openai.com/v1/images/edits", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${apiKey}` },
+          body: form,
+        });
+        if (!resp.ok) throw createProviderError("OpenAI gpt-image-1 (edits)", resp.status, await readResponseDetails(resp));
+        const data = await resp.json();
+        const b64 = data.data?.[0]?.b64_json;
+        if (b64) return `data:image/png;base64,${b64}`;
+      }
+    }
+
+    // Sem referências (ou fallback)
     const resp = await fetch("https://api.openai.com/v1/images/generations", {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "dall-e-3",
-        prompt: buildImagePrompt(title, content, visualElements, imagePrompt, fmt),
+        model: "gpt-image-1",
+        prompt: basePrompt,
+        size,
         n: 1,
-        size: dalleSize,
-        quality: "hd"
       }),
     });
-
-    if (!resp.ok) {
-      throw createProviderError("OpenAI DALL-E", resp.status, await readResponseDetails(resp));
-    }
-
+    if (!resp.ok) throw createProviderError("OpenAI gpt-image-1", resp.status, await readResponseDetails(resp));
     const data = await resp.json();
-    const imageUrl = data.data?.[0]?.url;
-    if (!imageUrl) {
-      throw new ProviderError("OpenAI DALL-E não retornou uma URL de imagem válida.", 500, false, false);
-    }
-
-    return imageUrl;
+    const b64 = data.data?.[0]?.b64_json;
+    const url = data.data?.[0]?.url;
+    if (b64) return `data:image/png;base64,${b64}`;
+    if (url) return url as string;
+    throw new ProviderError("OpenAI gpt-image-1 não retornou imagem.", 500, false, false);
   }, 1, 2000);
 }
 
@@ -319,37 +349,14 @@ serve(async (req) => {
       let imageUrl: string | null = null;
       const providerErrors: string[] = [];
 
-      // 1) Lovable AI Gateway (com referências visuais quando disponíveis)
-      try {
-        imageUrl = await generateImageLovable(article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt, fmt, knowledgeUrls);
-      } catch (error) {
-        providerErrors.push(`Lovable AI: ${getErrorMessage(error)}`);
-      }
-
-      // 2) Fallback: Gemini direto (chave do usuário)
-      if (!imageUrl && geminiApiKey) {
+      // ÚNICO PROVEDOR: OpenAI ChatGPT (gpt-image-1) — segue o prompt à risca.
+      if (!openaiApiKey) {
+        providerErrors.push("Chave OpenAI (ChatGPT) não configurada. Configure em Configurações > OpenAI.");
+      } else {
         try {
-          imageUrl = await generateImageGemini(geminiApiKey, article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt, fmt);
+          imageUrl = await generateImageOpenAI(openaiApiKey, article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt, fmt, knowledgeUrls);
         } catch (error) {
-          providerErrors.push(`Gemini: ${getErrorMessage(error)}`);
-        }
-      }
-
-      // 3) Fallback: OpenAI DALL-E (chave do usuário)
-      if (!imageUrl && openaiApiKey) {
-        try {
-          imageUrl = await generateImageDallE(openaiApiKey, article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt, fmt);
-        } catch (error) {
-          providerErrors.push(`OpenAI DALL-E: ${getErrorMessage(error)}`);
-        }
-      }
-
-      // 4) Último recurso: Pollinations (gratuito)
-      if (!imageUrl) {
-        try {
-          imageUrl = await generateImagePollinations(article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt, fmt);
-        } catch (error) {
-          providerErrors.push(`Pollinations: ${getErrorMessage(error)}`);
+          providerErrors.push(`OpenAI gpt-image-1: ${getErrorMessage(error)}`);
         }
       }
 
