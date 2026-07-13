@@ -412,18 +412,86 @@ async function generateImageGemini(apiKey: string, title: string, content: strin
   return null;
 }
 
-// Fallback robusto usando Pollinations.ai
-async function generateImagePollinations(title: string, content: string | null, visualElements: string, customImagePrompt?: string | null, formatKey?: string | null): Promise<string | null> {
+// Geração via OpenAI (ChatGPT) usando gpt-image-1 — modelo que segue o prompt com precisão.
+// Suporta referências visuais (conhecimento) via endpoint /v1/images/edits multipart.
+async function generateImageOpenAI(
+  apiKey: string,
+  title: string,
+  content: string | null,
+  visualElements: string,
+  customImagePrompt?: string | null,
+  formatKey?: string | null,
+  knowledgeUrls: string[] = [],
+): Promise<string | null> {
+  const fmt = getImageFormat(formatKey);
+  // gpt-image-1 aceita: 1024x1024, 1024x1536, 1536x1024
+  const ratio = fmt.width / fmt.height;
+  const size: "1024x1024" | "1024x1536" | "1536x1024" =
+    ratio > 1.15 ? "1536x1024" : ratio < 0.85 ? "1024x1536" : "1024x1024";
+  const basePrompt = appendFormatHint(buildImagePrompt(title, content, visualElements, customImagePrompt), fmt);
+  const refs = (knowledgeUrls || []).slice(0, 10).filter((u) => typeof u === "string" && u.startsWith("http"));
+
   try {
-    const fmt = getImageFormat(formatKey);
-    const prompt = appendFormatHint(buildImagePrompt(title, content, visualElements, customImagePrompt), fmt);
-    const encodedPrompt = encodeURIComponent(prompt);
-    const seed = Math.floor(Math.random() * 1000000);
-    const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${fmt.width}&height=${fmt.height}&nologo=true&seed=${seed}`;
-    console.log(`[Image] Using Pollinations fallback (${fmt.label}) for: ${title.substring(0, 50)}...`);
-    return url;
+    if (refs.length > 0) {
+      // /v1/images/edits com múltiplas referências (gpt-image-1)
+      const form = new FormData();
+      form.append("model", "gpt-image-1");
+      form.append("prompt", `${basePrompt}\n\nUse as imagens anexadas como REFERÊNCIA VISUAL obrigatória de estilo, paleta, composição e identidade visual. Siga o prompt em conjunto com o estilo dessas referências.`);
+      form.append("size", size);
+      form.append("n", "1");
+      let added = 0;
+      for (const url of refs) {
+        try {
+          const r = await fetch(url);
+          if (!r.ok) continue;
+          const blob = await r.blob();
+          form.append("image[]", blob, `ref-${added}.png`);
+          added++;
+        } catch { /* ignora referência inválida */ }
+      }
+      if (added > 0) {
+        console.log(`[Image] OpenAI gpt-image-1 (edits, refs=${added}) para: ${title.substring(0, 50)}...`);
+        const resp = await fetch("https://api.openai.com/v1/images/edits", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${apiKey}` },
+          body: form,
+        });
+        if (!resp.ok) {
+          const errText = await resp.text();
+          console.warn(`[Image] OpenAI edits falhou (${resp.status}): ${errText.substring(0, 300)}`);
+        } else {
+          const data = await resp.json();
+          const b64 = data.data?.[0]?.b64_json;
+          if (b64) return `data:image/png;base64,${b64}`;
+        }
+      }
+    }
+
+    // /v1/images/generations sem referências (ou fallback do edits)
+    console.log(`[Image] OpenAI gpt-image-1 (generations, size=${size}) para: ${title.substring(0, 50)}...`);
+    const resp = await fetch("https://api.openai.com/v1/images/generations", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "gpt-image-1",
+        prompt: basePrompt,
+        size,
+        n: 1,
+      }),
+    });
+    if (!resp.ok) {
+      const errText = await resp.text();
+      console.warn(`[Image] OpenAI gpt-image-1 falhou (${resp.status}): ${errText.substring(0, 300)}`);
+      return null;
+    }
+    const data = await resp.json();
+    const b64 = data.data?.[0]?.b64_json;
+    const url = data.data?.[0]?.url;
+    if (b64) return `data:image/png;base64,${b64}`;
+    if (url) return url;
+    return null;
   } catch (err) {
-    console.error("[Image] Pollinations fallback error:", err);
+    console.error("[Image] OpenAI gpt-image-1 erro:", err);
     return null;
   }
 }
