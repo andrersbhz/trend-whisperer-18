@@ -290,20 +290,12 @@ async function callWithFallback(providers: ProviderConfig[], systemPrompt: strin
 
 function buildImagePrompt(title: string, content: string | null, visualElements: string, customImagePrompt?: string | null): string {
   if (!customImagePrompt || customImagePrompt.trim().length < 5) {
-    throw new Error("O 'Prompt de Imagem IA' não está configurado em Configurações > Geral. Este prompt é obrigatório para garantir a conexão visual com o artigo.");
+    throw new Error("O 'Prompt de Imagem IA' não está configurado em Configurações > Geral. Este prompt é obrigatório.");
   }
-
-  return `DIRETRIZES OBRIGATÓRIAS DE ESTILO (DINÂMICO DAS CONFIGURAÇÕES):
-${customImagePrompt.trim()}
-
-ASSUNTO DA IMAGEM (DERIVADO DO TÍTULO DO ARTIGO):
-${title}
-
-INSTRUÇÕES DE CONEXÃO E VERACIDADE:
-- A imagem deve ser 100% fiel ao assunto do artigo acima.
-- Evite elementos fantasiosos que não correspondam à notícia.
-- Foque na representação visual profissional e jornalística.
-- Não inclua textos longos, marcas d'água ou logos inventados.`;
+  // Segue EXATAMENTE o prompt das configurações. Injeta o título somente como assunto.
+  const base = customImagePrompt.trim().replace(/\{\{?\s*title\s*\}?\}/gi, title);
+  const hasTitleToken = base !== customImagePrompt.trim();
+  return hasTitleToken ? base : `${base}\n\nTítulo da notícia (assunto da imagem): ${title}`;
 }
 
 const IMAGE_FORMATS: Record<string, { width: number; height: number; dalle: "1024x1024" | "1024x1792" | "1792x1024"; label: string }> = {
@@ -322,7 +314,7 @@ function getImageFormat(key?: string | null) {
 }
 
 function appendFormatHint(prompt: string, fmt: { width: number; height: number; label: string }) {
-  return `${prompt}\n\nFORMATO OBRIGATÓRIO DA IMAGEM: ${fmt.label} — proporção exata ${fmt.width}x${fmt.height}px. Componha o enquadramento para esta proporção.`;
+  return `${prompt}\n\nProporção/formato obrigatório: ${fmt.label} (${fmt.width}x${fmt.height}px).`;
 }
 
 // Geração de imagem via Lovable AI Gateway (estilo chat, sem necessidade de API específica de imagens).
