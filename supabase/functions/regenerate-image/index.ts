@@ -191,6 +191,31 @@ async function generateImageLovable(title: string, content: string | null, visua
   throw new ProviderError(errs.join(" | ") || "Falha ao gerar imagem via Lovable AI", 500, false, false);
 }
 
+async function resizeDataUrlToExact(dataUrl: string, targetW: number, targetH: number): Promise<string> {
+  try {
+    if (!dataUrl.startsWith("data:image/")) return dataUrl;
+    const { Image } = await import("https://deno.land/x/imagescript@1.2.17/mod.ts");
+    const b64 = dataUrl.split(",")[1];
+    const bin = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+    const img = await Image.decode(bin);
+    const scale = Math.max(targetW / img.width, targetH / img.height);
+    const scaledW = Math.round(img.width * scale);
+    const scaledH = Math.round(img.height * scale);
+    img.resize(scaledW, scaledH);
+    const cropX = Math.max(0, Math.floor((scaledW - targetW) / 2));
+    const cropY = Math.max(0, Math.floor((scaledH - targetH) / 2));
+    img.crop(cropX, cropY, targetW, targetH);
+    const out = await img.encode();
+    let s = "";
+    const CHUNK = 0x8000;
+    for (let i = 0; i < out.length; i += CHUNK) s += String.fromCharCode(...out.subarray(i, i + CHUNK));
+    return `data:image/png;base64,${btoa(s)}`;
+  } catch (e) {
+    console.warn("[Image] Falha ao redimensionar para tamanho exato:", e);
+    return dataUrl;
+  }
+}
+
 async function generateImageOpenAI(apiKey: string, title: string, content: string | null, visualElements: string | null, imagePrompt: string | null, fmt: { width: number; height: number; label: string }, knowledgeUrls: string[] = []): Promise<string> {
   const ratio = fmt.width / fmt.height;
   const size: "1024x1024" | "1024x1536" | "1536x1024" =
@@ -199,7 +224,6 @@ async function generateImageOpenAI(apiKey: string, title: string, content: strin
   const refs = (knowledgeUrls || []).slice(0, 10).filter((u) => typeof u === "string" && u.startsWith("http"));
 
   return await withRetry(async () => {
-    // Com referências: /v1/images/edits (multipart)
     if (refs.length > 0) {
       const form = new FormData();
       form.append("model", "gpt-image-1");
@@ -225,27 +249,32 @@ async function generateImageOpenAI(apiKey: string, title: string, content: strin
         if (!resp.ok) throw createProviderError("OpenAI gpt-image-1 (edits)", resp.status, await readResponseDetails(resp));
         const data = await resp.json();
         const b64 = data.data?.[0]?.b64_json;
-        if (b64) return `data:image/png;base64,${b64}`;
+        if (b64) return await resizeDataUrlToExact(`data:image/png;base64,${b64}`, fmt.width, fmt.height);
       }
     }
 
-    // Sem referências (ou fallback)
     const resp = await fetch("https://api.openai.com/v1/images/generations", {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "gpt-image-1",
-        prompt: basePrompt,
-        size,
-        n: 1,
-      }),
+      body: JSON.stringify({ model: "gpt-image-1", prompt: basePrompt, size, n: 1 }),
     });
     if (!resp.ok) throw createProviderError("OpenAI gpt-image-1", resp.status, await readResponseDetails(resp));
     const data = await resp.json();
     const b64 = data.data?.[0]?.b64_json;
     const url = data.data?.[0]?.url;
-    if (b64) return `data:image/png;base64,${b64}`;
-    if (url) return url as string;
+    if (b64) return await resizeDataUrlToExact(`data:image/png;base64,${b64}`, fmt.width, fmt.height);
+    if (url) {
+      try {
+        const r = await fetch(url);
+        const buf = new Uint8Array(await r.arrayBuffer());
+        let s = "";
+        const CHUNK = 0x8000;
+        for (let i = 0; i < buf.length; i += CHUNK) s += String.fromCharCode(...buf.subarray(i, i + CHUNK));
+        return await resizeDataUrlToExact(`data:image/png;base64,${btoa(s)}`, fmt.width, fmt.height);
+      } catch {
+        return url as string;
+      }
+    }
     throw new ProviderError("OpenAI gpt-image-1 não retornou imagem.", 500, false, false);
   }, 1, 2000);
 }
