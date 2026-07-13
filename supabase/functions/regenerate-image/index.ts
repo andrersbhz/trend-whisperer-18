@@ -321,7 +321,7 @@ serve(async (req) => {
 
       // Geração via Lovable AI Gateway (estilo chat) usando o Prompt de Imagem IA das Configurações.
       try {
-        imageUrl = await generateImageLovable(article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt, fmt);
+        imageUrl = await generateImageLovable(article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt, fmt, knowledgeUrls);
       } catch (error) {
         providerErrors.push(`Lovable AI: ${getErrorMessage(error)}`);
       }
