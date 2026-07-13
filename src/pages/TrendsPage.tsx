@@ -40,7 +40,7 @@ const TrendsPage = () => {
   const [sourceFilter, setSourceFilter] = useState<string>("all");
   const [regionFilter, setRegionFilter] = useState<"all" | "BR" | "World">("BR");
   const [sortBy, setSortBy] = useState<"recent" | "oldest" | "audience_desc" | "audience_asc">("audience_desc");
-  const [timeFilter, setTimeFilter] = useState<string>("all");
+  const [timeFilter, setTimeFilter] = useState<string>("24h");
 
   const sources = useMemo(() => {
     const uniqueSources = new Set<string>();
