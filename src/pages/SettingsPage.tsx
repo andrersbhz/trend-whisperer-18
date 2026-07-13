@@ -44,6 +44,7 @@ export interface UserSettings {
   image_mode: 'ai' | 'manual' | 'none';
   image_prompt: string;
   image_format: string;
+  image_knowledge_urls: string[];
   interaction_mode: string;
   dashboard_widgets: {
     stats: boolean;
