@@ -850,11 +850,27 @@ serve(async (req) => {
         const imageKnowledgeUrls: string[] = Array.isArray((settings as any)?.image_knowledge_urls) ? (settings as any).image_knowledge_urls : [];
 
         if (imageMode === "ai") {
-          // Imagens geradas via Lovable AI Gateway (estilo chat), usando o Prompt de Imagem IA das Configurações + conhecimento visual.
+          // 1) Lovable AI Gateway (com conhecimento visual)
           try {
             featuredImageUrl = await generateImageLovable(parsed.title, parsed.content, parsed.visual_elements, customImagePrompt, imageFormatKey, imageKnowledgeUrls);
           } catch (imgErr) {
             console.warn(`[Image] Lovable AI falhou para "${parsed.title}":`, imgErr);
+          }
+          // 2) Fallback: Gemini direto
+          if (!featuredImageUrl && geminiApiKey) {
+            try {
+              featuredImageUrl = await generateImageGemini(geminiApiKey, parsed.title, parsed.content, parsed.visual_elements, customImagePrompt, imageFormatKey);
+            } catch (imgErr) {
+              console.warn(`[Image] Gemini falhou para "${parsed.title}":`, imgErr);
+            }
+          }
+          // 3) Último recurso: Pollinations (gratuito)
+          if (!featuredImageUrl) {
+            try {
+              featuredImageUrl = await generateImagePollinations(parsed.title, parsed.content, parsed.visual_elements, customImagePrompt, imageFormatKey);
+            } catch (imgErr) {
+              console.warn(`[Image] Pollinations falhou para "${parsed.title}":`, imgErr);
+            }
           }
           if (!featuredImageUrl) {
             console.warn(`[Image] Não foi possível gerar imagem para "${parsed.title}" — artigo criado sem imagem.`);
