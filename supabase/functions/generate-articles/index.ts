@@ -847,11 +847,12 @@ serve(async (req) => {
         let featuredImageUrl: string | null = null;
         const customImagePrompt = settings?.image_prompt || null;
         const imageFormatKey = (settings as any)?.image_format || "instagram_portrait";
+        const imageKnowledgeUrls: string[] = Array.isArray((settings as any)?.image_knowledge_urls) ? (settings as any).image_knowledge_urls : [];
 
         if (imageMode === "ai") {
-          // Imagens geradas via Lovable AI Gateway (estilo chat), usando o Prompt de Imagem IA das Configurações.
+          // Imagens geradas via Lovable AI Gateway (estilo chat), usando o Prompt de Imagem IA das Configurações + conhecimento visual.
           try {
-            featuredImageUrl = await generateImageLovable(parsed.title, parsed.content, parsed.visual_elements, customImagePrompt, imageFormatKey);
+            featuredImageUrl = await generateImageLovable(parsed.title, parsed.content, parsed.visual_elements, customImagePrompt, imageFormatKey, imageKnowledgeUrls);
           } catch (imgErr) {
             console.warn(`[Image] Lovable AI falhou para "${parsed.title}":`, imgErr);
           }
