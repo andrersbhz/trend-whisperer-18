@@ -417,7 +417,7 @@ const TrendsPage = () => {
         </Card>
       ) : (
         <div className="grid gap-3">
-          {filteredAndSortedTopics.slice(0, 50).map((topic) => (
+          {filteredAndSortedTopics.slice(0, 50).map((topic, index) => (
             <Card key={topic.id} className="shadow-card group relative">
               <CardContent className="p-4 flex items-center gap-4">
                 <Checkbox 
@@ -425,10 +425,23 @@ const TrendsPage = () => {
                   onCheckedChange={() => toggleTopic(topic.id)}
                   disabled={topic.used}
                 />
+                <div className={`flex items-center justify-center min-w-[2.75rem] h-10 rounded-lg font-bold text-sm ${
+                  index === 0 ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/40 shadow-neon-lilac' :
+                  index === 1 ? 'bg-gray-400/20 text-gray-300 border border-gray-400/40' :
+                  index === 2 ? 'bg-orange-500/20 text-orange-400 border border-orange-500/40' :
+                  'bg-secondary/50 text-muted-foreground border border-border'
+                }`}>
+                  #{index + 1}
+                </div>
                 <div className="flex-1 flex items-center justify-between">
                   <div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-medium text-foreground">{topic.topic}</p>
+                      {topic.search_volume && (
+                        <Badge className="bg-primary/15 text-primary border-primary/30 text-[10px] h-5 font-bold">
+                          🔥 {topic.search_volume}
+                        </Badge>
+                      )}
                       {topic.source_url && (
                         <a 
                           href={topic.source_url} 
