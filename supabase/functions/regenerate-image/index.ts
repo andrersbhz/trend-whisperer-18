@@ -319,11 +319,38 @@ serve(async (req) => {
       let imageUrl: string | null = null;
       const providerErrors: string[] = [];
 
-      // Geração via Lovable AI Gateway (estilo chat) usando o Prompt de Imagem IA das Configurações.
+      // 1) Lovable AI Gateway (com referências visuais quando disponíveis)
       try {
         imageUrl = await generateImageLovable(article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt, fmt, knowledgeUrls);
       } catch (error) {
         providerErrors.push(`Lovable AI: ${getErrorMessage(error)}`);
+      }
+
+      // 2) Fallback: Gemini direto (chave do usuário)
+      if (!imageUrl && geminiApiKey) {
+        try {
+          imageUrl = await generateImageGemini(geminiApiKey, article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt, fmt);
+        } catch (error) {
+          providerErrors.push(`Gemini: ${getErrorMessage(error)}`);
+        }
+      }
+
+      // 3) Fallback: OpenAI DALL-E (chave do usuário)
+      if (!imageUrl && openaiApiKey) {
+        try {
+          imageUrl = await generateImageDallE(openaiApiKey, article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt, fmt);
+        } catch (error) {
+          providerErrors.push(`OpenAI DALL-E: ${getErrorMessage(error)}`);
+        }
+      }
+
+      // 4) Último recurso: Pollinations (gratuito)
+      if (!imageUrl) {
+        try {
+          imageUrl = await generateImagePollinations(article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt, fmt);
+        } catch (error) {
+          providerErrors.push(`Pollinations: ${getErrorMessage(error)}`);
+        }
       }
 
       if (!imageUrl) {
