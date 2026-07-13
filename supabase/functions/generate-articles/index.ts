@@ -589,24 +589,15 @@ serve(async (req) => {
     let topics = [];
     const userCategoriesToSearch: string[] = settings?.categories || ["esportes", "politica", "policia", "saude", "celebridades", "financas"];
 
-    // Janela das últimas 24h — usada para priorizar trends recentes
+    // Janela das últimas 24h — usada para priorizar trends recentes e evitar repetição de assunto
     const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    // Janela ampla para deduplicação (30 dias) — evita cobrir de novo assuntos já publicados
-    const since30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
-    // Artigos das últimas 24h (contagem por categoria)
+    // Carrega artigos das últimas 24h (para contagem por categoria + deduplicação de assunto)
     const { data: recentArticlesFull } = await supabase
       .from("articles")
       .select("category, title, trending_topic, created_at")
       .eq("user_id", userId)
       .gte("created_at", since24h);
-
-    // Artigos dos últimos 30 dias (dedup: assunto já coberto)
-    const { data: coveredArticles } = await supabase
-      .from("articles")
-      .select("title, trending_topic, created_at")
-      .eq("user_id", userId)
-      .gte("created_at", since30d);
 
     const normalize = (s: string) =>
       (s || "")
@@ -617,16 +608,10 @@ serve(async (req) => {
         .replace(/\s+/g, " ")
         .trim();
 
-    // Map: assunto normalizado → data da última cobertura
-    const coveredMap = new Map<string, string>();
-    const upsertCovered = (key: string, ts: string) => {
-      if (!key) return;
-      const prev = coveredMap.get(key);
-      if (!prev || new Date(ts) > new Date(prev)) coveredMap.set(key, ts);
-    };
-    for (const a of (coveredArticles || [])) {
-      if (a.trending_topic) upsertCovered(normalize(a.trending_topic), a.created_at);
-      if (a.title) upsertCovered(normalize(a.title), a.created_at);
+    const usedTopicsSet = new Set<string>();
+    for (const a of (recentArticlesFull || [])) {
+      if (a.trending_topic) usedTopicsSet.add(normalize(a.trending_topic));
+      if (a.title) usedTopicsSet.add(normalize(a.title));
     }
 
     if (manualTopics && Array.isArray(manualTopics) && manualTopics.length > 0) {
@@ -644,34 +629,18 @@ serve(async (req) => {
         .order("fetched_at", { ascending: false });
       topics = dbTopics || [];
 
-      // Remove tópicos já cobertos nos últimos 30 dias — a menos que haja novidade real:
-      //   → trend foi refetchada DEPOIS do último artigo (fetched_at > lastCovered)
-      //   → E possui novo contexto (news_item_title) OU update_count > 1 (nova atualização detectada)
+      // Remove tópicos cujo assunto já foi coberto por artigos das últimas 24h
       const before = topics.length;
       topics = topics.filter((t: any) => {
         const key = normalize(t.topic);
         if (!key) return false;
-        let lastCoveredAt: string | null = null;
-        for (const [used, ts] of coveredMap) {
+        for (const used of usedTopicsSet) {
           if (!used) continue;
-          if (used === key || used.includes(key) || key.includes(used)) {
-            if (!lastCoveredAt || new Date(ts) > new Date(lastCoveredAt)) lastCoveredAt = ts;
-          }
+          if (used === key || used.includes(key) || key.includes(used)) return false;
         }
-        if (!lastCoveredAt) return true; // nunca coberto → permite
-        // Já coberto: exige novidade
-        const fetchedAt = t.fetched_at ? new Date(t.fetched_at) : null;
-        const isNewerFetch = fetchedAt && fetchedAt > new Date(lastCoveredAt);
-        const hasUpdateSignal = (t.update_count || 1) > 1 || (t.context && String(t.context).trim().length > 0);
-        const allow = isNewerFetch && hasUpdateSignal;
-        if (!allow) {
-          console.log(`[Dedup] Pulando "${t.topic}" — já coberto em ${lastCoveredAt} e sem nova atualização.`);
-        } else {
-          console.log(`[Dedup] Republicando "${t.topic}" — nova atualização detectada (fetched ${t.fetched_at}, update_count ${t.update_count}).`);
-        }
-        return allow;
+        return true;
       });
-      console.log(`[Pipeline] Trends 24h: ${before} → ${topics.length} após dedup (30d, com exceção de novidades)`);
+      console.log(`[Pipeline] Trends 24h: ${before} → ${topics.length} após remover assuntos já publicados`);
     }
 
     const manualCategories: string[] = (manualTopics && Array.isArray(manualTopics) && manualTopics.length > 0)
