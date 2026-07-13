@@ -85,6 +85,7 @@ const defaultSettings: UserSettings = {
   image_mode: 'ai',
   image_prompt: '',
   image_format: 'instagram_portrait',
+  image_knowledge_urls: [],
   interaction_mode: 'standard',
   dashboard_widgets: {
     stats: true,
