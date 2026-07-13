@@ -8,6 +8,7 @@ import { Settings, PenTool, Image as ImageIcon } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import type { UserSettings } from '@/pages/SettingsPage';
 import { forwardRef } from 'react';
+import ImageKnowledgeUpload from '@/components/settings/ImageKnowledgeUpload';
 
  import { useState, useMemo } from 'react';
  import { Plus, X, Users, Shuffle, ShieldCheck, Star } from 'lucide-react';
