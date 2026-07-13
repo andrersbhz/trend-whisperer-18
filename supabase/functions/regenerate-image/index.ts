@@ -267,6 +267,7 @@ serve(async (req) => {
     }
     const imageMode = settings?.image_mode || "ai";
     const fmt = getImageFormat((settings as any)?.image_format);
+    const knowledgeUrls: string[] = Array.isArray((settings as any)?.image_knowledge_urls) ? (settings as any).image_knowledge_urls : [];
 
     if (imageMode !== "ai" && !force) {
       throw new Error(`A regeneração por IA está desativada. Altere o Modo de Imagem para "Gerada por IA" nas configurações.`);
