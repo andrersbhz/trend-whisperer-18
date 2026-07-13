@@ -247,6 +247,7 @@ const SettingsPage = () => {
         image_mode: settings.image_mode,
         image_prompt: settings.image_prompt,
         image_format: settings.image_format,
+        image_knowledge_urls: settings.image_knowledge_urls,
         interaction_mode: settings.interaction_mode,
         dashboard_widgets: settings.dashboard_widgets,
         dashboard_order: settings.dashboard_order,
