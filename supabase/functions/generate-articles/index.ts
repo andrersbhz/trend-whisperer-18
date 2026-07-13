@@ -918,26 +918,22 @@ serve(async (req) => {
         const imageKnowledgeUrls: string[] = Array.isArray((settings as any)?.image_knowledge_urls) ? (settings as any).image_knowledge_urls : [];
 
         if (imageMode === "ai") {
-          // 1) Lovable AI Gateway (com conhecimento visual)
-          try {
-            featuredImageUrl = await generateImageLovable(parsed.title, parsed.content, parsed.visual_elements, customImagePrompt, imageFormatKey, imageKnowledgeUrls);
-          } catch (imgErr) {
-            console.warn(`[Image] Lovable AI falhou para "${parsed.title}":`, imgErr);
-          }
-          // 2) Fallback: Gemini direto
-          if (!featuredImageUrl && geminiApiKey) {
+          // ÚNICO PROVEDOR: OpenAI ChatGPT (gpt-image-1) — segue o prompt à risca.
+          if (!openaiApiKey) {
+            console.warn(`[Image] OPENAI_API_KEY do usuário não configurada — imagem não será gerada para "${parsed.title}". Configure em Configurações > OpenAI.`);
+          } else {
             try {
-              featuredImageUrl = await generateImageGemini(geminiApiKey, parsed.title, parsed.content, parsed.visual_elements, customImagePrompt, imageFormatKey);
+              featuredImageUrl = await generateImageOpenAI(
+                openaiApiKey,
+                parsed.title,
+                parsed.content,
+                parsed.visual_elements,
+                customImagePrompt,
+                imageFormatKey,
+                imageKnowledgeUrls,
+              );
             } catch (imgErr) {
-              console.warn(`[Image] Gemini falhou para "${parsed.title}":`, imgErr);
-            }
-          }
-          // 3) Último recurso: Pollinations (gratuito)
-          if (!featuredImageUrl) {
-            try {
-              featuredImageUrl = await generateImagePollinations(parsed.title, parsed.content, parsed.visual_elements, customImagePrompt, imageFormatKey);
-            } catch (imgErr) {
-              console.warn(`[Image] Pollinations falhou para "${parsed.title}":`, imgErr);
+              console.warn(`[Image] OpenAI falhou para "${parsed.title}":`, imgErr);
             }
           }
           if (!featuredImageUrl) {
