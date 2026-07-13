@@ -67,7 +67,7 @@ async function readResponseDetails(resp: Response) {
 }
 
 function isBillingIssue(status: number, details: string) {
-  return status === 402 || /payment_required|not enough credits|spending cap|resource_exhausted|quota|monthly spending cap/i.test(details);
+  return status === 402 || /payment_required|not enough credits|spending cap|resource_exhausted|quota|monthly spending cap|billing hard limit|billing_limit/i.test(details);
 }
 
 function isRetryableIssue(status: number, details: string) {
@@ -82,6 +82,22 @@ function createProviderError(provider: string, status: number, details: string) 
 
 function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error);
+}
+
+function toUserImageError(message: string) {
+  if (/billing hard limit|billing_limit|spending cap|payment_required|not enough credits/i.test(message)) {
+    return "A geração chegou ao limite de cobrança/créditos da conta OpenAI configurada. A chave está correta, mas a OpenAI bloqueou novas imagens até ajustar o limite ou créditos da conta.";
+  }
+  if (/quota|resource_exhausted/i.test(message)) {
+    return "A conta OpenAI configurada atingiu o limite de uso/quota para geração de imagens.";
+  }
+  if (/content_policy|moderation|safety/i.test(message)) {
+    return "A OpenAI bloqueou o prompt por política de conteúdo. Ajuste o Prompt de Imagem IA para remover termos restritos.";
+  }
+  if (/401|invalid api key|incorrect api key|unauthorized/i.test(message)) {
+    return "A chave OpenAI configurada foi recusada. Verifique a chave salva em Configurações > OpenAI.";
+  }
+  return message.replace(/\s+/g, " ").slice(0, 240);
 }
 
 async function withRetry<T>(operation: () => Promise<T>, retries = 2, baseDelayMs = 1500): Promise<T> {
@@ -394,7 +410,7 @@ serve(async (req) => {
 
       if (!imageUrl) {
         failed++;
-        const reason = providerErrors[0]?.substring(0, 200) || "Todos os provedores de IA falharam";
+        const reason = toUserImageError(providerErrors[0] || "Todos os provedores de IA falharam");
         details.push({ articleId: article.id, title: article.title, reason });
         continue;
       }
@@ -411,9 +427,12 @@ serve(async (req) => {
       await sleep(500);
     }
 
+    const firstFailureReason = details.find((detail) => detail.reason !== "Success")?.reason;
     const message = updated > 0
       ? `${updated} imagens processadas com sucesso.`
-      : "Nenhuma imagem foi gerada. Verifique suas configurações de IA.";
+      : firstFailureReason
+        ? `Nenhuma imagem foi gerada. Motivo: ${firstFailureReason}`
+        : "Nenhuma imagem foi gerada. Verifique suas configurações de IA.";
 
     return new Response(
       JSON.stringify({ 
