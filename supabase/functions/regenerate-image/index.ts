@@ -349,37 +349,14 @@ serve(async (req) => {
       let imageUrl: string | null = null;
       const providerErrors: string[] = [];
 
-      // 1) Lovable AI Gateway (com referências visuais quando disponíveis)
-      try {
-        imageUrl = await generateImageLovable(article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt, fmt, knowledgeUrls);
-      } catch (error) {
-        providerErrors.push(`Lovable AI: ${getErrorMessage(error)}`);
-      }
-
-      // 2) Fallback: Gemini direto (chave do usuário)
-      if (!imageUrl && geminiApiKey) {
+      // ÚNICO PROVEDOR: OpenAI ChatGPT (gpt-image-1) — segue o prompt à risca.
+      if (!openaiApiKey) {
+        providerErrors.push("Chave OpenAI (ChatGPT) não configurada. Configure em Configurações > OpenAI.");
+      } else {
         try {
-          imageUrl = await generateImageGemini(geminiApiKey, article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt, fmt);
+          imageUrl = await generateImageOpenAI(openaiApiKey, article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt, fmt, knowledgeUrls);
         } catch (error) {
-          providerErrors.push(`Gemini: ${getErrorMessage(error)}`);
-        }
-      }
-
-      // 3) Fallback: OpenAI DALL-E (chave do usuário)
-      if (!imageUrl && openaiApiKey) {
-        try {
-          imageUrl = await generateImageDallE(openaiApiKey, article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt, fmt);
-        } catch (error) {
-          providerErrors.push(`OpenAI DALL-E: ${getErrorMessage(error)}`);
-        }
-      }
-
-      // 4) Último recurso: Pollinations (gratuito)
-      if (!imageUrl) {
-        try {
-          imageUrl = await generateImagePollinations(article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt, fmt);
-        } catch (error) {
-          providerErrors.push(`Pollinations: ${getErrorMessage(error)}`);
+          providerErrors.push(`OpenAI gpt-image-1: ${getErrorMessage(error)}`);
         }
       }
 
