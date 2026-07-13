@@ -150,10 +150,20 @@ async function generateImageGemini(apiKey: string, title: string, content: strin
   throw new ProviderError(errors.join(" | ") || "Falha ao gerar imagem com Gemini", 500, false, errors.some((message) => isBillingIssue(0, message)));
 }
 
-async function generateImageLovable(title: string, content: string | null, visualElements: string | null, imagePrompt: string | null, fmt?: { width: number; height: number; label: string }): Promise<string> {
+async function generateImageLovable(title: string, content: string | null, visualElements: string | null, imagePrompt: string | null, fmt?: { width: number; height: number; label: string }, knowledgeUrls: string[] = []): Promise<string> {
   const lovableKey = Deno.env.get("LOVABLE_API_KEY");
   if (!lovableKey) throw new ProviderError("LOVABLE_API_KEY não disponível no ambiente.", 500, false, false);
-  const prompt = buildImagePrompt(title, content, visualElements, imagePrompt, fmt);
+  const basePrompt = buildImagePrompt(title, content, visualElements, imagePrompt, fmt);
+  const refs = (knowledgeUrls || []).slice(0, 10).filter((u) => typeof u === "string" && u.startsWith("http"));
+  const promptText = refs.length
+    ? `${basePrompt}\n\nCONHECIMENTO VISUAL DE REFERÊNCIA: Você recebeu ${refs.length} imagem(ns) de referência anexadas nesta mensagem. Analise cuidadosamente o estilo visual, paleta de cores, composição, iluminação, tipografia e elementos gráficos delas e SE INSPIRE nesses modelos ao gerar a nova arte. A nova imagem deve seguir o prompt acima em conjunto com o estilo/identidade visual demonstrado nas referências.`
+    : basePrompt;
+
+  const userContent: any[] = [{ type: "text", text: promptText }];
+  for (const url of refs) {
+    userContent.push({ type: "image_url", image_url: { url } });
+  }
+
   const models = ["google/gemini-2.5-flash-image", "google/gemini-3-pro-image"];
   const errs: string[] = [];
   for (const model of models) {
@@ -164,7 +174,7 @@ async function generateImageLovable(title: string, content: string | null, visua
           headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },
           body: JSON.stringify({
             model,
-            messages: [{ role: "user", content: prompt }],
+            messages: [{ role: "user", content: userContent }],
             modalities: ["image", "text"],
           }),
         });
