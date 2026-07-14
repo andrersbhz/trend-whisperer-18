@@ -169,21 +169,37 @@ async function generateImageGemini(apiKey: string, title: string, content: strin
   throw new ProviderError(errors.join(" | ") || "Falha ao gerar imagem com Gemini", 500, false, errors.some((message) => isBillingIssue(0, message)));
 }
 
-async function generateImageLovable(title: string, content: string | null, visualElements: string | null, imagePrompt: string | null, fmt?: { width: number; height: number; label: string }, knowledgeUrls: string[] = []): Promise<string> {
+async function generateImageLovable(title: string, articleContent: string | null, visualElements: string | null, imagePrompt: string | null, fmt: { width: number; height: number; label: string } | undefined, knowledgeUrls: string[] = [], knowledgeText: string = ""): Promise<string> {
   const lovableKey = Deno.env.get("LOVABLE_API_KEY");
   if (!lovableKey) throw new ProviderError("LOVABLE_API_KEY não disponível no ambiente.", 500, false, false);
-  const basePrompt = buildImagePrompt(title, content, visualElements, imagePrompt, fmt);
+  const basePrompt = buildImagePrompt(title, articleContent, visualElements, imagePrompt, fmt);
   const refs = (knowledgeUrls || []).slice(0, 10).filter((u) => typeof u === "string" && u.startsWith("http"));
-  const promptText = refs.length
-    ? `${basePrompt}\n\nCONHECIMENTO VISUAL DE REFERÊNCIA: Você recebeu ${refs.length} imagem(ns) de referência anexadas nesta mensagem. Analise cuidadosamente o estilo visual, paleta de cores, composição, iluminação, tipografia e elementos gráficos delas e SE INSPIRE nesses modelos ao gerar a nova arte. A nova imagem deve seguir o prompt acima em conjunto com o estilo/identidade visual demonstrado nas referências.`
-    : basePrompt;
+
+  // Extrai um resumo do conteúdo do artigo (sem HTML) para dar contexto visual.
+  const articleSummary = (articleContent || "")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 1500);
+
+  const contextBlocks: string[] = [];
+  contextBlocks.push(`TÍTULO DO ARTIGO: ${title}`);
+  if (articleSummary) contextBlocks.push(`RESUMO DO CONTEÚDO DO ARTIGO (use para inferir cena, personagens, objetos e ambiente):\n${articleSummary}`);
+  if (knowledgeText && knowledgeText.trim().length > 0) {
+    contextBlocks.push(`BASE DE CONHECIMENTO DO USUÁRIO (use como referência de estilo, marca e temas):\n${knowledgeText.slice(0, 2500)}`);
+  }
+  if (refs.length) {
+    contextBlocks.push(`CONHECIMENTO VISUAL: ${refs.length} imagem(ns) de referência anexadas — inspire-se no estilo, paleta e composição.`);
+  }
+
+  const promptText = `${basePrompt}\n\n---\n${contextBlocks.join("\n\n")}`;
 
   const userContent: any[] = [{ type: "text", text: promptText }];
   for (const url of refs) {
     userContent.push({ type: "image_url", image_url: { url } });
   }
 
-  const models = ["google/gemini-2.5-flash-image", "google/gemini-3-pro-image"];
+  const models = ["google/gemini-3.1-flash-image", "google/gemini-2.5-flash-image", "google/gemini-3-pro-image"];
   const errs: string[] = [];
   for (const model of models) {
     try {
@@ -369,6 +385,25 @@ serve(async (req) => {
 
     if (!articles?.length) throw new Error("Nenhum artigo encontrado.");
 
+    // Fetch knowledge base texts (top 5 recent) to give the image AI more context.
+    let knowledgeText = "";
+    try {
+      const { data: kentries } = await supabase
+        .from("knowledge_entries")
+        .select("title, description, content")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(5);
+      if (kentries?.length) {
+        knowledgeText = kentries.map((k: any) => {
+          const body = (k.content || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 800);
+          return `# ${k.title}${k.description ? ` — ${k.description}` : ""}\n${body}`;
+        }).join("\n\n");
+      }
+    } catch (e) {
+      console.warn("[regenerate-image] knowledge fetch failed", e);
+    }
+
     let updated = 0;
     let failed = 0;
     let skipped = 0;
@@ -397,10 +432,23 @@ serve(async (req) => {
       let imageUrl: string | null = null;
       const providerErrors: string[] = [];
 
-      // ÚNICO PROVEDOR: OpenAI ChatGPT (gpt-image-1) — segue o prompt à risca.
-      if (!openaiApiKey) {
-        providerErrors.push("Chave OpenAI (ChatGPT) não configurada. Configure em Configurações > OpenAI.");
-      } else {
+      // PRIMÁRIO: Lovable AI Gateway (chat com modalidade imagem — Gemini). Usa título + conteúdo + conhecimento.
+      try {
+        imageUrl = await generateImageLovable(
+          article.title,
+          (article as any).content || null,
+          (article as any).visual_elements || null,
+          imagePrompt,
+          fmt,
+          knowledgeUrls,
+          knowledgeText,
+        );
+      } catch (error) {
+        providerErrors.push(`Lovable AI (chat imagem): ${getErrorMessage(error)}`);
+      }
+
+      // FALLBACK opcional: OpenAI gpt-image-1, apenas se a chave estiver configurada.
+      if (!imageUrl && openaiApiKey) {
         try {
           imageUrl = await generateImageOpenAI(openaiApiKey, article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt, fmt, knowledgeUrls);
         } catch (error) {

@@ -29,6 +29,7 @@ const Auth = lazyRetry(() => import("@/pages/Auth"));
 const Dashboard = lazyRetry(() => import("@/pages/Dashboard"));
 const ArticlesPage = lazyRetry(() => import("@/pages/ArticlesPage"));
 const TrendsPage = lazyRetry(() => import("@/pages/TrendsPage"));
+const TrendDetailPage = lazyRetry(() => import("@/pages/TrendDetailPage"));
 const SchedulePage = lazyRetry(() => import("@/pages/SchedulePage"));
 const SettingsPage = lazyRetry(() => import("@/pages/SettingsPage"));
 const AnalyticsPage = lazyRetry(() => import("@/pages/AnalyticsPage"));
@@ -147,6 +148,7 @@ const App = () => (
                 <Route path="/admin" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                 <Route path="/articles" element={<ProtectedRoute><ArticlesPage /></ProtectedRoute>} />
                 <Route path="/trends" element={<ProtectedRoute><TrendsPage /></ProtectedRoute>} />
+                <Route path="/trends/:trendId" element={<ProtectedRoute><TrendDetailPage /></ProtectedRoute>} />
                 <Route path="/schedule" element={<ProtectedRoute><SchedulePage /></ProtectedRoute>} />
                 <Route path="/analytics" element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
                 <Route path="/robot" element={<ProtectedRoute><SocialRobotPage /></ProtectedRoute>} />
