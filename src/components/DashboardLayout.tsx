@@ -171,13 +171,13 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                 className={cn(
                   'group flex items-center gap-3 px-3 py-2.5 rounded-none text-xs font-bold transition-all duration-300 uppercase tracking-widest',
                   active
-                    ? 'bg-[#2f2c79]/15 text-[#2f2c79] border-l-2 border-[#2f2c79] shadow-[inset_10px_0_15px_-10px_rgba(47,44,121,0.35)]'
+                    ? 'bg-[#a3ff12] text-black border-l-2 border-[#a3ff12] shadow-[inset_10px_0_15px_-10px_rgba(163,255,18,0.5)]'
                     : 'text-muted-foreground hover:bg-[#a3ff12] hover:text-black hover:translate-x-0.5'
                 )}
               >
-                <item.icon className={cn('h-[18px] w-[18px] transition-transform', active && 'scale-110 text-[#2f2c79]')} />
+                <item.icon className={cn('h-[18px] w-[18px] transition-transform', active && 'scale-110 text-black')} />
                 <span className="flex-1">{item.label}</span>
-                {active && <span className="h-1.5 w-1.5 rounded-full bg-[#2f2c79] animate-pulse-dot" />}
+                {active && <span className="h-1.5 w-1.5 rounded-full bg-black animate-pulse-dot" />}
 
               </Link>
             );
