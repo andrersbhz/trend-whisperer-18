@@ -848,7 +848,7 @@ const SchedulePage = () => {
                 scheduled_at: preview.scheduled_at ? new Date(preview.scheduled_at).toISOString() : null,
               })}
               disabled={previewLoading}
-              className="bg-[#4fafff] hover:bg-[#4fafff]/90 text-white border-0"
+              className="bg-[#4fafff] text-black border border-transparent hover:bg-transparent hover:text-black hover:border-[#4fafff]"
             >
               {previewLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
               Salvar Alterações
