@@ -422,6 +422,10 @@ const SettingsPage = () => {
           <GroqSettings settings={settings} onChange={updateSettings} hasGroqKey={credStatus.has_groq_key} onDisconnect={() => disconnectCredential({ groq_api_key: '' }, 'Groq')} />
         </TabsContent>
 
+        <TabsContent value="knowledge" className="space-y-6 mt-0 animate-in fade-in-50 duration-300">
+          <KnowledgeBaseSettings />
+        </TabsContent>
+
         <TabsContent value="wordpress" className="space-y-6 mt-0 animate-in fade-in-50 duration-300">
           <WordPressSettings settings={settings} onChange={updateSettings} hasWpPassword={credStatus.has_wp_password} onDisconnect={() => disconnectCredential({ wordpress_url: '', wordpress_username: '', wordpress_app_password: '' }, 'WordPress')} />
           <JetpackSettings settings={settings} hasWpPassword={credStatus.has_wp_password} />
