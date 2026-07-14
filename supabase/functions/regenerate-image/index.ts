@@ -368,12 +368,14 @@ serve(async (req) => {
     }
 
     if (settings?.openai_api_key) {
-      const { data: decrypted } = await supabase.rpc("decrypt_credential", { enc_key: "", val: settings.openai_api_key });
-      if (decrypted && typeof decrypted === "string" && decrypted.length > 5) openaiApiKey = decrypted;
+      try {
+        const { data: decrypted } = await supabase.rpc("decrypt_credential", { enc_key: "", val: settings.openai_api_key });
+        if (decrypted && typeof decrypted === "string" && decrypted.length > 5) openaiApiKey = decrypted;
+      } catch (e) {
+        console.warn("[regenerate-image] falha ao decifrar chave OpenAI (opcional):", e);
+      }
     }
-    if (!openaiApiKey) {
-      throw new Error("Chave da OpenAI (ChatGPT) não configurada. Vá em Configurações > OpenAI e salve sua API key — ela é obrigatória para gerar imagens.");
-    }
+    // OpenAI é opcional. Provedor principal: Lovable AI Gateway (sem chave do usuário).
 
     // Fetch articles
     const { data: articles } = await supabase
