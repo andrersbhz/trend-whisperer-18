@@ -728,6 +728,16 @@ const ArticlesPage = () => {
             <span className="sm:hidden">Manual</span>
           </Button>
           <Button
+            onClick={() => setKnowledgeDialogOpen(true)}
+            variant="outline"
+            size="sm"
+            className="gap-2 border-primary/40 text-primary hover:bg-primary/10"
+          >
+            <BookOpen className="h-4 w-4" />
+            <span className="hidden sm:inline">Criar do Conhecimento</span>
+            <span className="sm:hidden">Conhec.</span>
+          </Button>
+          <Button
             onClick={handleCleanupOld}
             disabled={cleaningUp}
             variant="outline"
