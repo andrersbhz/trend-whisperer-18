@@ -368,12 +368,14 @@ serve(async (req) => {
     }
 
     if (settings?.openai_api_key) {
-      const { data: decrypted } = await supabase.rpc("decrypt_credential", { enc_key: "", val: settings.openai_api_key });
-      if (decrypted && typeof decrypted === "string" && decrypted.length > 5) openaiApiKey = decrypted;
+      try {
+        const { data: decrypted } = await supabase.rpc("decrypt_credential", { enc_key: "", val: settings.openai_api_key });
+        if (decrypted && typeof decrypted === "string" && decrypted.length > 5) openaiApiKey = decrypted;
+      } catch (e) {
+        console.warn("[regenerate-image] falha ao decifrar chave OpenAI (opcional):", e);
+      }
     }
-    if (!openaiApiKey) {
-      throw new Error("Chave da OpenAI (ChatGPT) não configurada. Vá em Configurações > OpenAI e salve sua API key — ela é obrigatória para gerar imagens.");
-    }
+    // OpenAI é opcional. Provedor principal: Lovable AI Gateway (sem chave do usuário).
 
     // Fetch articles
     const { data: articles } = await supabase
@@ -431,19 +433,36 @@ serve(async (req) => {
       let imageUrl: string | null = null;
       const providerErrors: string[] = [];
 
-      // ÚNICO PROVEDOR: OpenAI (ChatGPT / gpt-image-1) — segue à risca o prompt de Configurações > Imagem Destacada.
+      // Provedor principal: Lovable AI Gateway (Gemini image). Sem chave do usuário.
       try {
-        imageUrl = await generateImageOpenAI(
-          openaiApiKey!,
+        imageUrl = await generateImageLovable(
           article.title,
           (article as any).content || null,
           (article as any).visual_elements || null,
           imagePrompt,
           fmt,
           knowledgeUrls,
+          knowledgeText,
         );
       } catch (error) {
-        providerErrors.push(`OpenAI (ChatGPT): ${getErrorMessage(error)}`);
+        providerErrors.push(`Lovable AI: ${getErrorMessage(error)}`);
+      }
+
+      // Fallback opcional: OpenAI, apenas se o usuário configurou a chave.
+      if (!imageUrl && openaiApiKey) {
+        try {
+          imageUrl = await generateImageOpenAI(
+            openaiApiKey,
+            article.title,
+            (article as any).content || null,
+            (article as any).visual_elements || null,
+            imagePrompt,
+            fmt,
+            knowledgeUrls,
+          );
+        } catch (error) {
+          providerErrors.push(`OpenAI (fallback): ${getErrorMessage(error)}`);
+        }
       }
 
       if (!imageUrl) {
