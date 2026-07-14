@@ -640,3 +640,52 @@ body {
   .reading-surface .reading-content { line-height: 1.7; }
   .reading-surface .reading-content p { margin-bottom: 1.2em; }
 }
+
+/* ============================================
+   Page CTA Scheme — Agendamentos & Artigos
+   Hover uniforme + textos brancos em botões escuros
+   + seta de postar/enviar em verde limão
+   ============================================ */
+.page-cta-scheme button:not(:disabled):hover,
+.page-cta-scheme a:hover,
+.page-cta-scheme [role="button"]:not(:disabled):hover {
+  background-color: #212c79 !important;
+  border: 1px solid #4fafff !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 8px rgba(79, 175, 255, 0.65), 0 0 16px rgba(79, 175, 255, 0.35) !important;
+  transition: background-color .18s ease, border-color .18s ease, box-shadow .18s ease, color .18s ease;
+}
+.page-cta-scheme button:not(:disabled):hover *,
+.page-cta-scheme a:hover *,
+.page-cta-scheme [role="button"]:not(:disabled):hover * {
+  color: #ffffff !important;
+}
+
+/* Botões de fundo escuro: texto sempre branco */
+.page-cta-scheme .bg-primary,
+.page-cta-scheme .bg-primary *,
+.page-cta-scheme .bg-secondary,
+.page-cta-scheme .bg-secondary *,
+.page-cta-scheme .bg-accent,
+.page-cta-scheme .bg-accent *,
+.page-cta-scheme .bg-destructive,
+.page-cta-scheme .bg-destructive *,
+.page-cta-scheme .gradient-primary,
+.page-cta-scheme .gradient-primary * {
+  color: #ffffff !important;
+}
+
+/* Seta / ícone de "Postar" / "Enviar" em verde limão */
+.page-cta-scheme .text-success,
+.page-cta-scheme .text-success svg,
+.page-cta-scheme [title*="Postar" i] svg,
+.page-cta-scheme [title*="postar" i] svg,
+.page-cta-scheme [title*="Enviar" i] svg,
+.page-cta-scheme [aria-label*="Postar" i] svg,
+.page-cta-scheme [aria-label*="Enviar" i] svg {
+  color: #a3ff12 !important;
+}
+.page-cta-scheme .text-success:hover,
+.page-cta-scheme .text-success:hover svg {
+  color: #ffffff !important;
+}
