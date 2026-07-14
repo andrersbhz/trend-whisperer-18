@@ -175,9 +175,9 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                     : 'text-muted-foreground hover:bg-[#a3ff12] hover:text-black hover:translate-x-0.5'
                 )}
               >
-                <item.icon className={cn('h-[18px] w-[18px] transition-transform', active && 'scale-110 text-[#2f2c79]')} />
+                <item.icon className={cn('h-[18px] w-[18px] transition-transform', active && 'scale-110 text-black')} />
                 <span className="flex-1">{item.label}</span>
-                {active && <span className="h-1.5 w-1.5 rounded-full bg-[#2f2c79] animate-pulse-dot" />}
+                {active && <span className="h-1.5 w-1.5 rounded-full bg-black animate-pulse-dot" />}
 
               </Link>
             );
