@@ -19,6 +19,8 @@ import { getErrorMessage, runBackendMutation, runBackendQuery } from '@/lib/back
 import DashboardWidgetSettings from '@/components/settings/DashboardWidgetSettings';
 import InstagramDirectSettings from '@/components/settings/InstagramDirectSettings';
 import YouTubeSettings from '@/components/settings/YouTubeSettings';
+import KnowledgeBaseSettings from '@/components/settings/KnowledgeBaseSettings';
+import { BookOpen } from 'lucide-react';
 
 export interface UserSettings {
   wordpress_url: string;
