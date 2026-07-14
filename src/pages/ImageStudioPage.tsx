@@ -64,7 +64,7 @@ export default function ImageStudioPage() {
     setMessages((m) => [...m, userMsg]);
     setPrompt('');
     try {
-      const { data, error } = await supabase.functions.invoke('image-studio', { body: { prompt: p } });
+      const { data, error } = await supabase.functions.invoke('image-studio', { body: { prompt: p, userId: user?.id } });
       if (error) throw error;
       if (!data?.imageUrl) throw new Error(data?.error || 'Sem imagem no retorno');
       setMessages((m) => [...m, { id: uid(), role: 'assistant', imageUrl: data.imageUrl, prompt: p }]);
