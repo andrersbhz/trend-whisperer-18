@@ -24,6 +24,7 @@ import {
   User,
   Sun,
   Moon,
+  ImageIcon,
 } from 'lucide-react';
 import { getPerformanceLogs, exportLogsToCSV } from '@/lib/performance';
 
@@ -44,6 +45,7 @@ import a3Logo from '@/assets/a3-logo.jpg';
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/admin' },
   { icon: FileText, label: 'Artigos', path: '/articles' },
+  { icon: ImageIcon, label: 'Estúdio de Imagens', path: '/image-studio' },
   { icon: User, label: 'Autores', path: '/authors' },
   { icon: Search, label: 'Google', path: '/google' },
   { icon: Facebook, label: 'Facebook', path: '/meta' },
