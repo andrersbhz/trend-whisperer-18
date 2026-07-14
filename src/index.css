@@ -689,3 +689,30 @@ body {
 .page-cta-scheme .text-success:hover svg {
   color: #ffffff !important;
 }
+
+/* Upload buttons/links: lime green text + icon */
+.page-cta-scheme [title*="Upload" i],
+.page-cta-scheme [title*="Upload" i] svg,
+.page-cta-scheme [aria-label*="Upload" i],
+.page-cta-scheme [aria-label*="Upload" i] svg,
+.page-cta-scheme [title*="Enviar imagem" i],
+.page-cta-scheme [title*="Enviar imagem" i] svg,
+.page-cta-scheme [aria-label*="Enviar imagem" i],
+.page-cta-scheme [aria-label*="Enviar imagem" i] svg,
+.page-cta-scheme label[for*="upload" i],
+.page-cta-scheme label[for*="upload" i] svg {
+  color: #a3ff12 !important;
+}
+/* Any button/link whose visible text contains "Upload" or "Enviar imagem" via :has */
+.page-cta-scheme button:has(> svg.lucide-upload),
+.page-cta-scheme button:has(> svg.lucide-upload) svg,
+.page-cta-scheme a:has(> svg.lucide-upload),
+.page-cta-scheme a:has(> svg.lucide-upload) svg,
+.page-cta-scheme label:has(> svg.lucide-upload),
+.page-cta-scheme label:has(> svg.lucide-upload) svg {
+  color: #a3ff12 !important;
+}
+.page-cta-scheme button:hover:has(> svg.lucide-upload),
+.page-cta-scheme button:hover:has(> svg.lucide-upload) svg {
+  color: #ffffff !important;
+}
