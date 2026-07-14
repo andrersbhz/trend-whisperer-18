@@ -47,14 +47,14 @@ serve(async (req) => {
         if (!resp.ok) {
           const text = (await resp.text()).slice(0, 400);
           if (resp.status === 429) {
-            return new Response(JSON.stringify({ error: "Muitas requisições. Aguarde alguns segundos." }), {
-              status: 429,
+            return new Response(JSON.stringify({ error: "Muitas requisições. Aguarde alguns segundos e tente novamente." }), {
+              status: 200,
               headers: { ...corsHeaders, "Content-Type": "application/json" },
             });
           }
           if (resp.status === 402) {
-            return new Response(JSON.stringify({ error: "Créditos do Lovable AI esgotados. Adicione créditos ao workspace." }), {
-              status: 402,
+            return new Response(JSON.stringify({ error: "O saldo de IA do workspace acabou. Vá em Configurações → Cloud & AI balance e adicione fundos para continuar gerando imagens." }), {
+              status: 200,
               headers: { ...corsHeaders, "Content-Type": "application/json" },
             });
           }
