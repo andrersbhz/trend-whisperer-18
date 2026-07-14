@@ -355,9 +355,9 @@ serve(async (req) => {
       .single();
     
     // O prompt de imagem é obrigatório vindo de image_prompt conforme solicitado pelo usuário.
-    const imagePrompt: string = settings?.image_prompt?.trim();
-    if (!imagePrompt && force) {
-      throw new Error("O 'Prompt de Imagem IA' não está configurado. Por favor, vá em Configurações > Geral.");
+    const imagePrompt: string = (settings?.image_prompt || "").trim();
+    if (!imagePrompt) {
+      throw new Error("O 'Prompt de Imagem IA' não está configurado. Vá em Configurações > Imagem Destacada e defina o prompt — ele é obrigatório e será seguido à risca.");
     }
     const imageMode = settings?.image_mode || "ai";
     const fmt = getImageFormat((settings as any)?.image_format);
@@ -367,13 +367,12 @@ serve(async (req) => {
       throw new Error(`A regeneração por IA está desativada. Altere o Modo de Imagem para "Gerada por IA" nas configurações.`);
     }
 
-    if (settings?.gemini_api_key) {
-      const { data: decrypted } = await supabase.rpc("decrypt_credential", { enc_key: "", val: settings.gemini_api_key });
-      if (decrypted && typeof decrypted === "string" && decrypted.length > 5) geminiApiKey = decrypted;
-    }
     if (settings?.openai_api_key) {
       const { data: decrypted } = await supabase.rpc("decrypt_credential", { enc_key: "", val: settings.openai_api_key });
       if (decrypted && typeof decrypted === "string" && decrypted.length > 5) openaiApiKey = decrypted;
+    }
+    if (!openaiApiKey) {
+      throw new Error("Chave da OpenAI (ChatGPT) não configurada. Vá em Configurações > OpenAI e salve sua API key — ela é obrigatória para gerar imagens.");
     }
 
     // Fetch articles
