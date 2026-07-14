@@ -35,7 +35,8 @@ import { ImageUpload } from '@/components/articles/ImageUpload';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { ManualArticleDialog } from '@/components/articles/ManualArticleDialog';
-import { Plus } from 'lucide-react';
+import { GenerateFromKnowledgeDialog } from '@/components/articles/GenerateFromKnowledgeDialog';
+import { Plus, BookOpen } from 'lucide-react';
 
 const ArticlesPage = () => {
   const { user } = useAuth();
