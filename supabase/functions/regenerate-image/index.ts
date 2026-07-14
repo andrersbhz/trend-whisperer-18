@@ -355,9 +355,9 @@ serve(async (req) => {
       .single();
     
     // O prompt de imagem é obrigatório vindo de image_prompt conforme solicitado pelo usuário.
-    const imagePrompt: string = settings?.image_prompt?.trim();
-    if (!imagePrompt && force) {
-      throw new Error("O 'Prompt de Imagem IA' não está configurado. Por favor, vá em Configurações > Geral.");
+    const imagePrompt: string = (settings?.image_prompt || "").trim();
+    if (!imagePrompt) {
+      throw new Error("O 'Prompt de Imagem IA' não está configurado. Vá em Configurações > Imagem Destacada e defina o prompt — ele é obrigatório e será seguido à risca.");
     }
     const imageMode = settings?.image_mode || "ai";
     const fmt = getImageFormat((settings as any)?.image_format);
@@ -367,13 +367,12 @@ serve(async (req) => {
       throw new Error(`A regeneração por IA está desativada. Altere o Modo de Imagem para "Gerada por IA" nas configurações.`);
     }
 
-    if (settings?.gemini_api_key) {
-      const { data: decrypted } = await supabase.rpc("decrypt_credential", { enc_key: "", val: settings.gemini_api_key });
-      if (decrypted && typeof decrypted === "string" && decrypted.length > 5) geminiApiKey = decrypted;
-    }
     if (settings?.openai_api_key) {
       const { data: decrypted } = await supabase.rpc("decrypt_credential", { enc_key: "", val: settings.openai_api_key });
       if (decrypted && typeof decrypted === "string" && decrypted.length > 5) openaiApiKey = decrypted;
+    }
+    if (!openaiApiKey) {
+      throw new Error("Chave da OpenAI (ChatGPT) não configurada. Vá em Configurações > OpenAI e salve sua API key — ela é obrigatória para gerar imagens.");
     }
 
     // Fetch articles
@@ -432,28 +431,19 @@ serve(async (req) => {
       let imageUrl: string | null = null;
       const providerErrors: string[] = [];
 
-      // PRIMÁRIO: Lovable AI Gateway (chat com modalidade imagem — Gemini). Usa título + conteúdo + conhecimento.
+      // ÚNICO PROVEDOR: OpenAI (ChatGPT / gpt-image-1) — segue à risca o prompt de Configurações > Imagem Destacada.
       try {
-        imageUrl = await generateImageLovable(
+        imageUrl = await generateImageOpenAI(
+          openaiApiKey!,
           article.title,
           (article as any).content || null,
           (article as any).visual_elements || null,
           imagePrompt,
           fmt,
           knowledgeUrls,
-          knowledgeText,
         );
       } catch (error) {
-        providerErrors.push(`Lovable AI (chat imagem): ${getErrorMessage(error)}`);
-      }
-
-      // FALLBACK opcional: OpenAI gpt-image-1, apenas se a chave estiver configurada.
-      if (!imageUrl && openaiApiKey) {
-        try {
-          imageUrl = await generateImageOpenAI(openaiApiKey, article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt, fmt, knowledgeUrls);
-        } catch (error) {
-          providerErrors.push(`OpenAI gpt-image-1: ${getErrorMessage(error)}`);
-        }
+        providerErrors.push(`OpenAI (ChatGPT): ${getErrorMessage(error)}`);
       }
 
       if (!imageUrl) {
