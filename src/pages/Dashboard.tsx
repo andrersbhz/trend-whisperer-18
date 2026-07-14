@@ -323,10 +323,10 @@ const Dashboard = () => {
       <div className="flex justify-end">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="text-[9px] uppercase font-bold tracking-[0.2em] text-muted-foreground/60 hover:text-black hover:bg-[#a3ff12] gap-2 h-7">
-              <RefreshCw className={cn("h-2.5 w-2.5", loadingMeta && "animate-spin")} />
+            <Button variant="outline" className="border-accent/30 hover:bg-accent/10 text-accent h-9 gap-2">
+              <RefreshCw className={cn("h-4 w-4", loadingMeta && "animate-spin")} />
               Atualizar a cada {refreshInterval} min
-              <ChevronDown className="h-2.5 w-2.5 opacity-50" />
+              <ChevronDown className="h-3 w-3 opacity-50" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="glass-card">
