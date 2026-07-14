@@ -203,7 +203,7 @@ const CategorySection = ({
   const sorted = [...articles].sort(
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
   );
-  const items = sorted.slice(0, 8);
+  const items = sorted.slice(0, 4);
   const slug = category.toLowerCase().replace(/\s+/g, '-');
 
   return (
@@ -212,22 +212,32 @@ const CategorySection = ({
       aria-labelledby={`cat-${slug}`}
     >
       {/* Category header */}
-      <div className="flex items-center gap-3 sm:gap-4 mb-6 sm:mb-7">
-        <span
-          className="inline-block w-1.5 h-8 sm:h-9"
-          style={{ background: accentColor }}
-          aria-hidden="true"
-        />
-        <h2
-          id={`cat-${slug}`}
-          className="news-display text-3xl sm:text-4xl md:text-5xl uppercase text-[hsl(var(--news-ink))]"
+      <div className="flex items-center justify-between gap-3 sm:gap-4 mb-6 sm:mb-7">
+        <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+          <span
+            className="inline-block w-1.5 h-8 sm:h-9 flex-shrink-0"
+            style={{ background: accentColor }}
+            aria-hidden="true"
+          />
+          <h2
+            id={`cat-${slug}`}
+            className="news-display text-3xl sm:text-4xl md:text-5xl uppercase text-[hsl(var(--news-ink))] truncate"
+          >
+            {category}
+          </h2>
+        </div>
+        <Link
+          to={`/${currentLang}/${slug}`}
+          className="news-kicker hidden sm:inline-flex items-center gap-2 px-4 py-2 border-2 hover:bg-[hsl(var(--news-navy))] hover:text-white hover:border-[hsl(var(--news-navy))] transition-colors whitespace-nowrap"
+          aria-label={`Ver todos os posts de ${category}`}
+          style={{ color: accentColor, borderColor: accentColor }}
         >
-          {category}
-        </h2>
+          Ver todos →
+        </Link>
       </div>
 
-      {/* 4 cards por linha */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+      {/* 4 posts em uma linha */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-5">
         {items.map((article) => (
           <NewsCardItem
             key={article.id}
@@ -239,15 +249,15 @@ const CategorySection = ({
         ))}
       </div>
 
-      {/* "Ver mais" at the bottom */}
-      <div className="mt-6 sm:mt-7 flex justify-center">
+      {/* "Ver todos" no mobile */}
+      <div className="mt-6 flex justify-center sm:hidden">
         <Link
           to={`/${currentLang}/${slug}`}
           className="news-kicker inline-flex items-center gap-2 px-5 py-3 border-2 hover:bg-[hsl(var(--news-navy))] hover:text-white transition-colors min-h-11"
-          aria-label={`Ver todas as matérias de ${category}`}
+          aria-label={`Ver todos os posts de ${category}`}
           style={{ color: accentColor, borderColor: accentColor }}
         >
-          Ver mais de {category} →
+          Ver todos →
         </Link>
       </div>
     </section>
