@@ -225,8 +225,8 @@
     @apply transition-colors duration-300;
   }
   .glass-card:hover .stat-card-value {
-    color: #ff0000;
-    text-shadow: 0 0 15px rgba(255, 0, 0, 0.75);
+    color: #a3ff12;
+    text-shadow: 0 0 15px rgba(163, 255, 18, 0.75);
   }
 }
 
