@@ -1100,6 +1100,12 @@ const ArticlesPage = () => {
         categories={userCategories}
         onSuccess={fetchArticles}
       />
+      <GenerateFromKnowledgeDialog
+        open={knowledgeDialogOpen}
+        onOpenChange={setKnowledgeDialogOpen}
+        categories={userCategories}
+        onSuccess={fetchArticles}
+      />
     </div>
   );
 };
