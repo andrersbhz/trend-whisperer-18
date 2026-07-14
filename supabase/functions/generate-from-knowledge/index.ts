@@ -157,7 +157,6 @@ serve(async (req) => {
         meta_description: parsed.meta_description || "",
         slug,
         status: "ready",
-        source: "knowledge_base",
       })
       .select("id, title")
       .single();
