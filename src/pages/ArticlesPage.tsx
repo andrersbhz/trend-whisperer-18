@@ -61,6 +61,7 @@ const ArticlesPage = () => {
   const [diagMetrics, setDiagMetrics] = useState<any[]>([]);
   const [showDiagnostics, setShowDiagnostics] = useState(false);
   const [manualDialogOpen, setManualDialogOpen] = useState(false);
+  const [knowledgeDialogOpen, setKnowledgeDialogOpen] = useState(false);
   const [titleInput, setTitleInput] = useState('');
   const [generatingByTitle, setGeneratingByTitle] = useState(false);
 
