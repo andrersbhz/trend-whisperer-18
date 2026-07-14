@@ -354,8 +354,8 @@
   }
   .hover-lift:hover {
     transform: translateY(-2px);
-    box-shadow: 0 15px 40px -10px rgba(0, 0, 0, 0.7), 0 0 25px -5px hsla(0, 100%, 50%, 0.35);
-    border-color: hsla(0, 100%, 50%, 0.6);
+    box-shadow: 0 15px 40px -10px rgba(0, 0, 0, 0.7), 0 0 25px -5px hsla(83, 100%, 54%, 0.35);
+    border-color: hsla(83, 100%, 54%, 0.6);
   }
 
 
