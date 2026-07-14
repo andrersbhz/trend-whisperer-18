@@ -431,28 +431,19 @@ serve(async (req) => {
       let imageUrl: string | null = null;
       const providerErrors: string[] = [];
 
-      // PRIMÁRIO: Lovable AI Gateway (chat com modalidade imagem — Gemini). Usa título + conteúdo + conhecimento.
+      // ÚNICO PROVEDOR: OpenAI (ChatGPT / gpt-image-1) — segue à risca o prompt de Configurações > Imagem Destacada.
       try {
-        imageUrl = await generateImageLovable(
+        imageUrl = await generateImageOpenAI(
+          openaiApiKey!,
           article.title,
           (article as any).content || null,
           (article as any).visual_elements || null,
           imagePrompt,
           fmt,
           knowledgeUrls,
-          knowledgeText,
         );
       } catch (error) {
-        providerErrors.push(`Lovable AI (chat imagem): ${getErrorMessage(error)}`);
-      }
-
-      // FALLBACK opcional: OpenAI gpt-image-1, apenas se a chave estiver configurada.
-      if (!imageUrl && openaiApiKey) {
-        try {
-          imageUrl = await generateImageOpenAI(openaiApiKey, article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt, fmt, knowledgeUrls);
-        } catch (error) {
-          providerErrors.push(`OpenAI gpt-image-1: ${getErrorMessage(error)}`);
-        }
+        providerErrors.push(`OpenAI (ChatGPT): ${getErrorMessage(error)}`);
       }
 
       if (!imageUrl) {
