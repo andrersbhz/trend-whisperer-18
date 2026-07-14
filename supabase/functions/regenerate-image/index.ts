@@ -433,19 +433,36 @@ serve(async (req) => {
       let imageUrl: string | null = null;
       const providerErrors: string[] = [];
 
-      // ÚNICO PROVEDOR: OpenAI (ChatGPT / gpt-image-1) — segue à risca o prompt de Configurações > Imagem Destacada.
+      // Provedor principal: Lovable AI Gateway (Gemini image). Sem chave do usuário.
       try {
-        imageUrl = await generateImageOpenAI(
-          openaiApiKey!,
+        imageUrl = await generateImageLovable(
           article.title,
           (article as any).content || null,
           (article as any).visual_elements || null,
           imagePrompt,
           fmt,
           knowledgeUrls,
+          knowledgeText,
         );
       } catch (error) {
-        providerErrors.push(`OpenAI (ChatGPT): ${getErrorMessage(error)}`);
+        providerErrors.push(`Lovable AI: ${getErrorMessage(error)}`);
+      }
+
+      // Fallback opcional: OpenAI, apenas se o usuário configurou a chave.
+      if (!imageUrl && openaiApiKey) {
+        try {
+          imageUrl = await generateImageOpenAI(
+            openaiApiKey,
+            article.title,
+            (article as any).content || null,
+            (article as any).visual_elements || null,
+            imagePrompt,
+            fmt,
+            knowledgeUrls,
+          );
+        } catch (error) {
+          providerErrors.push(`OpenAI (fallback): ${getErrorMessage(error)}`);
+        }
       }
 
       if (!imageUrl) {
