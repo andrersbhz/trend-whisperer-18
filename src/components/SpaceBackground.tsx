@@ -2,12 +2,13 @@ import React from 'react';
 
 const SpaceBackground: React.FC = () => {
   return (
-    <div className="fixed inset-0 z-[-1] overflow-hidden pointer-events-none bg-[#02040a] dark:block hidden">
+    <div className="fixed inset-0 z-[-1] overflow-hidden pointer-events-none bg-[#000020] dark:block hidden">
       {/* Dynamic Deep Space Gradient with movement */}
       <div 
-        className="absolute inset-0 opacity-40 bg-[radial-gradient(circle_at_50%_50%,#0a1930_0%,#02040a_100%)]"
+        className="absolute inset-0 opacity-50 bg-[radial-gradient(circle_at_50%_50%,#12002a_0%,#000020_100%)]"
         style={{ animation: 'rotate-slow 60s linear infinite' }}
       ></div>
+
       
       {/* Animated Deep Blues / Neons for depth */}
       <div className="absolute inset-0">
