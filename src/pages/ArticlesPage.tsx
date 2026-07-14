@@ -35,7 +35,8 @@ import { ImageUpload } from '@/components/articles/ImageUpload';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { ManualArticleDialog } from '@/components/articles/ManualArticleDialog';
-import { Plus } from 'lucide-react';
+import { GenerateFromKnowledgeDialog } from '@/components/articles/GenerateFromKnowledgeDialog';
+import { Plus, BookOpen } from 'lucide-react';
 
 const ArticlesPage = () => {
   const { user } = useAuth();
@@ -60,6 +61,7 @@ const ArticlesPage = () => {
   const [diagMetrics, setDiagMetrics] = useState<any[]>([]);
   const [showDiagnostics, setShowDiagnostics] = useState(false);
   const [manualDialogOpen, setManualDialogOpen] = useState(false);
+  const [knowledgeDialogOpen, setKnowledgeDialogOpen] = useState(false);
   const [titleInput, setTitleInput] = useState('');
   const [generatingByTitle, setGeneratingByTitle] = useState(false);
 
@@ -726,6 +728,16 @@ const ArticlesPage = () => {
             <span className="sm:hidden">Manual</span>
           </Button>
           <Button
+            onClick={() => setKnowledgeDialogOpen(true)}
+            variant="outline"
+            size="sm"
+            className="gap-2 border-primary/40 text-primary hover:bg-primary/10"
+          >
+            <BookOpen className="h-4 w-4" />
+            <span className="hidden sm:inline">Criar do Conhecimento</span>
+            <span className="sm:hidden">Conhec.</span>
+          </Button>
+          <Button
             onClick={handleCleanupOld}
             disabled={cleaningUp}
             variant="outline"
@@ -1085,6 +1097,12 @@ const ArticlesPage = () => {
       <ManualArticleDialog 
         open={manualDialogOpen} 
         onOpenChange={setManualDialogOpen} 
+        categories={userCategories}
+        onSuccess={fetchArticles}
+      />
+      <GenerateFromKnowledgeDialog
+        open={knowledgeDialogOpen}
+        onOpenChange={setKnowledgeDialogOpen}
         categories={userCategories}
         onSuccess={fetchArticles}
       />

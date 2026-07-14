@@ -19,6 +19,8 @@ import { getErrorMessage, runBackendMutation, runBackendQuery } from '@/lib/back
 import DashboardWidgetSettings from '@/components/settings/DashboardWidgetSettings';
 import InstagramDirectSettings from '@/components/settings/InstagramDirectSettings';
 import YouTubeSettings from '@/components/settings/YouTubeSettings';
+import KnowledgeBaseSettings from '@/components/settings/KnowledgeBaseSettings';
+import { BookOpen } from 'lucide-react';
 
 export interface UserSettings {
   wordpress_url: string;
@@ -393,9 +395,12 @@ const SettingsPage = () => {
       </div>
 
       <Tabs defaultValue="ai" className="w-full space-y-6">
-        <TabsList className="grid grid-cols-2 md:grid-cols-5 h-auto p-1 bg-background/50 border border-border/50 backdrop-blur-sm rounded-xl">
+        <TabsList className="grid grid-cols-2 md:grid-cols-6 h-auto p-1 bg-background/50 border border-border/50 backdrop-blur-sm rounded-xl">
           <TabsTrigger value="ai" className="py-2.5 rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
             <Cpu className="h-4 w-4 mr-2" /> Inteligência Artificial
+          </TabsTrigger>
+          <TabsTrigger value="knowledge" className="py-2.5 rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
+            <BookOpen className="h-4 w-4 mr-2" /> Conhecimento
           </TabsTrigger>
           <TabsTrigger value="wordpress" className="py-2.5 rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
             <Globe className="h-4 w-4 mr-2" /> WordPress
@@ -415,6 +420,10 @@ const SettingsPage = () => {
           <GeminiSettings settings={settings} onChange={updateSettings} hasGeminiKey={credStatus.has_gemini_key} onDisconnect={() => disconnectCredential({ gemini_api_key: '' }, 'Gemini')} />
           <OpenAISettings settings={settings} onChange={updateSettings} hasOpenaiKey={credStatus.has_openai_key} onDisconnect={() => disconnectCredential({ openai_api_key: '' }, 'OpenAI')} />
           <GroqSettings settings={settings} onChange={updateSettings} hasGroqKey={credStatus.has_groq_key} onDisconnect={() => disconnectCredential({ groq_api_key: '' }, 'Groq')} />
+        </TabsContent>
+
+        <TabsContent value="knowledge" className="space-y-6 mt-0 animate-in fade-in-50 duration-300">
+          <KnowledgeBaseSettings />
         </TabsContent>
 
         <TabsContent value="wordpress" className="space-y-6 mt-0 animate-in fade-in-50 duration-300">
