@@ -385,6 +385,25 @@ serve(async (req) => {
 
     if (!articles?.length) throw new Error("Nenhum artigo encontrado.");
 
+    // Fetch knowledge base texts (top 5 recent) to give the image AI more context.
+    let knowledgeText = "";
+    try {
+      const { data: kentries } = await supabase
+        .from("knowledge_entries")
+        .select("title, description, content")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(5);
+      if (kentries?.length) {
+        knowledgeText = kentries.map((k: any) => {
+          const body = (k.content || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 800);
+          return `# ${k.title}${k.description ? ` — ${k.description}` : ""}\n${body}`;
+        }).join("\n\n");
+      }
+    } catch (e) {
+      console.warn("[regenerate-image] knowledge fetch failed", e);
+    }
+
     let updated = 0;
     let failed = 0;
     let skipped = 0;
@@ -413,10 +432,23 @@ serve(async (req) => {
       let imageUrl: string | null = null;
       const providerErrors: string[] = [];
 
-      // ÚNICO PROVEDOR: OpenAI ChatGPT (gpt-image-1) — segue o prompt à risca.
-      if (!openaiApiKey) {
-        providerErrors.push("Chave OpenAI (ChatGPT) não configurada. Configure em Configurações > OpenAI.");
-      } else {
+      // PRIMÁRIO: Lovable AI Gateway (chat com modalidade imagem — Gemini). Usa título + conteúdo + conhecimento.
+      try {
+        imageUrl = await generateImageLovable(
+          article.title,
+          (article as any).content || null,
+          (article as any).visual_elements || null,
+          imagePrompt,
+          fmt,
+          knowledgeUrls,
+          knowledgeText,
+        );
+      } catch (error) {
+        providerErrors.push(`Lovable AI (chat imagem): ${getErrorMessage(error)}`);
+      }
+
+      // FALLBACK opcional: OpenAI gpt-image-1, apenas se a chave estiver configurada.
+      if (!imageUrl && openaiApiKey) {
         try {
           imageUrl = await generateImageOpenAI(openaiApiKey, article.title, (article as any).content || null, (article as any).visual_elements || null, imagePrompt, fmt, knowledgeUrls);
         } catch (error) {
