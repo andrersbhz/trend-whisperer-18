@@ -452,7 +452,7 @@ const SchedulePage = () => {
   if (loading) return <Preloader message="Sincronizando agendamentos..." />;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 page-cta-scheme">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Agendamentos</h1>
         <p className="text-sm mt-1">Artigos agendados para publicação automática — clique na data para editar</p>
