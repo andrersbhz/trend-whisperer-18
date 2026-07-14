@@ -395,9 +395,12 @@ const SettingsPage = () => {
       </div>
 
       <Tabs defaultValue="ai" className="w-full space-y-6">
-        <TabsList className="grid grid-cols-2 md:grid-cols-5 h-auto p-1 bg-background/50 border border-border/50 backdrop-blur-sm rounded-xl">
+        <TabsList className="grid grid-cols-2 md:grid-cols-6 h-auto p-1 bg-background/50 border border-border/50 backdrop-blur-sm rounded-xl">
           <TabsTrigger value="ai" className="py-2.5 rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
             <Cpu className="h-4 w-4 mr-2" /> Inteligência Artificial
+          </TabsTrigger>
+          <TabsTrigger value="knowledge" className="py-2.5 rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
+            <BookOpen className="h-4 w-4 mr-2" /> Conhecimento
           </TabsTrigger>
           <TabsTrigger value="wordpress" className="py-2.5 rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
             <Globe className="h-4 w-4 mr-2" /> WordPress
