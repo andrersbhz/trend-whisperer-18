@@ -83,7 +83,7 @@ const NewsCardItem = ({
             >
               {category}
             </span>
-            <h4 className="news-headline text-sm sm:text-base text-[hsl(var(--news-ink))] group-hover:text-[hsl(var(--news-navy))] transition-colors line-clamp-3 leading-snug">
+            <h4 className="news-headline text-sm sm:text-base text-white group-hover:text-[#ff2ec8] transition-colors line-clamp-3 leading-snug">
               {article.title}
             </h4>
             <time className="news-kicker text-[10px] sm:text-xs text-[hsl(var(--news-muted))] mt-auto pt-2">
