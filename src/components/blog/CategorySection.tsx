@@ -71,7 +71,7 @@ const NewsCardItem = ({
   // list = G1-style horizontal small item (image on the right, text on the left)
   if (size === 'list') {
     return (
-      <article className="group bg-white border border-[hsl(var(--news-line))] hover:shadow-md transition-shadow">
+      <article className="group bg-[#141414] border border-[#141414] hover:border-[#ff2ec8] hover:shadow-[0_0_16px_rgba(255,46,200,0.35)] transition-all">
         <Link
           to={href}
           className="flex gap-3 sm:gap-4 p-3 sm:p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--news-navy))]"
