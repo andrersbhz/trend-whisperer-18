@@ -151,11 +151,11 @@ const NewsCardItem = ({
         {size !== 'lead' && (
           <div className="flex flex-col flex-1 p-3 sm:p-4">
             <h3
-              className={`news-headline text-[hsl(var(--news-ink))] group-hover:text-[hsl(var(--news-navy))] transition-colors line-clamp-3 leading-snug ${titleSize}`}
+              className={`news-headline text-white group-hover:text-[#ff2ec8] transition-colors line-clamp-3 leading-snug ${titleSize}`}
             >
               {article.title}
             </h3>
-            <div className="flex items-center justify-between gap-2 mt-auto pt-3 text-[11px] sm:text-xs text-[hsl(var(--news-muted))]">
+            <div className="flex items-center justify-between gap-2 mt-auto pt-3 text-[11px] sm:text-xs text-white/60">
               <span className="inline-flex items-center gap-1 min-w-0">
                 <Calendar
                   className="w-3 h-3 flex-shrink-0"
@@ -171,6 +171,7 @@ const NewsCardItem = ({
             </div>
           </div>
         )}
+
 
         {size === 'lead' && (
           <div className="flex items-center justify-between gap-2 px-4 py-2.5 text-[11px] sm:text-xs text-[hsl(var(--news-muted))] border-t border-[hsl(var(--news-line))] bg-white">
