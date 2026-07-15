@@ -158,17 +158,17 @@ const NewsCardItem = ({
             <div className="flex items-center justify-between gap-2 mt-auto pt-3 text-[11px] sm:text-xs text-white/60">
               <span className="inline-flex items-center gap-1 min-w-0">
                 <Calendar
-                  className="w-3 h-3 flex-shrink-0"
-                  style={{ color: accentColor }}
+                  className="w-3.5 h-3.5 flex-shrink-0 text-[#a3ff12]"
                   aria-hidden="true"
                 />
                 <time className="truncate">{date}</time>
               </span>
               <span className="inline-flex items-center gap-1 min-w-0">
-                <User className="w-3 h-3 flex-shrink-0" aria-hidden="true" />
+                <User className="w-3.5 h-3.5 flex-shrink-0 text-[#ff2ec8]" aria-hidden="true" />
                 <span className="truncate">{authorName}</span>
               </span>
             </div>
+
           </div>
         )}
 
@@ -177,16 +177,16 @@ const NewsCardItem = ({
           <div className="flex items-center justify-between gap-2 px-4 py-2.5 text-[11px] sm:text-xs text-white/60 border-t border-white/10 bg-[#141414]">
             <span className="inline-flex items-center gap-1 min-w-0">
               <Calendar
-                className="w-3 h-3 flex-shrink-0"
-                style={{ color: accentColor }}
+                className="w-3.5 h-3.5 flex-shrink-0 text-[#a3ff12]"
                 aria-hidden="true"
               />
               <time className="truncate">{date}</time>
             </span>
             <span className="inline-flex items-center gap-1 min-w-0">
-              <User className="w-3 h-3 flex-shrink-0" aria-hidden="true" />
+              <User className="w-3.5 h-3.5 flex-shrink-0 text-[#ff2ec8]" aria-hidden="true" />
               <span className="truncate">{authorName}</span>
             </span>
+
           </div>
         )}
       </Link>
