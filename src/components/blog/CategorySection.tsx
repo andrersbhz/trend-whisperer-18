@@ -86,9 +86,10 @@ const NewsCardItem = ({
             <h4 className="news-headline text-sm sm:text-base text-white group-hover:text-[#ff2ec8] transition-colors line-clamp-3 leading-snug">
               {article.title}
             </h4>
-            <time className="news-kicker text-[10px] sm:text-xs text-[hsl(var(--news-muted))] mt-auto pt-2">
+            <time className="news-kicker text-[10px] sm:text-xs text-white/60 mt-auto pt-2">
               {date}
             </time>
+
           </div>
           <div className="w-24 h-24 sm:w-28 sm:h-28 flex-shrink-0 overflow-hidden bg-[hsl(var(--news-navy-deep))]">
             <Media
