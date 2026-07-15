@@ -113,7 +113,7 @@ const NewsCardItem = ({
         : 'text-sm sm:text-base';
 
   return (
-    <article className="group relative bg-white border border-[hsl(var(--news-line))] overflow-hidden flex flex-col h-full shadow-sm hover:shadow-md transition-shadow">
+    <article className="group relative bg-[#141414] border border-[#141414] hover:border-[#ff2ec8] hover:shadow-[0_0_16px_rgba(255,46,200,0.35)] overflow-hidden flex flex-col h-full transition-all">
       <Link
         to={href}
         className="flex flex-col h-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--news-navy))]"
