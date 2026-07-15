@@ -71,7 +71,7 @@ const NewsCardItem = ({
   // list = G1-style horizontal small item (image on the right, text on the left)
   if (size === 'list') {
     return (
-      <article className="group bg-white border border-[hsl(var(--news-line))] hover:shadow-md transition-shadow">
+      <article className="group bg-[#141414] border border-[#141414] hover:border-[#ff2ec8] hover:shadow-[0_0_16px_rgba(255,46,200,0.35)] transition-all">
         <Link
           to={href}
           className="flex gap-3 sm:gap-4 p-3 sm:p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--news-navy))]"
@@ -83,12 +83,13 @@ const NewsCardItem = ({
             >
               {category}
             </span>
-            <h4 className="news-headline text-sm sm:text-base text-[hsl(var(--news-ink))] group-hover:text-[hsl(var(--news-navy))] transition-colors line-clamp-3 leading-snug">
+            <h4 className="news-headline text-sm sm:text-base text-white group-hover:text-[#ff2ec8] transition-colors line-clamp-3 leading-snug">
               {article.title}
             </h4>
-            <time className="news-kicker text-[10px] sm:text-xs text-[hsl(var(--news-muted))] mt-auto pt-2">
+            <time className="news-kicker text-[10px] sm:text-xs text-white/60 mt-auto pt-2">
               {date}
             </time>
+
           </div>
           <div className="w-24 h-24 sm:w-28 sm:h-28 flex-shrink-0 overflow-hidden bg-[hsl(var(--news-navy-deep))]">
             <Media
@@ -112,7 +113,7 @@ const NewsCardItem = ({
         : 'text-sm sm:text-base';
 
   return (
-    <article className="group relative bg-white border border-[hsl(var(--news-line))] overflow-hidden flex flex-col h-full shadow-sm hover:shadow-md transition-shadow">
+    <article className="group relative bg-[#141414] border border-[#141414] hover:border-[#ff2ec8] hover:shadow-[0_0_16px_rgba(255,46,200,0.35)] overflow-hidden flex flex-col h-full transition-all">
       <Link
         to={href}
         className="flex flex-col h-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--news-navy))]"
@@ -150,11 +151,11 @@ const NewsCardItem = ({
         {size !== 'lead' && (
           <div className="flex flex-col flex-1 p-3 sm:p-4">
             <h3
-              className={`news-headline text-[hsl(var(--news-ink))] group-hover:text-[hsl(var(--news-navy))] transition-colors line-clamp-3 leading-snug ${titleSize}`}
+              className={`news-headline text-white group-hover:text-[#ff2ec8] transition-colors line-clamp-3 leading-snug ${titleSize}`}
             >
               {article.title}
             </h3>
-            <div className="flex items-center justify-between gap-2 mt-auto pt-3 text-[11px] sm:text-xs text-[hsl(var(--news-muted))]">
+            <div className="flex items-center justify-between gap-2 mt-auto pt-3 text-[11px] sm:text-xs text-white/60">
               <span className="inline-flex items-center gap-1 min-w-0">
                 <Calendar
                   className="w-3 h-3 flex-shrink-0"
@@ -171,8 +172,9 @@ const NewsCardItem = ({
           </div>
         )}
 
+
         {size === 'lead' && (
-          <div className="flex items-center justify-between gap-2 px-4 py-2.5 text-[11px] sm:text-xs text-[hsl(var(--news-muted))] border-t border-[hsl(var(--news-line))] bg-white">
+          <div className="flex items-center justify-between gap-2 px-4 py-2.5 text-[11px] sm:text-xs text-white/60 border-t border-white/10 bg-[#141414]">
             <span className="inline-flex items-center gap-1 min-w-0">
               <Calendar
                 className="w-3 h-3 flex-shrink-0"
