@@ -174,7 +174,7 @@ const NewsCardItem = ({
 
 
         {size === 'lead' && (
-          <div className="flex items-center justify-between gap-2 px-4 py-2.5 text-[11px] sm:text-xs text-[hsl(var(--news-muted))] border-t border-[hsl(var(--news-line))] bg-white">
+          <div className="flex items-center justify-between gap-2 px-4 py-2.5 text-[11px] sm:text-xs text-white/60 border-t border-white/10 bg-[#141414]">
             <span className="inline-flex items-center gap-1 min-w-0">
               <Calendar
                 className="w-3 h-3 flex-shrink-0"
