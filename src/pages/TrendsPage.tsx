@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import Preloader from '@/components/Preloader';
+import ViralNewsSearch from '@/components/admin/ViralNewsSearch';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
@@ -322,6 +323,8 @@ const TrendsPage = () => {
           </Button>
         </div>
       </div>
+
+      <ViralNewsSearch />
 
       <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between bg-card p-4 rounded-lg border shadow-sm">
         <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
