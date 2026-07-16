@@ -716,3 +716,26 @@ body {
 .page-cta-scheme button:hover:has(> svg.lucide-upload) svg {
   color: #ffffff !important;
 }
+
+/* Multi-color neon border hover cycle: bright blue → light blue → lime green */
+@keyframes neon-border-cycle {
+  0%, 100% {
+    border-color: #4fafff;
+    box-shadow: 0 0 18px rgba(79,175,255,0.7), 0 0 36px rgba(79,175,255,0.35);
+  }
+  33% {
+    border-color: #7ec8ff;
+    box-shadow: 0 0 18px rgba(126,200,255,0.7), 0 0 36px rgba(126,200,255,0.35);
+  }
+  66% {
+    border-color: #a3ff12;
+    box-shadow: 0 0 18px rgba(163,255,18,0.7), 0 0 36px rgba(163,255,18,0.35);
+  }
+}
+.neon-hover-cycle {
+  border: 1px solid transparent;
+  transition: border-color 400ms ease, box-shadow 400ms ease;
+}
+.neon-hover-cycle:hover {
+  animation: neon-border-cycle 4.5s ease-in-out infinite;
+}
