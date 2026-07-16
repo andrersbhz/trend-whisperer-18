@@ -29,6 +29,39 @@ interface ImageUploadProps {
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+type AspectKey = 'original' | 'square' | 'portrait45' | 'landscape' | 'story';
+const ASPECT_OPTIONS: Record<AspectKey, { label: string; ratio: number | null; w: number; h: number }> = {
+  original:    { label: 'Original', ratio: null,    w: 1920, h: 0 },
+  square:      { label: '1:1',      ratio: 1,       w: 1080, h: 1080 },
+  portrait45:  { label: '4:5',      ratio: 4 / 5,   w: 1080, h: 1350 },
+  landscape:   { label: '16:9',     ratio: 16 / 9,  w: 1920, h: 1080 },
+  story:       { label: '9:16',     ratio: 9 / 16,  w: 1080, h: 1920 },
+};
+
+// Resize an image (from data URL or URL) to a max width, keeping aspect ratio.
+async function resizeToMaxWidth(src: string, maxWidth: number, mime: string, quality: number): Promise<Blob | null> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const scale = Math.min(1, maxWidth / img.width);
+      const w = Math.round(img.width * scale);
+      const h = Math.round(img.height * scale);
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d', { alpha: false });
+      if (!ctx) return reject(new Error('canvas ctx'));
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(img, 0, 0, w, h);
+      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('blob'))), mime, quality);
+    };
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
 export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, onUploadSuccess, onThumbnailChange }: ImageUploadProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -41,14 +74,17 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
   const [linkType, setLinkType] = useState<'image' | 'video'>('image');
   const [linkUrl, setLinkUrl] = useState('');
   const [linkThumbUrl, setLinkThumbUrl] = useState('');
-  
+
+  // Aspect ratio selection (drives crop + preview container)
+  const [aspectKey, setAspectKey] = useState<AspectKey>('portrait45');
+  const currentAspect = ASPECT_OPTIONS[aspectKey];
+
   // Cropping states
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
   const [isCropDialogOpen, setIsCropDialogOpen] = useState(false);
-  const [aspect, setAspect] = useState<number | undefined>(1080/1350); // Default to 4:5 for Instagram (1080x1350 Portrait)
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
   const [format, setFormat] = useState<'image/jpeg' | 'image/webp'>('image/webp');
   const [quality, setQuality] = useState(0.85);
