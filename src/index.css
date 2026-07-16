@@ -58,14 +58,14 @@
 
 
   .dark {
-    /* Deep midnight blue background #000020 */
-    --background: 240 100% 6%;
+    /* Pure black background */
+    --background: 0 0% 0%;
     --foreground: 0 0% 98%;
 
-    --card: 240 90% 8%;
+    --card: 0 0% 0%;
     --card-foreground: 0 0% 98%;
 
-    --popover: 240 90% 8%;
+    --popover: 0 0% 0%;
     --popover-foreground: 0 0% 98%;
 
     /* Primary lime #a3ff12 */
