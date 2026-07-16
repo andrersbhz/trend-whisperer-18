@@ -485,7 +485,44 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
 
   return (
     <div className="space-y-4">
-      <div className="relative w-full aspect-[4/5] max-w-full mx-auto rounded-none border-2 border-dashed border-border overflow-hidden bg-muted/30 flex items-center justify-center">
+      {/* Aspect ratio selector */}
+      <div className="flex flex-col gap-2 p-3 bg-muted/20 border border-primary/10 rounded-lg">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Formato da Imagem</span>
+          <span className="text-[10px] font-medium bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+            {currentAspect.label}{currentAspect.ratio === null ? ' (máx 1920px)' : ` · ${currentAspect.w}x${currentAspect.h}`}
+          </span>
+        </div>
+        <div className="grid grid-cols-5 gap-1">
+          {(Object.keys(ASPECT_OPTIONS) as AspectKey[]).map((k) => (
+            <button
+              key={k}
+              type="button"
+              onClick={() => setAspectKey(k)}
+              className={cn(
+                'text-[10px] font-bold py-1.5 rounded transition-all border',
+                aspectKey === k
+                  ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                  : 'bg-background text-muted-foreground border-border hover:border-primary/40'
+              )}
+            >
+              {ASPECT_OPTIONS[k].label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div
+        className={cn(
+          'relative w-full max-w-full mx-auto rounded-none border-2 border-dashed border-border overflow-hidden bg-muted/30 flex items-center justify-center',
+          previewUrl ? '' : ''
+        )}
+        style={
+          previewUrl
+            ? undefined
+            : { aspectRatio: currentAspect.ratio ? String(currentAspect.ratio) : '4 / 5' }
+        }
+      >
         {previewUrl ? (
           <>
             {isPreviewVideo ? (
@@ -496,13 +533,13 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
                 loop
                 muted
                 playsInline
-                className="w-full h-full object-cover block"
+                className="w-full h-auto object-contain block max-h-[70vh]"
               />
             ) : (
               <img
                 src={previewUrl}
                 alt="Preview"
-                className="w-full h-full object-cover block"
+                className="w-full h-auto object-contain block max-h-[70vh]"
               />
             )}
             <button
