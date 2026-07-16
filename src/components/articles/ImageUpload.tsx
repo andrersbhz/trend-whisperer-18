@@ -75,8 +75,17 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
   const [linkUrl, setLinkUrl] = useState('');
   const [linkThumbUrl, setLinkThumbUrl] = useState('');
 
-  // Aspect ratio selection (drives crop + preview container)
-  const [aspectKey, setAspectKey] = useState<AspectKey>('portrait45');
+  // Aspect ratio selection (drives crop + preview container) - persisted as default
+  const ASPECT_STORAGE_KEY = 'imageUpload.aspectKey';
+  const [aspectKey, setAspectKeyState] = useState<AspectKey>(() => {
+    if (typeof window === 'undefined') return 'portrait45';
+    const saved = window.localStorage.getItem(ASPECT_STORAGE_KEY) as AspectKey | null;
+    return saved && saved in ASPECT_OPTIONS ? saved : 'portrait45';
+  });
+  const setAspectKey = (k: AspectKey) => {
+    setAspectKeyState(k);
+    try { window.localStorage.setItem(ASPECT_STORAGE_KEY, k); } catch { /* ignore */ }
+  };
   const currentAspect = ASPECT_OPTIONS[aspectKey];
 
   // Cropping states
