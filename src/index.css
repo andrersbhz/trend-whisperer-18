@@ -717,19 +717,15 @@ body {
   color: #ffffff !important;
 }
 
-/* Multi-color neon border hover cycle: bright blue → light blue → lime green */
+/* Neon border hover cycle: lime green ↔ neon lilac */
 @keyframes neon-border-cycle {
   0%, 100% {
-    border-color: #4fafff;
-    box-shadow: 0 0 18px rgba(79,175,255,0.7), 0 0 36px rgba(79,175,255,0.35);
-  }
-  33% {
-    border-color: #7ec8ff;
-    box-shadow: 0 0 18px rgba(126,200,255,0.7), 0 0 36px rgba(126,200,255,0.35);
-  }
-  66% {
     border-color: #a3ff12;
     box-shadow: 0 0 18px rgba(163,255,18,0.7), 0 0 36px rgba(163,255,18,0.35);
+  }
+  50% {
+    border-color: #b57bff;
+    box-shadow: 0 0 18px rgba(181,123,255,0.75), 0 0 36px rgba(181,123,255,0.4);
   }
 }
 .neon-hover-cycle {
@@ -739,3 +735,4 @@ body {
 .neon-hover-cycle:hover {
   animation: neon-border-cycle 4.5s ease-in-out infinite;
 }
+
