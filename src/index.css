@@ -649,10 +649,10 @@ body {
 .page-cta-scheme button:not(:disabled):hover,
 .page-cta-scheme a:hover,
 .page-cta-scheme [role="button"]:not(:disabled):hover {
-  background-color: #212c79 !important;
-  border: 1px solid #4fafff !important;
+  background-color: #2a1147 !important;
+  border: 1px solid #b57bff !important;
   color: #ffffff !important;
-  box-shadow: 0 0 8px rgba(79, 175, 255, 0.65), 0 0 16px rgba(79, 175, 255, 0.35) !important;
+  box-shadow: 0 0 8px rgba(181, 123, 255, 0.65), 0 0 16px rgba(181, 123, 255, 0.35) !important;
   transition: background-color .18s ease, border-color .18s ease, box-shadow .18s ease, color .18s ease;
 }
 .page-cta-scheme button:not(:disabled):hover *,
