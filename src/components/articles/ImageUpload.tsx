@@ -694,10 +694,10 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
         <DialogContent className="sm:max-w-[700px] p-0 overflow-hidden bg-background border-primary/20">
           <DialogHeader className="p-6 pb-0">
             <div className="flex items-center justify-between">
-              <DialogTitle>Ajustar Imagem (1080x1350)</DialogTitle>
+              <DialogTitle>Ajustar Imagem ({currentAspect.label})</DialogTitle>
               <div className="flex flex-wrap gap-2 mr-6">
                 <span className="text-xs font-medium text-primary bg-primary/10 px-3 py-1 rounded-full border border-primary/20">
-                  Formato Obrigatório: 1080x1350
+                  {currentAspect.w}x{currentAspect.h}
                 </span>
               </div>
             </div>
@@ -711,7 +711,7 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
                     image={selectedImage}
                     crop={crop}
                     zoom={zoom}
-                    aspect={1080/1350}
+                    aspect={currentAspect.ratio || 1}
                     onCropChange={setCrop}
                     onCropComplete={onCropComplete}
                     onZoomChange={setZoom}
@@ -722,9 +722,10 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
               
               <div className="hidden md:flex flex-col gap-4">
                 <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Pré-visualização</h4>
-                <div className={cn(
-                  "relative border border-primary/20 rounded-md overflow-hidden bg-muted/20 w-full max-w-[150px] mx-auto transition-all aspect-[4/5]"
-                )}>
+                <div
+                  className="relative border border-primary/20 rounded-md overflow-hidden bg-muted/20 w-full max-w-[150px] mx-auto transition-all"
+                  style={{ aspectRatio: String(currentAspect.ratio || 1) }}
+                >
                   {selectedImage && croppedAreaPixels && (
                     <div
                       className="absolute inset-0"
