@@ -833,7 +833,7 @@ const SchedulePage = () => {
           if (!open) setPreview(null);
         }}
       >
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto glass-card border border-transparent p-0 rounded-none transition-all duration-300 hover:bg-[#a3ff12]/10 hover:border-[#a3ff12] hover:shadow-[0_0_18px_rgba(163,255,18,0.7),0_0_36px_rgba(163,255,18,0.35)]">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto glass-card border-border p-0 rounded-none">
           <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b p-4 flex items-center justify-between">
             <DialogHeader className="p-0">
               <DialogTitle className="text-lg font-bold">Editar Agendamento</DialogTitle>
