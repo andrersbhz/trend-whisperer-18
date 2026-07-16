@@ -351,7 +351,7 @@ const SocialRobotPage = () => {
       {/* Main Content Area */}
       <div className="grid grid-cols-1 gap-6">
         {activeTab === 'interactions' && (
-          <Card className="glass-card border-primary/20 overflow-hidden shadow-elevated">
+          <Card className="glass-card border-primary/20 overflow-hidden shadow-elevated hover-lift">
             <CardHeader className="p-4 border-b border-white/5 flex items-center justify-between">
               <CardTitle className="text-xl font-black uppercase">Fluxo de Interações</CardTitle>
               <Badge variant="outline" className="border-primary/30 text-primary uppercase text-[8px] font-black">{interactions.length} NODES</Badge>
@@ -380,7 +380,7 @@ const SocialRobotPage = () => {
         {activeTab === 'metrics' && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {metrics.map((page) => (
-              <Card key={page.page_id} className="glass-card border-white/5">
+              <Card key={page.page_id} className="glass-card border-white/5 hover-lift">
                 <CardHeader className="p-4 border-b border-white/5"><CardTitle className="text-lg font-black uppercase truncate">{page.page_name}</CardTitle></CardHeader>
                 <CardContent className="p-6 grid grid-cols-2 gap-4">
                    <div className="bg-white/5 p-4 text-center"><p className="text-[10px] text-muted-foreground uppercase font-black">Seguidores</p><p className="text-2xl font-black">{page.facebook?.fan_count || 0}</p></div>
@@ -394,7 +394,7 @@ const SocialRobotPage = () => {
         {activeTab === 'growth' && (
           <div className="space-y-6">
             {/* Painel de Controle de Expansão */}
-            <Card className="glass-card border-primary/20 overflow-hidden shadow-elevated">
+            <Card className="glass-card border-primary/20 overflow-hidden shadow-elevated hover-lift">
               <CardHeader className="p-6 border-b border-white/5">
                 <div className="flex items-center justify-between gap-4 flex-wrap">
                   <div className="flex items-center gap-3">
@@ -455,7 +455,7 @@ const SocialRobotPage = () => {
             </Card>
 
             {/* Guia: Como o robô traz novos seguidores */}
-            <Card className="glass-card border-white/5 overflow-hidden">
+            <Card className="glass-card border-white/5 overflow-hidden hover-lift">
               <CardHeader className="p-6 border-b border-white/5">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-[hsl(200_100%_60%)]/10 border border-[hsl(200_100%_60%)]/20"><Info className="h-5 w-5 text-[hsl(200_100%_60%)]" /></div>
@@ -496,7 +496,7 @@ const SocialRobotPage = () => {
             </Card>
 
             {/* Conexões Ativas */}
-            <Card className="glass-card border-primary/20 overflow-hidden shadow-elevated">
+            <Card className="glass-card border-primary/20 overflow-hidden shadow-elevated hover-lift">
               <CardHeader className="p-6 border-b border-white/5 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-primary/10 border border-primary/20"><UserPlus className="h-6 w-6 text-primary" /></div>
@@ -530,7 +530,7 @@ const SocialRobotPage = () => {
         )}
 
         {activeTab === 'telemetry' && (
-          <Card className="glass-card border-white/5 overflow-hidden font-mono">
+          <Card className="glass-card border-white/5 overflow-hidden hover-lift font-mono">
             <CardHeader className="p-4 border-b border-white/5 flex items-center justify-between">
               <div className="flex items-center gap-2"><div className="h-2 w-2 bg-success rounded-full animate-pulse" /><CardTitle className="text-lg font-black uppercase">Kernel Terminal</CardTitle></div>
               <Button variant="ghost" size="sm" onClick={fetchLogs}><RefreshCw className={cn("h-4 w-4", loadingLogs && "animate-spin")} /></Button>
@@ -552,7 +552,7 @@ const SocialRobotPage = () => {
         )}
 
         {activeTab === 'settings' && (
-          <Card className="glass-card border-primary/20 overflow-hidden shadow-elevated">
+          <Card className="glass-card border-primary/20 overflow-hidden shadow-elevated hover-lift">
             <CardHeader className="p-6 border-b border-white/5 bg-black/40">
               <div className="flex items-center gap-4"><div className="p-2 bg-primary/10 border border-primary/20"><ShieldCheck className="h-6 w-6 text-primary" /></div><div><CardTitle className="text-xl font-black uppercase">Diretrizes de Operação</CardTitle><CardDescription className="text-[10px] uppercase font-bold text-muted-foreground">Configuração Neural</CardDescription></div></div>
             </CardHeader>
