@@ -78,12 +78,12 @@ const Auth = () => {
       <div className="w-full max-w-md animate-fade-in relative z-10">
         <div className="flex items-center justify-center gap-2 mb-8">
           <div className="gradient-primary p-2.5 rounded-xl shadow-neon-lilac animate-glow">
-            <Newspaper className="h-6 w-6 text-primary-foreground" />
+            <Newspaper className="h-6 w-6" style={{ color: '#a3ff12' }} />
           </div>
           <h1 className="text-2xl font-bold neon-text-lilac">NEURAL VORTEX</h1>
         </div>
 
-        <Card className="glass-card shadow-elevated">
+        <Card className="glass-card shadow-elevated transition-all duration-300 border border-transparent hover:border-[#ff2ec8] hover:shadow-[0_0_18px_rgba(255,46,200,0.7),0_0_36px_rgba(255,46,200,0.4)]">
           <CardHeader className="text-center">
             <CardTitle className="text-xl text-foreground">{isLogin ? 'Entrar' : 'Criar conta'}</CardTitle>
             <CardDescription>
