@@ -137,7 +137,11 @@ const Auth = () => {
                 minLength={6}
                 className="bg-secondary/30 border-border focus:border-primary"
               />
-              <Button type="submit" className="w-full gradient-primary text-primary-foreground shadow-neon-lilac" disabled={loading}>
+              <Button
+                type="submit"
+                className="w-full text-white font-semibold border border-transparent bg-[#a3ff12] hover:bg-[#a3ff12] hover:border-[#a3ff12] hover:shadow-[0_0_16px_rgba(163,255,18,0.7),0_0_32px_rgba(163,255,18,0.35)] hover:-translate-y-0.5 transition-all duration-500 ease-out"
+                disabled={loading}
+              >
                 <Sparkles className="h-4 w-4 mr-2" />
                 {loading ? 'Aguarde...' : isLogin ? 'Entrar' : 'Criar conta'}
               </Button>
