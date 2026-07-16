@@ -101,13 +101,7 @@ const RootRoute = () => {
 
   if (loading) return <Preloader message="Carregando..." />;
   if (user) return <Navigate to="/admin" replace />;
-  // Redirecionamento SÍNCRONO e instantâneo — sem espera por rede.
-  return <Navigate to={`/${getInstantLang()}`} replace />;
-};
-
-const CategoryPageWrapper = () => {
-  const { categoryId } = useParams();
-  return <CategoryPage categoryId={categoryId || ''} />;
+  return <Navigate to="/auth" replace />;
 };
 
 const PresenceTracker = () => {
@@ -130,19 +124,6 @@ const App = () => (
               <Routes>
                 {/* Redirect root based on auth status */}
                 <Route path="/" element={<RootRoute />} />
-
-                {/* Public Blog Routes */}
-                <Route path="/:lang" element={<BlogHome />} />
-                <Route path="/:lang/category/:categoryId" element={<CategoryPageWrapper />} />
-                <Route path="/:lang/:categoryId" element={<CategoryPageWrapper />} />
-                <Route path="/:lang/article/:articleId" element={<BlogArticle />} />
-                <Route path="/:lang/termos" element={<TermsPage />} />
-                <Route path="/:lang/sobre" element={<AboutPage />} />
-                <Route path="/:lang/contato" element={<ContactPage />} />
-                <Route path="/:lang/privacidade" element={<PrivacyPage />} />
-                <Route path="/:lang/principios-editoriais" element={<EditorialPage />} />
-                <Route path="/:lang/anuncie" element={<AdvertisePage />} />
-                <Route path="/:lang/newsletter" element={<NewsletterPage />} />
 
                 {/* Admin Dashboard Routes (Protected) */}
                 <Route path="/auth" element={<AuthRoute />} />
