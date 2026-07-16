@@ -83,7 +83,7 @@ const Auth = () => {
           <h1 className="text-2xl font-bold neon-text-lilac">NEURAL VORTEX</h1>
         </div>
 
-        <Card className="glass-card shadow-elevated transition-all duration-300 border border-transparent hover:border-[#ff2ec8] hover:shadow-[0_0_18px_rgba(255,46,200,0.7),0_0_36px_rgba(255,46,200,0.4)]">
+        <Card className="glass-card shadow-elevated neon-hover-cycle">
           <CardHeader className="text-center">
             <CardTitle className="text-xl text-foreground">{isLogin ? 'Entrar' : 'Criar conta'}</CardTitle>
             <CardDescription>
