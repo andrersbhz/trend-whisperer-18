@@ -137,9 +137,17 @@ const Dashboard = () => {
         else if (a.status === 'failed') byCat[cat].failed += 1;
         else byCat[cat].pending += 1;
       });
+      // Também contabiliza falhas registradas em publish_log (por categoria do artigo relacionado)
+      (data_errors || []).forEach((e: any) => {
+        const cat = e.articles?.category || 'outros';
+        if (!byCat[cat]) byCat[cat] = { total: 0, published: 0, pending: 0, failed: 0 };
+        byCat[cat].failed += 1;
+      });
+      const totalPublishFailed = (data_errors || []).length;
+      setStats(prev => ({ ...prev, failed: prev.failed + totalPublishFailed }));
       setCategoryStats(Object.entries(byCat).map(([category, v]) => ({ category, ...v })).sort((a, b) => b.total - a.total));
       setRecentArticles(data_recent);
-      setRecentErrors(data_errors);
+      setRecentErrors((data_errors || []).slice(0, 5));
       setAuditLogs(data_logs);
     } catch (error) {
       toast({ title: 'Erro ao carregar painel', description: getErrorMessage(error), variant: 'destructive' });
