@@ -90,7 +90,7 @@ const Dashboard = () => {
             supabase.from('articles').select('id, status, category, created_at').eq('user_id', user.id),
             supabase.from('trending_topics').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('used', false),
             supabase.from('articles').select('id, title, category, seo_keyword, status').eq('user_id', user.id).order('created_at', { ascending: false }).limit(50),
-            supabase.from('publish_log').select('id, article_id, error_message, created_at, status').eq('user_id', user.id).eq('status', 'failed').order('created_at', { ascending: false }).limit(5),
+            supabase.from('publish_log').select('id, article_id, error_message, created_at, status, articles(category)').eq('user_id', user.id).eq('status', 'failed').order('created_at', { ascending: false }).limit(200),
             supabase.from('audit_logs').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(10),
             supabase.from('trending_topics').select('*').eq('user_id', user.id).eq('used', false).order('fetched_at', { ascending: false }).limit(10),
             supabase.from('user_settings').select('categories, dashboard_widgets, dashboard_order').eq('user_id', user.id).maybeSingle(),
@@ -137,9 +137,17 @@ const Dashboard = () => {
         else if (a.status === 'failed') byCat[cat].failed += 1;
         else byCat[cat].pending += 1;
       });
+      // Também contabiliza falhas registradas em publish_log (por categoria do artigo relacionado)
+      (data_errors || []).forEach((e: any) => {
+        const cat = e.articles?.category || 'outros';
+        if (!byCat[cat]) byCat[cat] = { total: 0, published: 0, pending: 0, failed: 0 };
+        byCat[cat].failed += 1;
+      });
+      const totalPublishFailed = (data_errors || []).length;
+      setStats(prev => ({ ...prev, failed: prev.failed + totalPublishFailed }));
       setCategoryStats(Object.entries(byCat).map(([category, v]) => ({ category, ...v })).sort((a, b) => b.total - a.total));
       setRecentArticles(data_recent);
-      setRecentErrors(data_errors);
+      setRecentErrors((data_errors || []).slice(0, 5));
       setAuditLogs(data_logs);
     } catch (error) {
       toast({ title: 'Erro ao carregar painel', description: getErrorMessage(error), variant: 'destructive' });
