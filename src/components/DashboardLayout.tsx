@@ -276,8 +276,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
             <Button
               onClick={handleGlobalGenerate}
               disabled={generating}
-              variant="outline"
-              className="border-accent/30 hover:bg-accent/10 text-accent h-9 gap-2"
+              className="h-9 gap-2 text-[#0a1128] font-semibold border border-transparent bg-[#a3ff12] hover:bg-[#a3ff12] hover:border-[#a3ff12] hover:shadow-[0_0_16px_rgba(163,255,18,0.7),0_0_32px_rgba(163,255,18,0.35)] hover:-translate-y-0.5 transition-all duration-500 ease-out"
             >
               {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
               <span>{generating ? 'Gerando...' : 'Ligar Robô'}</span>
