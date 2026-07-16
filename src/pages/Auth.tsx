@@ -139,7 +139,7 @@ const Auth = () => {
               />
               <Button
                 type="submit"
-                className="w-full text-white font-semibold border border-transparent bg-[#a3ff12] hover:bg-[#a3ff12] hover:border-[#a3ff12] hover:shadow-[0_0_16px_rgba(163,255,18,0.7),0_0_32px_rgba(163,255,18,0.35)] hover:-translate-y-0.5 transition-all duration-500 ease-out"
+                className="w-full text-[#0a1128] font-semibold border border-transparent bg-[#a3ff12] hover:bg-[#a3ff12] hover:border-[#a3ff12] hover:shadow-[0_0_16px_rgba(163,255,18,0.7),0_0_32px_rgba(163,255,18,0.35)] hover:-translate-y-0.5 transition-all duration-500 ease-out"
                 disabled={loading}
               >
                 <Sparkles className="h-4 w-4 mr-2" />
