@@ -530,7 +530,7 @@ const ArticlesPage = () => {
                 key={article.featured_image_url}
                 src={article.featured_image_url}
                 alt={article.title}
-                className="absolute inset-0 w-full h-full object-cover transition-all duration-300 opacity-0 group-hover:scale-110"
+                className="absolute inset-0 w-full h-full object-contain transition-all duration-300 opacity-0 group-hover:scale-110"
                 onLoad={(e) => (e.currentTarget.style.opacity = "1")}
                 loading="lazy"
               />
