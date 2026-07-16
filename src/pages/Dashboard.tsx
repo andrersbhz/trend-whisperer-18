@@ -90,7 +90,7 @@ const Dashboard = () => {
             supabase.from('articles').select('id, status, category, created_at').eq('user_id', user.id),
             supabase.from('trending_topics').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('used', false),
             supabase.from('articles').select('id, title, category, seo_keyword, status').eq('user_id', user.id).order('created_at', { ascending: false }).limit(50),
-            supabase.from('publish_log').select('id, article_id, error_message, created_at, status').eq('user_id', user.id).eq('status', 'failed').order('created_at', { ascending: false }).limit(5),
+            supabase.from('publish_log').select('id, article_id, error_message, created_at, status, articles(category)').eq('user_id', user.id).eq('status', 'failed').order('created_at', { ascending: false }).limit(200),
             supabase.from('audit_logs').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(10),
             supabase.from('trending_topics').select('*').eq('user_id', user.id).eq('used', false).order('fetched_at', { ascending: false }).limit(10),
             supabase.from('user_settings').select('categories, dashboard_widgets, dashboard_order').eq('user_id', user.id).maybeSingle(),
