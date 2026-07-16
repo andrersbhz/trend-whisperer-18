@@ -1,6 +1,6 @@
 import { useEffect, lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, Navigate, useParams } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { HelmetProvider } from "react-helmet-async";
 import { Toaster } from "@/components/ui/toaster";
@@ -10,7 +10,7 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { useOnlinePresence } from "@/hooks/useOnlinePresence";
 import Preloader from "@/components/Preloader";
 import AppErrorBoundary from "@/components/AppErrorBoundary";
-import { getInstantLang, refreshGeoLangInBackground } from "@/lib/geo-language";
+import { refreshGeoLangInBackground } from "@/lib/geo-language";
 
 /** Lazy com 1 retry — evita tela branca quando um chunk falha por rede/deploy. */
 const lazyRetry = (factory: () => Promise<any>) =>
@@ -19,9 +19,6 @@ const lazyRetry = (factory: () => Promise<any>) =>
       () => new Promise((resolve) => setTimeout(resolve, 800)).then(factory)
     )
   );
-
-// Critical public route — keep eager so first paint is fast
-import BlogHome from "@/pages/BlogHome";
 
 // Lazy: admin/dashboard surface (heavy: recharts, etc.)
 const DashboardLayout = lazyRetry(() => import("@/components/DashboardLayout"));
@@ -54,16 +51,6 @@ const NexaAdmin = lazyRetry(() => import("@/nexa/pages/NexaAdmin"));
 const NexaPlaceholder = lazyRetry(() => import("@/nexa/pages/NexaPlaceholder"));
 const ProtectedNexaRoute = lazyRetry(() => import("@/nexa/components/ProtectedNexaRoute"));
 
-// Lazy: public secondary pages
-const BlogArticle = lazyRetry(() => import("@/pages/BlogArticle"));
-const CategoryPage = lazyRetry(() => import("@/pages/CategoryPage"));
-const TermsPage = lazyRetry(() => import("@/pages/TermsPage"));
-const AboutPage = lazyRetry(() => import("@/pages/AboutPage"));
-const ContactPage = lazyRetry(() => import("@/pages/ContactPage"));
-const PrivacyPage = lazyRetry(() => import("@/pages/PrivacyPage"));
-const EditorialPage = lazyRetry(() => import("@/pages/EditorialPage"));
-const AdvertisePage = lazyRetry(() => import("@/pages/AdvertisePage"));
-const NewsletterPage = lazyRetry(() => import("@/pages/NewsletterPage"));
 const NotFound = lazyRetry(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
@@ -101,13 +88,7 @@ const RootRoute = () => {
 
   if (loading) return <Preloader message="Carregando..." />;
   if (user) return <Navigate to="/admin" replace />;
-  // Redirecionamento SÍNCRONO e instantâneo — sem espera por rede.
-  return <Navigate to={`/${getInstantLang()}`} replace />;
-};
-
-const CategoryPageWrapper = () => {
-  const { categoryId } = useParams();
-  return <CategoryPage categoryId={categoryId || ''} />;
+  return <Navigate to="/auth" replace />;
 };
 
 const PresenceTracker = () => {
@@ -130,19 +111,6 @@ const App = () => (
               <Routes>
                 {/* Redirect root based on auth status */}
                 <Route path="/" element={<RootRoute />} />
-
-                {/* Public Blog Routes */}
-                <Route path="/:lang" element={<BlogHome />} />
-                <Route path="/:lang/category/:categoryId" element={<CategoryPageWrapper />} />
-                <Route path="/:lang/:categoryId" element={<CategoryPageWrapper />} />
-                <Route path="/:lang/article/:articleId" element={<BlogArticle />} />
-                <Route path="/:lang/termos" element={<TermsPage />} />
-                <Route path="/:lang/sobre" element={<AboutPage />} />
-                <Route path="/:lang/contato" element={<ContactPage />} />
-                <Route path="/:lang/privacidade" element={<PrivacyPage />} />
-                <Route path="/:lang/principios-editoriais" element={<EditorialPage />} />
-                <Route path="/:lang/anuncie" element={<AdvertisePage />} />
-                <Route path="/:lang/newsletter" element={<NewsletterPage />} />
 
                 {/* Admin Dashboard Routes (Protected) */}
                 <Route path="/auth" element={<AuthRoute />} />

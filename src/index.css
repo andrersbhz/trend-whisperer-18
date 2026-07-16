@@ -190,28 +190,28 @@
   }
 
   .neon-border-lilac {
-    border: 1px solid rgba(189, 0, 3, 0.4);
-    box-shadow: 0 0 10px rgba(189, 0, 3, 0.15);
+    border: 1px solid rgba(163, 255, 18, 0.4);
+    box-shadow: 0 0 10px rgba(163, 255, 18, 0.15);
   }
   .neon-border-lilac:hover {
-    border: 1px solid rgba(255, 0, 0, 0.9);
-    box-shadow: 0 0 22px rgba(255, 0, 0, 0.55);
+    border: 1px solid rgba(163, 255, 18, 0.95);
+    box-shadow: 0 0 22px rgba(163, 255, 18, 0.6);
   }
   .neon-border-pink {
-    border: 1px solid rgba(189, 0, 3, 0.4);
-    box-shadow: 0 0 10px rgba(189, 0, 3, 0.15);
+    border: 1px solid rgba(163, 255, 18, 0.4);
+    box-shadow: 0 0 10px rgba(163, 255, 18, 0.15);
   }
   .neon-border-pink:hover {
-    border: 1px solid rgba(255, 0, 0, 0.9);
-    box-shadow: 0 0 22px rgba(255, 0, 0, 0.55);
+    border: 1px solid rgba(163, 255, 18, 0.95);
+    box-shadow: 0 0 22px rgba(163, 255, 18, 0.6);
   }
   .neon-border-blue {
-    border: 1px solid rgba(189, 0, 3, 0.4);
-    box-shadow: 0 0 10px rgba(189, 0, 3, 0.15);
+    border: 1px solid rgba(163, 255, 18, 0.4);
+    box-shadow: 0 0 10px rgba(163, 255, 18, 0.15);
   }
   .neon-border-blue:hover {
-    border: 1px solid rgba(255, 0, 0, 0.9);
-    box-shadow: 0 0 25px rgba(255, 0, 0, 0.55);
+    border: 1px solid rgba(163, 255, 18, 0.95);
+    box-shadow: 0 0 25px rgba(163, 255, 18, 0.6);
   }
   .neon-text-lilac {
     color: hsl(var(--primary));
@@ -649,10 +649,10 @@ body {
 .page-cta-scheme button:not(:disabled):hover,
 .page-cta-scheme a:hover,
 .page-cta-scheme [role="button"]:not(:disabled):hover {
-  background-color: #212c79 !important;
-  border: 1px solid #4fafff !important;
+  background-color: #2a1147 !important;
+  border: 1px solid #b57bff !important;
   color: #ffffff !important;
-  box-shadow: 0 0 8px rgba(79, 175, 255, 0.65), 0 0 16px rgba(79, 175, 255, 0.35) !important;
+  box-shadow: 0 0 8px rgba(181, 123, 255, 0.65), 0 0 16px rgba(181, 123, 255, 0.35) !important;
   transition: background-color .18s ease, border-color .18s ease, box-shadow .18s ease, color .18s ease;
 }
 .page-cta-scheme button:not(:disabled):hover *,
