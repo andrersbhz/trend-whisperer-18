@@ -161,17 +161,19 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
         return;
       }
 
-      // Enforce 1080x1350 during crop
+      // Export at the resolution of the currently selected aspect
+      const targetW = currentAspect.w;
+      const targetH = currentAspect.h || undefined;
       const croppedImageBlob = await getCroppedImg(
-        sourceImage, 
+        sourceImage,
         pixels,
         0,
         { horizontal: false, vertical: false },
-        1080,
+        targetW,
         0.15,
         format,
         quality,
-        1350 // Forced height
+        targetH
       );
       if (!croppedImageBlob) throw new Error("Erro ao processar imagem");
 
