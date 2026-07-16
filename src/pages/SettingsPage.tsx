@@ -378,7 +378,7 @@ const SettingsPage = () => {
           <h1 className="text-2xl font-bold text-foreground">Configurações</h1>
           <p className="text-muted-foreground text-sm mt-1">Gerencie suas integrações, IAs e preferências do sistema</p>
         </div>
-        <Button onClick={handleSave} disabled={saving} className="gradient-primary shadow-neon-lilac">
+        <Button onClick={handleSave} disabled={saving} className="bg-[#a3ff12] text-[#0a1128] border border-transparent hover:bg-[#a3ff12] hover:text-[#0a1128] hover:border-[#a3ff12] hover:shadow-[0_0_16px_rgba(163,255,18,0.7),0_0_32px_rgba(163,255,18,0.35)] hover:-translate-y-0.5 transition-all">
           {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
           Salvar Alterações
         </Button>
