@@ -833,7 +833,7 @@ const SchedulePage = () => {
           if (!open) setPreview(null);
         }}
       >
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto glass-card border-border p-0 rounded-none">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto glass-card border border-transparent p-0 rounded-none transition-all duration-300 hover:bg-[#a3ff12]/10 hover:border-[#a3ff12] hover:shadow-[0_0_18px_rgba(163,255,18,0.7),0_0_36px_rgba(163,255,18,0.35)]">
           <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b p-4 flex items-center justify-between">
             <DialogHeader className="p-0">
               <DialogTitle className="text-lg font-bold">Editar Agendamento</DialogTitle>
@@ -848,12 +848,13 @@ const SchedulePage = () => {
                 scheduled_at: preview.scheduled_at ? new Date(preview.scheduled_at).toISOString() : null,
               })}
               disabled={previewLoading}
-              className="bg-[#b57bff] text-black border border-transparent hover:bg-transparent hover:text-black hover:border-[#b57bff]"
+              className="bg-[#b57bff] text-black border border-transparent hover:bg-[#a3ff12] hover:text-black hover:border-[#a3ff12] hover:shadow-[0_0_16px_rgba(163,255,18,0.7),0_0_32px_rgba(163,255,18,0.35)]"
             >
               {previewLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
               Salvar Alterações
             </Button>
           </div>
+
           
           {previewLoading && !preview ? (
             <div className="flex items-center justify-center py-20">
