@@ -229,37 +229,32 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
   const processAndUploadAIImage = async (url: string) => {
     try {
       setUploading(true);
+
+      // Original mode: keep AI image as-is (no crop, no resize).
+      if (currentAspect.ratio === null) {
+        setPreviewUrl(url);
+        onUploadSuccess(url);
+        return;
+      }
+
       const img = new Image();
-      img.crossOrigin = "anonymous";
-      
+      img.crossOrigin = 'anonymous';
       await new Promise((resolve, reject) => {
         img.onload = resolve;
         img.onerror = reject;
         img.src = url;
       });
 
-      // Automatic validation: check if it's already 1080x1350
-      if (img.width === 1080 && img.height === 1350) {
-        console.log("AI Image already perfect size");
-        setPreviewUrl(url);
-        onUploadSuccess(url);
-        return;
-      }
-
-      // If not, auto-crop/resize to 1080x1350
+      // Auto-crop to selected aspect
+      const targetAspect = currentAspect.ratio;
       const imgAspect = img.width / img.height;
-      const targetAspect = 1080 / 1350;
-      
       let cropWidth, cropHeight, cropX, cropY;
-      
       if (imgAspect > targetAspect) {
-        // Wider than 4:5, crop horizontal
         cropHeight = img.height;
         cropWidth = img.height * targetAspect;
         cropX = (img.width - cropWidth) / 2;
         cropY = 0;
       } else {
-        // Taller than 4:5, crop vertical
         cropWidth = img.width;
         cropHeight = img.width / targetAspect;
         cropX = 0;
@@ -270,19 +265,19 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
         x: Math.round(cropX),
         y: Math.round(cropY),
         width: Math.round(cropWidth),
-        height: Math.round(cropHeight)
+        height: Math.round(cropHeight),
       };
 
       await handleUpload(url, autoPixels);
     } catch (e) {
-      console.error("Error auto-processing AI image:", e);
-      // Fallback to the original URL if processing fails
+      console.error('Error auto-processing AI image:', e);
       setPreviewUrl(url);
       onUploadSuccess(url);
     } finally {
       setUploading(false);
     }
   };
+
 
   const handleGenerateAI = async () => {
     if (!user || !articleId) return;
