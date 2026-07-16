@@ -190,28 +190,28 @@
   }
 
   .neon-border-lilac {
-    border: 1px solid rgba(189, 0, 3, 0.4);
-    box-shadow: 0 0 10px rgba(189, 0, 3, 0.15);
+    border: 1px solid rgba(163, 255, 18, 0.4);
+    box-shadow: 0 0 10px rgba(163, 255, 18, 0.15);
   }
   .neon-border-lilac:hover {
-    border: 1px solid rgba(255, 0, 0, 0.9);
-    box-shadow: 0 0 22px rgba(255, 0, 0, 0.55);
+    border: 1px solid rgba(163, 255, 18, 0.95);
+    box-shadow: 0 0 22px rgba(163, 255, 18, 0.6);
   }
   .neon-border-pink {
-    border: 1px solid rgba(189, 0, 3, 0.4);
-    box-shadow: 0 0 10px rgba(189, 0, 3, 0.15);
+    border: 1px solid rgba(163, 255, 18, 0.4);
+    box-shadow: 0 0 10px rgba(163, 255, 18, 0.15);
   }
   .neon-border-pink:hover {
-    border: 1px solid rgba(255, 0, 0, 0.9);
-    box-shadow: 0 0 22px rgba(255, 0, 0, 0.55);
+    border: 1px solid rgba(163, 255, 18, 0.95);
+    box-shadow: 0 0 22px rgba(163, 255, 18, 0.6);
   }
   .neon-border-blue {
-    border: 1px solid rgba(189, 0, 3, 0.4);
-    box-shadow: 0 0 10px rgba(189, 0, 3, 0.15);
+    border: 1px solid rgba(163, 255, 18, 0.4);
+    box-shadow: 0 0 10px rgba(163, 255, 18, 0.15);
   }
   .neon-border-blue:hover {
-    border: 1px solid rgba(255, 0, 0, 0.9);
-    box-shadow: 0 0 25px rgba(255, 0, 0, 0.55);
+    border: 1px solid rgba(163, 255, 18, 0.95);
+    box-shadow: 0 0 25px rgba(163, 255, 18, 0.6);
   }
   .neon-text-lilac {
     color: hsl(var(--primary));
