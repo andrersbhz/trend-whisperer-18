@@ -94,16 +94,53 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
   }, []);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files.length > 0) {
-      const file = event.target.files[0];
-      const reader = new FileReader();
-      reader.addEventListener('load', () => {
-        setSelectedImage(reader.result as string);
+    if (!event.target.files || event.target.files.length === 0) return;
+    const file = event.target.files[0];
+    const reader = new FileReader();
+    reader.addEventListener('load', async () => {
+      const dataUrl = reader.result as string;
+      // Original: skip crop, resize to max 1920 width and upload directly.
+      if (currentAspect.ratio === null) {
+        await handleOriginalUpload(dataUrl);
+      } else {
+        setSelectedImage(dataUrl);
         setIsCropDialogOpen(true);
-      });
-      reader.readAsDataURL(file);
+      }
+    });
+    reader.readAsDataURL(file);
+  };
+
+  const handleOriginalUpload = async (sourceUrl: string) => {
+    if (!user) {
+      toast({ title: 'Erro', description: 'Você precisa estar logado.', variant: 'destructive' });
+      return;
+    }
+    try {
+      setUploading(true);
+      const blob = await resizeToMaxWidth(sourceUrl, 1920, format, quality);
+      if (!blob) throw new Error('Falha ao processar imagem');
+      const ext = format === 'image/webp' ? 'webp' : 'jpg';
+      const filePath = `${user.id}/${articleId}/${Math.random()}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from('article-images')
+        .upload(filePath, blob, { contentType: format, upsert: true });
+      if (uploadError) throw uploadError;
+      const { data: { publicUrl } } = supabase.storage.from('article-images').getPublicUrl(filePath);
+      if (articleId && UUID_RE.test(articleId)) {
+        const { error: updateError } = await supabase.from('articles').update({ featured_image_url: publicUrl }).eq('id', articleId);
+        if (updateError) throw updateError;
+      }
+      setPreviewUrl(publicUrl);
+      onUploadSuccess(publicUrl);
+      window.dispatchEvent(new CustomEvent('article-image-uploaded', { detail: { articleId, url: publicUrl } }));
+      toast({ title: 'Sucesso', description: 'Imagem enviada em tamanho original (máx 1920px).' });
+    } catch (e: any) {
+      toast({ title: 'Erro no upload', description: e.message, variant: 'destructive' });
+    } finally {
+      setUploading(false);
     }
   };
+
 
   const handleUpload = async (imageToUpload?: string, areaPixels?: any) => {
     const sourceImage = imageToUpload || selectedImage;
