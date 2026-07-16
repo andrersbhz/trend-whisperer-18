@@ -29,6 +29,39 @@ interface ImageUploadProps {
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+type AspectKey = 'original' | 'square' | 'portrait45' | 'landscape' | 'story';
+const ASPECT_OPTIONS: Record<AspectKey, { label: string; ratio: number | null; w: number; h: number }> = {
+  original:    { label: 'Original', ratio: null,    w: 1920, h: 0 },
+  square:      { label: '1:1',      ratio: 1,       w: 1080, h: 1080 },
+  portrait45:  { label: '4:5',      ratio: 4 / 5,   w: 1080, h: 1350 },
+  landscape:   { label: '16:9',     ratio: 16 / 9,  w: 1920, h: 1080 },
+  story:       { label: '9:16',     ratio: 9 / 16,  w: 1080, h: 1920 },
+};
+
+// Resize an image (from data URL or URL) to a max width, keeping aspect ratio.
+async function resizeToMaxWidth(src: string, maxWidth: number, mime: string, quality: number): Promise<Blob | null> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const scale = Math.min(1, maxWidth / img.width);
+      const w = Math.round(img.width * scale);
+      const h = Math.round(img.height * scale);
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d', { alpha: false });
+      if (!ctx) return reject(new Error('canvas ctx'));
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(img, 0, 0, w, h);
+      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('blob'))), mime, quality);
+    };
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
 export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, onUploadSuccess, onThumbnailChange }: ImageUploadProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -41,14 +74,17 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
   const [linkType, setLinkType] = useState<'image' | 'video'>('image');
   const [linkUrl, setLinkUrl] = useState('');
   const [linkThumbUrl, setLinkThumbUrl] = useState('');
-  
+
+  // Aspect ratio selection (drives crop + preview container)
+  const [aspectKey, setAspectKey] = useState<AspectKey>('portrait45');
+  const currentAspect = ASPECT_OPTIONS[aspectKey];
+
   // Cropping states
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
   const [isCropDialogOpen, setIsCropDialogOpen] = useState(false);
-  const [aspect, setAspect] = useState<number | undefined>(1080/1350); // Default to 4:5 for Instagram (1080x1350 Portrait)
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
   const [format, setFormat] = useState<'image/jpeg' | 'image/webp'>('image/webp');
   const [quality, setQuality] = useState(0.85);
@@ -58,16 +94,53 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
   }, []);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files.length > 0) {
-      const file = event.target.files[0];
-      const reader = new FileReader();
-      reader.addEventListener('load', () => {
-        setSelectedImage(reader.result as string);
+    if (!event.target.files || event.target.files.length === 0) return;
+    const file = event.target.files[0];
+    const reader = new FileReader();
+    reader.addEventListener('load', async () => {
+      const dataUrl = reader.result as string;
+      // Original: skip crop, resize to max 1920 width and upload directly.
+      if (currentAspect.ratio === null) {
+        await handleOriginalUpload(dataUrl);
+      } else {
+        setSelectedImage(dataUrl);
         setIsCropDialogOpen(true);
-      });
-      reader.readAsDataURL(file);
+      }
+    });
+    reader.readAsDataURL(file);
+  };
+
+  const handleOriginalUpload = async (sourceUrl: string) => {
+    if (!user) {
+      toast({ title: 'Erro', description: 'Você precisa estar logado.', variant: 'destructive' });
+      return;
+    }
+    try {
+      setUploading(true);
+      const blob = await resizeToMaxWidth(sourceUrl, 1920, format, quality);
+      if (!blob) throw new Error('Falha ao processar imagem');
+      const ext = format === 'image/webp' ? 'webp' : 'jpg';
+      const filePath = `${user.id}/${articleId}/${Math.random()}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from('article-images')
+        .upload(filePath, blob, { contentType: format, upsert: true });
+      if (uploadError) throw uploadError;
+      const { data: { publicUrl } } = supabase.storage.from('article-images').getPublicUrl(filePath);
+      if (articleId && UUID_RE.test(articleId)) {
+        const { error: updateError } = await supabase.from('articles').update({ featured_image_url: publicUrl }).eq('id', articleId);
+        if (updateError) throw updateError;
+      }
+      setPreviewUrl(publicUrl);
+      onUploadSuccess(publicUrl);
+      window.dispatchEvent(new CustomEvent('article-image-uploaded', { detail: { articleId, url: publicUrl } }));
+      toast({ title: 'Sucesso', description: 'Imagem enviada em tamanho original (máx 1920px).' });
+    } catch (e: any) {
+      toast({ title: 'Erro no upload', description: e.message, variant: 'destructive' });
+    } finally {
+      setUploading(false);
     }
   };
+
 
   const handleUpload = async (imageToUpload?: string, areaPixels?: any) => {
     const sourceImage = imageToUpload || selectedImage;
@@ -88,17 +161,19 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
         return;
       }
 
-      // Enforce 1080x1350 during crop
+      // Export at the resolution of the currently selected aspect
+      const targetW = currentAspect.w;
+      const targetH = currentAspect.h || undefined;
       const croppedImageBlob = await getCroppedImg(
-        sourceImage, 
+        sourceImage,
         pixels,
         0,
         { horizontal: false, vertical: false },
-        1080,
+        targetW,
         0.15,
         format,
         quality,
-        1350 // Forced height
+        targetH
       );
       if (!croppedImageBlob) throw new Error("Erro ao processar imagem");
 
@@ -136,8 +211,8 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
       setCroppedAreaPixels(null);
 
       toast({
-        title: "Sucesso",
-        description: "Imagem validada e enviada (1080x1350)!",
+        title: 'Sucesso',
+        description: `Imagem enviada (${currentAspect.w}${currentAspect.h ? 'x' + currentAspect.h : 'px'}).`,
       });
       return publicUrl;
     } catch (error: any) {
@@ -154,37 +229,32 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
   const processAndUploadAIImage = async (url: string) => {
     try {
       setUploading(true);
+
+      // Original mode: keep AI image as-is (no crop, no resize).
+      if (currentAspect.ratio === null) {
+        setPreviewUrl(url);
+        onUploadSuccess(url);
+        return;
+      }
+
       const img = new Image();
-      img.crossOrigin = "anonymous";
-      
+      img.crossOrigin = 'anonymous';
       await new Promise((resolve, reject) => {
         img.onload = resolve;
         img.onerror = reject;
         img.src = url;
       });
 
-      // Automatic validation: check if it's already 1080x1350
-      if (img.width === 1080 && img.height === 1350) {
-        console.log("AI Image already perfect size");
-        setPreviewUrl(url);
-        onUploadSuccess(url);
-        return;
-      }
-
-      // If not, auto-crop/resize to 1080x1350
+      // Auto-crop to selected aspect
+      const targetAspect = currentAspect.ratio;
       const imgAspect = img.width / img.height;
-      const targetAspect = 1080 / 1350;
-      
       let cropWidth, cropHeight, cropX, cropY;
-      
       if (imgAspect > targetAspect) {
-        // Wider than 4:5, crop horizontal
         cropHeight = img.height;
         cropWidth = img.height * targetAspect;
         cropX = (img.width - cropWidth) / 2;
         cropY = 0;
       } else {
-        // Taller than 4:5, crop vertical
         cropWidth = img.width;
         cropHeight = img.width / targetAspect;
         cropX = 0;
@@ -195,19 +265,19 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
         x: Math.round(cropX),
         y: Math.round(cropY),
         width: Math.round(cropWidth),
-        height: Math.round(cropHeight)
+        height: Math.round(cropHeight),
       };
 
       await handleUpload(url, autoPixels);
     } catch (e) {
-      console.error("Error auto-processing AI image:", e);
-      // Fallback to the original URL if processing fails
+      console.error('Error auto-processing AI image:', e);
       setPreviewUrl(url);
       onUploadSuccess(url);
     } finally {
       setUploading(false);
     }
   };
+
 
   const handleGenerateAI = async () => {
     if (!user || !articleId) return;
@@ -415,7 +485,44 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
 
   return (
     <div className="space-y-4">
-      <div className="relative w-full aspect-[4/5] max-w-full mx-auto rounded-none border-2 border-dashed border-border overflow-hidden bg-muted/30 flex items-center justify-center">
+      {/* Aspect ratio selector */}
+      <div className="flex flex-col gap-2 p-3 bg-muted/20 border border-primary/10 rounded-lg">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Formato da Imagem</span>
+          <span className="text-[10px] font-medium bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+            {currentAspect.label}{currentAspect.ratio === null ? ' (máx 1920px)' : ` · ${currentAspect.w}x${currentAspect.h}`}
+          </span>
+        </div>
+        <div className="grid grid-cols-5 gap-1">
+          {(Object.keys(ASPECT_OPTIONS) as AspectKey[]).map((k) => (
+            <button
+              key={k}
+              type="button"
+              onClick={() => setAspectKey(k)}
+              className={cn(
+                'text-[10px] font-bold py-1.5 rounded transition-all border',
+                aspectKey === k
+                  ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                  : 'bg-background text-muted-foreground border-border hover:border-primary/40'
+              )}
+            >
+              {ASPECT_OPTIONS[k].label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div
+        className={cn(
+          'relative w-full max-w-full mx-auto rounded-none border-2 border-dashed border-border overflow-hidden bg-muted/30 flex items-center justify-center',
+          previewUrl ? '' : ''
+        )}
+        style={
+          previewUrl
+            ? undefined
+            : { aspectRatio: currentAspect.ratio ? String(currentAspect.ratio) : '4 / 5' }
+        }
+      >
         {previewUrl ? (
           <>
             {isPreviewVideo ? (
@@ -426,13 +533,13 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
                 loop
                 muted
                 playsInline
-                className="w-full h-full object-cover block"
+                className="w-full h-auto object-contain block max-h-[70vh]"
               />
             ) : (
               <img
                 src={previewUrl}
                 alt="Preview"
-                className="w-full h-full object-cover block"
+                className="w-full h-auto object-contain block max-h-[70vh]"
               />
             )}
             <button
@@ -579,7 +686,7 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
       </div>
 
       <p className="text-[10px] text-muted-foreground text-center italic">
-        A IA gerará uma imagem realista (1080x1350) com uma chamada impactante baseada no título. As imagens são exibidas em seu tamanho original.
+        Escolha um formato antes de enviar. "Original" mantém o tamanho real (máx 1920px de largura).
       </p>
 
 
@@ -587,10 +694,10 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
         <DialogContent className="sm:max-w-[700px] p-0 overflow-hidden bg-background border-primary/20">
           <DialogHeader className="p-6 pb-0">
             <div className="flex items-center justify-between">
-              <DialogTitle>Ajustar Imagem (1080x1350)</DialogTitle>
+              <DialogTitle>Ajustar Imagem ({currentAspect.label})</DialogTitle>
               <div className="flex flex-wrap gap-2 mr-6">
                 <span className="text-xs font-medium text-primary bg-primary/10 px-3 py-1 rounded-full border border-primary/20">
-                  Formato Obrigatório: 1080x1350
+                  {currentAspect.w}x{currentAspect.h}
                 </span>
               </div>
             </div>
@@ -604,7 +711,7 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
                     image={selectedImage}
                     crop={crop}
                     zoom={zoom}
-                    aspect={1080/1350}
+                    aspect={currentAspect.ratio || 1}
                     onCropChange={setCrop}
                     onCropComplete={onCropComplete}
                     onZoomChange={setZoom}
@@ -615,9 +722,10 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
               
               <div className="hidden md:flex flex-col gap-4">
                 <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Pré-visualização</h4>
-                <div className={cn(
-                  "relative border border-primary/20 rounded-md overflow-hidden bg-muted/20 w-full max-w-[150px] mx-auto transition-all aspect-[4/5]"
-                )}>
+                <div
+                  className="relative border border-primary/20 rounded-md overflow-hidden bg-muted/20 w-full max-w-[150px] mx-auto transition-all"
+                  style={{ aspectRatio: String(currentAspect.ratio || 1) }}
+                >
                   {selectedImage && croppedAreaPixels && (
                     <div
                       className="absolute inset-0"
