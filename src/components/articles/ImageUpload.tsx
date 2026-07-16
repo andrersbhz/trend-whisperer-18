@@ -211,8 +211,8 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
       setCroppedAreaPixels(null);
 
       toast({
-        title: "Sucesso",
-        description: "Imagem validada e enviada (1080x1350)!",
+        title: 'Sucesso',
+        description: `Imagem enviada (${currentAspect.w}${currentAspect.h ? 'x' + currentAspect.h : 'px'}).`,
       });
       return publicUrl;
     } catch (error: any) {
