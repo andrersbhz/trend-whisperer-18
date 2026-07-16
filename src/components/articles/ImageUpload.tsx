@@ -686,7 +686,7 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
       </div>
 
       <p className="text-[10px] text-muted-foreground text-center italic">
-        A IA gerará uma imagem realista (1080x1350) com uma chamada impactante baseada no título. As imagens são exibidas em seu tamanho original.
+        Escolha um formato antes de enviar. "Original" mantém o tamanho real (máx 1920px de largura).
       </p>
 
 
