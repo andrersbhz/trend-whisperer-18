@@ -693,7 +693,7 @@ const SchedulePage = () => {
                               key={article.featured_image_url}
                               src={article.featured_image_url}
                               alt=""
-                              className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-110"
+                              className="absolute inset-0 w-full h-full object-contain transition-transform group-hover:scale-110"
                             />
                           ) : (
                             <ImageIcon className="h-4 w-4 text-muted-foreground/40" />
