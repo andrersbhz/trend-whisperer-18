@@ -13,11 +13,16 @@ const ContactPage = () => {
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isValidPhoneBR(phone)) {
+      toast({ title: 'Telefone inválido', description: 'Use DDD + número (10 ou 11 dígitos)', variant: 'destructive' });
+      return;
+    }
     setSending(true);
     setTimeout(() => {
       setSending(false);
       toast({ title: 'Mensagem enviada', description: 'Retornaremos em breve. Obrigado!' });
       (e.target as HTMLFormElement).reset();
+      setPhone('');
     }, 600);
   };
 
