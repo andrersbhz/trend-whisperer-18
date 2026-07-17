@@ -56,15 +56,18 @@ export default function ImageStudioPage() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages]);
 
+  const FIXED_PREFIX = 'você é um design senior crie uma imagem com o texto abaixo:';
+
   const handleGenerate = async () => {
     const p = prompt.trim();
     if (!p || generating) return;
     setGenerating(true);
+    const fullPrompt = `${FIXED_PREFIX}\n${p}`;
     const userMsg: ChatMessage = { id: uid(), role: 'user', text: p };
     setMessages((m) => [...m, userMsg]);
     setPrompt('');
     try {
-      const { data, error } = await supabase.functions.invoke('image-studio', { body: { prompt: p, userId: user?.id } });
+      const { data, error } = await supabase.functions.invoke('image-studio', { body: { prompt: fullPrompt, userId: user?.id } });
       if (error) throw error;
       if (!data?.imageUrl) throw new Error(data?.error || 'Sem imagem no retorno');
       setMessages((m) => [...m, { id: uid(), role: 'assistant', imageUrl: data.imageUrl, prompt: p }]);
