@@ -460,9 +460,11 @@ export type Database = {
           id: string
           last_login_at: string | null
           license_key: string
+          mp_subscription_id: string | null
           notes: string | null
           plan: string
           status: string
+          stripe_subscription_id: string | null
           subscription_id: string | null
           updated_at: string
           user_id: string | null
@@ -477,9 +479,11 @@ export type Database = {
           id?: string
           last_login_at?: string | null
           license_key: string
+          mp_subscription_id?: string | null
           notes?: string | null
           plan: string
           status?: string
+          stripe_subscription_id?: string | null
           subscription_id?: string | null
           updated_at?: string
           user_id?: string | null
@@ -494,9 +498,11 @@ export type Database = {
           id?: string
           last_login_at?: string | null
           license_key?: string
+          mp_subscription_id?: string | null
           notes?: string | null
           plan?: string
           status?: string
+          stripe_subscription_id?: string | null
           subscription_id?: string | null
           updated_at?: string
           user_id?: string | null
@@ -852,6 +858,11 @@ export type Database = {
           mercadopago_access_token: string | null
           mercadopago_enabled: boolean
           mercadopago_public_key: string | null
+          mp_webhook_secret: string | null
+          notify_admin_whatsapp_number: string | null
+          notify_email_admin: boolean | null
+          notify_email_customer: boolean | null
+          notify_whatsapp_admin: boolean | null
           pagarme_api_key: string | null
           pagarme_enabled: boolean
           pix_bank: string | null
@@ -872,6 +883,11 @@ export type Database = {
           mercadopago_access_token?: string | null
           mercadopago_enabled?: boolean
           mercadopago_public_key?: string | null
+          mp_webhook_secret?: string | null
+          notify_admin_whatsapp_number?: string | null
+          notify_email_admin?: boolean | null
+          notify_email_customer?: boolean | null
+          notify_whatsapp_admin?: boolean | null
           pagarme_api_key?: string | null
           pagarme_enabled?: boolean
           pix_bank?: string | null
@@ -892,6 +908,11 @@ export type Database = {
           mercadopago_access_token?: string | null
           mercadopago_enabled?: boolean
           mercadopago_public_key?: string | null
+          mp_webhook_secret?: string | null
+          notify_admin_whatsapp_number?: string | null
+          notify_email_admin?: boolean | null
+          notify_email_customer?: boolean | null
+          notify_whatsapp_admin?: boolean | null
           pagarme_api_key?: string | null
           pagarme_enabled?: boolean
           pix_bank?: string | null
@@ -1064,11 +1085,13 @@ export type Database = {
           id: string
           license_id: string | null
           metadata: Json | null
+          mp_payment_id: string | null
           payment_method: string
           payment_reference: string | null
           plan: string
           read_at: string | null
           status: string
+          stripe_session_id: string | null
           updated_at: string
         }
         Insert: {
@@ -1082,11 +1105,13 @@ export type Database = {
           id?: string
           license_id?: string | null
           metadata?: Json | null
+          mp_payment_id?: string | null
           payment_method: string
           payment_reference?: string | null
           plan: string
           read_at?: string | null
           status?: string
+          stripe_session_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -1100,11 +1125,13 @@ export type Database = {
           id?: string
           license_id?: string | null
           metadata?: Json | null
+          mp_payment_id?: string | null
           payment_method?: string
           payment_reference?: string | null
           plan?: string
           read_at?: string | null
           status?: string
+          stripe_session_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1227,6 +1254,7 @@ export type Database = {
           current_period_start: string | null
           environment: string
           id: string
+          license_id: string | null
           price_id: string
           product_id: string
           status: string
@@ -1242,6 +1270,7 @@ export type Database = {
           current_period_start?: string | null
           environment?: string
           id?: string
+          license_id?: string | null
           price_id: string
           product_id: string
           status?: string
@@ -1257,6 +1286,7 @@ export type Database = {
           current_period_start?: string | null
           environment?: string
           id?: string
+          license_id?: string | null
           price_id?: string
           product_id?: string
           status?: string
@@ -1265,7 +1295,15 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_license_id_fkey"
+            columns: ["license_id"]
+            isOneToOne: false
+            referencedRelation: "license_keys"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       trending_topics: {
         Row: {
@@ -1656,11 +1694,31 @@ export type Database = {
       }
       clean_old_trending_topics: { Args: never; Returns: undefined }
       cleanup_expired_data: { Args: never; Returns: undefined }
+      create_license_after_payment: {
+        Args: {
+          p_amount_cents: number
+          p_buyer_email: string
+          p_buyer_name: string
+          p_buyer_phone: string
+          p_currency: string
+          p_mp_payment_id?: string
+          p_payment_method: string
+          p_period_days?: number
+          p_plan: string
+          p_stripe_session_id?: string
+          p_stripe_subscription_id?: string
+        }
+        Returns: Json
+      }
       decrypt_credential: {
         Args: { enc_key: string; val: string }
         Returns: string
       }
       encrypt_credential: { Args: { val: string }; Returns: string }
+      extend_license_by_subscription: {
+        Args: { p_period_days?: number; p_stripe_subscription_id: string }
+        Returns: undefined
+      }
       generate_license_key: { Args: never; Returns: string }
       get_credentials_status: { Args: never; Returns: Json }
       get_online_locations: {
@@ -1704,6 +1762,10 @@ export type Database = {
           p_state: string
           p_user_id: string
         }
+        Returns: undefined
+      }
+      revoke_license_by_subscription: {
+        Args: { p_stripe_subscription_id: string }
         Returns: undefined
       }
       update_online_status: {
