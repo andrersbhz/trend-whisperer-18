@@ -116,10 +116,10 @@ export default function CheckoutModal({ open, onOpenChange, plan, planLabel, amo
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div><Label>E-mail *</Label><Input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} type="email" className="bg-[#141a2e] border-white/10" /></div>
-              <div><Label>Nome</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="bg-[#141a2e] border-white/10" /></div>
-              <div><Label>Telefone</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+55 11 99999-9999" className="bg-[#141a2e] border-white/10" /></div>
-              <div><Label>CPF (para Pix)</Label><Input value={form.document} onChange={(e) => setForm({ ...form, document: e.target.value })} className="bg-[#141a2e] border-white/10" /></div>
+              <div><Label>E-mail *</Label><Input required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} type="email" className="bg-[#141a2e] border-white/10" /></div>
+              <div><Label>Nome *</Label><Input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="bg-[#141a2e] border-white/10" /></div>
+              <div><Label>Telefone *</Label><Input required inputMode="numeric" value={form.phone} onChange={(e) => setForm({ ...form, phone: maskPhoneBR(e.target.value) })} placeholder="(11) 99999-9999" maxLength={16} className="bg-[#141a2e] border-white/10" /></div>
+              <div><Label>CPF (para Pix) *</Label><Input required inputMode="numeric" value={form.document} onChange={(e) => setForm({ ...form, document: maskCPF(e.target.value) })} placeholder="000.000.000-00" maxLength={14} className="bg-[#141a2e] border-white/10" /></div>
             </div>
 
             <Tabs value={tab} onValueChange={(v) => setTab(v as any)} className="mt-4">
