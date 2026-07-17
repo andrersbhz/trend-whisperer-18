@@ -6,6 +6,7 @@ import {
   ArrowRight, Star, Flame, Crown, Infinity as InfinityIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { usePlatformSettings } from "@/hooks/usePlatformSettings";
 
 const FEATURES = [
   { icon: Brain, title: "IA Multi-Provider", desc: "Gemini, OpenAI, Groq e Azure com fallback automático. Nunca fique offline." },
