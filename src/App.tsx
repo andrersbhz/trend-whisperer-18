@@ -39,6 +39,7 @@ const MapPage = lazyRetry(() => import("@/pages/MapPage"));
 const ProfilePage = lazyRetry(() => import("@/pages/ProfilePage"));
 const ImageStudioPage = lazyRetry(() => import("@/pages/ImageStudioPage"));
 const SalesPage = lazyRetry(() => import("@/pages/SalesPage"));
+const BrandingPage = lazyRetry(() => import("@/pages/BrandingPage"));
 
 // NEXA Insight (Etapa 1 — fundação multiempresa)
 const NexaLogin = lazyRetry(() => import("@/nexa/pages/NexaLogin"));
