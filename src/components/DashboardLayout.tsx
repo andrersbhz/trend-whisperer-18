@@ -25,6 +25,7 @@ import {
   Sun,
   Moon,
   ImageIcon,
+  Palette,
 } from 'lucide-react';
 import { getPerformanceLogs, exportLogsToCSV } from '@/lib/performance';
 
@@ -57,6 +58,7 @@ const navItems = [
   { icon: Clock, label: 'Agendamentos', path: '/schedule' },
   { icon: Newspaper, label: 'Ver Blog', path: '/pt-br' },
   { icon: User, label: 'Meu Perfil', path: '/profile' },
+  { icon: Palette, label: 'Marca / Vendas', path: '/branding' },
   { icon: Settings, label: 'Configurações', path: '/settings' },
 ];
 
