@@ -23,62 +23,8 @@ const FEATURES = [
   { icon: ShieldCheck, title: "Multi-empresa", desc: "NEXA Insight: múltiplas organizações, papéis, auditoria e SSO." },
 ];
 
-const TIERS = [
-  {
-    name: "Starter",
-    plan: "starter_monthly" as const,
-    amountBRL: 197,
-    price: "R$ 197",
-    period: "/mês",
-    highlight: false,
-    tag: "Para começar",
-    features: [
-      "1 portal WordPress",
-      "30 artigos/mês com IA",
-      "1 conta Facebook + Instagram",
-      "Analytics básico",
-      "Suporte por e-mail",
-    ],
-    cta: "Assinar Starter",
-  },
-  {
-    name: "Pro",
-    plan: "pro_monthly" as const,
-    amountBRL: 497,
-    price: "R$ 497",
-    period: "/mês",
-    highlight: true,
-    tag: "Mais escolhido",
-    features: [
-      "3 portais WordPress",
-      "Artigos ilimitados com IA",
-      "Multi-contas Meta + Instagram",
-      "Google Indexing + Search Console",
-      "Robô Social humanizado 24/7",
-      "Analytics avançado + insights IA",
-      "Suporte prioritário",
-    ],
-    cta: "Assinar Pro agora",
-  },
-  {
-    name: "Enterprise",
-    plan: null,
-    amountBRL: 0,
-    price: "Sob consulta",
-    period: "",
-    highlight: false,
-    tag: "White-label",
-    features: [
-      "Portais ilimitados",
-      "NEXA Insight multi-empresa",
-      "SSO, auditoria e compliance",
-      "API dedicada + integrações custom",
-      "Gerente de sucesso dedicado",
-      "SLA 99.9%",
-    ],
-    cta: "Falar com vendas",
-  },
-];
+
+
 
 const TESTIMONIALS = [
   { name: "Ricardo M.", role: "CEO, Portal FinanceTop", text: "Triplicamos o tráfego orgânico em 90 dias. A automação é assustadora de tão eficiente." },
