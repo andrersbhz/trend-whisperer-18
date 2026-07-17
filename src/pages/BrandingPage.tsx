@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Upload, Save, ExternalLink, Palette, Image as ImageIcon, ShieldCheck } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Upload, Save, ExternalLink, Palette, Image as ImageIcon, ShieldCheck, DollarSign, Plus, Trash2, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const BrandingPage = () => {
