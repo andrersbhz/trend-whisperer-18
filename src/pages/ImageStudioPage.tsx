@@ -169,7 +169,11 @@ export default function ImageStudioPage() {
               className="resize-none text-sm"
               disabled={generating}
             />
-            <Button onClick={handleGenerate} disabled={generating || !prompt.trim()} className="self-end gradient-primary">
+            <Button
+              onClick={handleGenerate}
+              disabled={generating || !prompt.trim()}
+              className="self-end bg-success text-success-foreground hover:bg-success/90 transition-shadow hover:shadow-[0_0_12px_hsl(var(--success)/0.9),0_0_28px_hsl(var(--success)/0.6)]"
+            >
               {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             </Button>
           </div>
