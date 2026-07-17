@@ -287,7 +287,7 @@ const SalesPage = () => {
                 ))}
               </ul>
               <Button
-                onClick={() => t.plan ? setCheckout({ plan: t.plan, label: t.name, amount: t.amountBRL }) : openEnterprise()}
+                onClick={() => t.plan ? setCheckout({ plan: t.plan as "starter_monthly" | "pro_monthly", label: t.name, amount: t.amountBRL }) : openEnterprise()}
                 className={`w-full font-bold py-6 ${
                   t.highlight
                     ? "bg-[#a3ff12] text-[#0a1128] hover:bg-[#a3ff12] hover:shadow-[0_0_24px_rgba(163,255,18,0.7)]"
