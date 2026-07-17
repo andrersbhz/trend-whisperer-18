@@ -439,6 +439,16 @@ const SalesPage = () => {
           to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
+
+      {checkout && (
+        <CheckoutModal
+          open={!!checkout}
+          onOpenChange={(v) => !v && setCheckout(null)}
+          plan={checkout.plan}
+          planLabel={checkout.label}
+          amountBRL={checkout.amount}
+        />
+      )}
     </div>
   );
 };
