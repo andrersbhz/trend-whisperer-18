@@ -27,6 +27,10 @@ type Config = {
   admin_notify_email: string;
   admin_notify_phone: string;
   admin_notify_whatsapp: boolean;
+  notify_email_customer: boolean;
+  notify_email_admin: boolean;
+  notify_whatsapp_admin: boolean;
+  notify_admin_whatsapp_number: string;
 };
 
 const EMPTY: Config = {
@@ -34,6 +38,7 @@ const EMPTY: Config = {
   mercadopago_enabled: false, mercadopago_public_key: "", mercadopago_access_token: "",
   pagarme_enabled: false, pagarme_api_key: "",
   admin_notify_email: "", admin_notify_phone: "", admin_notify_whatsapp: false,
+  notify_email_customer: true, notify_email_admin: true, notify_whatsapp_admin: false, notify_admin_whatsapp_number: "",
 };
 
 export default function PaymentMethodsPage() {
