@@ -256,7 +256,7 @@ const SalesPage = () => {
         </div>
 
         <div className="grid md:grid-cols-3 gap-6">
-          {TIERS.map((t) => (
+          {(s.plans_json || []).map((t) => (
             <div
               key={t.name}
               className={`relative p-8 rounded-3xl border backdrop-blur-sm transition-all hover:-translate-y-2 ${
