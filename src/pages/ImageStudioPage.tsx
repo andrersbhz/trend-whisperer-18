@@ -150,24 +150,29 @@ export default function ImageStudioPage() {
           )}
         </div>
 
-        <div className="border-t border-border/40 p-3 flex gap-2">
-          <Textarea
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleGenerate();
-              }
-            }}
-            placeholder="Descreva a imagem..."
-            rows={2}
-            className="resize-none text-sm"
-            disabled={generating}
-          />
-          <Button onClick={handleGenerate} disabled={generating || !prompt.trim()} className="self-end gradient-primary">
-            {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-          </Button>
+        <div className="border-t border-border/40 p-3 space-y-2">
+          <div className="text-[11px] px-3 py-2 rounded-md bg-primary/10 border border-primary/30 text-primary/90 italic select-none">
+            {FIXED_PREFIX}
+          </div>
+          <div className="flex gap-2">
+            <Textarea
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleGenerate();
+                }
+              }}
+              placeholder="Escreva aqui o texto/descrição da imagem..."
+              rows={2}
+              className="resize-none text-sm"
+              disabled={generating}
+            />
+            <Button onClick={handleGenerate} disabled={generating || !prompt.trim()} className="self-end gradient-primary">
+              {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            </Button>
+          </div>
         </div>
       </Card>
 
