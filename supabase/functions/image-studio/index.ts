@@ -132,7 +132,31 @@ serve(async (req) => {
     }
     if (lovable.error) errors.push(lovable.error);
 
-    // 2) Fallback: user-configured OpenAI / Gemini (only when Lovable is paused/unavailable)
+    // 2a) Fallback via secrets do projeto (mais confiável)
+    if (lovable.paused || !lovable.imageUrl) {
+      const envOpenAI = Deno.env.get("OPENAI_API_KEY");
+      if (envOpenAI) {
+        const r = await tryOpenAI(envOpenAI, prompt);
+        if (r.imageUrl) {
+          return new Response(JSON.stringify({ imageUrl: r.imageUrl, provider: "openai-env", notice: "Lovable AI pausado — usando OpenAI (secret do projeto)." }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        if (r.error) errors.push(r.error);
+      }
+      const envGemini = Deno.env.get("GEMINI_API_KEY");
+      if (envGemini) {
+        const r = await tryGemini(envGemini, prompt);
+        if (r.imageUrl) {
+          return new Response(JSON.stringify({ imageUrl: r.imageUrl, provider: "gemini-env", notice: "Lovable AI pausado — usando Gemini (secret do projeto)." }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        if (r.error) errors.push(r.error);
+      }
+    }
+
+    // 2b) Fallback: user-configured OpenAI / Gemini (only when Lovable is paused/unavailable)
     if (lovable.paused && userId) {
       const supaUrl = Deno.env.get("SUPABASE_URL")!;
       const supaKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
