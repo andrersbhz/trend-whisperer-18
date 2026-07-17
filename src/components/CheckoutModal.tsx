@@ -34,8 +34,15 @@ export default function CheckoutModal({ open, onOpenChange, plan, planLabel, amo
 
   const handleClose = (v: boolean) => { if (!v) reset(); onOpenChange(v); };
 
+  const validateCommon = () => {
+    if (!form.email) { toast.error("Informe seu e-mail"); return false; }
+    if (!form.name.trim()) { toast.error("Informe seu nome"); return false; }
+    if (!isValidPhoneBR(form.phone)) { toast.error("Telefone inválido (DDD + número)"); return false; }
+    return true;
+  };
+
   const startCard = async () => {
-    if (!form.email) return toast.error("Informe seu e-mail");
+    if (!validateCommon()) return;
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("create-checkout", {
@@ -43,7 +50,7 @@ export default function CheckoutModal({ open, onOpenChange, plan, planLabel, amo
           priceId: plan,
           customerEmail: form.email,
           customerName: form.name,
-          customerPhone: form.phone,
+          customerPhone: onlyDigits(form.phone),
           returnUrl: `${window.location.origin}/checkout/return?session_id={CHECKOUT_SESSION_ID}`,
           environment: getStripeEnvironment(),
         },
