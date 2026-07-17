@@ -59,7 +59,7 @@ const navItems = [
   { icon: Activity, label: 'Analytics', path: '/analytics' },
   { icon: Globe, label: 'Mapa Live', path: '/map' },
   { icon: Clock, label: 'Agendamentos', path: '/schedule' },
-  { icon: Newspaper, label: 'Ver Blog', path: '/pt-br' },
+  { icon: Newspaper, label: 'Ver Página de Vendas', path: '/vendas' },
   { icon: User, label: 'Meu Perfil', path: '/profile' },
   { icon: Palette, label: 'Marca / Vendas', path: '/branding' },
   { icon: Wallet, label: 'Meios de Pagamento', path: '/payment-methods' },
