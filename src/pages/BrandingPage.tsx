@@ -288,6 +288,96 @@ const BrandingPage = () => {
         </div>
       </Card>
 
+      {/* Planos */}
+      <Card className="p-6 bg-slate-900/60 border-slate-800 space-y-4">
+        <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+          <div className="flex items-center gap-2">
+            <DollarSign className="h-5 w-5 text-lime-400" />
+            <h2 className="text-lg font-bold text-white">Planos e Preços</h2>
+          </div>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={resetPlans} className="border-white/20 bg-white/5 text-white">Restaurar padrão</Button>
+            <Button size="sm" onClick={addPlan} className="bg-lime-400 text-slate-950 hover:bg-lime-300 font-bold">
+              <Plus className="h-4 w-4 mr-1" /> Adicionar plano
+            </Button>
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          {(form.plans_json || []).map((p, i) => (
+            <div key={i} className="p-4 rounded-lg border border-slate-700 bg-slate-950/50 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-lime-400">PLANO #{i + 1}</span>
+                  {p.highlight && <span className="text-[10px] px-2 py-0.5 rounded-full bg-lime-400/20 text-lime-300 font-bold flex items-center gap-1"><Star className="h-3 w-3" /> DESTAQUE</span>}
+                </div>
+                <Button size="sm" variant="ghost" onClick={() => removePlan(i)} className="text-red-400 hover:text-red-300 hover:bg-red-500/10">
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+
+              <div className="grid md:grid-cols-3 gap-3">
+                <div>
+                  <Label className="text-white text-xs">Nome</Label>
+                  <Input value={p.name} onChange={(e) => updatePlan(i, { name: e.target.value })} className="bg-slate-900 border-slate-700 text-white" />
+                </div>
+                <div>
+                  <Label className="text-white text-xs">Selo (tag)</Label>
+                  <Input value={p.tag} onChange={(e) => updatePlan(i, { tag: e.target.value })} className="bg-slate-900 border-slate-700 text-white" />
+                </div>
+                <div>
+                  <Label className="text-white text-xs">ID do plano (checkout)</Label>
+                  <Input value={p.plan ?? ""} onChange={(e) => updatePlan(i, { plan: e.target.value || null })} placeholder="ex.: pro_monthly ou vazio p/ contato" className="bg-slate-900 border-slate-700 text-white" />
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-4 gap-3">
+                <div>
+                  <Label className="text-white text-xs">Preço exibido</Label>
+                  <Input value={p.price} onChange={(e) => updatePlan(i, { price: e.target.value })} className="bg-slate-900 border-slate-700 text-white" />
+                </div>
+                <div>
+                  <Label className="text-white text-xs">Período</Label>
+                  <Input value={p.period} onChange={(e) => updatePlan(i, { period: e.target.value })} placeholder="/mês" className="bg-slate-900 border-slate-700 text-white" />
+                </div>
+                <div>
+                  <Label className="text-white text-xs">Valor (R$) para cobrança</Label>
+                  <Input type="number" value={p.amountBRL} onChange={(e) => updatePlan(i, { amountBRL: Number(e.target.value) })} className="bg-slate-900 border-slate-700 text-white" />
+                </div>
+                <div>
+                  <Label className="text-white text-xs">Texto do botão</Label>
+                  <Input value={p.cta} onChange={(e) => updatePlan(i, { cta: e.target.value })} className="bg-slate-900 border-slate-700 text-white" />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <Switch checked={p.highlight} onCheckedChange={(v) => updatePlan(i, { highlight: v })} />
+                <Label className="text-white text-sm">Destacar este plano (mais escolhido)</Label>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <Label className="text-white text-xs">Recursos incluídos</Label>
+                  <Button size="sm" variant="ghost" onClick={() => addFeature(i)} className="text-lime-400 hover:text-lime-300 h-7">
+                    <Plus className="h-3 w-3 mr-1" /> Adicionar
+                  </Button>
+                </div>
+                <div className="space-y-2">
+                  {(p.features || []).map((f, fi) => (
+                    <div key={fi} className="flex gap-2">
+                      <Input value={f} onChange={(e) => updateFeature(i, fi, e.target.value)} className="bg-slate-900 border-slate-700 text-white text-sm" />
+                      <Button size="icon" variant="ghost" onClick={() => removeFeature(i, fi)} className="text-red-400 hover:text-red-300 hover:bg-red-500/10 flex-shrink-0">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+
       {/* Contato */}
       <Card className="p-6 bg-slate-900/60 border-slate-800 space-y-4">
         <h2 className="text-lg font-bold text-white pb-2 border-b border-slate-800">Contato</h2>
