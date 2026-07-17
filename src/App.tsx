@@ -137,6 +137,9 @@ const App = () => (
                 <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
                 <Route path="/image-studio" element={<ProtectedRoute><ImageStudioPage /></ProtectedRoute>} />
                 <Route path="/branding" element={<ProtectedRoute><BrandingPage /></ProtectedRoute>} />
+                <Route path="/payment-methods" element={<ProtectedRoute><PaymentMethodsPage /></ProtectedRoute>} />
+                <Route path="/admin-sales" element={<ProtectedRoute><AdminSalesPage /></ProtectedRoute>} />
+                <Route path="/license" element={<LicenseActivatePage />} />
 
                 {/* NEXA Insight (multiempresa) */}
                 <Route path="/nexa" element={<Navigate to="/nexa/dashboard" replace />} />
