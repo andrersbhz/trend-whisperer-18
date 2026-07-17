@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import {
@@ -7,6 +8,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { usePlatformSettings } from "@/hooks/usePlatformSettings";
+import CheckoutModal from "@/components/CheckoutModal";
+import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 
 const FEATURES = [
   { icon: Brain, title: "IA Multi-Provider", desc: "Gemini, OpenAI, Groq e Azure com fallback automático. Nunca fique offline." },
