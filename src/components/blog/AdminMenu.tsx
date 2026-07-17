@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { LayoutDashboard, FileText, TrendingUp, Bot, Activity, Clock, Settings, User as UserIcon, Search as SearchIcon, Facebook, Globe } from 'lucide-react';
+import { LayoutDashboard, FileText, TrendingUp, Bot, Activity, Clock, Settings, User as UserIcon, Search as SearchIcon, Facebook, Globe, Palette } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,6 +21,7 @@ export const ADMIN_NAV = [
   { icon: Activity, label: 'Analytics', path: '/analytics' },
   { icon: Globe, label: 'Mapa Live', path: '/map' },
   { icon: Clock, label: 'Agendamentos', path: '/schedule' },
+  { icon: Palette, label: 'Marca / Vendas', path: '/branding' },
   { icon: Settings, label: 'Configurações', path: '/settings' },
 ] as const;
 
