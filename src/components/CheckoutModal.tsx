@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Loader2, CreditCard, QrCode, Copy, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
+import { maskPhoneBR, maskCPF, isValidPhoneBR, isValidCPF, onlyDigits } from "@/lib/masks";
 
 type Props = {
   open: boolean;
