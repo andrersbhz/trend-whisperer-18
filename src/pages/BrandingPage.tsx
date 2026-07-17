@@ -77,6 +77,7 @@ const BrandingPage = () => {
         cta_secondary: form.cta_secondary,
         offer_badge: form.offer_badge,
         footer_text: form.footer_text,
+        plans_json: form.plans_json as any,
         updated_by: user?.id,
         updated_at: new Date().toISOString(),
       })
