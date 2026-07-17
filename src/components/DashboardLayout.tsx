@@ -26,7 +26,10 @@ import {
   Moon,
   ImageIcon,
   Palette,
+  Wallet,
+  Bell,
 } from 'lucide-react';
+import { useLicenseSessionGuard } from '@/hooks/useLicenseSessionGuard';
 import { getPerformanceLogs, exportLogsToCSV } from '@/lib/performance';
 
 import {
