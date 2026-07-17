@@ -411,7 +411,7 @@ const SalesPage = () => {
             <div className="h-6 w-6 rounded bg-[#a3ff12] flex items-center justify-center">
               <Zap className="h-3.5 w-3.5 text-[#0a1128]" strokeWidth={3} />
             </div>
-            <span>© {new Date().getFullYear()} A3 Plataforma. Todos os direitos reservados.</span>
+            <span>{s.footer_text || `© ${new Date().getFullYear()} ${s.brand_name}. Todos os direitos reservados.`}</span>
           </div>
           <div className="flex items-center gap-6">
             <Link to="/auth" className="hover:text-[#a3ff12]">Entrar</Link>
