@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Loader2, CreditCard, QrCode, Copy, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
+import { maskPhoneBR, maskCPF, isValidPhoneBR, isValidCPF, onlyDigits } from "@/lib/masks";
 
 type Props = {
   open: boolean;
@@ -33,8 +34,15 @@ export default function CheckoutModal({ open, onOpenChange, plan, planLabel, amo
 
   const handleClose = (v: boolean) => { if (!v) reset(); onOpenChange(v); };
 
+  const validateCommon = () => {
+    if (!form.email) { toast.error("Informe seu e-mail"); return false; }
+    if (!form.name.trim()) { toast.error("Informe seu nome"); return false; }
+    if (!isValidPhoneBR(form.phone)) { toast.error("Telefone inválido (DDD + número)"); return false; }
+    return true;
+  };
+
   const startCard = async () => {
-    if (!form.email) return toast.error("Informe seu e-mail");
+    if (!validateCommon()) return;
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("create-checkout", {
@@ -42,7 +50,7 @@ export default function CheckoutModal({ open, onOpenChange, plan, planLabel, amo
           priceId: plan,
           customerEmail: form.email,
           customerName: form.name,
-          customerPhone: form.phone,
+          customerPhone: onlyDigits(form.phone),
           returnUrl: `${window.location.origin}/checkout/return?session_id={CHECKOUT_SESSION_ID}`,
           environment: getStripeEnvironment(),
         },
@@ -55,11 +63,12 @@ export default function CheckoutModal({ open, onOpenChange, plan, planLabel, amo
   };
 
   const startPix = async () => {
-    if (!form.email) return toast.error("Informe seu e-mail");
+    if (!validateCommon()) return;
+    if (!isValidCPF(form.document)) return toast.error("CPF inválido");
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("mp-create-pix", {
-        body: { plan, buyerEmail: form.email, buyerName: form.name, buyerPhone: form.phone, buyerDocument: form.document },
+        body: { plan, buyerEmail: form.email, buyerName: form.name, buyerPhone: onlyDigits(form.phone), buyerDocument: onlyDigits(form.document) },
       });
       if (error || !data?.qrCode) throw new Error(error?.message || data?.error || "Falha ao gerar Pix");
       setPixData({ qrCode: data.qrCode, qrCodeBase64: data.qrCodeBase64, paymentId: data.paymentId });
@@ -107,10 +116,10 @@ export default function CheckoutModal({ open, onOpenChange, plan, planLabel, amo
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div><Label>E-mail *</Label><Input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} type="email" className="bg-[#141a2e] border-white/10" /></div>
-              <div><Label>Nome</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="bg-[#141a2e] border-white/10" /></div>
-              <div><Label>Telefone</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+55 11 99999-9999" className="bg-[#141a2e] border-white/10" /></div>
-              <div><Label>CPF (para Pix)</Label><Input value={form.document} onChange={(e) => setForm({ ...form, document: e.target.value })} className="bg-[#141a2e] border-white/10" /></div>
+              <div><Label>E-mail *</Label><Input required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} type="email" className="bg-[#141a2e] border-white/10" /></div>
+              <div><Label>Nome *</Label><Input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="bg-[#141a2e] border-white/10" /></div>
+              <div><Label>Telefone *</Label><Input required inputMode="numeric" value={form.phone} onChange={(e) => setForm({ ...form, phone: maskPhoneBR(e.target.value) })} placeholder="(11) 99999-9999" maxLength={16} className="bg-[#141a2e] border-white/10" /></div>
+              <div><Label>CPF (para Pix) *</Label><Input required inputMode="numeric" value={form.document} onChange={(e) => setForm({ ...form, document: maskCPF(e.target.value) })} placeholder="000.000.000-00" maxLength={14} className="bg-[#141a2e] border-white/10" /></div>
             </div>
 
             <Tabs value={tab} onValueChange={(v) => setTab(v as any)} className="mt-4">

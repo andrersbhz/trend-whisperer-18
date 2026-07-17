@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Loader2, Upload, User as UserIcon } from 'lucide-react';
+import { maskPhoneBR, isValidPhoneBR, onlyDigits } from '@/lib/masks';
 
 const AVATAR_BUCKET = 'article-images';
 
@@ -39,7 +40,7 @@ const ProfilePage = () => {
       }
       setFullName(data?.full_name ?? '');
       setEmail(data?.email ?? user.email ?? '');
-      setWhatsapp(data?.whatsapp ?? '');
+      setWhatsapp(maskPhoneBR(data?.whatsapp ?? ''));
       setAvatarUrl(data?.avatar_url ?? null);
       setLoading(false);
     })();
@@ -67,13 +68,16 @@ const ProfilePage = () => {
 
   const handleSave = async () => {
     if (!user) return;
+    if (!fullName.trim()) return toast({ title: 'Nome é obrigatório', variant: 'destructive' });
+    if (!email.trim()) return toast({ title: 'E-mail é obrigatório', variant: 'destructive' });
+    if (!whatsapp.trim() || !isValidPhoneBR(whatsapp)) return toast({ title: 'WhatsApp inválido', description: 'Use DDD + número (10 ou 11 dígitos)', variant: 'destructive' });
     setSaving(true);
     try {
       const payload = {
         user_id: user.id,
-        full_name: fullName.trim() || null,
-        email: email.trim() || null,
-        whatsapp: whatsapp.trim() || null,
+        full_name: fullName.trim(),
+        email: email.trim(),
+        whatsapp: onlyDigits(whatsapp),
         avatar_url: avatarUrl,
       };
       const { error } = await supabase
@@ -156,16 +160,16 @@ const ProfilePage = () => {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="full_name">Nome</Label>
-            <Input id="full_name" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Seu nome" />
+            <Label htmlFor="full_name">Nome *</Label>
+            <Input id="full_name" required value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Seu nome" />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email">E-mail</Label>
-            <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="voce@email.com" />
+            <Label htmlFor="email">E-mail *</Label>
+            <Input id="email" required type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="voce@email.com" />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="whatsapp">WhatsApp</Label>
-            <Input id="whatsapp" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} placeholder="+55 11 99999-9999" />
+            <Label htmlFor="whatsapp">WhatsApp *</Label>
+            <Input id="whatsapp" required inputMode="numeric" value={whatsapp} onChange={(e) => setWhatsapp(maskPhoneBR(e.target.value))} placeholder="(11) 99999-9999" maxLength={16} />
           </div>
         </CardContent>
       </Card>
