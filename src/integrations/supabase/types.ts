@@ -736,6 +736,72 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_settings: {
+        Row: {
+          accent_color: string
+          brand_name: string
+          brand_short: string
+          contact_email: string | null
+          contact_phone: string | null
+          cta_primary: string
+          cta_secondary: string
+          description: string
+          favicon_url: string | null
+          footer_text: string | null
+          hero_video_url: string | null
+          id: string
+          logo_url: string | null
+          offer_badge: string | null
+          primary_color: string
+          singleton: boolean
+          tagline: string
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          accent_color?: string
+          brand_name?: string
+          brand_short?: string
+          contact_email?: string | null
+          contact_phone?: string | null
+          cta_primary?: string
+          cta_secondary?: string
+          description?: string
+          favicon_url?: string | null
+          footer_text?: string | null
+          hero_video_url?: string | null
+          id?: string
+          logo_url?: string | null
+          offer_badge?: string | null
+          primary_color?: string
+          singleton?: boolean
+          tagline?: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          accent_color?: string
+          brand_name?: string
+          brand_short?: string
+          contact_email?: string | null
+          contact_phone?: string | null
+          cta_primary?: string
+          cta_secondary?: string
+          description?: string
+          favicon_url?: string | null
+          footer_text?: string | null
+          hero_video_url?: string | null
+          id?: string
+          logo_url?: string | null
+          offer_badge?: string | null
+          primary_color?: string
+          singleton?: boolean
+          tagline?: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
