@@ -27,6 +27,10 @@ type Config = {
   admin_notify_email: string;
   admin_notify_phone: string;
   admin_notify_whatsapp: boolean;
+  notify_email_customer: boolean;
+  notify_email_admin: boolean;
+  notify_whatsapp_admin: boolean;
+  notify_admin_whatsapp_number: string;
 };
 
 const EMPTY: Config = {
@@ -34,6 +38,7 @@ const EMPTY: Config = {
   mercadopago_enabled: false, mercadopago_public_key: "", mercadopago_access_token: "",
   pagarme_enabled: false, pagarme_api_key: "",
   admin_notify_email: "", admin_notify_phone: "", admin_notify_whatsapp: false,
+  notify_email_customer: true, notify_email_admin: true, notify_whatsapp_admin: false, notify_admin_whatsapp_number: "",
 };
 
 export default function PaymentMethodsPage() {
@@ -138,10 +143,11 @@ export default function PaymentMethodsPage() {
           <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><Bell className="text-[#a3ff12]" /> Notificações de venda</CardTitle></CardHeader>
           <CardContent className="grid md:grid-cols-2 gap-4">
             <div><Label>E-mail do administrador</Label><Input className="bg-[#0b1020] border-white/10" type="email" value={cfg.admin_notify_email} onChange={(e) => set("admin_notify_email", e.target.value)} /></div>
-            <div><Label>Telefone (com DDD, ex: 5531999998888)</Label><Input className="bg-[#0b1020] border-white/10" value={cfg.admin_notify_phone} onChange={(e) => set("admin_notify_phone", e.target.value)} /></div>
-            <div className="md:col-span-2 flex items-center gap-3 pt-2">
-              <Switch checked={cfg.admin_notify_whatsapp} onCheckedChange={(v) => set("admin_notify_whatsapp", v)} />
-              <Label className="cursor-pointer">Enviar aviso por WhatsApp (requer integração Twilio na etapa 2)</Label>
+            <div><Label>WhatsApp admin (formato +5531999998888)</Label><Input className="bg-[#0b1020] border-white/10" value={cfg.notify_admin_whatsapp_number} onChange={(e) => set("notify_admin_whatsapp_number", e.target.value)} /></div>
+            <div className="md:col-span-2 space-y-2 pt-2">
+              <div className="flex items-center gap-3"><Switch checked={cfg.notify_email_customer} onCheckedChange={(v) => set("notify_email_customer", v)} /><Label className="cursor-pointer">Enviar chave de acesso ao cliente por e-mail</Label></div>
+              <div className="flex items-center gap-3"><Switch checked={cfg.notify_email_admin} onCheckedChange={(v) => set("notify_email_admin", v)} /><Label className="cursor-pointer">Avisar admin por e-mail a cada venda</Label></div>
+              <div className="flex items-center gap-3"><Switch checked={cfg.notify_whatsapp_admin} onCheckedChange={(v) => set("notify_whatsapp_admin", v)} /><Label className="cursor-pointer">Avisar admin por WhatsApp (requer Twilio conectado)</Label></div>
             </div>
           </CardContent>
         </Card>

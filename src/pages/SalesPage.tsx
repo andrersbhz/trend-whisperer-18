@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import {
@@ -7,6 +8,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { usePlatformSettings } from "@/hooks/usePlatformSettings";
+import CheckoutModal from "@/components/CheckoutModal";
+import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 
 const FEATURES = [
   { icon: Brain, title: "IA Multi-Provider", desc: "Gemini, OpenAI, Groq e Azure com fallback automático. Nunca fique offline." },
@@ -23,6 +26,8 @@ const FEATURES = [
 const TIERS = [
   {
     name: "Starter",
+    plan: "starter_monthly" as const,
+    amountBRL: 197,
     price: "R$ 197",
     period: "/mês",
     highlight: false,
@@ -34,10 +39,12 @@ const TIERS = [
       "Analytics básico",
       "Suporte por e-mail",
     ],
-    cta: "Testar 7 dias grátis",
+    cta: "Assinar Starter",
   },
   {
     name: "Pro",
+    plan: "pro_monthly" as const,
+    amountBRL: 497,
     price: "R$ 497",
     period: "/mês",
     highlight: true,
@@ -55,6 +62,8 @@ const TIERS = [
   },
   {
     name: "Enterprise",
+    plan: null,
+    amountBRL: 0,
     price: "Sob consulta",
     period: "",
     highlight: false,
@@ -79,8 +88,13 @@ const TESTIMONIALS = [
 
 const SalesPage = () => {
   const { settings: s } = usePlatformSettings();
+  const [checkout, setCheckout] = useState<{ plan: "starter_monthly" | "pro_monthly"; label: string; amount: number } | null>(null);
+  const openEnterprise = () => {
+    window.location.href = `mailto:contato@a3solucoesdigitais.com?subject=Interesse Enterprise ${encodeURIComponent(s.brand_name)}&body=Olá, gostaria de saber mais sobre o plano Enterprise.`;
+  };
   return (
     <div className="relative min-h-screen bg-[#05010f] text-white overflow-x-hidden">
+      <PaymentTestModeBanner />
       <Helmet>
         <title>{s.brand_name} — {s.tagline}</title>
         <meta name="description" content={s.description} />
@@ -326,17 +340,16 @@ const SalesPage = () => {
                   </li>
                 ))}
               </ul>
-              <Link to="/auth" className="block">
-                <Button
-                  className={`w-full font-bold py-6 ${
-                    t.highlight
-                      ? "bg-[#a3ff12] text-[#0a1128] hover:bg-[#a3ff12] hover:shadow-[0_0_24px_rgba(163,255,18,0.7)]"
-                      : "bg-white/5 border border-white/20 hover:bg-white/10 text-white"
-                  } transition-all`}
-                >
-                  {t.cta}
-                </Button>
-              </Link>
+              <Button
+                onClick={() => t.plan ? setCheckout({ plan: t.plan, label: t.name, amount: t.amountBRL }) : openEnterprise()}
+                className={`w-full font-bold py-6 ${
+                  t.highlight
+                    ? "bg-[#a3ff12] text-[#0a1128] hover:bg-[#a3ff12] hover:shadow-[0_0_24px_rgba(163,255,18,0.7)]"
+                    : "bg-white/5 border border-white/20 hover:bg-white/10 text-white"
+                } transition-all`}
+              >
+                {t.cta}
+              </Button>
             </div>
           ))}
         </div>
@@ -426,6 +439,16 @@ const SalesPage = () => {
           to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
+
+      {checkout && (
+        <CheckoutModal
+          open={!!checkout}
+          onOpenChange={(v) => !v && setCheckout(null)}
+          plan={checkout.plan}
+          planLabel={checkout.label}
+          amountBRL={checkout.amount}
+        />
+      )}
     </div>
   );
 };
