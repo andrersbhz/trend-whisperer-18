@@ -106,9 +106,14 @@ export default function PaymentMethodsPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div><Label>Chave Pix</Label><Input className="bg-[#0b1020] border-white/10" value={cfg.pix_key} onChange={(e) => set("pix_key", e.target.value)} maxLength={140} /></div>
+            <div><Label>Chave Pix</Label><Input className="bg-[#0b1020] border-white/10" value={cfg.pix_key} onChange={(e) => {
+              const v = e.target.value;
+              if (cfg.pix_key_type === "cpf" || cfg.pix_key_type === "cnpj") set("pix_key", maskCpfCnpj(v));
+              else if (cfg.pix_key_type === "phone") set("pix_key", maskPhoneBR(v));
+              else set("pix_key", v);
+            }} maxLength={140} /></div>
             <div><Label>Titular</Label><Input className="bg-[#0b1020] border-white/10" value={cfg.pix_owner_name} onChange={(e) => set("pix_owner_name", e.target.value)} maxLength={140} /></div>
-            <div><Label>CPF/CNPJ do titular</Label><Input className="bg-[#0b1020] border-white/10" value={cfg.pix_owner_document} onChange={(e) => set("pix_owner_document", e.target.value)} maxLength={20} /></div>
+            <div><Label>CPF/CNPJ do titular</Label><Input className="bg-[#0b1020] border-white/10" inputMode="numeric" value={cfg.pix_owner_document} onChange={(e) => set("pix_owner_document", maskCpfCnpj(e.target.value))} placeholder="000.000.000-00" maxLength={18} /></div>
             <div className="md:col-span-2"><Label>Banco</Label><Input className="bg-[#0b1020] border-white/10" value={cfg.pix_bank} onChange={(e) => set("pix_bank", e.target.value)} maxLength={80} /></div>
           </CardContent>
         </Card>
