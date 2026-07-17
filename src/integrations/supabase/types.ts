@@ -942,6 +942,7 @@ export type Database = {
           id: string
           logo_url: string | null
           offer_badge: string | null
+          plans_json: Json
           primary_color: string
           singleton: boolean
           tagline: string
@@ -963,6 +964,7 @@ export type Database = {
           id?: string
           logo_url?: string | null
           offer_badge?: string | null
+          plans_json?: Json
           primary_color?: string
           singleton?: boolean
           tagline?: string
@@ -984,6 +986,7 @@ export type Database = {
           id?: string
           logo_url?: string | null
           offer_badge?: string | null
+          plans_json?: Json
           primary_color?: string
           singleton?: boolean
           tagline?: string
