@@ -5,9 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
+import { maskPhoneBR, isValidPhoneBR } from '@/lib/masks';
 
 const ContactPage = () => {
   const [sending, setSending] = useState(false);
+  const [phone, setPhone] = useState('');
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
