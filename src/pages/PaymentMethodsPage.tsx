@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Loader2, Save, KeyRound, Wallet, CreditCard, Bell } from "lucide-react";
+import { maskPhoneBR, maskCpfCnpj } from "@/lib/masks";
 
 type Config = {
   id?: string;
