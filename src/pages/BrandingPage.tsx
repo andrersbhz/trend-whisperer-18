@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { usePlatformSettings } from "@/hooks/usePlatformSettings";
+import { usePlatformSettings, DEFAULT_PLANS, type PlanTier } from "@/hooks/usePlatformSettings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
