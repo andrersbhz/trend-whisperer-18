@@ -18,14 +18,21 @@ async function tryLovable(prompt: string): Promise<ProviderResult> {
 
   for (const model of models) {
     try {
-      const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      const isOpenAI = model.startsWith("openai/");
+      const url = isOpenAI
+        ? "https://ai.gateway.lovable.dev/v1/images/generations"
+        : "https://ai.gateway.lovable.dev/v1/chat/completions";
+      const body = isOpenAI
+        ? { model, prompt, size: "1024x1024", n: 1 }
+        : {
+            model,
+            messages: [{ role: "user", content: [{ type: "text", text: prompt }] }],
+            modalities: ["image", "text"],
+          };
+      const resp = await fetch(url, {
         method: "POST",
         headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model,
-          messages: [{ role: "user", content: [{ type: "text", text: prompt }] }],
-          modalities: ["image", "text"],
-        }),
+        body: JSON.stringify(body),
       });
       if (!resp.ok) {
         const text = (await resp.text()).slice(0, 300);
@@ -36,8 +43,15 @@ async function tryLovable(prompt: string): Promise<ProviderResult> {
         continue;
       }
       const data = await resp.json();
-      const url = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-      if (url) return { imageUrl: url };
+      if (isOpenAI) {
+        const b64 = data.data?.[0]?.b64_json;
+        const dUrl = data.data?.[0]?.url;
+        if (b64) return { imageUrl: `data:image/png;base64,${b64}` };
+        if (dUrl) return { imageUrl: dUrl };
+      } else {
+        const imgUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+        if (imgUrl) return { imageUrl: imgUrl };
+      }
       errs.push(`Lovable ${model}: sem imagem`);
     } catch (e) {
       errs.push(`Lovable ${model}: ${e instanceof Error ? e.message : String(e)}`);
