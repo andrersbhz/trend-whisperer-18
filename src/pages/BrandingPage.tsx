@@ -36,6 +36,32 @@ const BrandingPage = () => {
 
   const update = (k: keyof typeof form, v: any) => setForm((s) => ({ ...s, [k]: v }));
 
+  const updatePlan = (i: number, patch: Partial<PlanTier>) => {
+    setForm((s) => {
+      const plans = [...(s.plans_json || [])];
+      plans[i] = { ...plans[i], ...patch };
+      return { ...s, plans_json: plans };
+    });
+  };
+  const addPlan = () => {
+    setForm((s) => ({
+      ...s,
+      plans_json: [...(s.plans_json || []), { name: "Novo Plano", plan: null, amountBRL: 0, price: "R$ 0", period: "/mês", highlight: false, tag: "Personalizado", cta: "Assinar", features: ["Recurso 1"] }],
+    }));
+  };
+  const removePlan = (i: number) => {
+    setForm((s) => ({ ...s, plans_json: (s.plans_json || []).filter((_, idx) => idx !== i) }));
+  };
+  const updateFeature = (pi: number, fi: number, val: string) => {
+    const feats = [...(form.plans_json[pi]?.features || [])];
+    feats[fi] = val;
+    updatePlan(pi, { features: feats });
+  };
+  const addFeature = (pi: number) => updatePlan(pi, { features: [...(form.plans_json[pi]?.features || []), "Novo recurso"] });
+  const removeFeature = (pi: number, fi: number) => updatePlan(pi, { features: (form.plans_json[pi]?.features || []).filter((_, i) => i !== fi) });
+  const resetPlans = () => setForm((s) => ({ ...s, plans_json: DEFAULT_PLANS }));
+
+
   const handleUpload = async (file: File, kind: "logo" | "favicon") => {
     if (!user) return;
     setUploading(kind);
