@@ -12,7 +12,7 @@ async function tryLovable(prompt: string): Promise<ProviderResult> {
   const key = Deno.env.get("LOVABLE_API_KEY");
   if (!key) return { error: "LOVABLE_API_KEY ausente", paused: true };
 
-  const models = ["google/gemini-3.1-flash-image", "google/gemini-2.5-flash-image", "google/gemini-3-pro-image"];
+  const models = ["openai/gpt-image-2", "openai/gpt-image-1-mini", "google/gemini-3.1-flash-image", "google/gemini-2.5-flash-image", "google/gemini-3-pro-image"];
   const errs: string[] = [];
   let paused = false;
 
