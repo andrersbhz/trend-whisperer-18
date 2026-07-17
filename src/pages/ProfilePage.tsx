@@ -160,16 +160,16 @@ const ProfilePage = () => {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="full_name">Nome</Label>
-            <Input id="full_name" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Seu nome" />
+            <Label htmlFor="full_name">Nome *</Label>
+            <Input id="full_name" required value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Seu nome" />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email">E-mail</Label>
-            <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="voce@email.com" />
+            <Label htmlFor="email">E-mail *</Label>
+            <Input id="email" required type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="voce@email.com" />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="whatsapp">WhatsApp</Label>
-            <Input id="whatsapp" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} placeholder="+55 11 99999-9999" />
+            <Label htmlFor="whatsapp">WhatsApp *</Label>
+            <Input id="whatsapp" required inputMode="numeric" value={whatsapp} onChange={(e) => setWhatsapp(maskPhoneBR(e.target.value))} placeholder="(11) 99999-9999" maxLength={16} />
           </div>
         </CardContent>
       </Card>
