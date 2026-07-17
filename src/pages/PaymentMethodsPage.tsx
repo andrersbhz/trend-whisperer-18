@@ -149,7 +149,7 @@ export default function PaymentMethodsPage() {
           <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><Bell className="text-[#a3ff12]" /> Notificações de venda</CardTitle></CardHeader>
           <CardContent className="grid md:grid-cols-2 gap-4">
             <div><Label>E-mail do administrador</Label><Input className="bg-[#0b1020] border-white/10" type="email" value={cfg.admin_notify_email} onChange={(e) => set("admin_notify_email", e.target.value)} /></div>
-            <div><Label>WhatsApp admin (formato +5531999998888)</Label><Input className="bg-[#0b1020] border-white/10" value={cfg.notify_admin_whatsapp_number} onChange={(e) => set("notify_admin_whatsapp_number", e.target.value)} /></div>
+            <div><Label>WhatsApp admin (DDD + número)</Label><Input className="bg-[#0b1020] border-white/10" inputMode="numeric" value={maskPhoneBR(cfg.notify_admin_whatsapp_number)} onChange={(e) => set("notify_admin_whatsapp_number", maskPhoneBR(e.target.value))} placeholder="(11) 99999-9999" maxLength={16} /></div>
             <div className="md:col-span-2 space-y-2 pt-2">
               <div className="flex items-center gap-3"><Switch checked={cfg.notify_email_customer} onCheckedChange={(v) => set("notify_email_customer", v)} /><Label className="cursor-pointer">Enviar chave de acesso ao cliente por e-mail</Label></div>
               <div className="flex items-center gap-3"><Switch checked={cfg.notify_email_admin} onCheckedChange={(v) => set("notify_email_admin", v)} /><Label className="cursor-pointer">Avisar admin por e-mail a cada venda</Label></div>
