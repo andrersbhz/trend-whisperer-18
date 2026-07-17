@@ -63,11 +63,12 @@ export default function CheckoutModal({ open, onOpenChange, plan, planLabel, amo
   };
 
   const startPix = async () => {
-    if (!form.email) return toast.error("Informe seu e-mail");
+    if (!validateCommon()) return;
+    if (!isValidCPF(form.document)) return toast.error("CPF inválido");
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("mp-create-pix", {
-        body: { plan, buyerEmail: form.email, buyerName: form.name, buyerPhone: form.phone, buyerDocument: form.document },
+        body: { plan, buyerEmail: form.email, buyerName: form.name, buyerPhone: onlyDigits(form.phone), buyerDocument: onlyDigits(form.document) },
       });
       if (error || !data?.qrCode) throw new Error(error?.message || data?.error || "Falha ao gerar Pix");
       setPixData({ qrCode: data.qrCode, qrCodeBase64: data.qrCodeBase64, paymentId: data.paymentId });
