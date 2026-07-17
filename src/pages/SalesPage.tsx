@@ -78,37 +78,31 @@ const TESTIMONIALS = [
 ];
 
 const SalesPage = () => {
+  const { settings: s } = usePlatformSettings();
   return (
     <div className="relative min-h-screen bg-[#05010f] text-white overflow-x-hidden">
       <Helmet>
-        <title>A3 Plataforma — SaaS de Automação de Conteúdo com IA</title>
-        <meta name="description" content="Publique 3 artigos por dia com IA, distribua em Meta/Instagram, indexe no Google e escale seu portal sem esforço. Comece grátis." />
-        <meta property="og:title" content="A3 Plataforma — Automação de conteúdo com IA" />
-        <meta property="og:description" content="A plataforma que virou o motor de crescimento de portais em 12 países." />
+        <title>{s.brand_name} — {s.tagline}</title>
+        <meta name="description" content={s.description} />
+        <meta property="og:title" content={`${s.brand_name} — ${s.tagline}`} />
+        <meta property="og:description" content={s.description} />
         <meta property="og:type" content="website" />
         <meta name="twitter:card" content="summary_large_image" />
+        {s.favicon_url && <link rel="icon" href={s.favicon_url} />}
       </Helmet>
 
       {/* === TECH VIDEO BACKGROUND === */}
       <div className="fixed inset-0 -z-10 overflow-hidden">
-        <video
-          autoPlay
-          muted
-          loop
-          playsInline
-          className="absolute inset-0 w-full h-full object-cover opacity-40"
-          poster=""
-        >
-          <source
-            src="https://cdn.pixabay.com/video/2023/10/26/186098-878428480_large.mp4"
-            type="video/mp4"
-          />
-        </video>
-        {/* Fallback animated grid */}
+        {s.hero_video_url && (
+          <video autoPlay muted loop playsInline
+            className="absolute inset-0 w-full h-full object-cover opacity-40" poster="">
+            <source src={s.hero_video_url} type="video/mp4" />
+          </video>
+        )}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,#1a0033_0%,#05010f_60%,#000_100%)]" />
         <div className="absolute inset-0 opacity-30 [background-image:linear-gradient(rgba(163,255,18,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(163,255,18,0.08)_1px,transparent_1px)] [background-size:50px_50px]" />
-        <div className="absolute top-1/4 -left-40 w-[600px] h-[600px] rounded-full bg-[#a3ff12]/10 blur-[160px] animate-pulse" />
-        <div className="absolute bottom-1/4 -right-40 w-[600px] h-[600px] rounded-full bg-[#b57bff]/15 blur-[160px] animate-pulse" style={{ animationDelay: "2s" }} />
+        <div className="absolute top-1/4 -left-40 w-[600px] h-[600px] rounded-full blur-[160px] animate-pulse" style={{ backgroundColor: `${s.primary_color}1a` }} />
+        <div className="absolute bottom-1/4 -right-40 w-[600px] h-[600px] rounded-full blur-[160px] animate-pulse" style={{ backgroundColor: `${s.accent_color}26`, animationDelay: "2s" }} />
         <div className="absolute inset-0 bg-gradient-to-b from-[#05010f]/60 via-transparent to-[#05010f]" />
       </div>
 
@@ -116,10 +110,17 @@ const SalesPage = () => {
       <header className="relative z-20 border-b border-white/5 backdrop-blur-md bg-[#05010f]/40">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="h-9 w-9 rounded-lg bg-[#a3ff12] flex items-center justify-center">
-              <Zap className="h-5 w-5 text-[#0a1128]" strokeWidth={3} />
-            </div>
-            <span className="font-black text-xl tracking-tight">A3<span className="text-[#a3ff12]">.</span>PLATAFORMA</span>
+            {s.logo_url ? (
+              <img src={s.logo_url} alt={s.brand_name} className="h-9 w-9 rounded-lg object-contain" />
+            ) : (
+              <div className="h-9 w-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: s.primary_color }}>
+                <Zap className="h-5 w-5 text-[#0a1128]" strokeWidth={3} />
+              </div>
+            )}
+            <span className="font-black text-xl tracking-tight">
+              {s.brand_short}<span style={{ color: s.primary_color }}>.</span>
+              <span className="uppercase">{s.brand_name.replace(s.brand_short, "").trim() || "PLATAFORMA"}</span>
+            </span>
           </div>
           <nav className="hidden md:flex items-center gap-8 text-sm text-white/70">
             <a href="#recursos" className="hover:text-[#a3ff12] transition">Recursos</a>
@@ -136,32 +137,31 @@ const SalesPage = () => {
 
       {/* === HERO === */}
       <section className="relative z-10 max-w-7xl mx-auto px-6 pt-20 pb-32 text-center">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#a3ff12]/30 bg-[#a3ff12]/5 text-[#a3ff12] text-xs font-semibold mb-8 animate-pulse">
-          <Flame className="h-3.5 w-3.5" />
-          OFERTA DE LANÇAMENTO — apenas 47 vagas restantes
-        </div>
+        {s.offer_badge && (
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#a3ff12]/30 bg-[#a3ff12]/5 text-[#a3ff12] text-xs font-semibold mb-8 animate-pulse">
+            <Flame className="h-3.5 w-3.5" />
+            {s.offer_badge}
+          </div>
+        )}
 
         <h1 className="text-5xl md:text-7xl font-black leading-[1.05] tracking-tight mb-8">
-          Seu portal no <span className="text-[#a3ff12] [text-shadow:0_0_40px_rgba(163,255,18,0.5)]">piloto automático</span>
-          <br />
-          com o poder da <span className="bg-gradient-to-r from-[#b57bff] to-[#a3ff12] bg-clip-text text-transparent">Inteligência Artificial</span>
+          {s.tagline}
         </h1>
 
         <p className="text-xl md:text-2xl text-white/70 max-w-3xl mx-auto mb-12 leading-relaxed">
-          Publique <b className="text-white">3 artigos por dia</b>, distribua em <b className="text-white">Facebook e Instagram</b>,
-          indexe no <b className="text-white">Google em minutos</b> e escale seu tráfego <b className="text-[#a3ff12]">sem contratar redatores</b>.
+          {s.description}
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
           <Link to="/auth">
             <Button size="lg" className="bg-[#a3ff12] text-[#0a1128] font-black text-base px-8 py-6 hover:bg-[#a3ff12] hover:shadow-[0_0_32px_rgba(163,255,18,0.8),0_0_64px_rgba(163,255,18,0.3)] hover:-translate-y-1 transition-all">
-              Começar agora — 7 dias grátis
+              {s.cta_primary}
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </Link>
           <a href="#planos">
             <Button size="lg" variant="outline" className="border-white/20 bg-white/5 hover:bg-white/10 text-white px-8 py-6">
-              Ver planos e preços
+              {s.cta_secondary}
             </Button>
           </a>
         </div>
