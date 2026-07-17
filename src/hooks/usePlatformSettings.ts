@@ -72,7 +72,11 @@ export function usePlatformSettings() {
       .select("*")
       .limit(1)
       .maybeSingle();
-    if (data) setSettings({ ...DEFAULTS, ...(data as any) });
+    if (data) {
+      const d: any = data;
+      const plans = Array.isArray(d.plans_json) && d.plans_json.length > 0 ? d.plans_json : DEFAULT_PLANS;
+      setSettings({ ...DEFAULTS, ...d, plans_json: plans });
+    }
     setLoading(false);
   }, []);
 
