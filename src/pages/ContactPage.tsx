@@ -55,7 +55,10 @@ const ContactPage = () => {
           <Input required name="name" placeholder="Seu nome" />
           <Input required type="email" name="email" placeholder="Seu e-mail" />
         </div>
-        <Input required name="subject" placeholder="Assunto" />
+        <div className="grid md:grid-cols-2 gap-4">
+          <Input required name="phone" inputMode="numeric" value={phone} onChange={(e) => setPhone(maskPhoneBR(e.target.value))} placeholder="Telefone (11) 99999-9999" maxLength={16} />
+          <Input required name="subject" placeholder="Assunto" />
+        </div>
         <Textarea required name="message" placeholder="Sua mensagem" rows={6} />
         <Button type="submit" disabled={sending} className="bg-[hsl(var(--news-accent))] hover:brightness-110 text-white">
           {sending ? 'Enviando…' : 'Enviar mensagem'}
