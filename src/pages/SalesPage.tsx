@@ -88,8 +88,13 @@ const TESTIMONIALS = [
 
 const SalesPage = () => {
   const { settings: s } = usePlatformSettings();
+  const [checkout, setCheckout] = useState<{ plan: "starter_monthly" | "pro_monthly"; label: string; amount: number } | null>(null);
+  const openEnterprise = () => {
+    window.location.href = `mailto:contato@a3solucoesdigitais.com?subject=Interesse Enterprise ${encodeURIComponent(s.brand_name)}&body=Olá, gostaria de saber mais sobre o plano Enterprise.`;
+  };
   return (
     <div className="relative min-h-screen bg-[#05010f] text-white overflow-x-hidden">
+      <PaymentTestModeBanner />
       <Helmet>
         <title>{s.brand_name} — {s.tagline}</title>
         <meta name="description" content={s.description} />
