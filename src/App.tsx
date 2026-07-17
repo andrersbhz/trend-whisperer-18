@@ -38,6 +38,7 @@ const AuthorsPage = lazyRetry(() => import("@/pages/AuthorsPage"));
 const MapPage = lazyRetry(() => import("@/pages/MapPage"));
 const ProfilePage = lazyRetry(() => import("@/pages/ProfilePage"));
 const ImageStudioPage = lazyRetry(() => import("@/pages/ImageStudioPage"));
+const SalesPage = lazyRetry(() => import("@/pages/SalesPage"));
 
 // NEXA Insight (Etapa 1 — fundação multiempresa)
 const NexaLogin = lazyRetry(() => import("@/nexa/pages/NexaLogin"));
@@ -88,7 +89,7 @@ const RootRoute = () => {
 
   if (loading) return <Preloader message="Carregando..." />;
   if (user) return <Navigate to="/admin" replace />;
-  return <Navigate to="/auth" replace />;
+  return <SalesPage />;
 };
 
 const PresenceTracker = () => {
@@ -111,6 +112,8 @@ const App = () => (
               <Routes>
                 {/* Redirect root based on auth status */}
                 <Route path="/" element={<RootRoute />} />
+                <Route path="/vendas" element={<SalesPage />} />
+                <Route path="/pricing" element={<SalesPage />} />
 
                 {/* Admin Dashboard Routes (Protected) */}
                 <Route path="/auth" element={<AuthRoute />} />
