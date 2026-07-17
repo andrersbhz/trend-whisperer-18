@@ -40,7 +40,7 @@ const ProfilePage = () => {
       }
       setFullName(data?.full_name ?? '');
       setEmail(data?.email ?? user.email ?? '');
-      setWhatsapp(data?.whatsapp ?? '');
+      setWhatsapp(maskPhoneBR(data?.whatsapp ?? ''));
       setAvatarUrl(data?.avatar_url ?? null);
       setLoading(false);
     })();
