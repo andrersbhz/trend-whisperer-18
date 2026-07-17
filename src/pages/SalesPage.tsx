@@ -340,17 +340,16 @@ const SalesPage = () => {
                   </li>
                 ))}
               </ul>
-              <Link to="/auth" className="block">
-                <Button
-                  className={`w-full font-bold py-6 ${
-                    t.highlight
-                      ? "bg-[#a3ff12] text-[#0a1128] hover:bg-[#a3ff12] hover:shadow-[0_0_24px_rgba(163,255,18,0.7)]"
-                      : "bg-white/5 border border-white/20 hover:bg-white/10 text-white"
-                  } transition-all`}
-                >
-                  {t.cta}
-                </Button>
-              </Link>
+              <Button
+                onClick={() => t.plan ? setCheckout({ plan: t.plan, label: t.name, amount: t.amountBRL }) : openEnterprise()}
+                className={`w-full font-bold py-6 ${
+                  t.highlight
+                    ? "bg-[#a3ff12] text-[#0a1128] hover:bg-[#a3ff12] hover:shadow-[0_0_24px_rgba(163,255,18,0.7)]"
+                    : "bg-white/5 border border-white/20 hover:bg-white/10 text-white"
+                } transition-all`}
+              >
+                {t.cta}
+              </Button>
             </div>
           ))}
         </div>
