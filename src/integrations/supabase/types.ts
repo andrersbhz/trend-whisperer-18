@@ -449,6 +449,112 @@ export type Database = {
         }
         Relationships: []
       }
+      license_keys: {
+        Row: {
+          activated_at: string | null
+          created_at: string
+          current_ip: string | null
+          current_session_id: string | null
+          current_user_agent: string | null
+          expires_at: string | null
+          id: string
+          last_login_at: string | null
+          license_key: string
+          notes: string | null
+          plan: string
+          status: string
+          subscription_id: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          activated_at?: string | null
+          created_at?: string
+          current_ip?: string | null
+          current_session_id?: string | null
+          current_user_agent?: string | null
+          expires_at?: string | null
+          id?: string
+          last_login_at?: string | null
+          license_key: string
+          notes?: string | null
+          plan: string
+          status?: string
+          subscription_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          activated_at?: string | null
+          created_at?: string
+          current_ip?: string | null
+          current_session_id?: string | null
+          current_user_agent?: string | null
+          expires_at?: string | null
+          id?: string
+          last_login_at?: string | null
+          license_key?: string
+          notes?: string | null
+          plan?: string
+          status?: string
+          subscription_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "license_keys_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      license_sessions: {
+        Row: {
+          ended_at: string | null
+          ended_reason: string | null
+          id: string
+          ip: string | null
+          is_active: boolean
+          license_id: string
+          session_token: string
+          started_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          ended_at?: string | null
+          ended_reason?: string | null
+          id?: string
+          ip?: string | null
+          is_active?: boolean
+          license_id: string
+          session_token: string
+          started_at?: string
+          user_agent?: string | null
+        }
+        Update: {
+          ended_at?: string | null
+          ended_reason?: string | null
+          id?: string
+          ip?: string | null
+          is_active?: boolean
+          license_id?: string
+          session_token?: string
+          started_at?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "license_sessions_license_id_fkey"
+            columns: ["license_id"]
+            isOneToOne: false
+            referencedRelation: "license_keys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       nexa_audit_logs: {
         Row: {
           action: string
@@ -736,6 +842,69 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_methods_config: {
+        Row: {
+          admin_notify_email: string | null
+          admin_notify_phone: string | null
+          admin_notify_whatsapp: boolean
+          created_at: string
+          id: string
+          mercadopago_access_token: string | null
+          mercadopago_enabled: boolean
+          mercadopago_public_key: string | null
+          pagarme_api_key: string | null
+          pagarme_enabled: boolean
+          pix_bank: string | null
+          pix_enabled: boolean
+          pix_key: string | null
+          pix_key_type: string | null
+          pix_owner_document: string | null
+          pix_owner_name: string | null
+          singleton: boolean
+          updated_at: string
+        }
+        Insert: {
+          admin_notify_email?: string | null
+          admin_notify_phone?: string | null
+          admin_notify_whatsapp?: boolean
+          created_at?: string
+          id?: string
+          mercadopago_access_token?: string | null
+          mercadopago_enabled?: boolean
+          mercadopago_public_key?: string | null
+          pagarme_api_key?: string | null
+          pagarme_enabled?: boolean
+          pix_bank?: string | null
+          pix_enabled?: boolean
+          pix_key?: string | null
+          pix_key_type?: string | null
+          pix_owner_document?: string | null
+          pix_owner_name?: string | null
+          singleton?: boolean
+          updated_at?: string
+        }
+        Update: {
+          admin_notify_email?: string | null
+          admin_notify_phone?: string | null
+          admin_notify_whatsapp?: boolean
+          created_at?: string
+          id?: string
+          mercadopago_access_token?: string | null
+          mercadopago_enabled?: boolean
+          mercadopago_public_key?: string | null
+          pagarme_api_key?: string | null
+          pagarme_enabled?: boolean
+          pix_bank?: string | null
+          pix_enabled?: boolean
+          pix_key?: string | null
+          pix_key_type?: string | null
+          pix_owner_document?: string | null
+          pix_owner_name?: string | null
+          singleton?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       platform_settings: {
         Row: {
           accent_color: string
@@ -879,6 +1048,71 @@ export type Database = {
             columns: ["article_id"]
             isOneToOne: false
             referencedRelation: "public_articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sale_notifications: {
+        Row: {
+          amount_cents: number
+          buyer_email: string
+          buyer_name: string | null
+          buyer_phone: string | null
+          created_at: string
+          currency: string
+          delivered_at: string | null
+          id: string
+          license_id: string | null
+          metadata: Json | null
+          payment_method: string
+          payment_reference: string | null
+          plan: string
+          read_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount_cents: number
+          buyer_email: string
+          buyer_name?: string | null
+          buyer_phone?: string | null
+          created_at?: string
+          currency?: string
+          delivered_at?: string | null
+          id?: string
+          license_id?: string | null
+          metadata?: Json | null
+          payment_method: string
+          payment_reference?: string | null
+          plan: string
+          read_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount_cents?: number
+          buyer_email?: string
+          buyer_name?: string | null
+          buyer_phone?: string | null
+          created_at?: string
+          currency?: string
+          delivered_at?: string | null
+          id?: string
+          license_id?: string | null
+          metadata?: Json | null
+          payment_method?: string
+          payment_reference?: string | null
+          plan?: string
+          read_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sale_notifications_license_id_fkey"
+            columns: ["license_id"]
+            isOneToOne: false
+            referencedRelation: "license_keys"
             referencedColumns: ["id"]
           },
         ]
@@ -1272,6 +1506,19 @@ export type Database = {
       }
     }
     Views: {
+      payment_methods_public: {
+        Row: {
+          mercadopago_enabled: boolean | null
+          mercadopago_public_key: string | null
+          pagarme_enabled: boolean | null
+          pix_bank: string | null
+          pix_enabled: boolean | null
+          pix_key: string | null
+          pix_key_type: string | null
+          pix_owner_name: string | null
+        }
+        Relationships: []
+      }
       public_articles: {
         Row: {
           ai_provider: string | null
@@ -1403,6 +1650,10 @@ export type Database = {
       }
     }
     Functions: {
+      activate_license_session: {
+        Args: { p_ip: string; p_license_key: string; p_user_agent: string }
+        Returns: Json
+      }
       clean_old_trending_topics: { Args: never; Returns: undefined }
       cleanup_expired_data: { Args: never; Returns: undefined }
       decrypt_credential: {
@@ -1410,6 +1661,7 @@ export type Database = {
         Returns: string
       }
       encrypt_credential: { Args: { val: string }; Returns: string }
+      generate_license_key: { Args: never; Returns: string }
       get_credentials_status: { Args: never; Returns: Json }
       get_online_locations: {
         Args: { p_minutes: number }
@@ -1464,6 +1716,10 @@ export type Database = {
           p_user_id: string
         }
         Returns: undefined
+      }
+      validate_license_session: {
+        Args: { p_session_token: string }
+        Returns: Json
       }
     }
     Enums: {
