@@ -26,6 +26,8 @@ const FEATURES = [
 const TIERS = [
   {
     name: "Starter",
+    plan: "starter_monthly" as const,
+    amountBRL: 197,
     price: "R$ 197",
     period: "/mês",
     highlight: false,
@@ -37,10 +39,12 @@ const TIERS = [
       "Analytics básico",
       "Suporte por e-mail",
     ],
-    cta: "Testar 7 dias grátis",
+    cta: "Assinar Starter",
   },
   {
     name: "Pro",
+    plan: "pro_monthly" as const,
+    amountBRL: 497,
     price: "R$ 497",
     period: "/mês",
     highlight: true,
@@ -58,6 +62,8 @@ const TIERS = [
   },
   {
     name: "Enterprise",
+    plan: null,
+    amountBRL: 0,
     price: "Sob consulta",
     period: "",
     highlight: false,
