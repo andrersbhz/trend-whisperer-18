@@ -13,7 +13,7 @@ import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 
 const FEATURES = [
   { icon: Brain, title: "IA Multi-Provider", desc: "Gemini, OpenAI, Groq e Azure com fallback automático. Nunca fique offline." },
-  { icon: Sparkles, title: "Geração Automática", desc: "3 artigos por dia otimizados para SEO, publicados sem você mover um dedo." },
+  { icon: Sparkles, title: "Geração Automática", desc: "Quantos artigos por dia otimizados para SEO, publicados sem você mover um dedo." },
   { icon: Globe2, title: "WordPress Nativo", desc: "Publica direto no seu portal via REST API com imagens, categorias e SEO." },
   { icon: Facebook, title: "Meta + Instagram", desc: "OAuth completo, posts, interações e crescimento orgânico automatizado." },
   { icon: Search, title: "Google Indexing", desc: "Indexação instantânea no Google Search Console. Rankeie em horas." },
