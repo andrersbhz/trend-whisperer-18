@@ -62,10 +62,13 @@ const navItems = [
   { icon: Newspaper, label: 'Ver Blog', path: '/pt-br' },
   { icon: User, label: 'Meu Perfil', path: '/profile' },
   { icon: Palette, label: 'Marca / Vendas', path: '/branding' },
+  { icon: Wallet, label: 'Meios de Pagamento', path: '/payment-methods' },
+  { icon: Bell, label: 'Vendas & Licenças', path: '/admin-sales' },
   { icon: Settings, label: 'Configurações', path: '/settings' },
 ];
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
+  useLicenseSessionGuard(true);
   const { user, signOut } = useAuth();
   const { theme, setTheme } = useTheme();
   const location = useLocation();
