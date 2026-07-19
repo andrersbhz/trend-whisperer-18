@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Loader2, Bell, Copy, Send, RefreshCw, KeyRound } from "lucide-react";
+import { Loader2, Bell, Copy, Send, RefreshCw, KeyRound, FileCheck2, CheckCircle2, XCircle } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type Sale = {
   id: string;
