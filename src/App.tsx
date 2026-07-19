@@ -34,7 +34,7 @@ const SocialRobotPage = lazyRetry(() => import("@/pages/SocialRobotPage"));
 const GooglePage = lazyRetry(() => import("@/pages/GooglePage"));
 const MetaPage = lazyRetry(() => import("@/pages/MetaPage"));
 const InstagramPage = lazyRetry(() => import("@/pages/InstagramPage"));
-const AuthorsPage = lazyRetry(() => import("@/pages/AuthorsPage"));
+
 const MapPage = lazyRetry(() => import("@/pages/MapPage"));
 const ProfilePage = lazyRetry(() => import("@/pages/ProfilePage"));
 const ImageStudioPage = lazyRetry(() => import("@/pages/ImageStudioPage"));
