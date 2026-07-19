@@ -194,7 +194,7 @@ const WorldMap = () => {
             <ZoomableGroup 
               zoom={zoom} 
               minZoom={1} 
-              maxZoom={12} 
+              maxZoom={40} 
               onMoveEnd={({ zoom }) => setZoom(zoom)}
             >
               <Geographies geography={worldGeoUrl}>
