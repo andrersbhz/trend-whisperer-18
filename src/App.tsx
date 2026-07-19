@@ -132,7 +132,7 @@ const App = () => (
                 <Route path="/google" element={<ProtectedRoute><GooglePage /></ProtectedRoute>} />
                 <Route path="/meta" element={<ProtectedRoute><MetaPage /></ProtectedRoute>} />
                 <Route path="/instagram" element={<ProtectedRoute><InstagramPage /></ProtectedRoute>} />
-                <Route path="/authors" element={<ProtectedRoute><AuthorsPage /></ProtectedRoute>} />
+                
                 <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
                 <Route path="/map" element={<ProtectedRoute><MapPage /></ProtectedRoute>} />
                 <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
