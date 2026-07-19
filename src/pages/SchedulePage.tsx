@@ -393,9 +393,22 @@ const SchedulePage = () => {
       const endHour = endHM ? endHM.h + endHM.m / 60 : 23;
       const effectiveEnd = endHour > startHour ? endHour : startHour + 0.0001;
 
-      // Começa do horário definido (hoje se ainda não passou, senão amanhã)
-      const startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), startHM.h, startHM.m, 0);
+      // Base date: campo escolhido pelo usuário (ou hoje se vazio)
+      const [sy, sm, sd] = (rescheduleStartDate || '').split('-').map((n) => parseInt(n, 10));
+      const baseDate = sy && sm && sd
+        ? new Date(sy, sm - 1, sd, startHM.h, startHM.m, 0)
+        : new Date(now.getFullYear(), now.getMonth(), now.getDate(), startHM.h, startHM.m, 0);
+      const startDate = baseDate;
       if (startDate < now) startDate.setDate(startDate.getDate() + 1);
+
+      // Data-limite opcional (não pode agendar depois dela)
+      let endLimit: Date | null = null;
+      if (rescheduleEndDate) {
+        const [ey, em, ed] = rescheduleEndDate.split('-').map((n) => parseInt(n, 10));
+        if (ey && em && ed) {
+          endLimit = new Date(ey, em - 1, ed, 23, 59, 59);
+        }
+      }
 
       const updatedArticles = [];
 
