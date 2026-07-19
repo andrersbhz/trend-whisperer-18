@@ -16,10 +16,8 @@ export default function CheckoutReturnPage() {
     const start = Date.now();
     const timer = setInterval(async () => {
       if (Date.now() - start > 60_000) { clearInterval(timer); setChecking(false); return; }
-      const { data } = await supabase.from("sale_notifications")
-        .select("id,license:license_id(license_key)")
-        .eq("stripe_session_id", sessionId).maybeSingle();
-      const key = (data as any)?.license?.license_key;
+      const { data } = await supabase.rpc("check_sale_status", { p_mp_payment_id: null, p_stripe_session_id: sessionId });
+      const key = (data as any)?.license_key;
       if (key) { setLicenseKey(key); setChecking(false); clearInterval(timer); }
     }, 2500);
     return () => clearInterval(timer);

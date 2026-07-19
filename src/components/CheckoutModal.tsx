@@ -77,8 +77,8 @@ export default function CheckoutModal({ open, onOpenChange, plan, planLabel, amo
       const start = Date.now();
       const timer = setInterval(async () => {
         if (Date.now() - start > 10 * 60_000) { clearInterval(timer); setPixPolling(false); return; }
-        const { data: sale } = await supabase.from("sale_notifications").select("id,license_id").eq("mp_payment_id", String(data.paymentId)).maybeSingle();
-        if (sale?.license_id) {
+        const { data: sale } = await supabase.rpc("check_sale_status", { p_mp_payment_id: String(data.paymentId), p_stripe_session_id: null });
+        if ((sale as any)?.found && (sale as any)?.license_key) {
           clearInterval(timer);
           setPixPolling(false); setPaid(true);
           toast.success("Pagamento confirmado!");

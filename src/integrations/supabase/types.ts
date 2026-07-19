@@ -1695,6 +1695,10 @@ export type Database = {
         Args: { p_ip: string; p_license_key: string; p_user_agent: string }
         Returns: Json
       }
+      check_sale_status: {
+        Args: { p_mp_payment_id?: string; p_stripe_session_id?: string }
+        Returns: Json
+      }
       clean_old_trending_topics: { Args: never; Returns: undefined }
       cleanup_expired_data: { Args: never; Returns: undefined }
       create_license_after_payment: {

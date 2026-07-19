@@ -40,7 +40,10 @@ const ProfilePage = () => {
       }
       setFullName(data?.full_name ?? '');
       setEmail(data?.email ?? user.email ?? '');
-      setWhatsapp(maskPhoneBR(data?.whatsapp ?? ''));
+      const raw = onlyDigits(data?.whatsapp ?? '');
+      // Strip leading BR country code (55) if the stored value looks like E.164 12-13 digits.
+      const normalized = (raw.length === 12 || raw.length === 13) && raw.startsWith('55') ? raw.slice(2) : raw;
+      setWhatsapp(normalized ? maskPhoneBR(normalized) : '');
       setAvatarUrl(data?.avatar_url ?? null);
       setLoading(false);
     })();
@@ -70,14 +73,16 @@ const ProfilePage = () => {
     if (!user) return;
     if (!fullName.trim()) return toast({ title: 'Nome é obrigatório', variant: 'destructive' });
     if (!email.trim()) return toast({ title: 'E-mail é obrigatório', variant: 'destructive' });
-    if (!whatsapp.trim() || !isValidPhoneBR(whatsapp)) return toast({ title: 'WhatsApp inválido', description: 'Use DDD + número (10 ou 11 dígitos)', variant: 'destructive' });
+    if (whatsapp.trim() && !isValidPhoneBR(whatsapp)) {
+      return toast({ title: 'WhatsApp inválido', description: 'Use DDD + número (10 ou 11 dígitos)', variant: 'destructive' });
+    }
     setSaving(true);
     try {
       const payload = {
         user_id: user.id,
         full_name: fullName.trim(),
         email: email.trim(),
-        whatsapp: onlyDigits(whatsapp),
+        whatsapp: whatsapp.trim() ? onlyDigits(whatsapp) : null,
         avatar_url: avatarUrl,
       };
       const { error } = await supabase
@@ -168,8 +173,8 @@ const ProfilePage = () => {
             <Input id="email" required type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="voce@email.com" />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="whatsapp">WhatsApp *</Label>
-            <Input id="whatsapp" required inputMode="numeric" value={whatsapp} onChange={(e) => setWhatsapp(maskPhoneBR(e.target.value))} placeholder="(11) 99999-9999" maxLength={16} />
+            <Label htmlFor="whatsapp">WhatsApp</Label>
+            <Input id="whatsapp" inputMode="numeric" value={whatsapp} onChange={(e) => setWhatsapp(maskPhoneBR(e.target.value))} placeholder="(11) 99999-9999" maxLength={16} />
           </div>
         </CardContent>
       </Card>

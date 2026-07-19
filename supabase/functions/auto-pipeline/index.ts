@@ -153,7 +153,16 @@ serve(async (req) => {
           headers: { Authorization: `Bearer ${serviceKey}`, "Content-Type": "application/json" },
           body: JSON.stringify({ userId }),
         });
-        const genData = await genResp.json();
+        const rawBody = await genResp.text();
+        let genData: any = {};
+        try {
+          genData = rawBody ? JSON.parse(rawBody) : {};
+        } catch {
+          genData = { error: `Non-JSON response (HTTP ${genResp.status}): ${rawBody.slice(0, 200)}` };
+        }
+        if (!genResp.ok && !genData.error) {
+          genData.error = `HTTP ${genResp.status}`;
+        }
         results.push({ userId, step: "generate-articles", result: genData.message || genData.error || "done" });
         console.log(`[Pipeline] Articles for ${userId}: ${genData.message || genData.error}`);
       } catch (err) {
