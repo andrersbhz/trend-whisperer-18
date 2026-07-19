@@ -70,14 +70,16 @@ const ProfilePage = () => {
     if (!user) return;
     if (!fullName.trim()) return toast({ title: 'Nome é obrigatório', variant: 'destructive' });
     if (!email.trim()) return toast({ title: 'E-mail é obrigatório', variant: 'destructive' });
-    if (!whatsapp.trim() || !isValidPhoneBR(whatsapp)) return toast({ title: 'WhatsApp inválido', description: 'Use DDD + número (10 ou 11 dígitos)', variant: 'destructive' });
+    if (whatsapp.trim() && !isValidPhoneBR(whatsapp)) {
+      return toast({ title: 'WhatsApp inválido', description: 'Use DDD + número (10 ou 11 dígitos)', variant: 'destructive' });
+    }
     setSaving(true);
     try {
       const payload = {
         user_id: user.id,
         full_name: fullName.trim(),
         email: email.trim(),
-        whatsapp: onlyDigits(whatsapp),
+        whatsapp: whatsapp.trim() ? onlyDigits(whatsapp) : null,
         avatar_url: avatarUrl,
       };
       const { error } = await supabase
