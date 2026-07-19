@@ -59,6 +59,11 @@ const SchedulePage = () => {
   const [rescheduleType, setRescheduleType] = useState<'pending' | 'all'>('pending');
   const [rescheduleStart, setRescheduleStart] = useState('08:00');
   const [rescheduleEnd, setRescheduleEnd] = useState('');
+  const [rescheduleStartDate, setRescheduleStartDate] = useState<string>(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  });
+  const [rescheduleEndDate, setRescheduleEndDate] = useState<string>('');
   const [sortAsc, setSortAsc] = useState(true);
 
   const sortedArticles = [...articles].sort((a: any, b: any) => {
@@ -388,9 +393,22 @@ const SchedulePage = () => {
       const endHour = endHM ? endHM.h + endHM.m / 60 : 23;
       const effectiveEnd = endHour > startHour ? endHour : startHour + 0.0001;
 
-      // Começa do horário definido (hoje se ainda não passou, senão amanhã)
-      const startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), startHM.h, startHM.m, 0);
+      // Base date: campo escolhido pelo usuário (ou hoje se vazio)
+      const [sy, sm, sd] = (rescheduleStartDate || '').split('-').map((n) => parseInt(n, 10));
+      const baseDate = sy && sm && sd
+        ? new Date(sy, sm - 1, sd, startHM.h, startHM.m, 0)
+        : new Date(now.getFullYear(), now.getMonth(), now.getDate(), startHM.h, startHM.m, 0);
+      const startDate = baseDate;
       if (startDate < now) startDate.setDate(startDate.getDate() + 1);
+
+      // Data-limite opcional (não pode agendar depois dela)
+      let endLimit: Date | null = null;
+      if (rescheduleEndDate) {
+        const [ey, em, ed] = rescheduleEndDate.split('-').map((n) => parseInt(n, 10));
+        if (ey && em && ed) {
+          endLimit = new Date(ey, em - 1, ed, 23, 59, 59);
+        }
+      }
 
       const updatedArticles = [];
 
@@ -406,6 +424,14 @@ const SchedulePage = () => {
         const hour = startHour + (articleInDayIndex * hourStep);
         scheduledDate.setHours(Math.floor(hour));
         scheduledDate.setMinutes(Math.floor((hour % 1) * 60));
+
+        if (endLimit && scheduledDate > endLimit) {
+          toast({
+            title: 'Data-limite atingida',
+            description: `Só foi possível reagendar ${updatedArticles.length} de ${targetArticles.length} artigos até ${endLimit.toLocaleDateString('pt-BR')}.`,
+          });
+          break;
+        }
         
         const isoDate = scheduledDate.toISOString();
         
@@ -545,7 +571,28 @@ const SchedulePage = () => {
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label htmlFor="resched-start" className="text-xs">Iniciar às</Label>
+                <Label htmlFor="resched-start-date" className="text-xs">Data de início</Label>
+                <Input
+                  id="resched-start-date"
+                  type="date"
+                  value={rescheduleStartDate}
+                  onChange={(e) => setRescheduleStartDate(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="resched-end-date" className="text-xs">
+                  Data-limite <span className="text-muted-foreground">(opcional)</span>
+                </Label>
+                <Input
+                  id="resched-end-date"
+                  type="date"
+                  value={rescheduleEndDate}
+                  min={rescheduleStartDate || undefined}
+                  onChange={(e) => setRescheduleEndDate(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="resched-start" className="text-xs">Horário de início</Label>
                 <Input
                   id="resched-start"
                   type="time"
@@ -555,7 +602,7 @@ const SchedulePage = () => {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="resched-end" className="text-xs">
-                  Terminar às <span className="text-muted-foreground">(opcional)</span>
+                  Horário de término <span className="text-muted-foreground">(opcional)</span>
                 </Label>
                 <Input
                   id="resched-end"
@@ -568,18 +615,26 @@ const SchedulePage = () => {
             </div>
 
             <p className="text-sm text-muted-foreground">
-              {articlesPerDay} postagens por dia, iniciando às <strong>{rescheduleStart || '08:00'}</strong>
-              {rescheduleEnd
-                ? <> e terminando às <strong>{rescheduleEnd}</strong>.</>
-                : <> e seguindo sequencialmente até agendar o último artigo pronto.</>}
+              {articlesPerDay} postagens por dia, começando em{' '}
+              <strong>
+                {rescheduleStartDate
+                  ? new Date(rescheduleStartDate + 'T00:00:00').toLocaleDateString('pt-BR')
+                  : 'hoje'}
+              </strong>{' '}
+              às <strong>{rescheduleStart || '08:00'}</strong>
+              {rescheduleEnd ? <> e terminando às <strong>{rescheduleEnd}</strong></> : null}
+              {rescheduleEndDate
+                ? <>, até <strong>{new Date(rescheduleEndDate + 'T00:00:00').toLocaleDateString('pt-BR')}</strong>.</>
+                : <>, seguindo sequencialmente até o último artigo.</>}
             </p>
           </div>
           <div className="flex justify-end gap-3">
             <Button variant="outline" onClick={() => setRescheduleDialogOpen(false)}>Cancelar</Button>
-            <Button 
-              className={rescheduleType === 'all' ? 'gradient-accent' : 'gradient-primary'} 
+            <Button
               onClick={handleReschedule}
               disabled={isRescheduling}
+              style={{ backgroundColor: '#a3ff12', color: '#000000' }}
+              className="font-semibold border border-transparent hover:border-[#a3ff12] hover:shadow-[0_0_18px_rgba(163,255,18,0.7)] transition-all"
             >
               {isRescheduling ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : 'Confirmar Reagendamento'}
             </Button>
