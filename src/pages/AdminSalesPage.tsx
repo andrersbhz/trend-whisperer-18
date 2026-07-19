@@ -88,7 +88,32 @@ export default function AdminSalesPage() {
     if (error || !newLic) return toast.error("Erro ao gerar chave: " + error?.message);
     await supabase.from("sale_notifications").update({ license_id: newLic.id, status: "paid" }).eq("id", sale.id);
     toast.success("Chave gerada: " + licenseKey);
+    supabase.functions.invoke("send-sale-notifications", { body: { saleId: sale.id } }).catch(() => {});
     load();
+  };
+
+  const confirmManualPix = async (sale: Sale) => {
+    const { data, error } = await supabase.rpc("admin_confirm_pix_sale" as any, { p_sale_id: sale.id, p_period_days: 30 });
+    if (error) return toast.error("Erro: " + error.message);
+    const res = data as any;
+    if (!res?.ok) return toast.error("Falhou: " + (res?.error || "desconhecido"));
+    toast.success("Pagamento confirmado! Chave: " + res.license_key);
+    supabase.functions.invoke("send-sale-notifications", { body: { saleId: sale.id } }).catch(() => {});
+    load();
+  };
+
+  const changeStatus = async (id: string, status: string) => {
+    await supabase.from("sale_notifications").update({ status }).eq("id", id);
+    toast.success("Status atualizado");
+    load();
+  };
+
+  const viewProof = async (proofUrl: string) => {
+    // proof stored as `payment-proofs://<path>`
+    const path = proofUrl.replace(/^payment-proofs:\/\//, "");
+    const { data, error } = await supabase.storage.from("payment-proofs").createSignedUrl(path, 60 * 10);
+    if (error || !data?.signedUrl) return toast.error("Não foi possível abrir o comprovante");
+    window.open(data.signedUrl, "_blank");
   };
 
   const markDelivered = async (id: string) => {
