@@ -424,6 +424,14 @@ const SchedulePage = () => {
         const hour = startHour + (articleInDayIndex * hourStep);
         scheduledDate.setHours(Math.floor(hour));
         scheduledDate.setMinutes(Math.floor((hour % 1) * 60));
+
+        if (endLimit && scheduledDate > endLimit) {
+          toast({
+            title: 'Data-limite atingida',
+            description: `Só foi possível reagendar ${updatedArticles.length} de ${targetArticles.length} artigos até ${endLimit.toLocaleDateString('pt-BR')}.`,
+          });
+          break;
+        }
         
         const isoDate = scheduledDate.toISOString();
         
