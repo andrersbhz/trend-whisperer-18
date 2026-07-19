@@ -126,7 +126,8 @@ export default function CheckoutModal({ open, onOpenChange, plan, planLabel, amo
             <Tabs value={tab} onValueChange={(v) => setTab(v as any)} className="mt-4">
               <TabsList className="bg-[#141a2e] border border-white/10">
                 <TabsTrigger value="card"><CreditCard className="w-4 h-4 mr-1" /> Cartão</TabsTrigger>
-                <TabsTrigger value="pix"><QrCode className="w-4 h-4 mr-1" /> Pix</TabsTrigger>
+                <TabsTrigger value="pix"><QrCode className="w-4 h-4 mr-1" /> Pix (MP)</TabsTrigger>
+                <TabsTrigger value="pix_manual"><HandCoins className="w-4 h-4 mr-1" /> Pix manual</TabsTrigger>
               </TabsList>
               <TabsContent value="card" className="mt-4">
                 <p className="text-sm text-white/60 mb-3">Cobrança mensal automática via Stripe. Cancele quando quiser pelo portal.</p>
