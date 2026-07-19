@@ -196,15 +196,33 @@ const ArticlesPage = () => {
   const fetchCategories = async () => {
     if (!user) return;
     setLoadingCategories(true);
+    const fallback = ['policia', 'celebridades', 'politica', 'esportes', 'saude', 'financas'];
     try {
-      const { data } = await supabase.from('user_settings').select('categories').eq('user_id', user.id).maybeSingle();
-      setUserCategories(data?.categories || ['policia', 'celebridades', 'politica', 'esportes', 'saude', 'financas']);
+      // 1) Prioridade: categorias vindas do WordPress conectado (dinâmico)
+      const { data: wpData } = await supabase.functions.invoke('list-wp-categories', {
+        body: { userId: user.id },
+      });
+      const wpCats: string[] = Array.isArray(wpData?.categories) ? wpData.categories : [];
+      if (wpCats.length > 0) {
+        setUserCategories(wpCats);
+        return;
+      }
+
+      // 2) Fallback: categorias salvas nas configurações do usuário
+      const { data } = await supabase
+        .from('user_settings')
+        .select('categories')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      setUserCategories(data?.categories?.length ? data.categories : fallback);
     } catch (e) {
       console.error('Error fetching categories', e);
+      setUserCategories(fallback);
     } finally {
       setLoadingCategories(false);
     }
   };
+
 
   const handleGenerateByCategory = async (category: string) => {
     if (!user) return;
