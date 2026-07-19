@@ -37,11 +37,9 @@ export default function ManualPixTab({ plan, amountBRL, buyer, validateBuyer, on
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
-        .from("payment_methods_config")
-        .select("pix_enabled,pix_key,pix_key_type,pix_owner_name,pix_bank,admin_notify_email,notify_admin_whatsapp_number")
-        .limit(1).maybeSingle();
-      setCfg(data as Config | null);
+      const { data } = await supabase.rpc("get_public_payment_config");
+      const row = Array.isArray(data) ? data[0] : data;
+      setCfg((row as Config | null) ?? null);
     })();
   }, []);
 
