@@ -121,7 +121,8 @@ serve(async (req) => {
     }
 
     const tokenData = await tokenResp.json();
-    // Save token (ideally you'd save both access and refresh tokens)
+    // Add absolute expiry so downstream functions can refresh proactively
+    tokenData.expires_at = Date.now() + (tokenData.expires_in ?? 3600) * 1000;
     const storedToken = JSON.stringify(tokenData);
 
     await supabase
