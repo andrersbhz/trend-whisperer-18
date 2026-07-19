@@ -59,6 +59,11 @@ const SchedulePage = () => {
   const [rescheduleType, setRescheduleType] = useState<'pending' | 'all'>('pending');
   const [rescheduleStart, setRescheduleStart] = useState('08:00');
   const [rescheduleEnd, setRescheduleEnd] = useState('');
+  const [rescheduleStartDate, setRescheduleStartDate] = useState<string>(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  });
+  const [rescheduleEndDate, setRescheduleEndDate] = useState<string>('');
   const [sortAsc, setSortAsc] = useState(true);
 
   const sortedArticles = [...articles].sort((a: any, b: any) => {
