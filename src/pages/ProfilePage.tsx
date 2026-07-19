@@ -170,8 +170,8 @@ const ProfilePage = () => {
             <Input id="email" required type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="voce@email.com" />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="whatsapp">WhatsApp *</Label>
-            <Input id="whatsapp" required inputMode="numeric" value={whatsapp} onChange={(e) => setWhatsapp(maskPhoneBR(e.target.value))} placeholder="(11) 99999-9999" maxLength={16} />
+            <Label htmlFor="whatsapp">WhatsApp</Label>
+            <Input id="whatsapp" inputMode="numeric" value={whatsapp} onChange={(e) => setWhatsapp(maskPhoneBR(e.target.value))} placeholder="(11) 99999-9999" maxLength={16} />
           </div>
         </CardContent>
       </Card>
