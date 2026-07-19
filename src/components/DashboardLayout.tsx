@@ -176,9 +176,10 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
             <div className="h-10 w-10 rounded-full overflow-hidden border-2 border-[#a3ff12] shadow-[0_0_15px_rgba(163,255,18,0.7)] group-hover:scale-105 transition-transform shrink-0 bg-black">
               <img src={brand?.logo_url || a3Logo} alt={brand?.brand_name || 'Logo'} className="h-full w-full object-cover" />
             </div>
-            <span className="font-extrabold text-base tracking-tighter uppercase italic text-foreground font-montserrat">
+            <span className="font-extrabold text-base tracking-tighter uppercase text-foreground font-montserrat">
               {brand?.brand_short || 'A3'} <span className="text-[#a3ff12]">{(brand?.brand_name || 'A3 PostWP').replace(brand?.brand_short || '', '').trim() || 'PostWP'}</span>
             </span>
+
 
           </Link>
           <button
