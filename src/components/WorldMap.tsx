@@ -194,7 +194,7 @@ const WorldMap = () => {
             <ZoomableGroup 
               zoom={zoom} 
               minZoom={1} 
-              maxZoom={12} 
+              maxZoom={40} 
               onMoveEnd={({ zoom }) => setZoom(zoom)}
             >
               <Geographies geography={worldGeoUrl}>
@@ -278,15 +278,15 @@ const WorldMap = () => {
                         <animate attributeName="opacity" from="0.4" to="0" dur="2s" repeatCount="indefinite" />
                       </circle>
 
-                      {/* Info label - apenas bolinha verde + nome da cidade, sem box */}
-                      <motion.g transform={`translate(0, -${20 / zoom})`}>
-                         <circle cx={-10 / zoom} cy={-3 / zoom} r={1.8 / zoom} fill="#39FF14" style={{ filter: `drop-shadow(0 0 ${3 / zoom}px #39FF14)` }} className="animate-pulse" />
+                      {/* Info label - bolinha verde + nome da cidade em destaque */}
+                      <motion.g transform={`translate(0, -${22 / zoom})`}>
+                         <circle cx={-14 / zoom} cy={-4 / zoom} r={2.4 / zoom} fill="#39FF14" style={{ filter: `drop-shadow(0 0 ${5 / zoom}px #39FF14)` }} className="animate-pulse" />
                          <text
                            textAnchor="start"
-                           x={-6 / zoom}
+                           x={-9 / zoom}
                            y={-1 / zoom}
-                           className="font-black uppercase tracking-tighter"
-                           style={{ fontSize: `${6 / zoom}px`, fill: "#fff", paintOrder: 'stroke', stroke: 'rgba(0,0,0,0.85)', strokeWidth: `${1.2 / zoom}px`, strokeLinejoin: 'round' }}
+                           className="font-black uppercase tracking-tight"
+                           style={{ fontSize: `${Math.max(9, 13 / Math.sqrt(zoom))}px`, fill: "#fff", paintOrder: 'stroke', stroke: 'rgba(0,0,0,0.9)', strokeWidth: `${2 / Math.sqrt(zoom)}px`, strokeLinejoin: 'round' }}
                          >
                            {user.city || user.state || user.country}
                          </text>
