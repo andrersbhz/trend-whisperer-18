@@ -129,10 +129,12 @@ export default function AdminSalesPage() {
 
   const statusColor: Record<string, string> = {
     pending: "bg-yellow-500/20 text-yellow-300 border-yellow-500/40",
+    awaiting_confirmation: "bg-orange-500/20 text-orange-300 border-orange-500/40",
     paid: "bg-blue-500/20 text-blue-300 border-blue-500/40",
     delivered: "bg-green-500/20 text-green-300 border-green-500/40",
     cancelled: "bg-red-500/20 text-red-300 border-red-500/40",
   };
+  const STATUSES = ["pending", "awaiting_confirmation", "paid", "delivered", "cancelled"];
 
   return (
     <div className="min-h-screen bg-[#0b1020] text-white p-6">
