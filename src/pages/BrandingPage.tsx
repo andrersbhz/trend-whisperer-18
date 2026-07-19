@@ -67,7 +67,7 @@ const BrandingPage = () => {
     setUploading(kind);
     try {
       const ext = file.name.split(".").pop() || "png";
-      const path = `brand/${kind}-${Date.now()}.${ext}`;
+      const path = `${user.id}/brand/${kind}-${Date.now()}.${ext}`;
       const { error } = await supabase.storage
         .from("article-images")
         .upload(path, file, { upsert: true, contentType: file.type });
