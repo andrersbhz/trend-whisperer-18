@@ -1078,6 +1078,7 @@ export type Database = {
       }
       sale_notifications: {
         Row: {
+          admin_note: string | null
           amount_cents: number
           buyer_email: string
           buyer_name: string | null
@@ -1092,12 +1093,14 @@ export type Database = {
           payment_method: string
           payment_reference: string | null
           plan: string
+          proof_url: string | null
           read_at: string | null
           status: string
           stripe_session_id: string | null
           updated_at: string
         }
         Insert: {
+          admin_note?: string | null
           amount_cents: number
           buyer_email: string
           buyer_name?: string | null
@@ -1112,12 +1115,14 @@ export type Database = {
           payment_method: string
           payment_reference?: string | null
           plan: string
+          proof_url?: string | null
           read_at?: string | null
           status?: string
           stripe_session_id?: string | null
           updated_at?: string
         }
         Update: {
+          admin_note?: string | null
           amount_cents?: number
           buyer_email?: string
           buyer_name?: string | null
@@ -1132,6 +1137,7 @@ export type Database = {
           payment_method?: string
           payment_reference?: string | null
           plan?: string
+          proof_url?: string | null
           read_at?: string | null
           status?: string
           stripe_session_id?: string | null
@@ -1693,6 +1699,14 @@ export type Database = {
     Functions: {
       activate_license_session: {
         Args: { p_ip: string; p_license_key: string; p_user_agent: string }
+        Returns: Json
+      }
+      admin_confirm_pix_sale: {
+        Args: { p_period_days?: number; p_sale_id: string }
+        Returns: Json
+      }
+      attach_pix_proof: {
+        Args: { p_proof_url: string; p_sale_id: string }
         Returns: Json
       }
       check_sale_status: {
