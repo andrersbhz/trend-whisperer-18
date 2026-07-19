@@ -571,7 +571,28 @@ const SchedulePage = () => {
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label htmlFor="resched-start" className="text-xs">Iniciar às</Label>
+                <Label htmlFor="resched-start-date" className="text-xs">Data de início</Label>
+                <Input
+                  id="resched-start-date"
+                  type="date"
+                  value={rescheduleStartDate}
+                  onChange={(e) => setRescheduleStartDate(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="resched-end-date" className="text-xs">
+                  Data-limite <span className="text-muted-foreground">(opcional)</span>
+                </Label>
+                <Input
+                  id="resched-end-date"
+                  type="date"
+                  value={rescheduleEndDate}
+                  min={rescheduleStartDate || undefined}
+                  onChange={(e) => setRescheduleEndDate(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="resched-start" className="text-xs">Horário de início</Label>
                 <Input
                   id="resched-start"
                   type="time"
@@ -581,7 +602,7 @@ const SchedulePage = () => {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="resched-end" className="text-xs">
-                  Terminar às <span className="text-muted-foreground">(opcional)</span>
+                  Horário de término <span className="text-muted-foreground">(opcional)</span>
                 </Label>
                 <Input
                   id="resched-end"
@@ -594,18 +615,26 @@ const SchedulePage = () => {
             </div>
 
             <p className="text-sm text-muted-foreground">
-              {articlesPerDay} postagens por dia, iniciando às <strong>{rescheduleStart || '08:00'}</strong>
-              {rescheduleEnd
-                ? <> e terminando às <strong>{rescheduleEnd}</strong>.</>
-                : <> e seguindo sequencialmente até agendar o último artigo pronto.</>}
+              {articlesPerDay} postagens por dia, começando em{' '}
+              <strong>
+                {rescheduleStartDate
+                  ? new Date(rescheduleStartDate + 'T00:00:00').toLocaleDateString('pt-BR')
+                  : 'hoje'}
+              </strong>{' '}
+              às <strong>{rescheduleStart || '08:00'}</strong>
+              {rescheduleEnd ? <> e terminando às <strong>{rescheduleEnd}</strong></> : null}
+              {rescheduleEndDate
+                ? <>, até <strong>{new Date(rescheduleEndDate + 'T00:00:00').toLocaleDateString('pt-BR')}</strong>.</>
+                : <>, seguindo sequencialmente até o último artigo.</>}
             </p>
           </div>
           <div className="flex justify-end gap-3">
             <Button variant="outline" onClick={() => setRescheduleDialogOpen(false)}>Cancelar</Button>
-            <Button 
-              className={rescheduleType === 'all' ? 'gradient-accent' : 'gradient-primary'} 
+            <Button
               onClick={handleReschedule}
               disabled={isRescheduling}
+              style={{ backgroundColor: '#a3ff12', color: '#000000' }}
+              className="font-semibold border border-transparent hover:border-[#a3ff12] hover:shadow-[0_0_18px_rgba(163,255,18,0.7)] transition-all"
             >
               {isRescheduling ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : 'Confirmar Reagendamento'}
             </Button>
