@@ -158,6 +158,15 @@ export default function CheckoutModal({ open, onOpenChange, plan, planLabel, amo
                   </>
                 )}
               </TabsContent>
+              <TabsContent value="pix_manual" className="mt-4">
+                <ManualPixTab
+                  plan={plan}
+                  amountBRL={amountBRL}
+                  buyer={form}
+                  validateBuyer={() => validateCommon() && (isValidCPF(form.document) || (toast.error("CPF inválido"), false))}
+                  onPaid={() => setPaid(true)}
+                />
+              </TabsContent>
             </Tabs>
           </>
         )}
