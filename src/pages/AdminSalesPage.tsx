@@ -169,8 +169,26 @@ export default function AdminSalesPage() {
                     <div><p className="text-xs text-white/40">Plano</p><p className="font-bold text-[#a3ff12]">{s.plan}</p></div>
                     <div><p className="text-xs text-white/40">Valor</p><p className="font-bold">{(s.amount_cents / 100).toLocaleString("pt-BR", { style: "currency", currency: s.currency })}</p></div>
                     <div><p className="text-xs text-white/40">Método</p><p className="font-bold uppercase">{s.payment_method}</p></div>
-                    <div className="flex gap-2 justify-end">
-                      {!lic && (
+                    <div>
+                      <p className="text-xs text-white/40">Alterar status</p>
+                      <Select value={s.status} onValueChange={(v) => changeStatus(s.id, v)}>
+                        <SelectTrigger className="bg-[#0b1020] border-white/10 h-9"><SelectValue /></SelectTrigger>
+                        <SelectContent>{STATUSES.map(st => <SelectItem key={st} value={st}>{st}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="md:col-span-4 flex flex-wrap gap-2 pt-2 border-t border-white/10">
+                      {s.proof_url && (
+                        <Button size="sm" variant="outline" onClick={() => viewProof(s.proof_url!)} className="border-[#a3ff12]/40 text-[#a3ff12] hover:bg-[#a3ff12]/10">
+                          <FileCheck2 className="w-3 h-3 mr-1" /> Ver comprovante
+                        </Button>
+                      )}
+                      {s.payment_method === "pix_manual" && !lic && (
+                        <Button size="sm" onClick={() => confirmManualPix(s)} className="bg-[#a3ff12] text-black hover:bg-[#c8ff5c]">
+                          <CheckCircle2 className="w-3 h-3 mr-1" /> Confirmar pagamento e gerar chave
+                        </Button>
+                      )}
+                      {s.payment_method !== "pix_manual" && !lic && (
                         <Button size="sm" onClick={() => generateLicense(s)} className="bg-[#a3ff12] text-black hover:bg-[#c8ff5c]">
                           <KeyRound className="w-3 h-3 mr-1" /> Gerar chave
                         </Button>
@@ -180,7 +198,13 @@ export default function AdminSalesPage() {
                           <Send className="w-3 h-3 mr-1" /> Marcar enviado
                         </Button>
                       )}
+                      {s.status !== "cancelled" && (
+                        <Button size="sm" variant="outline" onClick={() => changeStatus(s.id, "cancelled")} className="border-red-500/40 text-red-300 hover:bg-red-500/10">
+                          <XCircle className="w-3 h-3 mr-1" /> Cancelar
+                        </Button>
+                      )}
                     </div>
+
                     {lic && (
                       <div className="md:col-span-4 flex items-center gap-2 pt-2 border-t border-white/10">
                         <Input readOnly value={lic.license_key} className="bg-[#0b1020] border-white/10 font-mono" />
