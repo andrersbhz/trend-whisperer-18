@@ -7,9 +7,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Loader2, CreditCard, QrCode, Copy, CheckCircle2 } from "lucide-react";
+import { Loader2, CreditCard, QrCode, Copy, CheckCircle2, HandCoins } from "lucide-react";
 import { toast } from "sonner";
 import { maskPhoneBR, maskCPF, isValidPhoneBR, isValidCPF, onlyDigits } from "@/lib/masks";
+import ManualPixTab from "./ManualPixTab";
 
 type Props = {
   open: boolean;
@@ -22,14 +23,15 @@ type Props = {
 export default function CheckoutModal({ open, onOpenChange, plan, planLabel, amountBRL }: Props) {
   const [form, setForm] = useState({ email: "", name: "", phone: "", document: "" });
   const [loading, setLoading] = useState(false);
-  const [tab, setTab] = useState<"card" | "pix">("card");
+  const [tab, setTab] = useState<"card" | "pix" | "pix_manual">("card");
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [pixData, setPixData] = useState<{ qrCode?: string; qrCodeBase64?: string; paymentId?: number } | null>(null);
   const [pixPolling, setPixPolling] = useState(false);
   const [paid, setPaid] = useState(false);
+  const [issuedKey, setIssuedKey] = useState<string | null>(null);
 
   const reset = () => {
-    setClientSecret(null); setPixData(null); setPaid(false); setPixPolling(false);
+    setClientSecret(null); setPixData(null); setPaid(false); setPixPolling(false); setIssuedKey(null);
   };
 
   const handleClose = (v: boolean) => { if (!v) reset(); onOpenChange(v); };
@@ -102,7 +104,15 @@ export default function CheckoutModal({ open, onOpenChange, plan, planLabel, amo
           <div className="py-8 text-center">
             <CheckCircle2 className="w-16 h-16 text-[#a3ff12] mx-auto mb-4" />
             <h3 className="text-xl font-bold mb-2">Pagamento aprovado!</h3>
-            <p className="text-white/60 mb-6">Sua chave de licença foi enviada para <b>{form.email}</b>.</p>
+            <p className="text-white/60 mb-4">Sua chave de licença foi enviada para <b>{form.email}</b>.</p>
+            {issuedKey && (
+              <div className="flex items-center gap-2 max-w-md mx-auto mb-6">
+                <input readOnly value={issuedKey} className="flex-1 bg-[#141a2e] border border-[#a3ff12]/40 rounded px-3 py-2 font-mono text-[#a3ff12] text-center" />
+                <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(issuedKey); toast.success("Copiada!"); }}>
+                  <Copy className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
             <Button onClick={() => (window.location.href = "/ativar")} className="bg-[#a3ff12] text-black font-bold">
               Ativar agora
             </Button>
@@ -125,7 +135,8 @@ export default function CheckoutModal({ open, onOpenChange, plan, planLabel, amo
             <Tabs value={tab} onValueChange={(v) => setTab(v as any)} className="mt-4">
               <TabsList className="bg-[#141a2e] border border-white/10">
                 <TabsTrigger value="card"><CreditCard className="w-4 h-4 mr-1" /> Cartão</TabsTrigger>
-                <TabsTrigger value="pix"><QrCode className="w-4 h-4 mr-1" /> Pix</TabsTrigger>
+                <TabsTrigger value="pix"><QrCode className="w-4 h-4 mr-1" /> Pix (MP)</TabsTrigger>
+                <TabsTrigger value="pix_manual"><HandCoins className="w-4 h-4 mr-1" /> Pix manual</TabsTrigger>
               </TabsList>
               <TabsContent value="card" className="mt-4">
                 <p className="text-sm text-white/60 mb-3">Cobrança mensal automática via Stripe. Cancele quando quiser pelo portal.</p>
@@ -155,6 +166,15 @@ export default function CheckoutModal({ open, onOpenChange, plan, planLabel, amo
                     </Button>
                   </>
                 )}
+              </TabsContent>
+              <TabsContent value="pix_manual" className="mt-4">
+                <ManualPixTab
+                  plan={plan}
+                  amountBRL={amountBRL}
+                  buyer={form}
+                  validateBuyer={() => validateCommon() && (isValidCPF(form.document) || (toast.error("CPF inválido"), false))}
+                  onPaid={(key) => { if (key) setIssuedKey(key); setPaid(true); }}
+                />
               </TabsContent>
             </Tabs>
           </>

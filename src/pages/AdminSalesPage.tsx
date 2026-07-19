@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Loader2, Bell, Copy, Send, RefreshCw, KeyRound } from "lucide-react";
+import { Loader2, Bell, Copy, Send, RefreshCw, KeyRound, FileCheck2, CheckCircle2, XCircle } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type Sale = {
   id: string;
@@ -23,6 +24,8 @@ type Sale = {
   created_at: string;
   read_at: string | null;
   delivered_at: string | null;
+  proof_url: string | null;
+  admin_note: string | null;
 };
 
 type License = {
@@ -85,7 +88,32 @@ export default function AdminSalesPage() {
     if (error || !newLic) return toast.error("Erro ao gerar chave: " + error?.message);
     await supabase.from("sale_notifications").update({ license_id: newLic.id, status: "paid" }).eq("id", sale.id);
     toast.success("Chave gerada: " + licenseKey);
+    supabase.functions.invoke("send-sale-notifications", { body: { saleId: sale.id } }).catch(() => {});
     load();
+  };
+
+  const confirmManualPix = async (sale: Sale) => {
+    const { data, error } = await supabase.rpc("admin_confirm_pix_sale" as any, { p_sale_id: sale.id, p_period_days: 30 });
+    if (error) return toast.error("Erro: " + error.message);
+    const res = data as any;
+    if (!res?.ok) return toast.error("Falhou: " + (res?.error || "desconhecido"));
+    toast.success("Pagamento confirmado! Chave: " + res.license_key);
+    supabase.functions.invoke("send-sale-notifications", { body: { saleId: sale.id } }).catch(() => {});
+    load();
+  };
+
+  const changeStatus = async (id: string, status: string) => {
+    await supabase.from("sale_notifications").update({ status }).eq("id", id);
+    toast.success("Status atualizado");
+    load();
+  };
+
+  const viewProof = async (proofUrl: string) => {
+    // proof stored as `payment-proofs://<path>`
+    const path = proofUrl.replace(/^payment-proofs:\/\//, "");
+    const { data, error } = await supabase.storage.from("payment-proofs").createSignedUrl(path, 60 * 10);
+    if (error || !data?.signedUrl) return toast.error("Não foi possível abrir o comprovante");
+    window.open(data.signedUrl, "_blank");
   };
 
   const markDelivered = async (id: string) => {
@@ -101,10 +129,12 @@ export default function AdminSalesPage() {
 
   const statusColor: Record<string, string> = {
     pending: "bg-yellow-500/20 text-yellow-300 border-yellow-500/40",
+    awaiting_confirmation: "bg-orange-500/20 text-orange-300 border-orange-500/40",
     paid: "bg-blue-500/20 text-blue-300 border-blue-500/40",
     delivered: "bg-green-500/20 text-green-300 border-green-500/40",
     cancelled: "bg-red-500/20 text-red-300 border-red-500/40",
   };
+  const STATUSES = ["pending", "awaiting_confirmation", "paid", "delivered", "cancelled"];
 
   return (
     <div className="min-h-screen bg-[#0b1020] text-white p-6">
@@ -139,8 +169,26 @@ export default function AdminSalesPage() {
                     <div><p className="text-xs text-white/40">Plano</p><p className="font-bold text-[#a3ff12]">{s.plan}</p></div>
                     <div><p className="text-xs text-white/40">Valor</p><p className="font-bold">{(s.amount_cents / 100).toLocaleString("pt-BR", { style: "currency", currency: s.currency })}</p></div>
                     <div><p className="text-xs text-white/40">Método</p><p className="font-bold uppercase">{s.payment_method}</p></div>
-                    <div className="flex gap-2 justify-end">
-                      {!lic && (
+                    <div>
+                      <p className="text-xs text-white/40">Alterar status</p>
+                      <Select value={s.status} onValueChange={(v) => changeStatus(s.id, v)}>
+                        <SelectTrigger className="bg-[#0b1020] border-white/10 h-9"><SelectValue /></SelectTrigger>
+                        <SelectContent>{STATUSES.map(st => <SelectItem key={st} value={st}>{st}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="md:col-span-4 flex flex-wrap gap-2 pt-2 border-t border-white/10">
+                      {s.proof_url && (
+                        <Button size="sm" variant="outline" onClick={() => viewProof(s.proof_url!)} className="border-[#a3ff12]/40 text-[#a3ff12] hover:bg-[#a3ff12]/10">
+                          <FileCheck2 className="w-3 h-3 mr-1" /> Ver comprovante
+                        </Button>
+                      )}
+                      {s.payment_method === "pix_manual" && !lic && (
+                        <Button size="sm" onClick={() => confirmManualPix(s)} className="bg-[#a3ff12] text-black hover:bg-[#c8ff5c]">
+                          <CheckCircle2 className="w-3 h-3 mr-1" /> Confirmar pagamento e gerar chave
+                        </Button>
+                      )}
+                      {s.payment_method !== "pix_manual" && !lic && (
                         <Button size="sm" onClick={() => generateLicense(s)} className="bg-[#a3ff12] text-black hover:bg-[#c8ff5c]">
                           <KeyRound className="w-3 h-3 mr-1" /> Gerar chave
                         </Button>
@@ -150,7 +198,13 @@ export default function AdminSalesPage() {
                           <Send className="w-3 h-3 mr-1" /> Marcar enviado
                         </Button>
                       )}
+                      {s.status !== "cancelled" && (
+                        <Button size="sm" variant="outline" onClick={() => changeStatus(s.id, "cancelled")} className="border-red-500/40 text-red-300 hover:bg-red-500/10">
+                          <XCircle className="w-3 h-3 mr-1" /> Cancelar
+                        </Button>
+                      )}
                     </div>
+
                     {lic && (
                       <div className="md:col-span-4 flex items-center gap-2 pt-2 border-t border-white/10">
                         <Input readOnly value={lic.license_key} className="bg-[#0b1020] border-white/10 font-mono" />
