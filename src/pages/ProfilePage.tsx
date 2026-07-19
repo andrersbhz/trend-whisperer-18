@@ -40,7 +40,10 @@ const ProfilePage = () => {
       }
       setFullName(data?.full_name ?? '');
       setEmail(data?.email ?? user.email ?? '');
-      setWhatsapp(maskPhoneBR(data?.whatsapp ?? ''));
+      const raw = onlyDigits(data?.whatsapp ?? '');
+      // Strip leading BR country code (55) if the stored value looks like E.164 12-13 digits.
+      const normalized = (raw.length === 12 || raw.length === 13) && raw.startsWith('55') ? raw.slice(2) : raw;
+      setWhatsapp(normalized ? maskPhoneBR(normalized) : '');
       setAvatarUrl(data?.avatar_url ?? null);
       setLoading(false);
     })();
