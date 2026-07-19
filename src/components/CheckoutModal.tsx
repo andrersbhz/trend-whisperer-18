@@ -173,7 +173,7 @@ export default function CheckoutModal({ open, onOpenChange, plan, planLabel, amo
                   amountBRL={amountBRL}
                   buyer={form}
                   validateBuyer={() => validateCommon() && (isValidCPF(form.document) || (toast.error("CPF inválido"), false))}
-                  onPaid={() => setPaid(true)}
+                  onPaid={(key) => { if (key) setIssuedKey(key); setPaid(true); }}
                 />
               </TabsContent>
             </Tabs>
