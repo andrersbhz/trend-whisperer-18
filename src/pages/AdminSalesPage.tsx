@@ -24,6 +24,8 @@ type Sale = {
   created_at: string;
   read_at: string | null;
   delivered_at: string | null;
+  proof_url: string | null;
+  admin_note: string | null;
 };
 
 type License = {
