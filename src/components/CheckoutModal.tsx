@@ -7,9 +7,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Loader2, CreditCard, QrCode, Copy, CheckCircle2 } from "lucide-react";
+import { Loader2, CreditCard, QrCode, Copy, CheckCircle2, HandCoins } from "lucide-react";
 import { toast } from "sonner";
 import { maskPhoneBR, maskCPF, isValidPhoneBR, isValidCPF, onlyDigits } from "@/lib/masks";
+import ManualPixTab from "./ManualPixTab";
 
 type Props = {
   open: boolean;
