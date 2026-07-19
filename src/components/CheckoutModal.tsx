@@ -104,7 +104,15 @@ export default function CheckoutModal({ open, onOpenChange, plan, planLabel, amo
           <div className="py-8 text-center">
             <CheckCircle2 className="w-16 h-16 text-[#a3ff12] mx-auto mb-4" />
             <h3 className="text-xl font-bold mb-2">Pagamento aprovado!</h3>
-            <p className="text-white/60 mb-6">Sua chave de licença foi enviada para <b>{form.email}</b>.</p>
+            <p className="text-white/60 mb-4">Sua chave de licença foi enviada para <b>{form.email}</b>.</p>
+            {issuedKey && (
+              <div className="flex items-center gap-2 max-w-md mx-auto mb-6">
+                <input readOnly value={issuedKey} className="flex-1 bg-[#141a2e] border border-[#a3ff12]/40 rounded px-3 py-2 font-mono text-[#a3ff12] text-center" />
+                <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(issuedKey); toast.success("Copiada!"); }}>
+                  <Copy className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
             <Button onClick={() => (window.location.href = "/ativar")} className="bg-[#a3ff12] text-black font-bold">
               Ativar agora
             </Button>
