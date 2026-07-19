@@ -136,12 +136,16 @@
     background: hsl(var(--background));
   }
   ::-webkit-scrollbar-thumb {
-    background: hsla(210, 50%, 30%, 0.6);
+    background: hsla(88, 100%, 54%, 0.6);
     border-radius: 0px;
     border: 2px solid hsl(var(--background));
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: hsla(210, 80%, 45%, 0.8);
+    background: hsla(88, 100%, 54%, 0.9);
+    box-shadow: 0 0 8px hsla(88, 100%, 54%, 0.8);
+  }
+  * {
+    scrollbar-color: hsla(88, 100%, 54%, 0.7) hsl(var(--background));
   }
 
   /* Better focus rings */
