@@ -1756,7 +1756,9 @@ export type Database = {
       get_public_payment_config: {
         Args: never
         Returns: {
+          admin_notify_email: string
           mercadopago_enabled: boolean
+          notify_admin_whatsapp_number: string
           pagarme_enabled: boolean
           pix_bank: string
           pix_enabled: boolean
