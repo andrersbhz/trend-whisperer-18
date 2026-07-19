@@ -1753,6 +1753,20 @@ export type Database = {
           state: string
         }[]
       }
+      get_public_payment_config: {
+        Args: never
+        Returns: {
+          admin_notify_email: string
+          mercadopago_enabled: boolean
+          notify_admin_whatsapp_number: string
+          pagarme_enabled: boolean
+          pix_bank: string
+          pix_enabled: boolean
+          pix_key: string
+          pix_key_type: string
+          pix_owner_name: string
+        }[]
+      }
       get_top_countries_history: {
         Args: { p_limit?: number }
         Returns: {
