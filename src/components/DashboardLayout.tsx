@@ -43,8 +43,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/lib/backend';
 import SpaceBackground from './SpaceBackground';
+import { usePlatformSettings } from '@/hooks/usePlatformSettings';
 
 import a3Logo from '@/assets/a3-logo.jpg';
+
 
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/admin' },
@@ -73,9 +75,26 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const { theme, setTheme } = useTheme();
   const location = useLocation();
   const { toast } = useToast();
+  const { settings: brand } = usePlatformSettings();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [logCount, setLogCount] = useState(0);
+
+  useEffect(() => {
+    if (brand?.favicon_url) {
+      let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement | null;
+      if (!link) {
+        link = document.createElement('link');
+        link.rel = 'icon';
+        document.head.appendChild(link);
+      }
+      link.href = brand.favicon_url;
+    }
+    if (brand?.brand_name) {
+      document.title = brand.brand_name;
+    }
+  }, [brand?.favicon_url, brand?.brand_name]);
+
 
   useEffect(() => {
     const handleLogAdded = () => setLogCount(prev => prev + 1);
@@ -154,10 +173,13 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
         {/* Brand */}
         <div className="p-5 flex items-center justify-between border-b border-border/40">
           <Link to="/admin" className="flex items-center gap-3 group">
-            <div className="h-10 w-10 rounded-full overflow-hidden border-2 border-[hsl(200_100%_60%)] shadow-[0_0_15px_hsl(200_100%_60%/0.7)] group-hover:scale-105 transition-transform shrink-0">
-              <img src={a3Logo} alt="A3 PostWP" className="h-full w-full object-cover" />
+            <div className="h-10 w-10 rounded-full overflow-hidden border-2 border-[#a3ff12] shadow-[0_0_15px_rgba(163,255,18,0.7)] group-hover:scale-105 transition-transform shrink-0 bg-black">
+              <img src={brand?.logo_url || a3Logo} alt={brand?.brand_name || 'Logo'} className="h-full w-full object-cover" />
             </div>
-            <span className="font-extrabold text-base tracking-tighter uppercase italic text-foreground font-montserrat">A3 <span className="text-[hsl(200_100%_60%)]">PostWP</span></span>
+            <span className="font-extrabold text-base tracking-tighter uppercase italic text-foreground font-montserrat">
+              {brand?.brand_short || 'A3'} <span className="text-[#a3ff12]">{(brand?.brand_name || 'A3 PostWP').replace(brand?.brand_short || '', '').trim() || 'PostWP'}</span>
+            </span>
+
           </Link>
           <button
             onClick={() => setSidebarOpen(false)}
