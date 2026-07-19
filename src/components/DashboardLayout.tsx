@@ -52,7 +52,7 @@ const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/admin' },
   { icon: FileText, label: 'Artigos', path: '/articles' },
   { icon: ImageIcon, label: 'Estúdio de Imagens', path: '/image-studio' },
-  { icon: User, label: 'Autores', path: '/authors' },
+  
   { icon: Search, label: 'Google', path: '/google' },
   { icon: Facebook, label: 'Facebook', path: '/meta' },
   { icon: Instagram, label: 'Instagram', path: '/instagram' },
