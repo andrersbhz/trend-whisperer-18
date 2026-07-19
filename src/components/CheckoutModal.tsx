@@ -28,9 +28,10 @@ export default function CheckoutModal({ open, onOpenChange, plan, planLabel, amo
   const [pixData, setPixData] = useState<{ qrCode?: string; qrCodeBase64?: string; paymentId?: number } | null>(null);
   const [pixPolling, setPixPolling] = useState(false);
   const [paid, setPaid] = useState(false);
+  const [issuedKey, setIssuedKey] = useState<string | null>(null);
 
   const reset = () => {
-    setClientSecret(null); setPixData(null); setPaid(false); setPixPolling(false);
+    setClientSecret(null); setPixData(null); setPaid(false); setPixPolling(false); setIssuedKey(null);
   };
 
   const handleClose = (v: boolean) => { if (!v) reset(); onOpenChange(v); };
