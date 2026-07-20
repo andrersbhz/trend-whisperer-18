@@ -145,17 +145,11 @@ export default function CheckoutModal({ open, onOpenChange, plan, planLabel, amo
 
             <Tabs value={tab} onValueChange={(v) => setTab(v as any)} className="mt-4">
               <TabsList className="bg-[#141a2e] border border-white/10">
-                <TabsTrigger value="card"><CreditCard className="w-4 h-4 mr-1" /> Cartão</TabsTrigger>
-                <TabsTrigger value="pix"><QrCode className="w-4 h-4 mr-1" /> Pix (MP)</TabsTrigger>
-                <TabsTrigger value="pix_manual"><HandCoins className="w-4 h-4 mr-1" /> Pix manual</TabsTrigger>
+                <TabsTrigger value="pix"><QrCode className="w-4 h-4 mr-1" /> Pix direto (recomendado)</TabsTrigger>
+                {stripeEnabled && (
+                  <TabsTrigger value="card"><CreditCard className="w-4 h-4 mr-1" /> Cartão</TabsTrigger>
+                )}
               </TabsList>
-              <TabsContent value="card" className="mt-4">
-                <p className="text-sm text-white/60 mb-3">Cobrança mensal automática via Stripe. Cancele quando quiser pelo portal.</p>
-                <Button onClick={startCard} disabled={loading} className="w-full bg-[#a3ff12] text-black font-bold py-6">
-                  {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CreditCard className="w-4 h-4 mr-2" />}
-                  Pagar com cartão
-                </Button>
-              </TabsContent>
               <TabsContent value="pix" className="mt-4">
                 {pixData ? (
                   <div className="text-center space-y-3">
@@ -178,15 +172,15 @@ export default function CheckoutModal({ open, onOpenChange, plan, planLabel, amo
                   </>
                 )}
               </TabsContent>
-              <TabsContent value="pix_manual" className="mt-4">
-                <ManualPixTab
-                  plan={plan}
-                  amountBRL={amountBRL}
-                  buyer={form}
-                  validateBuyer={() => validateCommon() && (isValidCPF(form.document) || (toast.error("CPF inválido"), false))}
-                  onPaid={(key) => { if (key) setIssuedKey(key); setPaid(true); }}
-                />
-              </TabsContent>
+              {stripeEnabled && (
+                <TabsContent value="card" className="mt-4">
+                  <p className="text-sm text-white/60 mb-3">Cobrança mensal automática via Stripe. Cancele quando quiser pelo portal.</p>
+                  <Button onClick={startCard} disabled={loading} className="w-full bg-[#a3ff12] text-black font-bold py-6">
+                    {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CreditCard className="w-4 h-4 mr-2" />}
+                    Pagar com cartão
+                  </Button>
+                </TabsContent>
+              )}
             </Tabs>
           </>
         )}
