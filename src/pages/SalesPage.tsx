@@ -120,7 +120,7 @@ const SalesPage = () => {
             </Button>
           </Link>
           <a href="#planos">
-            <Button size="lg" variant="outline" className="border-white/20 bg-white/5 hover:bg-white/10 text-white px-8 py-6">
+            <Button size="lg" variant="outline" className="border-white/20 bg-white/5 hover:bg-white/10 text-white hover:text-white focus:text-white active:text-white px-8 py-6">
               {s.cta_secondary}
             </Button>
           </a>
