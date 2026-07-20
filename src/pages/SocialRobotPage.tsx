@@ -597,7 +597,7 @@ const SocialRobotPage = () => {
                 </div>
                 <div className="space-y-8 bg-primary/5 p-8 border border-primary/10">
                   <div className="flex items-center justify-between p-4 border border-primary/20 bg-black/40"><Label className="text-xs font-black uppercase tracking-widest text-primary">Interação Humana</Label><Switch checked={growthSettings.humanLike} onCheckedChange={checked => setGrowthSettings({...growthSettings, humanLike: checked})} /></div>
-                  <Button className="w-full bg-primary text-black font-black uppercase h-12 hover:scale-[1.02] transition-all shadow-neon-lilac" onClick={saveGrowthSettings} disabled={loadingSettings}>{loadingSettings ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />} Atualizar Diretrizes</Button>
+                  <Button className="w-full bg-primary text-white font-black uppercase h-12 hover:scale-[1.02] hover:text-white transition-all shadow-neon-lilac" onClick={saveGrowthSettings} disabled={loadingSettings}>{loadingSettings ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />} Atualizar Diretrizes</Button>
                 </div>
               </div>
             </CardContent>
