@@ -37,14 +37,14 @@ export const DEFAULT_PLANS: PlanTier[] = [
   {
     name: "Completo",
     plan: "pro_monthly",
-    amountBRL: 497,
-    price: "R$ 497",
+    amountBRL: 197,
+    price: "R$ 197",
     period: "/mês",
     highlight: true,
     tag: "Todos os recursos",
     cta: "Assinar Completo",
     features: [
-      "Portais WordPress ilimitados",
+      "1 portal WordPress",
       "Artigos ilimitados gerados por IA",
       "Multi-contas Meta (Facebook + Instagram)",
       "Google Indexing + Search Console",
