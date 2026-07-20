@@ -9,7 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { usePlatformSettings } from "@/hooks/usePlatformSettings";
 import CheckoutModal from "@/components/CheckoutModal";
-import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
+
 
 const FEATURES = [
   { icon: Brain, title: "IA Multi-Provider", desc: "Gemini, OpenAI, Groq e Azure com fallback automático. Nunca fique offline." },
@@ -40,7 +40,7 @@ const SalesPage = () => {
   };
   return (
     <div className="relative min-h-screen bg-[#05010f] text-white overflow-x-hidden">
-      <PaymentTestModeBanner />
+      
       <Helmet>
         <title>{s.brand_name} — {s.tagline}</title>
         <meta name="description" content={s.description} />
