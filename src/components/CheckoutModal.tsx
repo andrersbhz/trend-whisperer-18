@@ -79,32 +79,12 @@ export default function CheckoutModal({ open, onOpenChange, plan, planLabel, amo
     } finally { setLoading(false); }
   };
 
-  const startPix = async () => {
-    if (!validateCommon()) return;
-    if (!isValidCPF(form.document)) return toast.error("CPF inválido");
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("mp-create-pix", {
-        body: { plan, buyerEmail: form.email, buyerName: form.name, buyerPhone: onlyDigits(form.phone), buyerDocument: onlyDigits(form.document) },
-      });
-      if (error || !data?.qrCode) throw new Error(error?.message || data?.error || "Falha ao gerar Pix");
-      setPixData({ qrCode: data.qrCode, qrCodeBase64: data.qrCodeBase64, paymentId: data.paymentId });
-      setPixPolling(true);
-      // Poll sale_notifications for this payment id
-      const start = Date.now();
-      const timer = setInterval(async () => {
-        if (Date.now() - start > 10 * 60_000) { clearInterval(timer); setPixPolling(false); return; }
-        const { data: sale } = await supabase.rpc("check_sale_status", { p_mp_payment_id: String(data.paymentId), p_stripe_session_id: null });
-        if ((sale as any)?.found && (sale as any)?.license_key) {
-          clearInterval(timer);
-          setPixPolling(false); setPaid(true);
-          toast.success("Pagamento confirmado!");
-        }
-      }, 4000);
-    } catch (e: any) {
-      toast.error(e.message || "Erro ao gerar Pix");
-    } finally { setLoading(false); }
+  const copyPixKey = () => {
+    if (!pixCfg?.key) return toast.error("Chave Pix não configurada");
+    navigator.clipboard.writeText(pixCfg.key);
+    toast.success("Chave copiada!");
   };
+
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
