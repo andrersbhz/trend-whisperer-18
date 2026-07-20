@@ -872,6 +872,7 @@ export type Database = {
           pix_owner_document: string | null
           pix_owner_name: string | null
           singleton: boolean
+          stripe_enabled: boolean
           updated_at: string
         }
         Insert: {
@@ -897,6 +898,7 @@ export type Database = {
           pix_owner_document?: string | null
           pix_owner_name?: string | null
           singleton?: boolean
+          stripe_enabled?: boolean
           updated_at?: string
         }
         Update: {
@@ -922,6 +924,7 @@ export type Database = {
           pix_owner_document?: string | null
           pix_owner_name?: string | null
           singleton?: boolean
+          stripe_enabled?: boolean
           updated_at?: string
         }
         Relationships: []
@@ -1765,6 +1768,7 @@ export type Database = {
           pix_key: string
           pix_key_type: string
           pix_owner_name: string
+          stripe_enabled: boolean
         }[]
       }
       get_top_countries_history: {
