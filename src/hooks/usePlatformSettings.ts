@@ -60,8 +60,8 @@ export const DEFAULT_PLANS: PlanTier[] = [
   {
     name: "Licença Adicional",
     plan: "starter_monthly",
-    amountBRL: 197,
-    price: "R$ 197",
+    amountBRL: 49.9,
+    price: "R$ 49,90",
     period: "/mês",
     highlight: false,
     tag: "Para expandir",
