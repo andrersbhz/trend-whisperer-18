@@ -22,7 +22,19 @@ type Props = {
 export default function CheckoutModal({ open, onOpenChange, plan, planLabel, amountBRL }: Props) {
   const [form, setForm] = useState({ email: "", name: "", phone: "", document: "" });
   const [loading, setLoading] = useState(false);
-  const [tab, setTab] = useState<"card" | "pix" | "pix_manual">("card");
+  const [tab, setTab] = useState<"card" | "pix">("pix");
+  const [stripeEnabled, setStripeEnabled] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    (async () => {
+      const { data } = await supabase.rpc("get_public_payment_config");
+      const cfg = Array.isArray(data) ? data[0] : data;
+      const stripeOn = !!(cfg as any)?.stripe_enabled;
+      setStripeEnabled(stripeOn);
+      setTab(stripeOn ? "card" : "pix");
+    })();
+  }, [open]);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [pixData, setPixData] = useState<{ qrCode?: string; qrCodeBase64?: string; paymentId?: number } | null>(null);
   const [pixPolling, setPixPolling] = useState(false);
