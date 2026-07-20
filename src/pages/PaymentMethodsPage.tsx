@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Loader2, Save, KeyRound, Wallet, CreditCard, Bell } from "lucide-react";
+import { Loader2, Save, KeyRound, Wallet, CreditCard, Bell, Zap } from "lucide-react";
 import { maskPhoneBR, maskCpfCnpj } from "@/lib/masks";
 
 type Config = {
@@ -25,6 +25,7 @@ type Config = {
   mercadopago_access_token: string;
   pagarme_enabled: boolean;
   pagarme_api_key: string;
+  stripe_enabled: boolean;
   admin_notify_email: string;
   admin_notify_phone: string;
   admin_notify_whatsapp: boolean;
@@ -38,6 +39,7 @@ const EMPTY: Config = {
   pix_enabled: false, pix_key: "", pix_key_type: "email", pix_owner_name: "", pix_owner_document: "", pix_bank: "",
   mercadopago_enabled: false, mercadopago_public_key: "", mercadopago_access_token: "",
   pagarme_enabled: false, pagarme_api_key: "",
+  stripe_enabled: false,
   admin_notify_email: "", admin_notify_phone: "", admin_notify_whatsapp: false,
   notify_email_customer: true, notify_email_admin: true, notify_whatsapp_admin: false, notify_admin_whatsapp_number: "",
 };
@@ -143,6 +145,23 @@ export default function PaymentMethodsPage() {
             <p className="text-xs text-white/50 mt-2">Pegue em: dashboard.pagar.me → Configurações → Chaves de API.</p>
           </CardContent>
         </Card>
+
+        {/* Stripe (Cartão) */}
+        <Card className="bg-[#141a2e] border-white/10">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="flex items-center gap-2 text-lg"><Zap className="text-[#a3ff12]" /> Stripe (Cartão)</CardTitle>
+            <Switch checked={cfg.stripe_enabled} onCheckedChange={(v) => set("stripe_enabled", v)} />
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-white/70">
+              Habilite para exibir a aba <b>Cartão</b> no checkout. As chaves do Stripe são gerenciadas pelo Lovable Cloud —
+              basta ativar a integração de pagamentos do projeto para começar a receber via cartão.
+            </p>
+            <p className="text-xs text-white/50 mt-2">Quando desligado, apenas Pix aparece para o cliente.</p>
+          </CardContent>
+        </Card>
+
+
 
         {/* Notificações */}
         <Card className="bg-[#141a2e] border-white/10">
