@@ -227,6 +227,8 @@ export default function ImageStudioPage() {
           })}
         </div>
       </Card>
+      </div>
     </div>
   );
 }
+
