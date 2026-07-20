@@ -313,7 +313,7 @@ const TrendsPage = () => {
               Gerar Artigos com Selecionados ({selectedTopics.length})
             </Button>
           )}
-          <Button onClick={handleFetchTrends} disabled={fetching || generating} variant="outline" size="sm" className="shadow-sm order-3 sm:order-none flex-1 sm:flex-none">
+          <Button onClick={handleFetchTrends} disabled={fetching || generating} variant="outline" size="sm" className="shadow-sm order-3 sm:order-none flex-1 sm:flex-none bg-[#a3ff12] text-black border-[#a3ff12] hover:bg-[#a3ff12]/90 hover:text-black">
             {fetching ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
             {fetching ? "Atualizando..." : "Atualizar"}
           </Button>
@@ -375,7 +375,7 @@ const TrendsPage = () => {
                 variant="outline"
                 size="sm"
                 onClick={handleBatchDeleteTopics}
-                className="text-xs text-destructive hover:bg-destructive/10 h-8"
+                className="text-xs h-8 bg-[#a3ff12] text-black border-[#a3ff12] hover:bg-[#a3ff12]/90 hover:text-black"
               >
                 <Trash2 className="h-3.5 w-3.5 mr-1.5" />
                 Apagar Selecionados ({selectedTopics.length})
@@ -505,7 +505,7 @@ const TrendsPage = () => {
                         e.stopPropagation();
                         handleDeleteTopic(topic.id);
                       }}
-                      className="h-8 w-8 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="h-8 w-8 bg-[#a3ff12] text-black hover:bg-[#a3ff12]/90 hover:text-black opacity-0 group-hover:opacity-100 transition-opacity"
                       title="Remover assunto"
                     >
                       <XCircle className="h-4 w-4" />
