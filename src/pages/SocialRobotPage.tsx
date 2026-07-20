@@ -426,7 +426,7 @@ const SocialRobotPage = () => {
                         }
                       }}
                       disabled={processing}
-                      className="bg-primary text-white font-black uppercase h-8 px-3 rounded-none text-[10px] hover:text-white"
+                      className="bg-primary text-white font-black uppercase h-8 px-3 rounded-none text-[10px] hover:text-black"
                     >
                       {processing ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <UserPlus className="h-3 w-3 mr-1" />}
                       Executar Ciclo
