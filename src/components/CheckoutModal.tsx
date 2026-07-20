@@ -140,8 +140,8 @@ export default function CheckoutModal({ open, onOpenChange, plan, planLabel, amo
             </div>
 
             <Tabs value={tab} onValueChange={(v) => setTab(v as any)} className="mt-4">
-              <TabsList className="bg-[#141a2e] border border-white/10">
-                <TabsTrigger value="pix"><QrCode className="w-4 h-4 mr-1" /> Pix direto (recomendado)</TabsTrigger>
+              <TabsList className={`bg-[#141a2e] border border-white/10 ${stripeEnabled ? "" : "flex justify-center w-full"}`}>
+                <TabsTrigger value="pix" className={stripeEnabled ? "" : "mx-auto"}><QrCode className="w-4 h-4 mr-1" /> Pix direto (recomendado)</TabsTrigger>
                 {stripeEnabled && (
                   <TabsTrigger value="card"><CreditCard className="w-4 h-4 mr-1" /> Cartão</TabsTrigger>
                 )}
