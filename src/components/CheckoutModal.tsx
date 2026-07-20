@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, CreditCard, QrCode, Copy, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { maskPhoneBR, maskCPF, isValidPhoneBR, onlyDigits } from "@/lib/masks";
+import { buildPixPayload } from "@/lib/pix";
 
 type Props = {
   open: boolean;
@@ -79,10 +80,21 @@ export default function CheckoutModal({ open, onOpenChange, plan, planLabel, amo
     } finally { setLoading(false); }
   };
 
-  const copyPixKey = () => {
-    if (!pixCfg?.key) return toast.error("Chave Pix não configurada");
-    navigator.clipboard.writeText(pixCfg.key);
-    toast.success("Chave copiada!");
+  const pixPayload = pixCfg?.key
+    ? buildPixPayload({
+        key: pixCfg.key,
+        amount: amountBRL,
+        merchantName: pixCfg.owner || "Andre Rocha Soares",
+        merchantCity: "SAO PAULO",
+        txid: `${plan}${Date.now().toString().slice(-8)}`,
+        description: planLabel,
+      })
+    : "";
+
+  const copyPixCode = () => {
+    if (!pixPayload) return toast.error("Chave Pix não configurada");
+    navigator.clipboard.writeText(pixPayload);
+    toast.success("Código Pix copiado!");
   };
 
 
@@ -137,14 +149,17 @@ export default function CheckoutModal({ open, onOpenChange, plan, planLabel, amo
               <TabsContent value="pix" className="mt-4">
                 {pixCfg?.key ? (
                   <div className="text-center space-y-3">
+                    <p className="text-sm text-white/70">
+                      Valor: <b className="text-[#a3ff12]">R$ {amountBRL.toFixed(2).replace(".", ",")}</b>
+                    </p>
                     <img
-                      src={`https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(pixCfg.key)}&size=280x280&margin=8`}
+                      src={`https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(pixPayload)}&size=280x280&margin=8`}
                       alt="QR Code Pix"
                       className="w-56 h-56 mx-auto rounded-lg bg-white p-2"
                     />
-                    <div className="p-2 bg-[#141a2e] border border-white/10 rounded font-mono text-xs break-all">{pixCfg.key}</div>
-                    <Button size="sm" variant="outline" onClick={copyPixKey}>
-                      <Copy className="w-3 h-3 mr-1" /> Copiar chave
+                    <div className="p-2 bg-[#141a2e] border border-white/10 rounded font-mono text-[10px] break-all max-h-24 overflow-auto">{pixPayload}</div>
+                    <Button size="sm" variant="outline" onClick={copyPixCode}>
+                      <Copy className="w-3 h-3 mr-1" /> Copiar código Pix
                     </Button>
                     <p className="text-xs text-white/50 pt-1">Titular: {pixCfg.owner}{pixCfg.bank ? ` — ${pixCfg.bank}` : ""}</p>
                   </div>
