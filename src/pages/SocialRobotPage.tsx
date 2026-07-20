@@ -9,7 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { Loader2, RefreshCw, MessageSquare, Bot, UserCheck, ExternalLink, History, ThumbsUp, AtSign, Power, PowerOff, Activity, AlertCircle, Info, Instagram, ChevronRight, ChevronDown as ChevronDownIcon, TrendingUp, FileText, UserPlus, UserMinus, ShieldCheck } from 'lucide-react';
+import { Loader2, RefreshCw, MessageSquare, Bot, UserCheck, ExternalLink, History, ThumbsUp, AtSign, Power, PowerOff, Activity, AlertCircle, Info, Instagram, ChevronRight, ChevronDown as ChevronDownIcon, TrendingUp, FileText, UserPlus, UserMinus, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/lib/backend';
 import { format, parseISO, startOfDay, eachDayOfInterval, addDays } from 'date-fns';
@@ -530,25 +530,50 @@ const SocialRobotPage = () => {
         )}
 
         {activeTab === 'telemetry' && (
-          <Card className="glass-card border-white/5 overflow-hidden hover-lift font-mono">
-            <CardHeader className="p-4 border-b border-white/5 flex items-center justify-between">
-              <div className="flex items-center gap-2"><div className="h-2 w-2 bg-success rounded-full animate-pulse" /><CardTitle className="text-lg font-black uppercase">Kernel Terminal</CardTitle></div>
-              <Button variant="ghost" size="sm" onClick={fetchLogs}><RefreshCw className={cn("h-4 w-4", loadingLogs && "animate-spin")} /></Button>
-            </CardHeader>
-            <CardContent className="p-0 bg-black/40 max-h-[600px] overflow-y-auto no-scrollbar">
-              <div className="divide-y divide-white/5">
-                {logs.map(log => (
-                  <div key={log.id} className="p-4 hover:bg-white/5 transition-all flex items-start gap-3">
-                    <div className={cn("mt-1 p-2 border", log.level === 'error' ? "border-destructive text-destructive" : "border-primary text-primary")}><Bot className="h-4 w-4" /></div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between mb-1"><span className="text-[10px] uppercase text-primary/60">{log.module} | {format(new Date(log.created_at), "HH:mm")}</span><Badge variant="outline" className="text-[7px] font-black">{log.level.toUpperCase()}</Badge></div>
-                      <p className="text-xs font-bold text-foreground leading-tight truncate">{log.message}</p>
-                    </div>
-                  </div>
-                ))}
+          <div className="relative">
+            <div className="absolute -inset-4 bg-gradient-to-r from-[#a3ff12]/20 to-[#b57bff]/20 blur-3xl rounded-full pointer-events-none" />
+            <div className="relative p-6 rounded-3xl border border-white/10 bg-[#0a0518]/80 backdrop-blur-xl">
+              <div className="flex items-center gap-2 mb-6">
+                <div className="h-3 w-3 rounded-full bg-red-500" />
+                <div className="h-3 w-3 rounded-full bg-yellow-500" />
+                <div className="h-3 w-3 rounded-full bg-[#a3ff12]" />
+                <span className="text-xs text-white/40 ml-2 flex-1">a3.plataforma/live</span>
+                <Button variant="ghost" size="sm" onClick={fetchLogs} className="h-7 px-2 text-white/60 hover:text-white">
+                  <RefreshCw className={cn("h-3.5 w-3.5", loadingLogs && "animate-spin")} />
+                </Button>
               </div>
-            </CardContent>
-          </Card>
+              <div className="space-y-3 font-mono text-sm max-h-[600px] overflow-y-auto no-scrollbar pr-2">
+                {logs.length === 0 && !loadingLogs && (
+                  <div className="text-xs text-white/40 py-8 text-center">Sem eventos recentes.</div>
+                )}
+                {logs.map((log, i) => {
+                  const isError = log.level === 'error';
+                  const isRunning = i === 0 && log.level === 'info' && /processando|iniciando|executando|running/i.test(log.message || '');
+                  return (
+                    <div
+                      key={log.id}
+                      className="flex items-center gap-3 opacity-0 animate-[fadeIn_0.5s_ease-out_forwards]"
+                      style={{ animationDelay: `${Math.min(i, 8) * 0.08}s` }}
+                    >
+                      {isError ? (
+                        <AlertCircle className="h-4 w-4 text-destructive flex-shrink-0" />
+                      ) : isRunning ? (
+                        <div className="h-4 w-4 rounded-full border-2 border-[#a3ff12] border-t-transparent animate-spin flex-shrink-0" />
+                      ) : (
+                        <CheckCircle2 className="h-4 w-4 text-[#a3ff12] flex-shrink-0" />
+                      )}
+                      <span className={cn("flex-1 truncate", isError ? "text-destructive/90" : "text-white/80")}>{log.message}</span>
+                      <span className="text-[10px] text-white/30 flex-shrink-0">{format(new Date(log.created_at), "HH:mm")}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="mt-6 pt-6 border-t border-white/10 flex items-center justify-between">
+                <span className="text-xs text-white/40">Eventos exibidos</span>
+                <span className="text-[#a3ff12] font-black text-lg">{logs.length}</span>
+              </div>
+            </div>
+          </div>
         )}
 
         {activeTab === 'settings' && (
