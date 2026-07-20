@@ -748,3 +748,27 @@ body {
   animation: neon-border-cycle 4.5s ease-in-out infinite;
 }
 
+/* Global neon border on all buttons/links with button role — hover & active/focus */
+button,
+[role="button"],
+a.btn,
+.btn {
+  border: 1px solid transparent;
+  transition: border-color 300ms ease, box-shadow 300ms ease, color 200ms ease, background-color 200ms ease;
+}
+button:not(:disabled):hover,
+button:not(:disabled):focus-visible,
+button[aria-pressed="true"],
+button[data-state="active"],
+button[data-state="open"],
+button[aria-current="page"],
+[role="button"]:not([aria-disabled="true"]):hover,
+[role="button"]:not([aria-disabled="true"]):focus-visible,
+a.btn:hover,
+a.btn:focus-visible,
+.btn:hover,
+.btn:focus-visible {
+  animation: neon-border-cycle 4.5s ease-in-out infinite;
+}
+
+
