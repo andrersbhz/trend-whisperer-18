@@ -505,7 +505,7 @@ const TrendsPage = () => {
                         e.stopPropagation();
                         handleDeleteTopic(topic.id);
                       }}
-                      className="h-8 w-8 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="h-8 w-8 bg-[#a3ff12] text-black hover:bg-[#a3ff12]/90 hover:text-black opacity-0 group-hover:opacity-100 transition-opacity"
                       title="Remover assunto"
                     >
                       <XCircle className="h-4 w-4" />
