@@ -307,7 +307,7 @@ const TrendsPage = () => {
               onClick={() => handleGenerate(topics.filter(t => selectedTopics.includes(t.id)))} 
               disabled={generating || fetching}
               variant="default"
-              className="gradient-primary shadow-neon-lilac order-1 sm:order-none w-full sm:w-auto"
+              className="bg-[#a3ff12] text-black hover:bg-[#a3ff12]/90 hover:text-black shadow-neon-lilac order-1 sm:order-none w-full sm:w-auto"
             >
               {generating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
               Gerar Artigos com Selecionados ({selectedTopics.length})
@@ -317,7 +317,7 @@ const TrendsPage = () => {
             {fetching ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
             {fetching ? "Atualizando..." : "Atualizar"}
           </Button>
-          <Button onClick={() => handleGenerate()} disabled={generating || fetching} className="gradient-primary shadow-neon-lilac hover:scale-[1.02] transition-transform order-2 sm:order-none flex-1 sm:flex-none">
+          <Button onClick={() => handleGenerate()} disabled={generating || fetching} className="bg-[#b57bff] text-black hover:bg-[#b57bff]/90 hover:text-black shadow-neon-lilac hover:scale-[1.02] transition-transform order-2 sm:order-none flex-1 sm:flex-none">
             {generating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
             Atualizar e Gerar Tudo
           </Button>
