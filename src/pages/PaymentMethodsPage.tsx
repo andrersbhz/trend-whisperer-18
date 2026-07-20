@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Loader2, Save, KeyRound, Wallet, CreditCard, Bell } from "lucide-react";
+import { Loader2, Save, KeyRound, Wallet, CreditCard, Bell, Zap } from "lucide-react";
 import { maskPhoneBR, maskCpfCnpj } from "@/lib/masks";
 
 type Config = {
