@@ -1,18 +1,14 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { sendMail } from "../_shared/smtp.ts";
 
 const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
 async function sendEmailViaLovable(to: string, subject: string, html: string): Promise<boolean> {
   try {
-    // Lovable Emails via enqueue_email RPC (available if email infra is set up)
-    const { error } = await sb.rpc("enqueue_email" as any, {
-      queue_name: "transactional_emails",
-      email: { to, subject, html, purpose: "transactional" },
-    });
-    if (error) { console.warn("enqueue_email failed (email infra not set):", error.message); return false; }
+    await sendMail({ to, subject, html });
     return true;
   } catch (e) {
-    console.warn("email not sent:", e);
+    console.warn("SMTP send failed:", (e as Error).message);
     return false;
   }
 }
