@@ -146,6 +146,23 @@ export default function PaymentMethodsPage() {
           </CardContent>
         </Card>
 
+        {/* Stripe (Cartão) */}
+        <Card className="bg-[#141a2e] border-white/10">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="flex items-center gap-2 text-lg"><Zap className="text-[#a3ff12]" /> Stripe (Cartão)</CardTitle>
+            <Switch checked={cfg.stripe_enabled} onCheckedChange={(v) => set("stripe_enabled", v)} />
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-white/70">
+              Habilite para exibir a aba <b>Cartão</b> no checkout. As chaves do Stripe são gerenciadas pelo Lovable Cloud —
+              basta ativar a integração de pagamentos do projeto para começar a receber via cartão.
+            </p>
+            <p className="text-xs text-white/50 mt-2">Quando desligado, apenas Pix aparece para o cliente.</p>
+          </CardContent>
+        </Card>
+
+
+
         {/* Notificações */}
         <Card className="bg-[#141a2e] border-white/10">
           <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><Bell className="text-[#a3ff12]" /> Notificações de venda</CardTitle></CardHeader>
