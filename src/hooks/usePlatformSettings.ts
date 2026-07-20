@@ -75,6 +75,24 @@ export const DEFAULT_PLANS: PlanTier[] = [
       "Suporte por e-mail",
     ],
   },
+  {
+    name: "Personalizado",
+    plan: null,
+    amountBRL: 0,
+    price: "Sob consulta",
+    period: "",
+    highlight: false,
+    tag: "Sob medida",
+    cta: "Falar com vendas",
+    features: [
+      "Portais WordPress ilimitados",
+      "Integrações e APIs customizadas",
+      "White-label e domínio próprio",
+      "SSO, auditoria e compliance",
+      "Gerente de sucesso dedicado",
+      "SLA 99.9%",
+    ],
+  },
 ];
 
 const DEFAULTS: PlatformSettings = {

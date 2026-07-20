@@ -255,7 +255,7 @@ const SalesPage = () => {
           <p className="text-white/60 text-lg">Sem taxas escondidas. Cancele quando quiser.</p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto justify-center">
+        <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto justify-center">
 
           {(s.plans_json || []).map((t) => (
             <div
