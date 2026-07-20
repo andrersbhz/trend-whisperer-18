@@ -282,16 +282,16 @@ const SocialRobotPage = () => {
   return (
     <div className="space-y-6 lg:space-y-8 animate-float-up">
       {/* Header Panel */}
-      <div className="flex flex-row items-center justify-between gap-4 p-4 glass-card border-[hsl(200_100%_60%)]/20 relative overflow-hidden group">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-[hsl(200_100%_60%)]/5 rounded-full blur-3xl -mr-32 -mt-32 group-hover:bg-[hsl(200_100%_60%)]/10 transition-colors duration-700" />
+      <div className="flex flex-row items-center justify-between gap-4 p-4 glass-card border-[#a3ff12]/20 relative overflow-hidden group">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-[#a3ff12]/5 rounded-full blur-3xl -mr-32 -mt-32 group-hover:bg-[#a3ff12]/10 transition-colors duration-700" />
         
         <div className="relative z-10 flex items-center gap-6 flex-1 min-w-0">
           <div className="flex items-center gap-3 shrink-0">
-            <div className="p-2 bg-[hsl(200_100%_60%)]/10 rounded-none border border-[hsl(200_100%_60%)]/30 shrink-0">
-              <Bot className="h-5 w-5 text-[hsl(200_100%_60%)]" />
+            <div className="p-2 bg-[#a3ff12]/10 rounded-none border border-[#a3ff12]/30 shrink-0">
+              <Bot className="h-5 w-5 text-[#a3ff12]" />
             </div>
             <div className="hidden sm:block">
-              <h1 className="text-xl font-black text-[hsl(200_100%_60%)] uppercase tracking-tighter font-montserrat">Robô Social A3</h1>
+              <h1 className="text-xl font-black text-[#a3ff12] uppercase tracking-tighter font-montserrat">Robô Social A3</h1>
               <p className="text-muted-foreground text-[8px] uppercase tracking-[0.2em] flex items-center gap-1.5 font-bold">
                 <span className="flex h-1.5 w-1.5 relative"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span><span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-success"></span></span>
                 Interface Neural
@@ -310,7 +310,7 @@ const SocialRobotPage = () => {
             </div>
             <div className="flex flex-col shrink-0">
               <span className="text-[7px] text-muted-foreground uppercase font-black tracking-widest mb-0.5">Modo</span>
-              <div className="text-[hsl(200_100%_60%)]">{followerGrowthMode ? "CRESCIMENTO" : "PADRÃO"}</div>
+              <div className="text-[#a3ff12]">{followerGrowthMode ? "CRESCIMENTO" : "PADRÃO"}</div>
             </div>
           </div>
         </div>
@@ -323,10 +323,10 @@ const SocialRobotPage = () => {
             {automationEnabled ? <Power className="h-3 w-3 mr-1" /> : <PowerOff className="h-3 w-3 mr-1" />}
             {automationEnabled ? "DESATIVAR" : "ATIVAR"}
           </Button>
-          <Button variant="outline" size="sm" onClick={() => toggleFollowerGrowth(!followerGrowthMode)} className="text-[9px] font-black uppercase rounded-none border-2 border-[hsl(200_100%_60%)] h-8 px-3 text-[hsl(200_100%_60%)]">
+          <Button variant="outline" size="sm" onClick={() => toggleFollowerGrowth(!followerGrowthMode)} className="text-[9px] font-black uppercase rounded-none border-2 border-[#a3ff12] h-8 px-3 text-[#a3ff12]">
             <UserCheck className="h-3 w-3 mr-1" /> MOD {followerGrowthMode ? "CRESC." : "PADRÃO"}
           </Button>
-          <Button size="sm" onClick={handleProcessInteractions} disabled={processing} className="bg-[hsl(200_100%_60%)] text-black font-black uppercase h-8 px-3 rounded-none">
+          <Button size="sm" onClick={handleProcessInteractions} disabled={processing} className="bg-[#a3ff12] text-black font-black uppercase h-8 px-3 rounded-none">
             {processing ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <RefreshCw className="h-3 w-3 mr-1" />} SYNC
           </Button>
         </div>
@@ -341,9 +341,9 @@ const SocialRobotPage = () => {
           { id: 'growth', label: 'Expansão', icon: TrendingUp },
           { id: 'settings', label: 'Diretrizes', icon: ShieldCheck },
         ].map((tab) => (
-          <Button key={tab.id} variant={activeTab === tab.id ? 'secondary' : 'ghost'} size="sm" onClick={() => setActiveTab(tab.id as any)} className={cn("text-[9px] uppercase font-black tracking-widest h-7 px-3 rounded-none relative", activeTab === tab.id ? "text-[hsl(200_100%_60%)]" : "text-muted-foreground")}>
+          <Button key={tab.id} variant={activeTab === tab.id ? 'secondary' : 'ghost'} size="sm" onClick={() => setActiveTab(tab.id as any)} className={cn("text-[9px] uppercase font-black tracking-widest h-7 px-3 rounded-none relative", activeTab === tab.id ? "text-[#a3ff12]" : "text-muted-foreground")}>
             <tab.icon className="h-3 w-3 mr-1.5" /> {tab.label}
-            {activeTab === tab.id && <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[hsl(200_100%_60%)]" />}
+            {activeTab === tab.id && <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[#a3ff12]" />}
           </Button>
         ))}
       </div>
@@ -458,7 +458,7 @@ const SocialRobotPage = () => {
             <Card className="glass-card border-white/5 overflow-hidden hover-lift">
               <CardHeader className="p-6 border-b border-white/5">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-[hsl(200_100%_60%)]/10 border border-[hsl(200_100%_60%)]/20"><Info className="h-5 w-5 text-[hsl(200_100%_60%)]" /></div>
+                  <div className="p-2 bg-[#a3ff12]/10 border border-[#a3ff12]/20"><Info className="h-5 w-5 text-[#a3ff12]" /></div>
                   <div>
                     <CardTitle className="text-lg font-black uppercase">Como Trazer Novos Seguidores</CardTitle>
                     <CardDescription className="text-xs uppercase font-bold text-muted-foreground">Estratégia em 4 passos — totalmente automatizada</CardDescription>
