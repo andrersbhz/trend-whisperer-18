@@ -24,6 +24,7 @@ export default function CheckoutModal({ open, onOpenChange, plan, planLabel, amo
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState<"card" | "pix">("pix");
   const [stripeEnabled, setStripeEnabled] = useState(false);
+  const [pixCfg, setPixCfg] = useState<{ key: string; owner: string; bank: string } | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -33,16 +34,19 @@ export default function CheckoutModal({ open, onOpenChange, plan, planLabel, amo
       const stripeOn = !!(cfg as any)?.stripe_enabled;
       setStripeEnabled(stripeOn);
       setTab(stripeOn ? "card" : "pix");
+      setPixCfg({
+        key: (cfg as any)?.pix_key || "",
+        owner: (cfg as any)?.pix_owner_name || "Andre Rocha Soares",
+        bank: (cfg as any)?.pix_bank || "Nubank",
+      });
     })();
   }, [open]);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
-  const [pixData, setPixData] = useState<{ qrCode?: string; qrCodeBase64?: string; paymentId?: number } | null>(null);
-  const [pixPolling, setPixPolling] = useState(false);
   const [paid, setPaid] = useState(false);
   const [issuedKey, setIssuedKey] = useState<string | null>(null);
 
   const reset = () => {
-    setClientSecret(null); setPixData(null); setPaid(false); setPixPolling(false); setIssuedKey(null);
+    setClientSecret(null); setPaid(false); setIssuedKey(null);
   };
 
   const handleClose = (v: boolean) => { if (!v) reset(); onOpenChange(v); };
