@@ -326,7 +326,7 @@ const SocialRobotPage = () => {
           <Button variant="outline" size="sm" onClick={() => toggleFollowerGrowth(!followerGrowthMode)} className="text-[9px] font-black uppercase rounded-none border-2 border-[#b57bff] h-8 px-3 text-[#b57bff]">
             <UserCheck className="h-3 w-3 mr-1" /> MOD {followerGrowthMode ? "CRESC." : "PADRÃO"}
           </Button>
-          <Button size="sm" onClick={handleProcessInteractions} disabled={processing} className="bg-[#a3ff12] text-black font-black uppercase h-8 px-3 rounded-none">
+          <Button size="sm" onClick={handleProcessInteractions} disabled={processing} className="bg-[#a3ff12] text-white font-black uppercase h-8 px-3 rounded-none hover:text-white">
             {processing ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <RefreshCw className="h-3 w-3 mr-1" />} SYNC
           </Button>
         </div>
