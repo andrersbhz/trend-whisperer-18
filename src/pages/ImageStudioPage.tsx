@@ -100,7 +100,15 @@ export default function ImageStudioPage() {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 h-[calc(100vh-8rem)]">
+    <div className="space-y-4">
+      <div className="rounded-md border border-[#a3ff12]/40 bg-[#a3ff12]/10 px-4 py-3 text-sm text-[#a3ff12] flex items-start gap-2">
+        <Sparkles className="h-4 w-4 mt-0.5 flex-shrink-0" />
+        <p>
+          <strong>Atenção:</strong> para gerar imagens é necessário configurar sua chave da <strong>OpenAI (DALL·E)</strong> em <em>Configurações → OpenAI</em>. Sem a chave, a geração de imagens não funcionará.
+        </p>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 h-[calc(100vh-12rem)]">
+
       {/* Chat panel */}
       <Card className="glass-card flex flex-col overflow-hidden">
         <div className="px-5 py-4 border-b border-border/40 flex items-center gap-2">
