@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Loader2, CreditCard, QrCode, Copy, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
-import { maskPhoneBR, maskCPF, isValidPhoneBR, isValidCPF, onlyDigits } from "@/lib/masks";
+import { maskPhoneBR, maskCPF, isValidPhoneBR, onlyDigits } from "@/lib/masks";
 
 type Props = {
   open: boolean;
@@ -24,6 +24,7 @@ export default function CheckoutModal({ open, onOpenChange, plan, planLabel, amo
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState<"card" | "pix">("pix");
   const [stripeEnabled, setStripeEnabled] = useState(false);
+  const [pixCfg, setPixCfg] = useState<{ key: string; owner: string; bank: string } | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -33,16 +34,19 @@ export default function CheckoutModal({ open, onOpenChange, plan, planLabel, amo
       const stripeOn = !!(cfg as any)?.stripe_enabled;
       setStripeEnabled(stripeOn);
       setTab(stripeOn ? "card" : "pix");
+      setPixCfg({
+        key: (cfg as any)?.pix_key || "",
+        owner: (cfg as any)?.pix_owner_name || "Andre Rocha Soares",
+        bank: (cfg as any)?.pix_bank || "Nubank",
+      });
     })();
   }, [open]);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
-  const [pixData, setPixData] = useState<{ qrCode?: string; qrCodeBase64?: string; paymentId?: number } | null>(null);
-  const [pixPolling, setPixPolling] = useState(false);
   const [paid, setPaid] = useState(false);
   const [issuedKey, setIssuedKey] = useState<string | null>(null);
 
   const reset = () => {
-    setClientSecret(null); setPixData(null); setPaid(false); setPixPolling(false); setIssuedKey(null);
+    setClientSecret(null); setPaid(false); setIssuedKey(null);
   };
 
   const handleClose = (v: boolean) => { if (!v) reset(); onOpenChange(v); };
@@ -75,32 +79,12 @@ export default function CheckoutModal({ open, onOpenChange, plan, planLabel, amo
     } finally { setLoading(false); }
   };
 
-  const startPix = async () => {
-    if (!validateCommon()) return;
-    if (!isValidCPF(form.document)) return toast.error("CPF inválido");
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("mp-create-pix", {
-        body: { plan, buyerEmail: form.email, buyerName: form.name, buyerPhone: onlyDigits(form.phone), buyerDocument: onlyDigits(form.document) },
-      });
-      if (error || !data?.qrCode) throw new Error(error?.message || data?.error || "Falha ao gerar Pix");
-      setPixData({ qrCode: data.qrCode, qrCodeBase64: data.qrCodeBase64, paymentId: data.paymentId });
-      setPixPolling(true);
-      // Poll sale_notifications for this payment id
-      const start = Date.now();
-      const timer = setInterval(async () => {
-        if (Date.now() - start > 10 * 60_000) { clearInterval(timer); setPixPolling(false); return; }
-        const { data: sale } = await supabase.rpc("check_sale_status", { p_mp_payment_id: String(data.paymentId), p_stripe_session_id: null });
-        if ((sale as any)?.found && (sale as any)?.license_key) {
-          clearInterval(timer);
-          setPixPolling(false); setPaid(true);
-          toast.success("Pagamento confirmado!");
-        }
-      }, 4000);
-    } catch (e: any) {
-      toast.error(e.message || "Erro ao gerar Pix");
-    } finally { setLoading(false); }
+  const copyPixKey = () => {
+    if (!pixCfg?.key) return toast.error("Chave Pix não configurada");
+    navigator.clipboard.writeText(pixCfg.key);
+    toast.success("Chave copiada!");
   };
+
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -151,25 +135,21 @@ export default function CheckoutModal({ open, onOpenChange, plan, planLabel, amo
                 )}
               </TabsList>
               <TabsContent value="pix" className="mt-4">
-                {pixData ? (
+                {pixCfg?.key ? (
                   <div className="text-center space-y-3">
-                    {pixData.qrCodeBase64 && (
-                      <img src={`data:image/png;base64,${pixData.qrCodeBase64}`} alt="Pix QR" className="w-56 h-56 mx-auto rounded-lg bg-white p-2" />
-                    )}
-                    <div className="p-2 bg-[#141a2e] border border-white/10 rounded font-mono text-xs break-all">{pixData.qrCode}</div>
-                    <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(pixData.qrCode || ""); toast.success("Copiado!"); }}>
-                      <Copy className="w-3 h-3 mr-1" /> Copiar código Pix
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(pixCfg.key)}&size=280x280&margin=8`}
+                      alt="QR Code Pix"
+                      className="w-56 h-56 mx-auto rounded-lg bg-white p-2"
+                    />
+                    <div className="p-2 bg-[#141a2e] border border-white/10 rounded font-mono text-xs break-all">{pixCfg.key}</div>
+                    <Button size="sm" variant="outline" onClick={copyPixKey}>
+                      <Copy className="w-3 h-3 mr-1" /> Copiar chave
                     </Button>
-                    {pixPolling && <p className="text-sm text-white/60 flex items-center justify-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Aguardando pagamento…</p>}
+                    <p className="text-xs text-white/50 pt-1">Titular: {pixCfg.owner}{pixCfg.bank ? ` — ${pixCfg.bank}` : ""}</p>
                   </div>
                 ) : (
-                  <>
-                    <p className="text-sm text-white/60 mb-3">Pagamento único mensal via Pix. Renovação manual a cada 30 dias.</p>
-                    <Button onClick={startPix} disabled={loading} className="w-full bg-[#a3ff12] text-black font-bold py-6">
-                      {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <QrCode className="w-4 h-4 mr-2" />}
-                      Gerar QR Code Pix
-                    </Button>
-                  </>
+                  <p className="text-sm text-white/60">Chave Pix não configurada. Fale com o suporte.</p>
                 )}
               </TabsContent>
               {stripeEnabled && (
