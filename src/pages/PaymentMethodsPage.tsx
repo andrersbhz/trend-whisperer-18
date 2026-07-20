@@ -25,6 +25,7 @@ type Config = {
   mercadopago_access_token: string;
   pagarme_enabled: boolean;
   pagarme_api_key: string;
+  stripe_enabled: boolean;
   admin_notify_email: string;
   admin_notify_phone: string;
   admin_notify_whatsapp: boolean;
@@ -38,6 +39,7 @@ const EMPTY: Config = {
   pix_enabled: false, pix_key: "", pix_key_type: "email", pix_owner_name: "", pix_owner_document: "", pix_bank: "",
   mercadopago_enabled: false, mercadopago_public_key: "", mercadopago_access_token: "",
   pagarme_enabled: false, pagarme_api_key: "",
+  stripe_enabled: false,
   admin_notify_email: "", admin_notify_phone: "", admin_notify_whatsapp: false,
   notify_email_customer: true, notify_email_admin: true, notify_whatsapp_admin: false, notify_admin_whatsapp_number: "",
 };
