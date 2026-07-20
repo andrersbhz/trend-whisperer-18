@@ -771,4 +771,48 @@ a.btn:focus-visible,
   animation: neon-border-cycle 4.5s ease-in-out infinite;
 }
 
+/* Hover em fundo escuro → texto branco (garante contraste) */
+button:not(:disabled):hover[class*="bg-background"],
+button:not(:disabled):hover[class*="bg-card"],
+button:not(:disabled):hover[class*="bg-popover"],
+button:not(:disabled):hover[class*="bg-secondary"],
+button:not(:disabled):hover[class*="bg-muted"],
+button:not(:disabled):hover[class*="bg-accent"],
+button:not(:disabled):hover[class*="bg-primary"],
+button:not(:disabled):hover[class*="bg-destructive"],
+button:not(:disabled):hover[class*="bg-black"],
+button:not(:disabled):hover[class*="bg-zinc-8"],
+button:not(:disabled):hover[class*="bg-zinc-9"],
+button:not(:disabled):hover[class*="bg-neutral-8"],
+button:not(:disabled):hover[class*="bg-neutral-9"],
+button:not(:disabled):hover[class*="bg-slate-8"],
+button:not(:disabled):hover[class*="bg-slate-9"],
+button:not(:disabled):hover[class*="bg-gray-8"],
+button:not(:disabled):hover[class*="bg-gray-9"],
+[role="button"]:not([aria-disabled="true"]):hover[class*="hover:bg-background"],
+[role="button"]:not([aria-disabled="true"]):hover[class*="hover:bg-card"],
+[role="button"]:not([aria-disabled="true"]):hover[class*="hover:bg-secondary"],
+[role="button"]:not([aria-disabled="true"]):hover[class*="hover:bg-muted"],
+[role="button"]:not([aria-disabled="true"]):hover[class*="hover:bg-accent"],
+a.btn:hover[class*="bg-background"],
+a.btn:hover[class*="bg-card"],
+a.btn:hover[class*="bg-secondary"],
+a.btn:hover[class*="bg-muted"],
+a.btn:hover[class*="bg-accent"],
+a.btn:hover[class*="bg-primary"],
+a.btn:hover[class*="bg-black"] {
+  color: #ffffff !important;
+}
+button:not(:disabled):hover[class*="bg-background"] *,
+button:not(:disabled):hover[class*="bg-card"] *,
+button:not(:disabled):hover[class*="bg-secondary"] *,
+button:not(:disabled):hover[class*="bg-muted"] *,
+button:not(:disabled):hover[class*="bg-accent"] *,
+button:not(:disabled):hover[class*="bg-primary"] *,
+button:not(:disabled):hover[class*="bg-destructive"] *,
+button:not(:disabled):hover[class*="bg-black"] * {
+  color: #ffffff !important;
+}
+
+
 
