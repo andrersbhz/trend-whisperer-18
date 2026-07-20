@@ -375,7 +375,7 @@ const TrendsPage = () => {
                 variant="outline"
                 size="sm"
                 onClick={handleBatchDeleteTopics}
-                className="text-xs text-destructive hover:bg-destructive/10 h-8"
+                className="text-xs h-8 bg-[#a3ff12] text-black border-[#a3ff12] hover:bg-[#a3ff12]/90 hover:text-black"
               >
                 <Trash2 className="h-3.5 w-3.5 mr-1.5" />
                 Apagar Selecionados ({selectedTopics.length})
