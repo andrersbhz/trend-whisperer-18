@@ -97,6 +97,90 @@ export default function CheckoutModal({ open, onOpenChange, plan, planLabel, amo
     toast.success("Código Pix copiado!");
   };
 
+  // ---- Registro da venda Pix + acompanhamento da confirmação ----
+  const [saleRef, setSaleRef] = useState<string | null>(null);
+  const [saleId, setSaleId] = useState<string | null>(null);
+  const [registering, setRegistering] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [proofSent, setProofSent] = useState(false);
+
+  const registerPixSale = async () => {
+    if (!validateCommon()) return;
+    if (saleRef) return;
+    setRegistering(true);
+    try {
+      const ref = `pixman_${crypto.randomUUID()}`;
+      const { data, error } = await supabase
+        .from("sale_notifications")
+        .insert({
+          buyer_email: form.email,
+          buyer_name: form.name,
+          buyer_phone: onlyDigits(form.phone),
+          plan,
+          amount_cents: Math.round(amountBRL * 100),
+          currency: "BRL",
+          payment_method: "pix_manual",
+          status: "pending",
+          mp_payment_id: ref,
+          metadata: { document: onlyDigits(form.document), plan_label: planLabel },
+        })
+        .select("id")
+        .single();
+      if (error || !data) throw new Error(error?.message || "Falha ao registrar a venda");
+      setSaleId(data.id);
+      setSaleRef(ref);
+      toast.success("Pagamento registrado! Envie o comprovante para agilizar a liberação.");
+    } catch (e: any) {
+      toast.error(e.message || "Erro ao registrar pagamento");
+    } finally {
+      setRegistering(false);
+    }
+  };
+
+  const uploadProof = async (file: File) => {
+    if (!saleId) return;
+    if (file.size > 8 * 1024 * 1024) return toast.error("Arquivo muito grande (máx 8MB)");
+    setUploading(true);
+    try {
+      const path = `${saleId}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+      const { error: upErr } = await supabase.storage
+        .from("payment-proofs")
+        .upload(path, file, { upsert: false, contentType: file.type || "application/octet-stream" });
+      if (upErr) throw upErr;
+      const { error: rpcErr } = await supabase.rpc("attach_pix_proof" as any, {
+        p_sale_id: saleId,
+        p_proof_url: `payment-proofs://${path}`,
+      });
+      if (rpcErr) throw rpcErr;
+      setProofSent(true);
+      toast.success("Comprovante enviado! Aguardando confirmação.");
+    } catch (e: any) {
+      toast.error(e.message || "Falha no envio do comprovante");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // Poll status via RPC (security definer) até o admin/gateway confirmar
+  useEffect(() => {
+    if (!saleRef || paid) return;
+    const started = Date.now();
+    const timer = setInterval(async () => {
+      if (Date.now() - started > 30 * 60_000) { clearInterval(timer); return; }
+      const { data } = await supabase.rpc("check_sale_status" as any, { p_mp_payment_id: saleRef });
+      const res = data as any;
+      if (res?.found && (res.status === "paid" || res.status === "delivered")) {
+        clearInterval(timer);
+        setIssuedKey(res.license_key || null);
+        setPaid(true);
+        toast.success("Pagamento confirmado!");
+      }
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [saleRef, paid]);
+
+
+
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
