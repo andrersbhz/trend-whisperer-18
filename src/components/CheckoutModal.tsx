@@ -48,7 +48,9 @@ export default function CheckoutModal({ open, onOpenChange, plan, planLabel, amo
 
   const reset = () => {
     setClientSecret(null); setPaid(false); setIssuedKey(null);
+    setSaleRef(null); setSaleId(null); setProofSent(false);
   };
+
 
   const handleClose = (v: boolean) => { if (!v) reset(); onOpenChange(v); };
 
