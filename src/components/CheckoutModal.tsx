@@ -248,8 +248,30 @@ export default function CheckoutModal({ open, onOpenChange, plan, planLabel, amo
                       <Copy className="w-3 h-3 mr-1" /> Copiar código Pix
                     </Button>
                     <p className="text-xs text-white/50 pt-1">Titular: {pixCfg.owner}{pixCfg.bank ? ` — ${pixCfg.bank}` : ""}</p>
+
+                    {!saleRef ? (
+                      <Button onClick={registerPixSale} disabled={registering} className="w-full bg-[#a3ff12] text-black font-bold py-6 hover:text-black">
+                        {registering ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
+                        Já fiz o pagamento
+                      </Button>
+                    ) : (
+                      <div className="space-y-3 text-left">
+                        <Label className="text-sm">Enviar comprovante (imagem ou PDF, até 8MB)</Label>
+                        <div className="flex items-center gap-2">
+                          <Input type="file" accept="image/*,application/pdf" disabled={uploading}
+                            onChange={(e) => e.target.files?.[0] && uploadProof(e.target.files[0])}
+                            className="bg-[#141a2e] border-white/10 file:text-[#a3ff12] file:bg-transparent file:border-0" />
+                          {uploading && <Loader2 className="w-4 h-4 animate-spin text-[#a3ff12]" />}
+                        </div>
+                        {proofSent && <p className="text-xs text-[#a3ff12] flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Comprovante enviado</p>}
+                        <p className="text-sm text-white/60 flex items-center justify-center gap-2">
+                          <Loader2 className="w-4 h-4 animate-spin text-[#a3ff12]" /> Aguardando confirmação do pagamento…
+                        </p>
+                      </div>
+                    )}
                   </div>
                 ) : (
+
                   <p className="text-sm text-white/60">Chave Pix não configurada. Fale com o suporte.</p>
                 )}
               </TabsContent>
