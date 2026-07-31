@@ -46,13 +46,24 @@ serve(async (req) => {
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-    if (article.status === "published" || article.status === "publishing") {
+    // "publishing" travado há mais de 10 minutos é considerado órfão e pode ser retomado
+    const STALE_MS = 10 * 60 * 1000;
+    const isStalePublishing =
+      article.status === "publishing" &&
+      article.updated_at &&
+      Date.now() - new Date(article.updated_at).getTime() > STALE_MS;
+
+    if (article.status === "published" || (article.status === "publishing" && !isStalePublishing)) {
       console.log(`[publish-article] Artigo ${articleId} em estado "${article.status}". Ignorando execução duplicada.`);
       return new Response(
         JSON.stringify({ success: true, skipped: true, message: `Publicação já em andamento/concluída (${article.status}).` }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+    if (isStalePublishing) {
+      console.warn(`[publish-article] Artigo ${articleId} preso em "publishing" há mais de 10 min. Retomando.`);
+    }
+
 
     // Fetch settings
     const { data: settings, error: settingsError } = await supabase
