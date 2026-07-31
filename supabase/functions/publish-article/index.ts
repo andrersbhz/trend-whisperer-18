@@ -15,9 +15,12 @@ async function decryptField(supabase: any, val: string | null, encKey: string): 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
+  let claimCtx: { supabase: any; articleId: string } | null = null;
+
   try {
     const { articleId, userId } = await req.json();
     if (!articleId || !userId) throw new Error("articleId and userId are required");
+
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -43,13 +46,24 @@ serve(async (req) => {
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-    if (article.status === "published" || article.status === "publishing") {
+    // "publishing" travado há mais de 10 minutos é considerado órfão e pode ser retomado
+    const STALE_MS = 10 * 60 * 1000;
+    const isStalePublishing =
+      article.status === "publishing" &&
+      article.updated_at &&
+      Date.now() - new Date(article.updated_at).getTime() > STALE_MS;
+
+    if (article.status === "published" || (article.status === "publishing" && !isStalePublishing)) {
       console.log(`[publish-article] Artigo ${articleId} em estado "${article.status}". Ignorando execução duplicada.`);
       return new Response(
         JSON.stringify({ success: true, skipped: true, message: `Publicação já em andamento/concluída (${article.status}).` }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+    if (isStalePublishing) {
+      console.warn(`[publish-article] Artigo ${articleId} preso em "publishing" há mais de 10 min. Retomando.`);
+    }
+
 
     // Fetch settings
     const { data: settings, error: settingsError } = await supabase
@@ -82,6 +96,10 @@ serve(async (req) => {
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    // A partir daqui somos donos do claim: qualquer erro deve liberar o artigo
+    claimCtx = { supabase, articleId };
+
 
 
     // Prepare WordPress connection
@@ -457,10 +475,26 @@ serve(async (req) => {
   } catch (error) {
     console.error("publish-article error:", error);
     const message = error instanceof Error ? error.message : "Erro desconhecido";
+
+    // Libera o artigo preso em "publishing" para permitir nova tentativa
+    if (claimCtx) {
+      try {
+        await claimCtx.supabase
+          .from("articles")
+          .update({ status: "failed" })
+          .eq("id", claimCtx.articleId)
+          .eq("status", "publishing")
+          .is("wordpress_post_id", null);
+      } catch (e) {
+        console.error("[publish-article] Falha ao liberar status do artigo:", e);
+      }
+    }
+
     const isMissingConfiguration =
       message.includes("Configurações") ||
       message.includes("não configurad") ||
       message.includes("não encontrado");
+
 
     return new Response(
       JSON.stringify({ success: false, error: message, message }),

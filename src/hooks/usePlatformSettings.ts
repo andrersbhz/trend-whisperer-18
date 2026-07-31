@@ -125,9 +125,12 @@ export function usePlatformSettings() {
     setLoading(true);
     const { data } = await supabase
       .from("platform_settings")
-      .select("*")
+      .select(
+        "brand_name,brand_short,tagline,description,logo_url,favicon_url,hero_video_url,primary_color,accent_color,cta_primary,cta_secondary,offer_badge,footer_text,plans_json,updated_at"
+      )
       .limit(1)
       .maybeSingle();
+
     if (data) {
       const d: any = data;
       const plans = Array.isArray(d.plans_json) && d.plans_json.length > 0 ? d.plans_json : DEFAULT_PLANS;
