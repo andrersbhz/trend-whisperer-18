@@ -15,9 +15,12 @@ async function decryptField(supabase: any, val: string | null, encKey: string): 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
+  let claimCtx: { supabase: any; articleId: string } | null = null;
+
   try {
     const { articleId, userId } = await req.json();
     if (!articleId || !userId) throw new Error("articleId and userId are required");
+
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
