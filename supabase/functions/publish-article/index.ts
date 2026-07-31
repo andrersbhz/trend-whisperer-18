@@ -97,6 +97,10 @@ serve(async (req) => {
       );
     }
 
+    // A partir daqui somos donos do claim: qualquer erro deve liberar o artigo
+    claimCtx = { supabase, articleId };
+
+
 
     // Prepare WordPress connection
     let wpUrl = settings.wordpress_url.replace(/\/$/, "");
