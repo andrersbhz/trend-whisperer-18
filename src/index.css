@@ -814,5 +814,25 @@ button:not(:disabled):hover[class*="bg-black"] * {
   color: #ffffff !important;
 }
 
-
+/* Hover em verde do sistema (lime) => fonte preta para contraste */
+button:not(:disabled):hover[class*="bg-primary"],
+button:not(:disabled):hover[class*="bg-primary"] *,
+button:not(:disabled):hover[class*="bg-success"],
+button:not(:disabled):hover[class*="bg-success"] *,
+button:not(:disabled):hover[class*="bg-lime"],
+button:not(:disabled):hover[class*="bg-lime"] *,
+button:not(:disabled):hover[class*="bg-[#a3ff12]"],
+button:not(:disabled):hover[class*="bg-[#a3ff12]"] *,
+button:not(:disabled):hover[class*="bg-green"],
+button:not(:disabled):hover[class*="bg-green"] *,
+a:hover[class*="bg-primary"],
+a:hover[class*="bg-primary"] *,
+a:hover[class*="bg-[#a3ff12]"],
+a:hover[class*="bg-[#a3ff12]"] *,
+[role="button"]:not([aria-disabled="true"]):hover[class*="bg-primary"],
+[role="button"]:not([aria-disabled="true"]):hover[class*="bg-primary"] *,
+[role="button"]:not([aria-disabled="true"]):hover[class*="bg-[#a3ff12]"],
+[role="button"]:not([aria-disabled="true"]):hover[class*="bg-[#a3ff12]"] * {
+  color: #000000 !important;
+}
 

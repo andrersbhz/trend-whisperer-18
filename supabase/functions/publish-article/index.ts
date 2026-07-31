@@ -34,6 +34,23 @@ serve(async (req) => {
 
     if (articleError || !article) throw new Error("Artigo não encontrado: " + (articleError?.message || ""));
 
+    // --- Idempotência: nunca republicar o mesmo artigo ---
+    if (article.wordpress_post_id) {
+      console.log(`[publish-article] Artigo ${articleId} já possui post no WordPress (${article.wordpress_post_id}). Ignorando republicação.`);
+      await supabase.from("articles").update({ status: "published" }).eq("id", articleId);
+      return new Response(
+        JSON.stringify({ success: true, skipped: true, message: "Artigo já publicado no WordPress.", wpPostId: article.wordpress_post_id }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    if (article.status === "published" || article.status === "publishing") {
+      console.log(`[publish-article] Artigo ${articleId} em estado "${article.status}". Ignorando execução duplicada.`);
+      return new Response(
+        JSON.stringify({ success: true, skipped: true, message: `Publicação já em andamento/concluída (${article.status}).` }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Fetch settings
     const { data: settings, error: settingsError } = await supabase
       .from("user_settings")
@@ -49,8 +66,23 @@ serve(async (req) => {
       throw new Error("Usuário do WordPress não configurado. Use seu usuário real do WordPress junto com uma Senha de Aplicativo.");
     }
 
-    // Update status
-    await supabase.from("articles").update({ status: "publishing" }).eq("id", articleId);
+    // Claim atômico: só um processo consegue mover o artigo para "publishing"
+    const { data: claimed } = await supabase
+      .from("articles")
+      .update({ status: "publishing" })
+      .eq("id", articleId)
+      .eq("status", article.status)
+      .is("wordpress_post_id", null)
+      .select("id");
+
+    if (!claimed || claimed.length === 0) {
+      console.log(`[publish-article] Artigo ${articleId} já foi capturado por outra execução. Abortando.`);
+      return new Response(
+        JSON.stringify({ success: true, skipped: true, message: "Outra execução já está publicando este artigo." }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
 
     // Prepare WordPress connection
     let wpUrl = settings.wordpress_url.replace(/\/$/, "");
