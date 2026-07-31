@@ -475,10 +475,26 @@ serve(async (req) => {
   } catch (error) {
     console.error("publish-article error:", error);
     const message = error instanceof Error ? error.message : "Erro desconhecido";
+
+    // Libera o artigo preso em "publishing" para permitir nova tentativa
+    if (claimCtx) {
+      try {
+        await claimCtx.supabase
+          .from("articles")
+          .update({ status: "failed" })
+          .eq("id", claimCtx.articleId)
+          .eq("status", "publishing")
+          .is("wordpress_post_id", null);
+      } catch (e) {
+        console.error("[publish-article] Falha ao liberar status do artigo:", e);
+      }
+    }
+
     const isMissingConfiguration =
       message.includes("Configurações") ||
       message.includes("não configurad") ||
       message.includes("não encontrado");
+
 
     return new Response(
       JSON.stringify({ success: false, error: message, message }),
