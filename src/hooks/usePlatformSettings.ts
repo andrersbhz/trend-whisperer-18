@@ -126,7 +126,7 @@ export function usePlatformSettings() {
     const { data } = await supabase
       .from("platform_settings")
       .select(
-        "brand_name,brand_short,tagline,description,logo_url,favicon_url,hero_video_url,primary_color,accent_color,cta_primary,cta_secondary,offer_badge,footer_text,plans_json,updated_at"
+        "id,brand_name,brand_short,tagline,description,logo_url,favicon_url,hero_video_url,primary_color,accent_color,cta_primary,cta_secondary,offer_badge,footer_text,plans_json,updated_at"
       )
       .limit(1)
       .maybeSingle();
