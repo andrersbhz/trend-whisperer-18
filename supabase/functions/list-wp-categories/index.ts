@@ -44,11 +44,14 @@ serve(async (req) => {
     const auth = "Basic " + btoa(`${s.wordpress_username.trim()}:${pwd}`);
 
     const names: string[] = [];
+    const items: { id: number; name: string; slug: string; count: number }[] = [];
+    let lastStatus = 0;
     for (let page = 1; page <= 5; page++) {
       const resp = await fetch(
         `${url}/wp-json/wp/v2/categories?per_page=100&page=${page}&orderby=name&order=asc`,
         { headers: { Authorization: auth } },
       );
+      lastStatus = resp.status;
       if (!resp.ok) break;
       const cats = await resp.json();
       if (!Array.isArray(cats) || cats.length === 0) break;
@@ -56,15 +59,17 @@ serve(async (req) => {
         const name = (c?.name || "").toString().trim();
         if (name && name.toLowerCase() !== "sem categoria" && name.toLowerCase() !== "uncategorized") {
           names.push(name);
+          items.push({ id: c.id, name, slug: c.slug, count: c.count ?? 0 });
         }
       }
       if (cats.length < 100) break;
     }
 
     const unique = Array.from(new Set(names));
-    return new Response(JSON.stringify({ categories: unique }), {
+    return new Response(JSON.stringify({ categories: unique, items, status: lastStatus }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
+
   } catch (e: any) {
     return new Response(JSON.stringify({ categories: [], error: e.message }), {
       status: 200,
