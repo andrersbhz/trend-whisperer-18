@@ -248,9 +248,12 @@ serve(async (req) => {
         "Authorization": authHeader,
         "X-WP-Nonce": "", // Some servers require this even if empty to allow REST
       };
+      // O título vai APENAS no campo title do WordPress — sem H1 no conteúdo
+      const cleanContent = stripDuplicateTitle(article.content || "", article.title || "");
+
       const body: Record<string, unknown> = {
         title: article.title,
-        content: article.content || "",
+        content: cleanContent,
         status: "publish",
         excerpt: article.excerpt || article.meta_description || "",
       };
@@ -261,15 +264,19 @@ serve(async (req) => {
         body.categories = [wpCategoryId];
       }
 
-      // Set slug if available
-      if (article.seo_keyword) {
-        body.slug = article.seo_keyword
-          .toLowerCase()
-          .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-          .replace(/[^a-z0-9]+/g, "-")
-          .replace(/^-|-$/g, "")
-          .substring(0, 80);
-      }
+      // Slug SEO: prioriza slug salvo, depois focus keyword, depois título
+      const slug = buildSlug(article.slug || article.focus_keyword || article.seo_keyword || article.title || "");
+      if (slug) body.slug = slug;
+
+      // Yoast SEO já no POST inicial (quando os metas estão expostos na REST API)
+      const yoast: Record<string, string> = {};
+      const yTitle = article.meta_title || article.seo_title;
+      const yKw = article.focus_keyword || article.seo_keyword;
+      if (yTitle) yoast._yoast_wpseo_title = yTitle;
+      if (article.meta_description) yoast._yoast_wpseo_metadesc = article.meta_description;
+      if (yKw) yoast._yoast_wpseo_focuskw = yKw;
+      if (Object.keys(yoast).length > 0) body.meta = yoast;
+
 
       // Featured image upload with alt text
       if (article.featured_image_url) {
