@@ -355,15 +355,17 @@ serve(async (req) => {
       const pluginEndpoint = `${wpUrl}/wp-json/autoblog-ai/v1/publish`;
       const pluginBody = {
         title: article.title,
-        content: article.content || "",
+        content: stripDuplicateTitle(article.content || "", article.title || ""),
         excerpt: article.excerpt || article.meta_description || "",
         status: "publish",
-        seo_title: article.seo_title || article.title,
+        seo_title: article.meta_title || article.seo_title || article.title,
         meta_description: article.meta_description || "",
-        seo_keyword: article.seo_keyword || "",
+        seo_keyword: article.focus_keyword || article.seo_keyword || "",
+        slug: buildSlug(article.slug || article.focus_keyword || article.seo_keyword || article.title || ""),
         featured_image_url: article.featured_image_url || "",
         categories: [article.category],
       };
+
       console.log(`POST (plugin) ${pluginEndpoint}`);
       wpResponse = await fetch(pluginEndpoint, {
         method: "POST",
