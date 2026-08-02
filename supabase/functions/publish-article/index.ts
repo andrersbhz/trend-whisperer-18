@@ -191,8 +191,11 @@ serve(async (req) => {
     const wpPassword = await decryptField(supabase, settings.wordpress_app_password, encKey) || settings.wordpress_app_password;
     console.log(`WP Config: url=${wpUrl}, user=${normalizedUsername}, pwd_len=${wpPassword?.length}, pwd_start=${wpPassword?.substring(0,4)}`);
 
-    // --- Helper: find or create WP category ---
+    // --- Helper: encontra ou cria a categoria no WordPress (dinâmico, sem duplicar) ---
     async function resolveWpCategory(authHeader: string, categoryName: string): Promise<number | null> {
+      const raw = (categoryName || "").trim();
+      if (!raw) return null;
+
       const categoryLabels: Record<string, string> = {
         esportes: "Esportes",
         politica: "Política",
@@ -201,32 +204,33 @@ serve(async (req) => {
         celebridades: "Celebridades",
         financas: "Finanças",
       };
-      const label = categoryLabels[categoryName] || categoryName;
-      const slug = categoryName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-");
+      const label = categoryLabels[norm(raw).replace(/\s+/g, "")] || raw;
+      const slug = buildSlug(raw);
+      const target = norm(label);
 
       try {
-        // Search existing categories
-        const searchResp = await fetch(`${wpUrl}/wp-json/wp/v2/categories?search=${encodeURIComponent(label)}&per_page=100`, {
-          headers: { Authorization: authHeader },
-        });
-        if (searchResp.ok) {
-          const cats = await searchResp.json();
-          const match = cats.find((c: any) =>
-            c.slug === slug || c.name.toLowerCase() === label.toLowerCase()
-          );
-          if (match) { console.log(`Found WP category: ${match.name} (id=${match.id})`); return match.id; }
+        // 1) Lista todas as categorias existentes e compara sem acento/caixa
+        const all: any[] = [];
+        for (let page = 1; page <= 5; page++) {
+          const resp = await fetch(`${wpUrl}/wp-json/wp/v2/categories?per_page=100&page=${page}`, {
+            headers: { Authorization: authHeader },
+          });
+          if (!resp.ok) break;
+          const cats = await resp.json();
+          if (!Array.isArray(cats) || cats.length === 0) break;
+          all.push(...cats);
+          if (cats.length < 100) break;
         }
 
-        // Also try by slug directly
-        const slugResp = await fetch(`${wpUrl}/wp-json/wp/v2/categories?slug=${slug}`, {
-          headers: { Authorization: authHeader },
-        });
-        if (slugResp.ok) {
-          const slugCats = await slugResp.json();
-          if (slugCats.length > 0) { console.log(`Found WP category by slug: ${slugCats[0].name} (id=${slugCats[0].id})`); return slugCats[0].id; }
+        const match = all.find(
+          (c: any) => c.slug === slug || norm(c.name) === target || norm(c.slug) === target,
+        );
+        if (match) {
+          console.log(`Categoria WP encontrada: ${match.name} (id=${match.id})`);
+          return match.id;
         }
 
-        // Create category if not found
+        // 2) Cria a categoria quando não existe
         const createResp = await fetch(`${wpUrl}/wp-json/wp/v2/categories`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: authHeader },
@@ -234,12 +238,22 @@ serve(async (req) => {
         });
         if (createResp.ok) {
           const newCat = await createResp.json();
-          console.log(`Created WP category: ${newCat.name} (id=${newCat.id})`);
+          console.log(`Categoria WP criada: ${newCat.name} (id=${newCat.id})`);
           return newCat.id;
         }
+
+        // 3) term_exists: reaproveita o id devolvido pelo WordPress
+        const errJson = await createResp.json().catch(() => null);
+        const existingId = errJson?.data?.term_id ?? errJson?.data?.resource_id;
+        if (errJson?.code === "term_exists" && existingId) {
+          console.log(`Categoria WP já existia (term_exists): id=${existingId}`);
+          return existingId;
+        }
+        console.error("Falha ao criar categoria WP:", JSON.stringify(errJson)?.substring(0, 200));
       } catch (err) { console.error("Category resolution error:", err); }
       return null;
     }
+
 
     // --- Helper: publish via standard REST API ---
     async function publishStandard(authHeader: string) {
