@@ -332,8 +332,20 @@ serve(async (req) => {
 
       const endpoint = `${wpUrl}/wp-json/wp/v2/posts`;
       console.log(`POST (standard) ${endpoint}`);
-      return fetch(endpoint, { method: "POST", headers, body: JSON.stringify(body) });
+      let resp = await fetch(endpoint, { method: "POST", headers, body: JSON.stringify(body) });
+
+      // Se o Yoast não expõe os metas na REST API, reenvia sem "meta"
+      if (!resp.ok && body.meta) {
+        const errText = await resp.clone().text();
+        if (errText.includes("rest_invalid_param") || errText.includes("meta")) {
+          console.log("Metas Yoast não registrados na REST API — reenviando sem meta.");
+          const { meta: _omit, ...noMeta } = body as Record<string, unknown>;
+          resp = await fetch(endpoint, { method: "POST", headers, body: JSON.stringify(noMeta) });
+        }
+      }
+      return resp;
     }
+
 
     // --- Determine auth and attempt publish ---
     let wpResponse: Response;
