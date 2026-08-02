@@ -397,23 +397,19 @@ serve(async (req) => {
       if (wpPostId) {
         const auth = btoa(`${normalizedUsername}:${wpPassword}`);
         const updateBody: Record<string, unknown> = { status: "publish" };
-        
-        // Ensure featured media is set in the update if it exists in the article
-        // This acts as a fallback to ensure the featured image is correctly linked
-        if (article.featured_image_url) {
-          // The image should have been uploaded in Step 1, but we don't have the ID easily here
-          // unless we passed it. We rely on the initial POST creating it.
-        }
 
-        // Set Yoast SEO meta fields (focus keyword, meta description, SEO title)
+        // Yoast SEO: título SEO, meta description e palavra-chave em foco
         const yoastMeta: Record<string, string> = {};
-        if (article.seo_title) yoastMeta._yoast_wpseo_title = article.seo_title;
+        const yTitle2 = article.meta_title || article.seo_title;
+        const yKw2 = article.focus_keyword || article.seo_keyword;
+        if (yTitle2) yoastMeta._yoast_wpseo_title = yTitle2;
         if (article.meta_description) yoastMeta._yoast_wpseo_metadesc = article.meta_description;
-        if (article.seo_keyword) yoastMeta._yoast_wpseo_focuskw = article.seo_keyword;
+        if (yKw2) yoastMeta._yoast_wpseo_focuskw = yKw2;
 
         if (Object.keys(yoastMeta).length > 0) {
           updateBody.meta = yoastMeta;
         }
+
 
         try {
           const publishResp = await fetch(`${wpUrl}/wp-json/wp/v2/posts/${wpPostId}`, {
