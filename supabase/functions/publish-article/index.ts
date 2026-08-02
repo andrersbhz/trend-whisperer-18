@@ -12,6 +12,85 @@ async function decryptField(supabase: any, val: string | null, encKey: string): 
   return data || val;
 }
 
+// Normaliza texto para comparação (sem acentos, sem pontuação, minúsculo)
+function norm(s: string): string {
+  return (s || "")
+    .replace(/<[^>]*>/g, " ")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+/**
+ * Remove o título duplicado do corpo do artigo.
+ * O WordPress já renderiza o título do post, então nenhum H1 deve ir no conteúdo.
+ */
+function stripDuplicateTitle(rawContent: string, title: string): string {
+  let content = (rawContent || "").trim();
+  if (!content) return content;
+
+  const target = norm(title);
+  let changed = true;
+  let guard = 0;
+
+  while (changed && guard < 5) {
+    changed = false;
+    guard++;
+    content = content.trim();
+
+    // 1) Markdown: "# Título" na primeira linha
+    const mdMatch = content.match(/^#{1,3}\s*(.+?)\s*(?:\n|$)/);
+    if (mdMatch && (norm(mdMatch[1]) === target || !target)) {
+      content = content.slice(mdMatch[0].length).trim();
+      changed = true;
+      continue;
+    }
+
+    // 2) HTML: <h1>..</h1> / <h2>..</h2> logo no início igual ao título
+    const hMatch = content.match(/^<h([1-3])[^>]*>([\s\S]*?)<\/h\1>/i);
+    if (hMatch && (hMatch[1] === "1" || norm(hMatch[2]) === target)) {
+      content = content.slice(hMatch[0].length).trim();
+      changed = true;
+      continue;
+    }
+
+    // 3) Parágrafo inicial que é só o título (às vezes em <strong>)
+    const pMatch = content.match(/^<p[^>]*>\s*(?:<strong>)?([\s\S]*?)(?:<\/strong>)?\s*<\/p>/i);
+    if (pMatch && target && norm(pMatch[1]) === target) {
+      content = content.slice(pMatch[0].length).trim();
+      changed = true;
+      continue;
+    }
+
+    // 4) Primeira linha em texto puro idêntica ao título
+    const firstLine = content.split("\n")[0];
+    if (target && firstLine && norm(firstLine) === target && firstLine.length < 200) {
+      content = content.slice(firstLine.length).trim();
+      changed = true;
+    }
+  }
+
+  // Qualquer H1 remanescente vira H2 (SEO: um único H1 = título do post)
+  content = content
+    .replace(/<h1(\s[^>]*)?>/gi, "<h2$1>")
+    .replace(/<\/h1>/gi, "</h2>")
+    .replace(/^#\s+/gm, "## ");
+
+  return content.trim();
+}
+
+function buildSlug(source: string): string {
+  return (source || "")
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .substring(0, 80);
+}
+
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
