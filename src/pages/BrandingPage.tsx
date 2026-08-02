@@ -22,6 +22,20 @@ const BrandingPage = () => {
 
   useEffect(() => setForm(settings), [settings]);
 
+  // Contact fields are readable only by authenticated users, so the public
+  // settings hook omits them — load them here for the admin form.
+  useEffect(() => {
+    if (!user || !settings.id) return;
+    supabase
+      .from("platform_settings")
+      .select("contact_email,contact_phone")
+      .eq("id", settings.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) setForm((s) => ({ ...s, contact_email: data.contact_email, contact_phone: data.contact_phone }));
+      });
+  }, [user, settings.id]);
+
   useEffect(() => {
     if (!user) return;
     supabase
