@@ -12,6 +12,85 @@ async function decryptField(supabase: any, val: string | null, encKey: string): 
   return data || val;
 }
 
+// Normaliza texto para comparação (sem acentos, sem pontuação, minúsculo)
+function norm(s: string): string {
+  return (s || "")
+    .replace(/<[^>]*>/g, " ")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+/**
+ * Remove o título duplicado do corpo do artigo.
+ * O WordPress já renderiza o título do post, então nenhum H1 deve ir no conteúdo.
+ */
+function stripDuplicateTitle(rawContent: string, title: string): string {
+  let content = (rawContent || "").trim();
+  if (!content) return content;
+
+  const target = norm(title);
+  let changed = true;
+  let guard = 0;
+
+  while (changed && guard < 5) {
+    changed = false;
+    guard++;
+    content = content.trim();
+
+    // 1) Markdown: "# Título" na primeira linha
+    const mdMatch = content.match(/^#{1,3}\s*(.+?)\s*(?:\n|$)/);
+    if (mdMatch && (norm(mdMatch[1]) === target || !target)) {
+      content = content.slice(mdMatch[0].length).trim();
+      changed = true;
+      continue;
+    }
+
+    // 2) HTML: <h1>..</h1> / <h2>..</h2> logo no início igual ao título
+    const hMatch = content.match(/^<h([1-3])[^>]*>([\s\S]*?)<\/h\1>/i);
+    if (hMatch && (hMatch[1] === "1" || norm(hMatch[2]) === target)) {
+      content = content.slice(hMatch[0].length).trim();
+      changed = true;
+      continue;
+    }
+
+    // 3) Parágrafo inicial que é só o título (às vezes em <strong>)
+    const pMatch = content.match(/^<p[^>]*>\s*(?:<strong>)?([\s\S]*?)(?:<\/strong>)?\s*<\/p>/i);
+    if (pMatch && target && norm(pMatch[1]) === target) {
+      content = content.slice(pMatch[0].length).trim();
+      changed = true;
+      continue;
+    }
+
+    // 4) Primeira linha em texto puro idêntica ao título
+    const firstLine = content.split("\n")[0];
+    if (target && firstLine && norm(firstLine) === target && firstLine.length < 200) {
+      content = content.slice(firstLine.length).trim();
+      changed = true;
+    }
+  }
+
+  // Qualquer H1 remanescente vira H2 (SEO: um único H1 = título do post)
+  content = content
+    .replace(/<h1(\s[^>]*)?>/gi, "<h2$1>")
+    .replace(/<\/h1>/gi, "</h2>")
+    .replace(/^#\s+/gm, "## ");
+
+  return content.trim();
+}
+
+function buildSlug(source: string): string {
+  return (source || "")
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .substring(0, 80);
+}
+
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -112,8 +191,11 @@ serve(async (req) => {
     const wpPassword = await decryptField(supabase, settings.wordpress_app_password, encKey) || settings.wordpress_app_password;
     console.log(`WP Config: url=${wpUrl}, user=${normalizedUsername}, pwd_len=${wpPassword?.length}, pwd_start=${wpPassword?.substring(0,4)}`);
 
-    // --- Helper: find or create WP category ---
+    // --- Helper: encontra ou cria a categoria no WordPress (dinâmico, sem duplicar) ---
     async function resolveWpCategory(authHeader: string, categoryName: string): Promise<number | null> {
+      const raw = (categoryName || "").trim();
+      if (!raw) return null;
+
       const categoryLabels: Record<string, string> = {
         esportes: "Esportes",
         politica: "Política",
@@ -122,32 +204,33 @@ serve(async (req) => {
         celebridades: "Celebridades",
         financas: "Finanças",
       };
-      const label = categoryLabels[categoryName] || categoryName;
-      const slug = categoryName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-");
+      const label = categoryLabels[norm(raw).replace(/\s+/g, "")] || raw;
+      const slug = buildSlug(raw);
+      const target = norm(label);
 
       try {
-        // Search existing categories
-        const searchResp = await fetch(`${wpUrl}/wp-json/wp/v2/categories?search=${encodeURIComponent(label)}&per_page=100`, {
-          headers: { Authorization: authHeader },
-        });
-        if (searchResp.ok) {
-          const cats = await searchResp.json();
-          const match = cats.find((c: any) =>
-            c.slug === slug || c.name.toLowerCase() === label.toLowerCase()
-          );
-          if (match) { console.log(`Found WP category: ${match.name} (id=${match.id})`); return match.id; }
+        // 1) Lista todas as categorias existentes e compara sem acento/caixa
+        const all: any[] = [];
+        for (let page = 1; page <= 5; page++) {
+          const resp = await fetch(`${wpUrl}/wp-json/wp/v2/categories?per_page=100&page=${page}`, {
+            headers: { Authorization: authHeader },
+          });
+          if (!resp.ok) break;
+          const cats = await resp.json();
+          if (!Array.isArray(cats) || cats.length === 0) break;
+          all.push(...cats);
+          if (cats.length < 100) break;
         }
 
-        // Also try by slug directly
-        const slugResp = await fetch(`${wpUrl}/wp-json/wp/v2/categories?slug=${slug}`, {
-          headers: { Authorization: authHeader },
-        });
-        if (slugResp.ok) {
-          const slugCats = await slugResp.json();
-          if (slugCats.length > 0) { console.log(`Found WP category by slug: ${slugCats[0].name} (id=${slugCats[0].id})`); return slugCats[0].id; }
+        const match = all.find(
+          (c: any) => c.slug === slug || norm(c.name) === target || norm(c.slug) === target,
+        );
+        if (match) {
+          console.log(`Categoria WP encontrada: ${match.name} (id=${match.id})`);
+          return match.id;
         }
 
-        // Create category if not found
+        // 2) Cria a categoria quando não existe
         const createResp = await fetch(`${wpUrl}/wp-json/wp/v2/categories`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: authHeader },
@@ -155,12 +238,22 @@ serve(async (req) => {
         });
         if (createResp.ok) {
           const newCat = await createResp.json();
-          console.log(`Created WP category: ${newCat.name} (id=${newCat.id})`);
+          console.log(`Categoria WP criada: ${newCat.name} (id=${newCat.id})`);
           return newCat.id;
         }
+
+        // 3) term_exists: reaproveita o id devolvido pelo WordPress
+        const errJson = await createResp.json().catch(() => null);
+        const existingId = errJson?.data?.term_id ?? errJson?.data?.resource_id;
+        if (errJson?.code === "term_exists" && existingId) {
+          console.log(`Categoria WP já existia (term_exists): id=${existingId}`);
+          return existingId;
+        }
+        console.error("Falha ao criar categoria WP:", JSON.stringify(errJson)?.substring(0, 200));
       } catch (err) { console.error("Category resolution error:", err); }
       return null;
     }
+
 
     // --- Helper: publish via standard REST API ---
     async function publishStandard(authHeader: string) {
@@ -169,9 +262,12 @@ serve(async (req) => {
         "Authorization": authHeader,
         "X-WP-Nonce": "", // Some servers require this even if empty to allow REST
       };
+      // O título vai APENAS no campo title do WordPress — sem H1 no conteúdo
+      const cleanContent = stripDuplicateTitle(article.content || "", article.title || "");
+
       const body: Record<string, unknown> = {
         title: article.title,
-        content: article.content || "",
+        content: cleanContent,
         status: "publish",
         excerpt: article.excerpt || article.meta_description || "",
       };
@@ -182,15 +278,19 @@ serve(async (req) => {
         body.categories = [wpCategoryId];
       }
 
-      // Set slug if available
-      if (article.seo_keyword) {
-        body.slug = article.seo_keyword
-          .toLowerCase()
-          .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-          .replace(/[^a-z0-9]+/g, "-")
-          .replace(/^-|-$/g, "")
-          .substring(0, 80);
-      }
+      // Slug SEO: prioriza slug salvo, depois focus keyword, depois título
+      const slug = buildSlug(article.slug || article.focus_keyword || article.seo_keyword || article.title || "");
+      if (slug) body.slug = slug;
+
+      // Yoast SEO já no POST inicial (quando os metas estão expostos na REST API)
+      const yoast: Record<string, string> = {};
+      const yTitle = article.meta_title || article.seo_title;
+      const yKw = article.focus_keyword || article.seo_keyword;
+      if (yTitle) yoast._yoast_wpseo_title = yTitle;
+      if (article.meta_description) yoast._yoast_wpseo_metadesc = article.meta_description;
+      if (yKw) yoast._yoast_wpseo_focuskw = yKw;
+      if (Object.keys(yoast).length > 0) body.meta = yoast;
+
 
       // Featured image upload with alt text
       if (article.featured_image_url) {
@@ -246,8 +346,20 @@ serve(async (req) => {
 
       const endpoint = `${wpUrl}/wp-json/wp/v2/posts`;
       console.log(`POST (standard) ${endpoint}`);
-      return fetch(endpoint, { method: "POST", headers, body: JSON.stringify(body) });
+      let resp = await fetch(endpoint, { method: "POST", headers, body: JSON.stringify(body) });
+
+      // Se o Yoast não expõe os metas na REST API, reenvia sem "meta"
+      if (!resp.ok && body.meta) {
+        const errText = await resp.clone().text();
+        if (errText.includes("rest_invalid_param") || errText.includes("meta")) {
+          console.log("Metas Yoast não registrados na REST API — reenviando sem meta.");
+          const { meta: _omit, ...noMeta } = body as Record<string, unknown>;
+          resp = await fetch(endpoint, { method: "POST", headers, body: JSON.stringify(noMeta) });
+        }
+      }
+      return resp;
     }
+
 
     // --- Determine auth and attempt publish ---
     let wpResponse: Response;
@@ -257,15 +369,17 @@ serve(async (req) => {
       const pluginEndpoint = `${wpUrl}/wp-json/autoblog-ai/v1/publish`;
       const pluginBody = {
         title: article.title,
-        content: article.content || "",
+        content: stripDuplicateTitle(article.content || "", article.title || ""),
         excerpt: article.excerpt || article.meta_description || "",
         status: "publish",
-        seo_title: article.seo_title || article.title,
+        seo_title: article.meta_title || article.seo_title || article.title,
         meta_description: article.meta_description || "",
-        seo_keyword: article.seo_keyword || "",
+        seo_keyword: article.focus_keyword || article.seo_keyword || "",
+        slug: buildSlug(article.slug || article.focus_keyword || article.seo_keyword || article.title || ""),
         featured_image_url: article.featured_image_url || "",
         categories: [article.category],
       };
+
       console.log(`POST (plugin) ${pluginEndpoint}`);
       wpResponse = await fetch(pluginEndpoint, {
         method: "POST",
@@ -297,23 +411,19 @@ serve(async (req) => {
       if (wpPostId) {
         const auth = btoa(`${normalizedUsername}:${wpPassword}`);
         const updateBody: Record<string, unknown> = { status: "publish" };
-        
-        // Ensure featured media is set in the update if it exists in the article
-        // This acts as a fallback to ensure the featured image is correctly linked
-        if (article.featured_image_url) {
-          // The image should have been uploaded in Step 1, but we don't have the ID easily here
-          // unless we passed it. We rely on the initial POST creating it.
-        }
 
-        // Set Yoast SEO meta fields (focus keyword, meta description, SEO title)
+        // Yoast SEO: título SEO, meta description e palavra-chave em foco
         const yoastMeta: Record<string, string> = {};
-        if (article.seo_title) yoastMeta._yoast_wpseo_title = article.seo_title;
+        const yTitle2 = article.meta_title || article.seo_title;
+        const yKw2 = article.focus_keyword || article.seo_keyword;
+        if (yTitle2) yoastMeta._yoast_wpseo_title = yTitle2;
         if (article.meta_description) yoastMeta._yoast_wpseo_metadesc = article.meta_description;
-        if (article.seo_keyword) yoastMeta._yoast_wpseo_focuskw = article.seo_keyword;
+        if (yKw2) yoastMeta._yoast_wpseo_focuskw = yKw2;
 
         if (Object.keys(yoastMeta).length > 0) {
           updateBody.meta = yoastMeta;
         }
+
 
         try {
           const publishResp = await fetch(`${wpUrl}/wp-json/wp/v2/posts/${wpPostId}`, {
