@@ -3,361 +3,238 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const GRAPH_API = "https://graph.facebook.com/v21.0";
+const META_GRAPH = "https://graph.facebook.com/v21.0";
+const THREADS_GRAPH = "https://graph.threads.net/v1.0";
 
-async function decryptField(supabase: any, val: string | null): Promise<string | null> {
-  if (!val) return val;
-  if (!val.startsWith("ENCRYPTED:")) return val;
-  const { data } = await supabase.rpc("decrypt_credential", { val, enc_key: "" });
-  return data || val;
+function cleanText(value: string | null | undefined) {
+  return (value || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 }
 
-// ---------- Professional caption + hashtags ----------
-
-function cleanText(s: string | null): string {
-  return (s || "").replace(/<[^>]+>/g, "").replace(/\s+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
-}
-
-function buildProfessionalCaption(article: any, wpLink: string | null): string {
+function buildArticleCaption(article: any, linkUrl: string | null) {
   const title = cleanText(article.title);
-  const excerpt = cleanText(article.excerpt || "");
-  const body = cleanText(article.content || "");
-
-  // Use excerpt when available, otherwise first 2-3 sentences of body
-  let summary = excerpt;
-  if (!summary && body) {
-    const sentences = body.split(/(?<=[.!?])\s+/);
-    summary = sentences.slice(0, 3).join(" ");
-  }
-
-  const divider = "━━━━━━━━━━━━━━━━━━";
-  const cta = wpLink
-    ? `📖 Leia o artigo completo:\n${wpLink}`
-    : `💬 Compartilhe sua opinião nos comentários!`;
-
-  // Hard cap ~2200; reserve room for CTA + link
-  const reserved = (cta?.length || 0) + 60;
-  const maxSummary = 2000 - title.length - reserved;
-  const trimmedSummary =
-    summary.length > maxSummary ? summary.substring(0, maxSummary - 3).trimEnd() + "..." : summary;
-
-  return [
-    title.toUpperCase(),
-    divider,
-    trimmedSummary,
-    "",
-    cta,
-    "",
-    "👉 Siga para mais conteúdos como este.",
-  ]
-    .filter(Boolean)
-    .join("\n")
-    .trim();
+  const summary = cleanText(article.excerpt || article.meta_description || article.content).slice(0, 1500);
+  return [title, summary, linkUrl ? `Leia mais: ${linkUrl}` : null].filter(Boolean).join("\n\n").slice(0, 2100);
 }
 
-async function generateHashtags(article: any): Promise<string> {
-  const apiKey = Deno.env.get("LOVABLE_API_KEY");
-  const fallback =
-    `#noticias #atualidades #${(article.category || "geral").toString().toLowerCase().replace(/\s+/g, "")} #brasil #news #trending #informacao #conteudo`;
-  if (!apiKey) return fallback;
-
-  try {
-    const prompt = `Gere EXATAMENTE 20 hashtags em português (pt-BR), relevantes ao tema do artigo, otimizadas para Instagram (mistura de hashtags amplas, médias e de nicho). Sem espaços, sem números no final, sem repetições. Responda APENAS com as hashtags separadas por espaço, começando cada uma com #.
-
-Título: ${article.title}
-Categoria: ${article.category || "geral"}
-Resumo: ${cleanText(article.excerpt || article.content || "").substring(0, 500)}`;
-
-    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [{ role: "user", content: prompt }],
-      }),
-    });
-    if (!resp.ok) return fallback;
-    const data = await resp.json();
-    const text: string = data?.choices?.[0]?.message?.content || "";
-    const tags = (text.match(/#[\p{L}0-9_]+/gu) || []).slice(0, 28).join(" ");
-    return tags || fallback;
-  } catch {
-    return fallback;
-  }
+async function decryptField(supabase: any, value: string | null) {
+  if (!value || !value.startsWith("ENCRYPTED:")) return value;
+  const { data } = await supabase.rpc("decrypt_credential", { val: value, enc_key: "" });
+  return data || value;
 }
 
-// ---------- Instagram publishing ----------
+async function metaJson(url: string, init?: RequestInit) {
+  const response = await fetch(url, init);
+  const text = await response.text();
+  let body: any = null;
+  try { body = text ? JSON.parse(text) : {}; } catch { body = { raw: text }; }
+  if (!response.ok) throw new Error(body?.error?.message || body?.raw || `HTTP ${response.status}`);
+  return body;
+}
 
-async function publishIgContainer(containerId: string, igId: string, token: string): Promise<string | null> {
-  for (let i = 0; i < 15; i++) {
-    const statusResp = await fetch(
-      `${GRAPH_API}/${containerId}?fields=status_code,status&access_token=${encodeURIComponent(token)}`
-    );
-    if (statusResp.ok) {
-      const s = await statusResp.json();
-      if (s.status_code === "FINISHED") break;
-      if (s.status_code === "ERROR") {
-        console.error("IG container ERROR:", s);
-        return null;
-      }
-    }
-    await new Promise((r) => setTimeout(r, 2500));
-  }
-  const pubResp = await fetch(`${GRAPH_API}/${igId}/media_publish`, {
+async function publishInstagram(igId: string, token: string, caption: string, imageUrl: string) {
+  const container = await metaJson(`${META_GRAPH}/${igId}/media`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ creation_id: containerId, access_token: token }),
+    body: JSON.stringify({ image_url: imageUrl, caption, access_token: token }),
   });
-  if (!pubResp.ok) {
-    console.error("IG publish failed:", await pubResp.text());
-    return null;
-  }
-  const data = await pubResp.json();
-  return data.id || null;
-}
 
-async function postFirstComment(mediaId: string, message: string, token: string): Promise<boolean> {
-  try {
-    const resp = await fetch(`${GRAPH_API}/${mediaId}/comments`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message, access_token: token }),
-    });
-    if (!resp.ok) {
-      console.error("IG first comment failed:", await resp.text());
-      return false;
-    }
-    return true;
-  } catch (e) {
-    console.error("IG first comment error:", e);
-    return false;
-  }
-}
-
-async function getInstagramPermalink(mediaId: string, token: string): Promise<string | null> {
-  try {
-    const r = await fetch(
-      `${GRAPH_API}/${mediaId}?fields=permalink&access_token=${encodeURIComponent(token)}`
+  for (let attempt = 0; attempt < 12; attempt++) {
+    await new Promise((resolve) => setTimeout(resolve, attempt === 0 ? 1200 : 2200));
+    const status = await metaJson(
+      `${META_GRAPH}/${container.id}?fields=status_code,status&access_token=${encodeURIComponent(token)}`
     );
-    if (!r.ok) return null;
-    const d = await r.json();
-    return d.permalink || null;
-  } catch {
-    return null;
+    if (status.status_code === "FINISHED") break;
+    if (status.status_code === "ERROR" || attempt === 11) throw new Error(status.status || "Falha ao processar mídia no Instagram");
   }
+
+  const published = await metaJson(`${META_GRAPH}/${igId}/media_publish`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ creation_id: container.id, access_token: token }),
+  });
+
+  let permalink: string | null = null;
+  try {
+    const media = await metaJson(`${META_GRAPH}/${published.id}?fields=permalink&access_token=${encodeURIComponent(token)}`);
+    permalink = media.permalink || null;
+  } catch { /* permalink is best effort */ }
+  return { id: published.id as string, permalink };
 }
 
-async function publishInstagramDirect(
-  _supabase: any,
-  account: any
-): Promise<{ ok: boolean; id?: string; error?: string }> {
-  // Direct (login/password) posting not supported in edge runtime
-  return { ok: false, error: "Conexão direta via login/senha não publica de fato. Use a conta oficial (Graph API)." };
+async function publishFacebook(pageId: string, token: string, caption: string, linkUrl: string | null) {
+  const body: Record<string, string> = { message: caption, access_token: token };
+  if (linkUrl) body.link = linkUrl;
+  const published = await metaJson(`${META_GRAPH}/${pageId}/feed`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  return { id: published.id as string, permalink: `https://www.facebook.com/${published.id}` };
+}
+
+async function publishThreads(userId: string, token: string, caption: string, imageUrl: string | null, linkUrl: string | null) {
+  const text = [caption, linkUrl && !caption.includes(linkUrl) ? linkUrl : null].filter(Boolean).join("\n\n").slice(0, 500);
+  const createBody: Record<string, string> = {
+    media_type: imageUrl ? "IMAGE" : "TEXT",
+    text,
+    access_token: token,
+  };
+  if (imageUrl) createBody.image_url = imageUrl;
+
+  const container = await metaJson(`${THREADS_GRAPH}/${userId}/threads`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(createBody),
+  });
+  const published = await metaJson(`${THREADS_GRAPH}/${userId}/threads_publish`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ creation_id: container.id, access_token: token }),
+  });
+  return { id: published.id as string, permalink: null as string | null };
 }
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { articleId, userId } = await req.json();
-    if (!articleId || !userId) throw new Error("articleId and userId required");
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) throw new Error("Unauthorized");
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
+    const authed = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: auth } = await authed.auth.getUser(authHeader.replace("Bearer ", ""));
+    if (!auth?.user) throw new Error("Unauthorized");
 
-    const { data: article } = await supabase
-      .from("articles")
-      .select("*")
-      .eq("id", articleId)
-      .eq("user_id", userId)
-      .single();
-    if (!article) throw new Error("Artigo não encontrado");
+    const body = await req.json();
+    const userId = body.userId || auth.user.id;
+    if (userId !== auth.user.id) throw new Error("Forbidden");
 
-    const imageUrl = article.featured_image_url;
-    const { data: lastLog } = await supabase
-      .from("publish_log")
-      .select("published_url")
-      .eq("article_id", articleId)
-      .eq("platform", "wordpress")
-      .eq("status", "success")
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    const wpLink: string | null = lastLog?.published_url || null;
+    const articleId: string | null = body.articleId || null;
+    const targetKeys: string[] = Array.isArray(body.targetKeys) ? body.targetKeys : [];
+    const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
-    if (!imageUrl || imageUrl.startsWith("data:")) {
-      return new Response(
-        JSON.stringify({ success: false, message: "Artigo sem imagem pública para publicar nas redes sociais." }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    let article: any = null;
+    let caption = cleanText(body.content?.caption);
+    let imageUrl: string | null = body.content?.imageUrl || null;
+    let linkUrl: string | null = body.content?.linkUrl || null;
 
-    // Professional caption + hashtags (hashtags go in the FIRST COMMENT)
-    const caption = buildProfessionalCaption(article, wpLink);
-    const hashtags = await generateHashtags(article);
-    const altText = cleanText(article.title).substring(0, 240);
-
-    // 1. Collect Graph API Targets
-    const { data: settings } = await supabase
-      .from("user_settings")
-      .select("facebook_page_id, facebook_access_token, instagram_account_id")
-      .eq("user_id", userId)
-      .single();
-
-    const { data: fbAccounts } = await supabase
-      .from("facebook_accounts")
-      .select("*")
-      .eq("user_id", userId)
-      .eq("is_active", true);
-
-    type Target = { pageId: string; pageToken: string; pageName: string; igId?: string | null };
-    const targets: Target[] = [];
-
-    if (settings?.facebook_page_id && settings?.facebook_access_token) {
-      const tok = (await decryptField(supabase, settings.facebook_access_token)) || "";
-      if (tok) {
-        targets.push({
-          pageId: settings.facebook_page_id,
-          pageToken: tok,
-          pageName: "Página Principal",
-          igId: settings.instagram_account_id || null,
-        });
+    if (articleId) {
+      const { data } = await admin.from("articles").select("*").eq("id", articleId).eq("user_id", userId).maybeSingle();
+      if (!data) throw new Error("Artigo não encontrado");
+      article = data;
+      imageUrl = imageUrl || article.featured_image_url || null;
+      if (!linkUrl) {
+        const { data: log } = await admin.from("publish_log")
+          .select("published_url")
+          .eq("article_id", articleId)
+          .eq("platform", "wordpress")
+          .eq("status", "success")
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        linkUrl = log?.published_url || null;
       }
-    }
-    for (const acc of fbAccounts || []) {
-      const tok = (await decryptField(supabase, acc.access_token)) || "";
-      if (!tok) continue;
-      if (targets.find((t) => t.pageId === acc.page_id)) continue;
-      targets.push({
-        pageId: acc.page_id,
-        pageToken: tok,
-        pageName: acc.page_name || acc.page_id,
-        igId: acc.instagram_account_id || null,
-      });
+      if (!caption) caption = buildArticleCaption(article, linkUrl);
     }
 
-    const { data: directAccounts } = await supabase
-      .from("instagram_accounts_direct")
-      .select("*")
-      .eq("user_id", userId)
-      .eq("is_active", true);
+    if (!caption) throw new Error("Legenda obrigatória");
+    if (imageUrl?.startsWith("data:")) throw new Error("A imagem precisa ter uma URL pública");
 
-    const results: Array<{ target: string; channel: string; ok: boolean; id?: string; error?: string; permalink?: string }> = [];
-    const processedTargets = new Set<string>();
-    let firstIgFeedId: string | null = null;
+    const { data: metaAccounts } = await admin.from("facebook_accounts").select("*").eq("user_id", userId).eq("is_active", true);
+    const { data: threadsAccounts } = await admin.from("threads_accounts").select("*").eq("user_id", userId).eq("is_active", true);
 
-    for (const t of targets) {
-      const targetKey = `${t.pageId}-${t.igId || "no-ig"}`;
-      if (processedTargets.has(targetKey)) continue;
-      processedTargets.add(targetKey);
+    const results: Array<{ accountKey: string; target: string; channel: string; ok: boolean; id?: string; permalink?: string | null; error?: string }> = [];
+    const wants = (key: string) => targetKeys.length === 0 || targetKeys.includes(key);
 
-      // Official Instagram (Graph API) — PROFESSIONAL POSTING
-      if (t.igId) {
+    const saveLog = async (platform: string, key: string, name: string, ok: boolean, remoteId?: string, permalink?: string | null, error?: string) => {
+      await admin.from("social_publications").insert({
+        user_id: userId,
+        article_id: articleId,
+        platform,
+        account_key: key,
+        account_name: name,
+        status: ok ? "success" : "failed",
+        remote_id: remoteId || null,
+        permalink: permalink || null,
+        caption,
+        image_url: imageUrl,
+        link_url: linkUrl,
+        error_message: error || null,
+        published_at: ok ? new Date().toISOString() : null,
+      }).then(() => undefined, () => undefined);
+    };
+
+    for (const account of metaAccounts || []) {
+      const token = await decryptField(admin, account.access_token);
+      if (!token) continue;
+
+      const fbKey = `facebook:${account.page_id}`;
+      if (wants(fbKey)) {
         try {
-          const containerResp = await fetch(`${GRAPH_API}/${t.igId}/media`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              image_url: imageUrl,
-              caption,
-              alt_text: altText, // accessibility
-              access_token: t.pageToken,
-            }),
-          });
-          if (containerResp.ok) {
-            const c = await containerResp.json();
-            const postId = await publishIgContainer(c.id, t.igId, t.pageToken);
-            if (postId) {
-              if (!firstIgFeedId) firstIgFeedId = postId;
-
-              // Post hashtags as FIRST COMMENT (professional practice)
-              await postFirstComment(postId, hashtags, t.pageToken);
-
-              const permalink = await getInstagramPermalink(postId, t.pageToken);
-              results.push({
-                target: t.pageName,
-                channel: "instagram_feed",
-                ok: true,
-                id: postId,
-                permalink: permalink || undefined,
-              });
-              await supabase.from("publish_log").insert({
-                user_id: userId,
-                article_id: articleId,
-                platform: "instagram",
-                status: "success",
-                published_url: permalink || `https://www.instagram.com/p/${postId}`,
-              });
-            } else {
-              results.push({ target: t.pageName, channel: "instagram_feed", ok: false, error: "publish failed" });
-            }
-          } else {
-            const err = await containerResp.text();
-            console.error("IG container failed:", err);
-            results.push({ target: t.pageName, channel: "instagram_feed", ok: false, error: err.substring(0, 300) });
-          }
+          const published = await publishFacebook(account.page_id, token, caption, linkUrl);
+          results.push({ accountKey: fbKey, target: account.page_name || account.page_id, channel: "facebook", ok: true, ...published });
+          await saveLog("facebook", fbKey, account.page_name || account.page_id, true, published.id, published.permalink);
         } catch (e) {
-          results.push({ target: t.pageName, channel: "instagram_feed", ok: false, error: String(e) });
+          const error = e instanceof Error ? e.message : String(e);
+          results.push({ accountKey: fbKey, target: account.page_name || account.page_id, channel: "facebook", ok: false, error });
+          await saveLog("facebook", fbKey, account.page_name || account.page_id, false, undefined, null, error);
         }
       }
 
-      // Facebook Feed
+      if (account.instagram_account_id) {
+        const igKey = `instagram:${account.instagram_account_id}`;
+        if (wants(igKey)) {
+          if (!imageUrl) {
+            const error = "Instagram exige uma imagem pública";
+            results.push({ accountKey: igKey, target: account.instagram_username || account.page_name, channel: "instagram", ok: false, error });
+            await saveLog("instagram", igKey, account.instagram_username || account.page_name, false, undefined, null, error);
+          } else {
+            try {
+              const published = await publishInstagram(account.instagram_account_id, token, caption, imageUrl);
+              results.push({ accountKey: igKey, target: account.instagram_username || account.page_name, channel: "instagram", ok: true, ...published });
+              await saveLog("instagram", igKey, account.instagram_username || account.page_name, true, published.id, published.permalink);
+              if (articleId) await admin.from("articles").update({ instagram_post_id: published.id }).eq("id", articleId);
+            } catch (e) {
+              const error = e instanceof Error ? e.message : String(e);
+              results.push({ accountKey: igKey, target: account.instagram_username || account.page_name, channel: "instagram", ok: false, error });
+              await saveLog("instagram", igKey, account.instagram_username || account.page_name, false, undefined, null, error);
+            }
+          }
+        }
+      }
+    }
+
+    for (const account of threadsAccounts || []) {
+      const key = `threads:${account.id}`;
+      if (!wants(key)) continue;
+      const token = await decryptField(admin, account.access_token);
       try {
-        const fbPostResp = await fetch(`${GRAPH_API}/${t.pageId}/feed`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: caption, link: wpLink, access_token: t.pageToken }),
-        });
-        if (fbPostResp.ok) {
-          const pd = await fbPostResp.json();
-          results.push({ target: t.pageName, channel: "facebook_feed", ok: true, id: pd.id });
-          await supabase.from("publish_log").insert({
-            user_id: userId,
-            article_id: articleId,
-            platform: "facebook",
-            status: "success",
-            published_url: `https://www.facebook.com/${pd.id}`,
-          });
-        } else {
-          const err = await fbPostResp.text();
-          results.push({ target: t.pageName, channel: "facebook_feed", ok: false, error: err.substring(0, 300) });
-        }
+        const published = await publishThreads(account.threads_user_id, token || "", caption, imageUrl, linkUrl);
+        results.push({ accountKey: key, target: account.username ? `@${account.username}` : account.threads_user_id, channel: "threads", ok: true, ...published });
+        await saveLog("threads", key, account.username || account.threads_user_id, true, published.id, published.permalink);
       } catch (e) {
-        results.push({ target: t.pageName, channel: "facebook_feed", ok: false, error: String(e) });
+        const error = e instanceof Error ? e.message : String(e);
+        results.push({ accountKey: key, target: account.username ? `@${account.username}` : account.threads_user_id, channel: "threads", ok: false, error });
+        await saveLog("threads", key, account.username || account.threads_user_id, false, undefined, null, error);
       }
-    }
-
-    for (const acc of directAccounts || []) {
-      const res = await publishInstagramDirect(supabase, acc);
-      results.push({ target: acc.username, channel: "instagram_direct", ok: res.ok, id: res.id, error: res.error });
-    }
-
-    if (firstIgFeedId) {
-      await supabase.from("articles").update({ instagram_post_id: firstIgFeedId }).eq("id", articleId);
     }
 
     const okCount = results.filter((r) => r.ok).length;
-    return new Response(
-      JSON.stringify({
-        success: okCount > 0,
-        message: `Publicado em ${okCount}/${results.length} canais sociais`,
-        caption_preview: caption.substring(0, 200),
-        hashtags_preview: hashtags,
-        results,
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({
+      success: okCount > 0,
+      message: results.length ? `Publicado com sucesso em ${okCount}/${results.length} destino(s).` : "Nenhuma conta compatível foi selecionada.",
+      results,
+    }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (error) {
     console.error("publish-social error:", error);
-    return new Response(
-      JSON.stringify({ success: false, error: error instanceof Error ? error.message : "Erro desconhecido" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ success: false, error: error instanceof Error ? error.message : "Erro desconhecido" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
