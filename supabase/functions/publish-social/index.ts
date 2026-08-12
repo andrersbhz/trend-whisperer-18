@@ -60,7 +60,7 @@ async function publishInstagram(igId: string, token: string, caption: string, im
   try {
     const media = await metaJson(`${META_GRAPH}/${published.id}?fields=permalink&access_token=${encodeURIComponent(token)}`);
     permalink = media.permalink || null;
-  } catch { /* permalink is best effort */ }
+  } catch { /* best effort */ }
   return { id: published.id as string, permalink };
 }
 
@@ -174,7 +174,7 @@ serve(async (req) => {
       if (!token) continue;
 
       const fbKey = `facebook:${account.page_id}`;
-      if (wants(fbKey)) {
+      if (account.facebook_enabled !== false && wants(fbKey)) {
         try {
           const published = await publishFacebook(account.page_id, token, caption, linkUrl);
           results.push({ accountKey: fbKey, target: account.page_name || account.page_id, channel: "facebook", ok: true, ...published });
@@ -186,23 +186,23 @@ serve(async (req) => {
         }
       }
 
-      if (account.instagram_account_id) {
+      if (account.instagram_account_id && account.instagram_enabled !== false) {
         const igKey = `instagram:${account.instagram_account_id}`;
         if (wants(igKey)) {
           if (!imageUrl) {
             const error = "Instagram exige uma imagem pública";
-            results.push({ accountKey: igKey, target: account.instagram_username || account.page_name, channel: "instagram", ok: false, error });
-            await saveLog("instagram", igKey, account.instagram_username || account.page_name, false, undefined, null, error);
+            results.push({ accountKey: igKey, target: account.page_name, channel: "instagram", ok: false, error });
+            await saveLog("instagram", igKey, account.page_name, false, undefined, null, error);
           } else {
             try {
               const published = await publishInstagram(account.instagram_account_id, token, caption, imageUrl);
-              results.push({ accountKey: igKey, target: account.instagram_username || account.page_name, channel: "instagram", ok: true, ...published });
-              await saveLog("instagram", igKey, account.instagram_username || account.page_name, true, published.id, published.permalink);
+              results.push({ accountKey: igKey, target: account.page_name, channel: "instagram", ok: true, ...published });
+              await saveLog("instagram", igKey, account.page_name, true, published.id, published.permalink);
               if (articleId) await admin.from("articles").update({ instagram_post_id: published.id }).eq("id", articleId);
             } catch (e) {
               const error = e instanceof Error ? e.message : String(e);
-              results.push({ accountKey: igKey, target: account.instagram_username || account.page_name, channel: "instagram", ok: false, error });
-              await saveLog("instagram", igKey, account.instagram_username || account.page_name, false, undefined, null, error);
+              results.push({ accountKey: igKey, target: account.page_name, channel: "instagram", ok: false, error });
+              await saveLog("instagram", igKey, account.page_name, false, undefined, null, error);
             }
           }
         }
@@ -227,7 +227,7 @@ serve(async (req) => {
     const okCount = results.filter((r) => r.ok).length;
     return new Response(JSON.stringify({
       success: okCount > 0,
-      message: results.length ? `Publicado com sucesso em ${okCount}/${results.length} destino(s).` : "Nenhuma conta compatível foi selecionada.",
+      message: results.length ? `Publicado com sucesso em ${okCount}/${results.length} destino(s).` : "Nenhuma conta conectada foi selecionada.",
       results,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (error) {
