@@ -31,6 +31,7 @@ const SchedulePage = lazyRetry(() => import("@/pages/SchedulePage"));
 const SettingsPage = lazyRetry(() => import("@/pages/SettingsPage"));
 const AnalyticsPage = lazyRetry(() => import("@/pages/AnalyticsPage"));
 const SocialRobotPage = lazyRetry(() => import("@/pages/SocialRobotPage"));
+const SocialPublisherPage = lazyRetry(() => import("@/pages/SocialPublisherPage"));
 const GooglePage = lazyRetry(() => import("@/pages/GooglePage"));
 const MetaPage = lazyRetry(() => import("@/pages/MetaPage"));
 const InstagramPage = lazyRetry(() => import("@/pages/InstagramPage"));
@@ -86,8 +87,6 @@ const AuthRoute = () => {
 
 const RootRoute = () => {
   const { user, loading } = useAuth();
-
-  // Atualiza o cache de geolocalização em segundo plano (nunca bloqueia).
   useEffect(() => {
     refreshGeoLangInBackground();
   }, []);
@@ -115,12 +114,10 @@ const App = () => (
             <PresenceTracker />
             <Suspense fallback={<Preloader message="Carregando..." />}>
               <Routes>
-                {/* Redirect root based on auth status */}
                 <Route path="/" element={<RootRoute />} />
                 <Route path="/vendas" element={<SalesPage />} />
                 <Route path="/pricing" element={<SalesPage />} />
 
-                {/* Admin Dashboard Routes (Protected) */}
                 <Route path="/auth" element={<AuthRoute />} />
                 <Route path="/admin" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                 <Route path="/articles" element={<ProtectedRoute><ArticlesPage /></ProtectedRoute>} />
@@ -129,10 +126,10 @@ const App = () => (
                 <Route path="/schedule" element={<ProtectedRoute><SchedulePage /></ProtectedRoute>} />
                 <Route path="/analytics" element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
                 <Route path="/robot" element={<ProtectedRoute><SocialRobotPage /></ProtectedRoute>} />
+                <Route path="/social" element={<ProtectedRoute><SocialPublisherPage /></ProtectedRoute>} />
                 <Route path="/google" element={<ProtectedRoute><GooglePage /></ProtectedRoute>} />
                 <Route path="/meta" element={<ProtectedRoute><MetaPage /></ProtectedRoute>} />
                 <Route path="/instagram" element={<ProtectedRoute><InstagramPage /></ProtectedRoute>} />
-                
                 <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
                 <Route path="/map" element={<ProtectedRoute><MapPage /></ProtectedRoute>} />
                 <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
@@ -144,7 +141,6 @@ const App = () => (
                 <Route path="/ativar" element={<LicenseActivatePage />} />
                 <Route path="/checkout/return" element={<CheckoutReturnPage />} />
 
-                {/* NEXA Insight (multiempresa) */}
                 <Route path="/nexa" element={<Navigate to="/nexa/dashboard" replace />} />
                 <Route path="/nexa/login" element={<NexaLogin />} />
                 <Route path="/nexa/onboarding" element={<ProtectedNexaRoute><NexaOnboarding /></ProtectedNexaRoute>} />
@@ -165,7 +161,6 @@ const App = () => (
                 <Route path="/nexa/knowledge" element={<ProtectedNexaRoute><NexaPlaceholder title="Base de conhecimento" stage="Etapa 5" description="Upload de scripts, manuais e políticas. Embeddings e controle de permissões." /></ProtectedNexaRoute>} />
                 <Route path="/nexa/reports" element={<ProtectedNexaRoute><NexaPlaceholder title="Relatórios" stage="Etapa 4" description="Relatórios executivos, por equipe, por atendente, por cliente e exportações." /></ProtectedNexaRoute>} />
                 <Route path="/nexa/integrations" element={<ProtectedNexaRoute><NexaPlaceholder title="Integrações" stage="Etapa 6" description="WhatsApp, e-mail, telefonia SIP, CRM, ERP e webhooks autenticados." /></ProtectedNexaRoute>} />
-
 
                 <Route path="*" element={<NotFound />} />
               </Routes>
