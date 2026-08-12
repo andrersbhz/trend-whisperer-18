@@ -5,22 +5,28 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-bold ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 active:scale-[0.98] shadow-sm",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-semibold tracking-tight ring-offset-background transition-[background-color,color,border-color,box-shadow,transform] duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/45 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-45 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 active:translate-y-px",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-neon-blue border border-border transition-all duration-300",
-        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90 border border-transparent hover:border-red-400/50 hover:shadow-lg",
-        outline: "border border-border bg-background text-foreground hover:bg-accent hover:text-accent-foreground hover:shadow-neon-blue transition-all duration-300",
-        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80 border border-border hover:border-primary/30",
-        ghost: "hover:bg-accent text-foreground hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
+        default:
+          "border border-primary bg-primary text-primary-foreground shadow-sm hover:bg-background hover:text-primary hover:border-primary hover:shadow-md",
+        destructive:
+          "border border-destructive bg-destructive text-destructive-foreground shadow-sm hover:bg-background hover:text-destructive hover:border-destructive",
+        outline:
+          "border border-border/80 bg-background/70 text-foreground shadow-sm hover:bg-foreground hover:text-background hover:border-foreground",
+        secondary:
+          "border border-border/70 bg-secondary text-secondary-foreground hover:bg-foreground hover:text-background hover:border-foreground",
+        ghost:
+          "border border-transparent bg-transparent text-muted-foreground hover:bg-foreground hover:text-background hover:border-foreground/20",
+        link:
+          "h-auto p-0 text-primary underline-offset-4 shadow-none hover:text-foreground hover:underline",
       },
       size: {
         default: "h-10 px-4 py-2",
-        sm: "h-9 px-3",
-        lg: "h-11 px-8",
-        icon: "h-10 w-10",
+        sm: "h-9 rounded-md px-3 text-xs",
+        lg: "h-11 px-6",
+        icon: "h-10 w-10 p-0",
       },
     },
     defaultVariants: {
