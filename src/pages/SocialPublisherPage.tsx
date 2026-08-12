@@ -9,14 +9,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 
- type SocialAccount = {
+type SocialAccount = {
   key: string;
   platform: 'facebook' | 'instagram' | 'threads';
   name: string;
   subtitle?: string;
   avatar?: string | null;
   active: boolean;
- };
+};
 
 const SocialPublisherPage = () => {
   const { user } = useAuth();
@@ -37,7 +37,7 @@ const SocialPublisherPage = () => {
       const [{ data: meta }, { data: threads }] = await Promise.all([
         supabase
           .from('facebook_accounts')
-          .select('page_id,page_name,picture_url,instagram_account_id,instagram_username,is_active')
+          .select('page_id,page_name,picture_url,instagram_account_id,is_active')
           .eq('user_id', user.id)
           .eq('is_active', true),
         supabase
@@ -61,8 +61,8 @@ const SocialPublisherPage = () => {
           next.push({
             key: `instagram:${row.instagram_account_id}`,
             platform: 'instagram',
-            name: row.instagram_username ? `@${row.instagram_username}` : row.page_name,
-            subtitle: `Instagram via ${row.page_name}`,
+            name: `${row.page_name} · Instagram`,
+            subtitle: `Instagram Business vinculado a ${row.page_name}`,
             avatar: row.picture_url,
             active: true,
           });
@@ -102,10 +102,7 @@ const SocialPublisherPage = () => {
   }, []);
 
   const selectedAccounts = useMemo(() => accounts.filter((a) => selected.includes(a.key)), [accounts, selected]);
-
-  const toggle = (key: string) => {
-    setSelected((s) => s.includes(key) ? s.filter((x) => x !== key) : [...s, key]);
-  };
+  const toggle = (key: string) => setSelected((s) => s.includes(key) ? s.filter((x) => x !== key) : [...s, key]);
 
   const connectMeta = async () => {
     const { data, error } = await supabase.functions.invoke('facebook-oauth-start', {
@@ -166,11 +163,7 @@ const SocialPublisherPage = () => {
     }
   };
 
-  const iconFor = (platform: SocialAccount['platform']) => {
-    if (platform === 'facebook') return Facebook;
-    if (platform === 'instagram') return Instagram;
-    return MessageSquareText;
-  };
+  const iconFor = (platform: SocialAccount['platform']) => platform === 'facebook' ? Facebook : platform === 'instagram' ? Instagram : MessageSquareText;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -191,29 +184,18 @@ const SocialPublisherPage = () => {
         <Card className="border-border/60 bg-card/70 shadow-sm">
           <CardHeader><CardTitle className="text-base font-semibold">Contas conectadas</CardTitle></CardHeader>
           <CardContent className="space-y-2">
-            {accounts.length === 0 && !loading && (
-              <div className="rounded-lg border border-dashed border-border p-6 text-sm text-muted-foreground text-center">Nenhuma conta encontrada. Use “Adicionar Meta” ou “Adicionar Threads”.</div>
-            )}
+            {accounts.length === 0 && !loading && <div className="rounded-lg border border-dashed border-border p-6 text-sm text-muted-foreground text-center">Nenhuma conta encontrada. Use “Adicionar Meta” ou “Adicionar Threads”.</div>}
             {accounts.map((account) => {
               const Icon = iconFor(account.platform);
               const checked = selected.includes(account.key);
               return (
                 <div key={account.key} className={`flex items-center gap-3 rounded-lg border p-3 transition-colors ${checked ? 'border-primary bg-primary/5' : 'border-border/60 bg-background/35 hover:bg-muted/40'}`}>
                   <button onClick={() => toggle(account.key)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
-                    <div className="h-10 w-10 rounded-lg border border-border/60 bg-background flex items-center justify-center overflow-hidden shrink-0">
-                      {account.avatar ? <img src={account.avatar} alt="" className="h-full w-full object-cover" /> : <Icon className="h-4 w-4" />}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold truncate">{account.name}</p>
-                      <p className="text-xs text-muted-foreground truncate">{account.subtitle}</p>
-                    </div>
-                    <div className={`h-5 w-5 rounded-full border flex items-center justify-center ${checked ? 'bg-primary border-primary text-primary-foreground' : 'border-border'}`}>
-                      {checked && <CheckCircle2 className="h-3.5 w-3.5" />}
-                    </div>
+                    <div className="h-10 w-10 rounded-lg border border-border/60 bg-background flex items-center justify-center overflow-hidden shrink-0">{account.avatar ? <img src={account.avatar} alt="" className="h-full w-full object-cover" /> : <Icon className="h-4 w-4" />}</div>
+                    <div className="min-w-0 flex-1"><p className="text-sm font-semibold truncate">{account.name}</p><p className="text-xs text-muted-foreground truncate">{account.subtitle}</p></div>
+                    <div className={`h-5 w-5 rounded-full border flex items-center justify-center ${checked ? 'bg-primary border-primary text-primary-foreground' : 'border-border'}`}>{checked && <CheckCircle2 className="h-3.5 w-3.5" />}</div>
                   </button>
-                  {account.platform === 'threads' && (
-                    <Button variant="ghost" size="icon" onClick={() => removeThreads(account.key)} title="Remover conta"><Trash2 /></Button>
-                  )}
+                  {account.platform === 'threads' && <Button variant="ghost" size="icon" onClick={() => removeThreads(account.key)} title="Remover conta"><Trash2 /></Button>}
                 </div>
               );
             })}
@@ -223,10 +205,7 @@ const SocialPublisherPage = () => {
         <Card className="border-border/60 bg-card/70 shadow-sm">
           <CardHeader><CardTitle className="text-base font-semibold">Nova publicação</CardTitle></CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Legenda</Label>
-              <Textarea value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Escreva a publicação..." className="min-h-44 resize-y" />
-            </div>
+            <div className="space-y-2"><Label>Legenda</Label><Textarea value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Escreva a publicação..." className="min-h-44 resize-y" /></div>
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2"><Label>URL da imagem</Label><Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://.../imagem.jpg" /></div>
               <div className="space-y-2"><Label>Link opcional</Label><Input value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} placeholder="https://..." /></div>
@@ -243,10 +222,7 @@ const SocialPublisherPage = () => {
           <CardContent className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
             {results.map((r, i) => (
               <div key={`${r.accountKey || r.target}-${i}`} className="rounded-lg border border-border/60 p-3 bg-background/30">
-                <div className="flex items-start gap-2">
-                  {r.ok ? <CheckCircle2 className="h-4 w-4 text-success mt-0.5" /> : <AlertCircle className="h-4 w-4 text-destructive mt-0.5" />}
-                  <div className="min-w-0"><p className="text-sm font-semibold truncate">{r.target || r.accountKey}</p><p className="text-xs text-muted-foreground">{r.channel}</p>{r.error && <p className="text-xs text-destructive mt-1 break-words">{r.error}</p>}</div>
-                </div>
+                <div className="flex items-start gap-2">{r.ok ? <CheckCircle2 className="h-4 w-4 text-success mt-0.5" /> : <AlertCircle className="h-4 w-4 text-destructive mt-0.5" />}<div className="min-w-0"><p className="text-sm font-semibold truncate">{r.target || r.accountKey}</p><p className="text-xs text-muted-foreground">{r.channel}</p>{r.error && <p className="text-xs text-destructive mt-1 break-words">{r.error}</p>}</div></div>
               </div>
             ))}
           </CardContent>
