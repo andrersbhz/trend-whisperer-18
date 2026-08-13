@@ -1,42 +1,137 @@
-#root {
-  max-width: 1280px;
+/* Global visual polish loaded after Tailwind. Visual-only overrides. */
+
+[data-ui-button="true"] {
+  min-height: 2.25rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
+}
+
+[data-ui-button="true"]:hover {
+  transform: translateY(-1px);
+}
+
+[data-ui-button="true"][data-variant="default"]:hover {
+  background: hsl(var(--background)) !important;
+  color: hsl(var(--primary)) !important;
+  border-color: hsl(var(--primary)) !important;
+  box-shadow: 0 8px 24px -12px hsl(var(--primary) / 0.55) !important;
+}
+
+[data-ui-button="true"][data-variant="outline"]:hover,
+[data-ui-button="true"][data-variant="secondary"]:hover,
+[data-ui-button="true"][data-variant="ghost"]:hover {
+  background: hsl(var(--foreground)) !important;
+  color: hsl(var(--background)) !important;
+  border-color: hsl(var(--foreground)) !important;
+}
+
+[data-ui-button="true"][data-variant="destructive"]:hover {
+  background: hsl(var(--background)) !important;
+  color: hsl(var(--destructive)) !important;
+  border-color: hsl(var(--destructive)) !important;
+}
+
+[data-ui-button="true"][data-variant="link"]:hover {
+  background: transparent !important;
+  color: hsl(var(--foreground)) !important;
+  text-decoration: underline;
+  transform: none;
+}
+
+[data-ui-button="true"]:disabled:hover {
+  transform: none;
+}
+
+/* Inputs remain readable in both themes. */
+input:not([type="color"]),
+textarea,
+[role="combobox"] {
+  background-color: hsl(var(--background) / 0.82) !important;
+  color: hsl(var(--foreground)) !important;
+  border-color: hsl(var(--input)) !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: hsl(var(--muted-foreground) / 0.72) !important;
+}
+
+input:focus,
+textarea:focus,
+[role="combobox"]:focus {
+  border-color: hsl(var(--primary) / 0.72) !important;
+}
+
+/* Cleaner cards and panels. */
+.glass-card,
+[data-radix-popper-content-wrapper] > div {
+  border-radius: 0.8rem;
+}
+
+.glass-card {
+  transition: border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
+}
+
+.glass-card:hover {
+  border-color: hsl(var(--border) / 0.95);
+}
+
+.dark .glass-card:hover {
+  box-shadow: 0 14px 38px -28px hsl(var(--primary) / 0.35);
+}
+
+/* Tabs: active state gets guaranteed contrast; inactive stays neutral. */
+[role="tab"] {
+  color: hsl(var(--muted-foreground));
+  transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease;
+}
+
+[role="tab"]:hover:not([data-state="active"]) {
+  background: hsl(var(--muted) / 0.65) !important;
+  color: hsl(var(--foreground)) !important;
+}
+
+[role="tab"][data-state="active"] {
+  background: hsl(var(--primary) / 0.14) !important;
+  color: hsl(var(--primary)) !important;
+  box-shadow: inset 0 0 0 1px hsl(var(--primary) / 0.28);
+}
+
+/* Menus and selectable rows. */
+[role="menuitem"],
+[role="option"] {
+  border-radius: 0.45rem;
+}
+
+[role="menuitem"]:hover,
+[role="option"]:hover,
+[role="option"][data-highlighted] {
+  background: hsl(var(--foreground)) !important;
+  color: hsl(var(--background)) !important;
+}
+
+/* Better hierarchy and spacing without changing layout structure. */
+.page-container {
+  width: 100%;
+  max-width: 1540px;
   margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+.page-container > div > h1,
+.page-container h1 {
+  letter-spacing: -0.035em;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
+.dark .glass,
+.dark .glass-card {
+  background-image: linear-gradient(180deg, hsl(var(--card) / 0.96), hsl(var(--card) / 0.9));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-ui-button="true"],
+  .glass-card,
+  [role="tab"] {
+    transition: none !important;
   }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
-}
-
-.card {
-  padding: 2em;
-}
-
-.read-the-docs {
-  color: #888;
 }
