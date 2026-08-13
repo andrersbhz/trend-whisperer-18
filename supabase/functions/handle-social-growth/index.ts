@@ -15,165 +15,66 @@ serve(async (req) => {
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    console.log(`[handle-social-growth] Iniciando ciclo de crescimento para usuário: ${userId}`);
-
-    // 1. Buscar configurações do usuário
-    const { data: settings, error: settingsError } = await supabase
+    const { data: settings } = await supabase
       .from("user_settings")
-      .select("*")
+      .select("follower_growth_mode")
       .eq("user_id", userId)
-      .single();
+      .maybeSingle();
 
-    if (settingsError || !settings) throw new Error("Settings not found");
-    if (!settings.follower_growth_mode) {
-      return new Response(JSON.stringify({ message: "Modo crescimento desativado" }), { 
-        headers: { ...corsHeaders, "Content-Type": "application/json" } 
+    if (!settings?.follower_growth_mode) {
+      return new Response(JSON.stringify({ success: true, message: "Modo crescimento desativado", followed: 0, unfollowed: 0, opportunities: 0 }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const {
-      instagram_follows_per_day_min: minFollows = 2,
-      instagram_follows_per_day_max: maxFollows = 8,
-      instagram_follow_duration_min: minDays = 6,
-      instagram_follow_duration_max: maxDays = 10,
-      instagram_automation_human_like: humanLike = true
-    } = settings;
-
-    // 2. Lógica de UNFOLLOW (Deixar de seguir)
-    // Buscar pessoas que seguimos há mais de X dias
-    const { data: toUnfollow, error: unfollowError } = await supabase
-      .from("social_follows")
-      .select("*")
+    // A API oficial do Instagram não oferece endpoints para seguir/desseguir usuários
+    // nem para transformar curtidores de posts em follows automáticos. Em vez de simular
+    // a ação, mantemos uma fila de oportunidades baseada em interações reais.
+    const { data: interactions } = await supabase
+      .from("social_interactions")
+      .select("id,platform,external_id,author_name,author_avatar,interaction_type,created_at")
       .eq("user_id", userId)
-      .eq("status", "following");
+      .in("platform", ["instagram", "facebook", "threads"])
+      .order("created_at", { ascending: false })
+      .limit(50);
 
-    if (unfollowError) console.error("Erro ao buscar unfollows:", unfollowError);
-
-    let unfollowedCount = 0;
-    const now = new Date();
-
-    if (toUnfollow && toUnfollow.length > 0) {
-      for (const follow of toUnfollow) {
-        const followedDate = new Date(follow.followed_at);
-        // Calculamos um tempo aleatório entre minDays e maxDays para cada pessoa
-        // Para simplificar, usamos uma semente baseada no ID para ser consistente ou apenas o minDays
-        const daysDiff = Math.floor((now.getTime() - followedDate.getTime()) / (1000 * 60 * 60 * 24));
-        
-        // Decidimos aleatoriamente se deixamos de seguir hoje se estiver no range, 
-        // ou obrigatoriamente se passar do maxDays
-        const targetDays = humanLike ? (Math.floor(Math.random() * (maxDays - minDays + 1)) + minDays) : minDays;
-
-        // Proteção: nunca deixar de seguir contas que já são conexões há mais de 6 meses (180 dias)
-        const LOYAL_THRESHOLD_DAYS = 180;
-        if (daysDiff >= LOYAL_THRESHOLD_DAYS) {
-          console.log(`[handle-social-growth] Mantendo ${follow.target_username} (conexão leal: ${daysDiff} dias)`);
-          continue;
-        }
-
-        if (daysDiff >= targetDays) {
-          console.log(`[handle-social-growth] Deixando de seguir: ${follow.target_username} (${daysDiff} dias)`);
-          
-          // Simulação de unfollow (Já que a API oficial não permite, registramos a intenção/ação simulada)
-          await supabase.from("social_follows").update({
-            status: 'unfollowed',
-            unfollowed_at: now.toISOString()
-          }).eq("id", follow.id);
-
-          await supabase.from("automation_logs").insert({
-            user_id: userId,
-            level: 'info',
-            module: 'growth',
-            message: `Robô deixou de seguir ${follow.target_username || follow.target_external_id} após ${daysDiff} dias.`,
-            details: { action: 'unfollow', target: follow.target_username, duration: daysDiff }
-          });
-          unfollowedCount++;
-        }
-      }
+    const unique = new Map<string, any>();
+    for (const item of interactions || []) {
+      const key = `${item.platform}:${item.author_name || item.external_id}`;
+      if (!unique.has(key)) unique.set(key, item);
     }
 
-    // 3. Lógica de FOLLOW (Seguir novas pessoas)
-    // Verificar quantos seguimos hoje
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
+    const opportunities = Array.from(unique.values()).slice(0, 20);
 
-    const { count: followedToday } = await supabase
-      .from("social_follows")
-      .select("*", { count: 'exact', head: true })
-      .eq("user_id", userId)
-      .gte("followed_at", startOfDay.toISOString());
-
-    const targetFollows = Math.floor(Math.random() * (maxFollows - minFollows + 1)) + minFollows;
-    const remainingToFollow = targetFollows - (followedToday || 0);
-
-    let followedCount = 0;
-    if (remainingToFollow > 0) {
-      console.log(`[handle-social-growth] Meta hoje: ${targetFollows}. Já seguiu: ${followedToday}. Restante: ${remainingToFollow}`);
-      
-      // Buscar potenciais alvos (Pessoas que interagiram com a gente mas ainda não seguimos)
-      const { data: interactions } = await supabase
-        .from("social_interactions")
-        .select("author_name, author_avatar, external_id")
-        .eq("user_id", userId)
-        .order("created_at", { ascending: false })
-        .limit(20);
-
-      const potentialTargets = interactions || [];
-      
-      // Filtrar quem já seguimos
-      const { data: alreadyFollowed } = await supabase
-        .from("social_follows")
-        .select("target_external_id")
-        .eq("user_id", userId);
-      
-      const followedSet = new Set((alreadyFollowed || []).map(f => f.target_external_id));
-      const targets = potentialTargets.filter(t => !followedSet.has(t.external_id)).slice(0, remainingToFollow);
-
-      for (const target of targets) {
-        // Simulação de Follow
-        await supabase.from("social_follows").insert({
-          user_id: userId,
-          platform: 'instagram',
-          target_external_id: target.external_id,
-          target_username: target.author_name,
-          target_avatar: target.author_avatar,
-          status: 'following',
-          followed_at: now.toISOString()
-        });
-
-        await supabase.from("automation_logs").insert({
-          user_id: userId,
-          level: 'info',
-          module: 'growth',
-          message: `Robô começou a seguir ${target.author_name} (Forma humana ativada 👤)`,
-          details: { action: 'follow', target: target.author_name }
-        });
-        followedCount++;
-        
-        // Se humanLike, adicionamos um delay pequeno entre as ações (apenas log/simulação aqui)
-        if (humanLike) {
-           console.log(`[handle-social-growth] Delay humano entre follows...`);
-           // Em uma função edge, não queremos dar sleep longo, mas podemos processar sequencialmente
-        }
-      }
-    }
-
-    return new Response(JSON.stringify({ 
-      success: true, 
-      followed: followedCount, 
-      unfollowed: unfollowedCount,
-      targetToday: targetFollows
-    }), { 
-      headers: { ...corsHeaders, "Content-Type": "application/json" } 
+    await supabase.from("automation_logs").insert({
+      user_id: userId,
+      level: "info",
+      module: "growth",
+      message: `${opportunities.length} oportunidades de relacionamento identificadas. Follow automático não é executado porque a API oficial não disponibiliza essa ação.`,
+      details: {
+        action: "growth-opportunities",
+        supported_follow_api: false,
+        opportunities: opportunities.map((x) => ({ platform: x.platform, author: x.author_name, interaction_type: x.interaction_type })),
+      },
     });
 
-  } catch (error: any) {
-    console.error("[handle-social-growth] Erro:", error);
-    return new Response(JSON.stringify({ error: error.message }), { 
-      status: 500, 
-      headers: { ...corsHeaders, "Content-Type": "application/json" } 
+    return new Response(JSON.stringify({
+      success: true,
+      followed: 0,
+      unfollowed: 0,
+      opportunities: opportunities.length,
+      supportedFollowApi: false,
+      message: "Oportunidades identificadas sem simular follows inexistentes.",
+    }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({ success: false, error: error instanceof Error ? error.message : String(error) }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
