@@ -43,12 +43,21 @@
   transform: none;
 }
 
-/* Articles + Schedule: every button label/icon stays white on hover. */
+/* Articles + Schedule: CTA labels and icons are ALWAYS white on hover.
+   This intentionally overrides local Tailwind classes such as hover:text-primary,
+   hover:text-black and inline inherited text colors used by legacy buttons. */
+.page-cta-scheme button[data-ui-button="true"]:hover,
+.page-cta-scheme button[data-ui-button="true"]:hover > *,
 .page-cta-scheme [data-ui-button="true"]:hover,
 .page-cta-scheme [data-ui-button="true"]:hover * {
   color: #ffffff !important;
-  fill: currentColor;
-  stroke: currentColor;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+.page-cta-scheme button[data-ui-button="true"]:hover svg,
+.page-cta-scheme [data-ui-button="true"]:hover svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
 }
 
 /* Inputs remain readable in both themes. */
