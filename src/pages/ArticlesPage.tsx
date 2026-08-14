@@ -135,11 +135,11 @@ const ArticlesPage = () => {
   };
 
   useEffect(() => {
-    if (user && !initialFetchDone) {
+    if (user) {
       setDiagMetrics(diagnostics.getMetrics());
       Promise.all([fetchArticles(), fetchCategories()]);
     }
-  }, [user, initialFetchDone]);
+  }, [user, selectedBlogId]);
 
   // Auto-close preview logic
   useEffect(() => {
