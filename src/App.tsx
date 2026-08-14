@@ -20,7 +20,6 @@ const lazyRetry = (factory: () => Promise<any>) =>
     )
   );
 
-// Lazy components
 const DashboardLayout = lazyRetry(() => import("@/components/DashboardLayout"));
 const Auth = lazyRetry(() => import("@/pages/Auth"));
 const Dashboard = lazyRetry(() => import("@/pages/Dashboard"));
@@ -32,6 +31,7 @@ const SettingsPage = lazyRetry(() => import("@/pages/SettingsPage"));
 const AnalyticsPage = lazyRetry(() => import("@/pages/AnalyticsPage"));
 const SocialRobotPage = lazyRetry(() => import("@/pages/SocialRobotPage"));
 const SocialPublisherPage = lazyRetry(() => import("@/pages/SocialPublisherPage"));
+const SocialPlannerPage = lazyRetry(() => import("@/pages/SocialPlannerPage"));
 const GooglePage = lazyRetry(() => import("@/pages/GooglePage"));
 const MetaPage = lazyRetry(() => import("@/pages/MetaPage"));
 const InstagramPage = lazyRetry(() => import("@/pages/InstagramPage"));
@@ -46,7 +46,6 @@ const LicenseActivatePage = lazyRetry(() => import("@/pages/LicenseActivatePage"
 const CheckoutReturnPage = lazyRetry(() => import("@/pages/CheckoutReturnPage"));
 const AdminSystemPage = lazyRetry(() => import("@/pages/AdminSystemPage"));
 
-// NEXA
 const NexaLogin = lazyRetry(() => import("@/nexa/pages/NexaLogin"));
 const NexaOnboarding = lazyRetry(() => import("@/nexa/pages/NexaOnboarding"));
 const NexaDashboard = lazyRetry(() => import("@/nexa/pages/NexaDashboard"));
@@ -57,7 +56,6 @@ const NexaAudit = lazyRetry(() => import("@/nexa/pages/NexaAudit"));
 const NexaAdmin = lazyRetry(() => import("@/nexa/pages/NexaAdmin"));
 const NexaPlaceholder = lazyRetry(() => import("@/nexa/pages/NexaPlaceholder"));
 const ProtectedNexaRoute = lazyRetry(() => import("@/nexa/components/ProtectedNexaRoute"));
-
 const NotFound = lazyRetry(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
@@ -73,24 +71,17 @@ const queryClient = new QueryClient({
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
-  
   if (loading) return <Preloader message="Validando acesso..." />;
   if (!user) return <Navigate to="/auth" replace />;
-  
   return <DashboardLayout>{children}</DashboardLayout>;
 };
 
 const AuthRoute = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-
   useEffect(() => {
-    if (!loading && user) {
-      console.log('[AuthRoute] Redirecting to /admin');
-      navigate('/admin', { replace: true });
-    }
+    if (!loading && user) navigate('/admin', { replace: true });
   }, [user, loading, navigate]);
-
   if (loading) return <Preloader message="Autenticando..." />;
   return <Auth />;
 };
@@ -98,17 +89,10 @@ const AuthRoute = () => {
 const RootRoute = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  
+  useEffect(() => { refreshGeoLangInBackground(); }, []);
   useEffect(() => {
-    refreshGeoLangInBackground();
-  }, []);
-
-  useEffect(() => {
-    if (!loading && user) {
-      navigate('/admin', { replace: true });
-    }
+    if (!loading && user) navigate('/admin', { replace: true });
   }, [user, loading, navigate]);
-
   if (loading) return <Preloader message="Carregando..." />;
   return <SalesPage />;
 };
@@ -143,6 +127,7 @@ const App = () => (
                     <Route path="/analytics" element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
                     <Route path="/robot" element={<ProtectedRoute><SocialRobotPage /></ProtectedRoute>} />
                     <Route path="/social" element={<ProtectedRoute><SocialPublisherPage /></ProtectedRoute>} />
+                    <Route path="/social/planner" element={<ProtectedRoute><SocialPlannerPage /></ProtectedRoute>} />
                     <Route path="/google" element={<ProtectedRoute><GooglePage /></ProtectedRoute>} />
                     <Route path="/meta" element={<ProtectedRoute><MetaPage /></ProtectedRoute>} />
                     <Route path="/instagram" element={<ProtectedRoute><InstagramPage /></ProtectedRoute>} />
@@ -157,7 +142,6 @@ const App = () => (
                     <Route path="/ativar" element={<LicenseActivatePage />} />
                     <Route path="/checkout/return" element={<CheckoutReturnPage />} />
                     <Route path="/admin/system" element={<ProtectedRoute><AdminSystemPage /></ProtectedRoute>} />
-                    
                     <Route path="/nexa" element={<Navigate to="/nexa/dashboard" replace />} />
                     <Route path="/nexa/login" element={<NexaLogin />} />
                     <Route path="/nexa/onboarding" element={<ProtectedNexaRoute><NexaOnboarding /></ProtectedNexaRoute>} />
