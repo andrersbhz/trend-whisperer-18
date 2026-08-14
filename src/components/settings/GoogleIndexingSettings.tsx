@@ -58,20 +58,25 @@ const GoogleIndexingSettings = forwardRef<HTMLDivElement, Props>(({ settings, on
   const handleGoogleConnect = async () => {
     setOauthLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('google-search-console-status');
+      console.log('[GoogleIndexingSettings] Invocando google-search-console-auth...');
+      const { data, error } = await supabase.functions.invoke('google-search-console-auth', {
+        body: { returnUrl: window.location.href }
+      });
+      
       if (error) throw error;
-      if (data?.connected) {
-        setHasGoogleToken(true);
-        toast({ title: 'Google Search Console conectado!' });
+      if (data?.authUrl) {
+        console.log('[GoogleIndexingSettings] Redirecionando para Google OAuth:', data.authUrl);
+        window.location.assign(data.authUrl);
       } else {
-        toast({
-          title: 'Conexão Google não encontrada',
-          description: 'Abra Configurações → Conectores e vincule "Google Search Console".',
-          variant: 'destructive',
-        });
+        throw new Error('URL de autenticação não retornada');
       }
     } catch (e: any) {
-      toast({ title: 'Erro ao verificar', description: e.message, variant: 'destructive' });
+      console.error('[GoogleIndexingSettings] Erro ao iniciar OAuth:', e);
+      toast({ 
+        title: 'Erro ao conectar', 
+        description: e.message || 'Não foi possível iniciar a autenticação com o Google.', 
+        variant: 'destructive' 
+      });
     } finally {
       setOauthLoading(false);
     }
