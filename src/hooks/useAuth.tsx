@@ -20,87 +20,81 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  const finishAuthLoading = useCallback(async (nextSession: Session | null) => {
-    console.log('[useAuth] Finishing auth loading with session:', !!nextSession);
-    setSession(nextSession);
-    setUser(nextSession?.user ?? null);
-    
-    if (nextSession?.user) {
-      try {
-        const { data } = await supabase.from('user_roles').select('role').eq('user_id', nextSession.user.id).eq('role', 'admin').maybeSingle();
-        setIsAdmin(!!data);
-      } catch (err) {
-        console.error('[useAuth] Admin check error:', err);
-        setIsAdmin(false);
-      }
-    } else {
+  // IMPORTANT: this function must never be awaited from inside onAuthStateChange.
+  // Supabase Auth holds an internal Web Lock while firing auth callbacks. Starting
+  // another Supabase request from the callback can deadlock or make a competing
+  // request steal the auth-token lock.
+  const refreshAdminRole = useCallback(async (userId: string | null) => {
+    if (!userId) {
+      setIsAdmin(false);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .eq('role', 'admin')
+        .maybeSingle();
+
+      if (error) throw error;
+      setIsAdmin(!!data);
+    } catch (err) {
+      console.error('[useAuth] Admin check error:', err);
       setIsAdmin(false);
     }
-    
-    // Pequeno delay para garantir que o Preloader chegue a 100% visualmente
-    setTimeout(() => {
-      setLoading(false);
-    }, 800);
   }, []);
+
+  const applySession = useCallback((nextSession: Session | null) => {
+    setSession(nextSession);
+    setUser(nextSession?.user ?? null);
+    setLoading(false);
+
+    // Defer every Supabase/database call until the auth callback has completely
+    // released its internal lock. setTimeout(0) intentionally crosses that boundary.
+    window.setTimeout(() => {
+      void refreshAdminRole(nextSession?.user?.id ?? null);
+    }, 0);
+  }, [refreshAdminRole]);
 
   useEffect(() => {
     let isMounted = true;
-    let authInitialized = false;
 
-    const initializeAuth = async () => {
-      if (authInitialized) return;
-      try {
-        const { data: { session: currentSession }, error } = await supabase.auth.getSession();
-        if (error) throw error;
-        if (isMounted) {
-          authInitialized = true;
-          await finishAuthLoading(currentSession);
-        }
-      } catch (err: any) {
-        console.error('[useAuth] Init error:', err);
-        // Se for erro de lock, não desistimos imediatamente
-        if (err.message?.includes('lock') || err.message?.includes('stole')) {
-           console.warn('[useAuth] Lock error during init, waiting for event...');
-           return; 
-        }
-        if (isMounted) await finishAuthLoading(null);
-      }
-    };
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      if (!isMounted) return;
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      console.log('[useAuth] Auth state changed:', _event, !!session);
-      
-      // Se já inicializamos e é apenas um refresh, atualizamos sem travar
-      if (authInitialized && (_event === 'TOKEN_REFRESHED' || _event === 'INITIAL_SESSION')) {
-        if (isMounted) {
-          setSession(session);
-          setUser(session?.user ?? null);
-        }
+      console.log('[useAuth] Auth state changed:', event, !!nextSession);
+
+      if (event === 'SIGNED_OUT') {
+        setSession(null);
+        setUser(null);
+        setIsAdmin(false);
+        setLoading(false);
         return;
       }
 
-      if (_event === 'SIGNED_IN' || _event === 'TOKEN_REFRESHED' || _event === 'INITIAL_SESSION') {
-        if (isMounted) {
-          authInitialized = true;
-          await finishAuthLoading(session);
-        }
-      } else if (_event === 'SIGNED_OUT') {
-        if (isMounted) {
-          setUser(null);
-          setSession(null);
-          setIsAdmin(false);
-          setLoading(false);
-        }
+      if (
+        event === 'INITIAL_SESSION' ||
+        event === 'SIGNED_IN' ||
+        event === 'TOKEN_REFRESHED' ||
+        event === 'USER_UPDATED'
+      ) {
+        // Keep this callback synchronous. Do not await Supabase calls here.
+        applySession(nextSession);
       }
     });
 
-    initializeAuth();
-
+    // INITIAL_SESSION is emitted by Supabase after subscription. Avoid calling
+    // getSession() in parallel here; doing both caused competing auth-token locks.
     const timeoutId = window.setTimeout(() => {
-      if (isMounted && loading) {
-        console.warn('[useAuth] Safety timeout: forcing loading false');
-        setLoading(false);
-      }
+      if (!isMounted) return;
+      setLoading((current) => {
+        if (current) {
+          console.warn('[useAuth] Safety timeout: auth initialization took too long');
+        }
+        return false;
+      });
     }, 5000);
 
     return () => {
@@ -108,7 +102,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       window.clearTimeout(timeoutId);
       subscription.unsubscribe();
     };
-  }, [finishAuthLoading]);
+  }, [applySession]);
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -142,7 +136,7 @@ export const useAuth = () => {
     return {
       user: null,
       session: null,
-      loading: true, // Se o contexto não existe, ainda estamos inicializando o provider
+      loading: true,
       isAdmin: false,
       signIn: async () => {},
       signUp: async () => {},
