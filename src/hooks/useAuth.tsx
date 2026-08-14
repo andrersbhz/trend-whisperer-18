@@ -30,10 +30,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       if (nextSession?.user) {
         try {
-          const { data } = await supabase.rpc('has_role', { 
-            _user_id: nextSession.user.id, 
-            _role: 'admin' 
-          });
+          const { data, error } = await supabase.from('user_roles').select('role').eq('user_id', nextSession.user.id).eq('role', 'admin').maybeSingle();
           setIsAdmin(!!data);
         } catch (err) {
           console.error('[useAuth] Admin check error:', err);
@@ -47,16 +44,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       console.log('[useAuth] Auth state changed:', _event);
-      finishAuthLoading(session);
+      await finishAuthLoading(session);
     });
 
     // Timeout safety
-    const timeoutId = window.setTimeout(() => {
+    const timeoutId = window.setTimeout(async () => {
       if (loading) {
         console.warn('[useAuth] Auth timeout reached, forcing loading state to false');
-        finishAuthLoading(null);
+        await finishAuthLoading(null);
       }
     }, 5000);
 
