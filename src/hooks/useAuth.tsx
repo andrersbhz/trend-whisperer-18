@@ -45,11 +45,45 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     let isMounted = true;
+    let authInitialized = false;
+
+    const initializeAuth = async () => {
+      if (authInitialized) return;
+      try {
+        const { data: { session: currentSession }, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        if (isMounted) {
+          authInitialized = true;
+          await finishAuthLoading(currentSession);
+        }
+      } catch (err: any) {
+        console.error('[useAuth] Init error:', err);
+        // Se for erro de lock, não desistimos imediatamente
+        if (err.message?.includes('lock') || err.message?.includes('stole')) {
+           console.warn('[useAuth] Lock error during init, waiting for event...');
+           return; 
+        }
+        if (isMounted) await finishAuthLoading(null);
+      }
+    };
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       console.log('[useAuth] Auth state changed:', _event, !!session);
+      
+      // Se já inicializamos e é apenas um refresh, atualizamos sem travar
+      if (authInitialized && (_event === 'TOKEN_REFRESHED' || _event === 'INITIAL_SESSION')) {
+        if (isMounted) {
+          setSession(session);
+          setUser(session?.user ?? null);
+        }
+        return;
+      }
+
       if (_event === 'SIGNED_IN' || _event === 'TOKEN_REFRESHED' || _event === 'INITIAL_SESSION') {
-        if (isMounted) await finishAuthLoading(session);
+        if (isMounted) {
+          authInitialized = true;
+          await finishAuthLoading(session);
+        }
       } else if (_event === 'SIGNED_OUT') {
         if (isMounted) {
           setUser(null);
@@ -59,17 +93,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
       }
     });
-
-    const initializeAuth = async () => {
-      try {
-        const { data: { session: currentSession }, error } = await supabase.auth.getSession();
-        if (error) throw error;
-        if (isMounted) await finishAuthLoading(currentSession);
-      } catch (err) {
-        console.error('[useAuth] Init error:', err);
-        if (isMounted) await finishAuthLoading(null);
-      }
-    };
 
     initializeAuth();
 
