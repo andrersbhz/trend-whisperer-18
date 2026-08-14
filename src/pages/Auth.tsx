@@ -7,9 +7,10 @@ import { PasswordInput } from '@/components/ui/password-input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Newspaper, Sparkles, Loader2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { Separator } from '@/components/ui/separator';
 import SpaceBackground from '@/components/SpaceBackground';
+import { lovable } from '@/integrations/lovable/index';
+
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -49,16 +50,22 @@ const Auth = () => {
     setGoogleLoading(true);
     try {
       console.log('[Auth] Starting Google sign in with origin:', window.location.origin);
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth`,
-        },
+      const result = await lovable.auth.signInWithOAuth('google', {
+        redirect_uri: `${window.location.origin}/auth`,
       });
-      if (error) {
-        toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+      
+      if (result.error) {
+        toast({ title: 'Erro', description: result.error.message, variant: 'destructive' });
         return;
       }
+      
+      if (result.redirected) {
+        return;
+      }
+
+      // If we reach here, session is set (handled by lovable.auth helper)
+      const from = (location.state as any)?.from || '/admin';
+      navigate(from, { replace: true });
     } catch (error: any) {
       console.error('[Auth] Google sign in exception:', error);
       toast({ title: 'Erro', description: error.message, variant: 'destructive' });
@@ -66,6 +73,7 @@ const Auth = () => {
       setGoogleLoading(false);
     }
   };
+
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
