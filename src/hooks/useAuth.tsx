@@ -119,7 +119,7 @@ export const useAuth = () => {
     return {
       user: null,
       session: null,
-      loading: false,
+      loading: true, // Se o contexto não existe, ainda estamos inicializando o provider
       isAdmin: false,
       signIn: async () => {},
       signUp: async () => {},
