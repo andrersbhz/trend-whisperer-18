@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
-import { Upload, Save, ExternalLink, Palette, Image as ImageIcon, ShieldCheck, DollarSign, Plus, Trash2, Star } from "lucide-react";
+import { Upload, Save, ExternalLink, Palette, Image as ImageIcon, ShieldCheck, DollarSign, Plus, Trash2, Star, MousePointer2, Type } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const BrandingPage = () => {
@@ -117,7 +117,12 @@ const BrandingPage = () => {
         cta_secondary: form.cta_secondary,
         offer_badge: form.offer_badge,
         footer_text: form.footer_text,
+        button_radius: form.button_radius,
+        button_hover_style: form.button_hover_style,
+        font_color_base: form.font_color_base,
+        font_color_muted: form.font_color_muted,
         plans_json: form.plans_json as any,
+
         updated_by: user?.id,
         updated_at: new Date().toISOString(),
       })
@@ -274,6 +279,65 @@ const BrandingPage = () => {
           </div>
         </div>
       </Card>
+
+      {/* Interface e Botões */}
+      <Card className="p-6 bg-slate-900/60 border-slate-800 space-y-4">
+        <div className="flex items-center gap-2 pb-2 border-b border-slate-800">
+          <MousePointer2 className="h-5 w-5 text-lime-400" />
+          <h2 className="text-lg font-bold text-white">Interface e Botões</h2>
+        </div>
+        <div className="grid md:grid-cols-2 gap-4">
+          <div>
+            <Label className="text-white">Arredondamento dos botões (Ex: 0.5rem, 9999px)</Label>
+            <Input value={form.button_radius} onChange={(e) => update("button_radius", e.target.value)}
+              className="bg-slate-950 border-slate-700 text-white mt-1" />
+          </div>
+          <div>
+            <Label className="text-white">Estilo de Hover</Label>
+            <select 
+              value={form.button_hover_style} 
+              onChange={(e) => update("button_hover_style", e.target.value)}
+              className="w-full h-10 px-3 py-2 bg-slate-950 border border-slate-700 text-white rounded-md mt-1 outline-none focus:ring-2 focus:ring-lime-400/50"
+            >
+              <option value="glow">Brilho Neon (Verde/Lilás)</option>
+              <option value="scale">Escala Suave (+5%)</option>
+              <option value="outline">Apenas Contorno</option>
+              <option value="standard">Padrão</option>
+            </select>
+          </div>
+        </div>
+      </Card>
+
+      {/* Tipografia */}
+      <Card className="p-6 bg-slate-900/60 border-slate-800 space-y-4">
+        <div className="flex items-center gap-2 pb-2 border-b border-slate-800">
+          <Type className="h-5 w-5 text-lime-400" />
+          <h2 className="text-lg font-bold text-white">Tipografia e Cores de Fonte</h2>
+        </div>
+        <div className="grid md:grid-cols-2 gap-4">
+          <div>
+            <Label className="text-white">Cor da fonte base</Label>
+            <div className="flex gap-2 mt-1">
+              <input type="color" value={form.font_color_base}
+                onChange={(e) => update("font_color_base", e.target.value)}
+                className="h-10 w-16 rounded cursor-pointer bg-transparent" />
+              <Input value={form.font_color_base} onChange={(e) => update("font_color_base", e.target.value)}
+                className="bg-slate-950 border-slate-700 text-white" />
+            </div>
+          </div>
+          <div>
+            <Label className="text-white">Cor da fonte secundária (Muted)</Label>
+            <div className="flex gap-2 mt-1">
+              <input type="color" value={form.font_color_muted}
+                onChange={(e) => update("font_color_muted", e.target.value)}
+                className="h-10 w-16 rounded cursor-pointer bg-transparent" />
+              <Input value={form.font_color_muted} onChange={(e) => update("font_color_muted", e.target.value)}
+                className="bg-slate-950 border-slate-700 text-white" />
+            </div>
+          </div>
+        </div>
+      </Card>
+
 
       {/* Textos de vendas */}
       <Card className="p-6 bg-slate-900/60 border-slate-800 space-y-4">

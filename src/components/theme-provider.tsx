@@ -39,7 +39,15 @@ interface ThemeProviderState {
   customPrimary: string
   customAccent: string
   setCustomColors: (primary: string, accent: string) => void
+  interfaceSettings: {
+    buttonRadius: string;
+    buttonHoverStyle: string;
+    fontColorBase: string;
+    fontColorMuted: string;
+  };
+  setInterfaceSettings: (settings: Partial<ThemeProviderState["interfaceSettings"]>) => void;
 }
+
 
 const initialState: ThemeProviderState = {
   theme: "system",
@@ -49,7 +57,15 @@ const initialState: ThemeProviderState = {
   customPrimary: "#a3ff12",
   customAccent: "#7c3aed",
   setCustomColors: () => null,
+  interfaceSettings: {
+    buttonRadius: "0.5rem",
+    buttonHoverStyle: "glow",
+    fontColorBase: "#ffffff",
+    fontColorMuted: "rgba(255,255,255,0.6)",
+  },
+  setInterfaceSettings: () => null,
 }
+
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
 
@@ -92,6 +108,13 @@ export function ThemeProvider({ children, defaultTheme = "system", storageKey = 
   const [palette, setPaletteState] = useState<PaletteName>(() => (localStorage.getItem("a3-ui-palette") as PaletteName) || "lime")
   const [customPrimary, setCustomPrimary] = useState(() => localStorage.getItem("a3-ui-custom-primary") || "#a3ff12")
   const [customAccent, setCustomAccent] = useState(() => localStorage.getItem("a3-ui-custom-accent") || "#7c3aed")
+  const [interfaceSettings, setInterfaceSettingsState] = useState({
+    buttonRadius: localStorage.getItem("a3-ui-radius") || "0.5rem",
+    buttonHoverStyle: localStorage.getItem("a3-ui-hover-style") || "glow",
+    fontColorBase: localStorage.getItem("a3-ui-font-base") || "#ffffff",
+    fontColorMuted: localStorage.getItem("a3-ui-font-muted") || "rgba(255,255,255,0.6)",
+  })
+
 
   useEffect(() => {
     const root = window.document.documentElement
@@ -117,7 +140,13 @@ export function ThemeProvider({ children, defaultTheme = "system", storageKey = 
     root.style.setProperty("--sidebar-primary", current.primary)
     root.style.setProperty("--sidebar-primary-foreground", current.primaryForeground)
     root.style.setProperty("--subtitle-highlight", current.primary)
-  }, [palette, customPrimary, customAccent, theme])
+    
+    // Injetar interface settings
+    root.style.setProperty("--radius", interfaceSettings.buttonRadius)
+    root.style.setProperty("--foreground", hexToHsl(interfaceSettings.fontColorBase))
+    root.style.setProperty("--muted-foreground", hexToHsl(interfaceSettings.fontColorMuted))
+  }, [palette, customPrimary, customAccent, theme, interfaceSettings])
+
 
   const value = useMemo(() => ({
     theme,
@@ -140,7 +169,19 @@ export function ThemeProvider({ children, defaultTheme = "system", storageKey = 
       setCustomAccent(accent)
       setPaletteState("custom")
     },
-  }), [theme, storageKey, palette, customPrimary, customAccent])
+    interfaceSettings,
+    setInterfaceSettings: (next: Partial<ThemeProviderState["interfaceSettings"]>) => {
+      setInterfaceSettingsState(prev => {
+        const updated = { ...prev, ...next };
+        if (next.buttonRadius) localStorage.setItem("a3-ui-radius", next.buttonRadius);
+        if (next.buttonHoverStyle) localStorage.setItem("a3-ui-hover-style", next.buttonHoverStyle);
+        if (next.fontColorBase) localStorage.setItem("a3-ui-font-base", next.fontColorBase);
+        if (next.fontColorMuted) localStorage.setItem("a3-ui-font-muted", next.fontColorMuted);
+        return updated;
+      });
+    }
+  }), [theme, storageKey, palette, customPrimary, customAccent, interfaceSettings])
+
 
   return <ThemeProviderContext.Provider {...props} value={value}>{children}</ThemeProviderContext.Provider>
 }
