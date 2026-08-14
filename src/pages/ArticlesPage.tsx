@@ -313,6 +313,11 @@ const ArticlesPage = () => {
     }
   };
 
+  const handleUpdateBlogFilter = (blogId: string) => {
+    setSelectedBlogId(blogId);
+    setInitialFetchDone(false); // Reset to ensure fetch logic works cleanly if needed, though the useEffect dependency is enough
+  };
+
   const handlePublish = async (articleId: string) => {
     const startTime = diagnostics.startTimer();
     setPublishing(articleId);
