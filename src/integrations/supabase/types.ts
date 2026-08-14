@@ -1604,6 +1604,8 @@ export type Database = {
           gemini_api_key: string | null
           google_analytics_property_id: string | null
           google_indexing_key: string | null
+          google_oauth_client_id: string | null
+          google_oauth_secret_vault_id: string | null
           google_search_console_token: string | null
           groq_api_key: string | null
           id: string
@@ -1655,6 +1657,8 @@ export type Database = {
           gemini_api_key?: string | null
           google_analytics_property_id?: string | null
           google_indexing_key?: string | null
+          google_oauth_client_id?: string | null
+          google_oauth_secret_vault_id?: string | null
           google_search_console_token?: string | null
           groq_api_key?: string | null
           id?: string
@@ -1706,6 +1710,8 @@ export type Database = {
           gemini_api_key?: string | null
           google_analytics_property_id?: string | null
           google_indexing_key?: string | null
+          google_oauth_client_id?: string | null
+          google_oauth_secret_vault_id?: string | null
           google_search_console_token?: string | null
           groq_api_key?: string | null
           id?: string
@@ -1958,6 +1964,7 @@ export type Database = {
         Args: { enc_key: string; val: string }
         Returns: string
       }
+      disconnect_google_oauth_credentials: { Args: never; Returns: undefined }
       encrypt_credential: { Args: { val: string }; Returns: string }
       extend_license_by_subscription: {
         Args: { p_period_days?: number; p_stripe_subscription_id: string }
@@ -1965,6 +1972,7 @@ export type Database = {
       }
       generate_license_key: { Args: never; Returns: string }
       get_credentials_status: { Args: never; Returns: Json }
+      get_google_oauth_credentials_status: { Args: never; Returns: Json }
       get_online_locations: {
         Args: { p_minutes: number }
         Returns: {
@@ -2033,6 +2041,10 @@ export type Database = {
       revoke_license_by_subscription: {
         Args: { p_stripe_subscription_id: string }
         Returns: undefined
+      }
+      save_google_oauth_credentials: {
+        Args: { p_client_id: string; p_client_secret?: string }
+        Returns: Json
       }
       update_online_status: {
         Args: {
