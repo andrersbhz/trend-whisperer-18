@@ -1,49 +1,25 @@
-# Plano: Adição de Múltiplos Blogs e Métricas por Blog
+# Plano: Customização de Interface e Cores Editáveis
 
-O objetivo é permitir que o usuário cadastre múltiplos blogs (instâncias do WordPress) e visualize métricas específicas para cada um deles. Atualmente, o sistema parece suportar apenas uma configuração de WordPress por usuário.
+O objetivo é adicionar controles avançados de interface no painel de administração, permitindo ao administrador ajustar o arredondamento dos botões, efeitos de hover e cores das fontes em todo o sistema.
 
-## Alterações Sugeridas
+## Alterações Técnicas
 
 ### Banco de Dados (Supabase)
-- Criar a tabela `user_blogs` para armazenar as credenciais de múltiplos sites WordPress.
-- Adicionar políticas de RLS e GRANTs necessários.
-- Migrar os dados existentes da `user_settings` (campos `wordpress_*`) para a nova tabela (opcional, mas recomendado para consistência).
+- Adição de colunas na tabela `platform_settings`:
+  - `button_radius`: Controle de arredondamento (`border-radius`).
+  - `button_hover_style`: Estilo visual do hover (ex: brilho neon, contorno, escala).
+  - `font_color_base`: Cor principal dos textos.
+  - `font_color_muted`: Cor de textos secundários/suaves.
 
-### Frontend
-- **Configurações**: Criar uma nova aba ou seção "Meus Blogs" para listar, adicionar, editar e remover blogs.
-- **Navegação**: Adicionar um seletor de blog global ou específico nas páginas de Analytics e Artigos.
-- **Página de Analytics**: Ajustar a página de métricas para filtrar os dados com base no blog selecionado.
-- **Geração de Artigos**: Permitir escolher para qual blog o artigo será gerado/agendado.
+### Frontend (React/Tailwind)
+- **Hooks & Contexto**:
+  - Atualização do `usePlatformSettings.ts` para carregar as novas variáveis.
+  - Expansão do `ThemeProvider.tsx` para injetar essas variáveis como propriedades CSS (`--radius`, `--font-base`, `--font-muted`, etc.) no `documentElement`.
+- **Componentes de Configuração**:
+  - Modificação da `BrandingPage.tsx` para incluir seletores de cores de fontes e controles de botões.
+  - Atualização do `AppearancePaletteSettings.tsx` para permitir ajustes rápidos de estilo de interface.
+- **Estilos Globais**:
+  - Refatoração do `src/index.css` para utilizar as variáveis dinâmicas injetadas pelo provider, garantindo que as mudanças reflitam em todos os componentes Shadcn UI e customizados.
 
-## Detalhes Técnicos
-
-### 1. Migração SQL
-```sql
-CREATE TABLE public.user_blogs (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-    name TEXT NOT NULL,
-    wordpress_url TEXT NOT NULL,
-    wordpress_username TEXT NOT NULL,
-    wordpress_app_password TEXT NOT NULL,
-    is_active BOOLEAN DEFAULT true,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-);
-
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.user_blogs TO authenticated;
-GRANT ALL ON public.user_blogs TO service_role;
-
-ALTER TABLE public.user_blogs ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Users can manage their own blogs"
-ON public.user_blogs
-FOR ALL
-TO authenticated
-USING (auth.uid() = user_id);
-```
-
-### 2. Interface de Usuário
-- Criar o componente `src/components/blogs/BlogManager.tsx`.
-- Atualizar `src/pages/SettingsPage.tsx` para incluir o gerenciador de blogs.
-- Atualizar `src/pages/AnalyticsPage.tsx` para aceitar um `blog_id` como filtro.
+### Segurança
+- Manutenção das políticas RLS para garantir que apenas administradores possam alterar as configurações de interface.
