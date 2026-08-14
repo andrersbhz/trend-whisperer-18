@@ -66,26 +66,13 @@ serve(async (req) => {
     const code = url.searchParams.get("code");
     const state = url.searchParams.get("state");
     const error = url.searchParams.get("error");
-
     const returnUrl = getReturnUrlFromState(state);
 
-    if (error) {
-      return htmlResponse("Conexão cancelada", error, false, returnUrl);
-    }
-    if (!code || !state) {
-      return htmlResponse("Erro", "Parâmetros 'code' ou 'state' ausentes.", false, returnUrl);
-    }
+    if (error) return htmlResponse("Conexão cancelada", error, false, returnUrl);
+    if (!code || !state) return htmlResponse("Erro", "Parâmetros 'code' ou 'state' ausentes.", false, returnUrl);
 
-    const clientId = Deno.env.get("GOOGLE_CLIENT_ID");
-    const clientSecret = Deno.env.get("GOOGLE_CLIENT_SECRET");
-    if (!clientId || !clientSecret) {
-        return htmlResponse("Erro de configuração", "GOOGLE_CLIENT_ID ou GOOGLE_CLIENT_SECRET não configurados.", false, returnUrl);
-    }
-
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabase = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
     const { data: stateRow } = await supabase
       .from("google_search_console_oauth_states")
@@ -100,9 +87,17 @@ serve(async (req) => {
     const userId = stateRow.user_id;
     await supabase.from("google_search_console_oauth_states").delete().eq("state", state);
 
-    const redirectUri = `${Deno.env.get("SUPABASE_URL")}/functions/v1/google-search-console-callback`;
+    const { data: savedCreds } = await supabase.rpc("get_google_oauth_credentials_for_backend", {
+      p_user_id: userId,
+    });
 
-    // Exchange code for tokens
+    const clientId = savedCreds?.client_id || Deno.env.get("GOOGLE_CLIENT_ID") || "";
+    const clientSecret = savedCreds?.client_secret || Deno.env.get("GOOGLE_CLIENT_SECRET") || "";
+    if (!clientId || !clientSecret) {
+      return htmlResponse("Erro de configuração", "Client ID ou Client Secret do Google não configurados no sistema.", false, returnUrl);
+    }
+
+    const redirectUri = `${supabaseUrl}/functions/v1/google-search-console-callback`;
     const tokenResp = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -121,7 +116,6 @@ serve(async (req) => {
     }
 
     const tokenData = await tokenResp.json();
-    // Add absolute expiry so downstream functions can refresh proactively
     tokenData.expires_at = Date.now() + (tokenData.expires_in ?? 3600) * 1000;
     const storedToken = JSON.stringify(tokenData);
 
