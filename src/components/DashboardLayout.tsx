@@ -43,7 +43,7 @@ const navItems = [
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   useLicenseSessionGuard(true);
-  const { user, signOut } = useAuth();
+  const { user, signOut, isAdmin } = useAuth();
   const { theme, setTheme } = useTheme();
   const location = useLocation();
   const { toast } = useToast();
@@ -130,7 +130,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
         </div>
 
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-          {navItems.map((item) => {
+          {navItems.filter(item => !item.adminOnly || isAdmin).map((item) => {
             const active = location.pathname === item.path;
             return (
               <Link
