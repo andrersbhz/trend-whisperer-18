@@ -60,9 +60,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const timeoutId = window.setTimeout(async () => {
       if (loading) {
         console.warn('[useAuth] Auth timeout reached, forcing loading state to false');
-        await finishAuthLoading(null);
+        if (isMounted) finishAuthLoading(null);
       }
-    }, 5000);
+    }, 15000); // Aumentado para 15s para evitar travar em conexões lentas
 
     const initializeAuth = async () => {
       try {
