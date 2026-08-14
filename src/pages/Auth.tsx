@@ -81,11 +81,8 @@ const Auth = () => {
       const result = await withTimeout(
         lovable.auth.signInWithOAuth('google', { 
           redirect_uri: redirectTo,
-          // Ensure we don't end up in a loop if the user is already partially logged in
-          options: {
-            queryParams: {
-              prompt: 'select_account'
-            }
+          queryParams: {
+            prompt: 'select_account'
           }
         }),
         OAUTH_TIMEOUT_MS,
