@@ -6,6 +6,7 @@ const RETRYABLE_MESSAGES = [
   /network/i,
   /upstream request timeout/i,
   /temporarily unavailable/i,
+  /lock "lock:sb-.*-auth-token" was released/i,
 ];
 
 const sleep = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms));
