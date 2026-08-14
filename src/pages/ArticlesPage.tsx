@@ -104,9 +104,9 @@ const ArticlesPage = () => {
 
       if (blogsResult.data) setBlogs(blogsResult.data);
 
-      let filteredArticles = articlesResult.data || [];
+      let fetchedArticles = articlesResult.data || [];
       if (selectedBlogId !== 'all') {
-        filteredArticles = filteredArticles.filter(a => a.blog_id === selectedBlogId);
+        fetchedArticles = fetchedArticles.filter(a => a.blog_id === selectedBlogId);
       }
 
       if (articlesResult.error) throw articlesResult.error;
