@@ -38,6 +38,7 @@ const navItems = [
   { icon: Wallet, label: 'Meios de Pagamento', path: '/payment-methods' },
   { icon: Bell, label: 'Vendas & Licenças', path: '/admin-sales' },
   { icon: Settings, label: 'Configurações', path: '/settings' },
+  { icon: Bot, label: 'Painel Admin', path: '/admin/system', adminOnly: true },
 ];
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
