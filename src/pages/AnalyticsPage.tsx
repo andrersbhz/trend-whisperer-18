@@ -1139,6 +1139,7 @@ const AnalyticsPage = ({ isModal = false, pageId }: { isModal?: boolean; pageId?
             <p className="text-muted-foreground text-sm mt-1">Métricas completas e insights do seu blog</p>
           </div>
         )}
+        {blogSelector}
         
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2 bg-secondary/30 p-1 rounded-lg border border-white/5">
