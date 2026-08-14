@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 import { Button } from '@/components/ui/button';
-import { Search, LogIn, Loader2, RefreshCw, CheckCircle2, History, ExternalLink, AlertCircle } from 'lucide-react';
+import { Search, LogIn, Loader2, RefreshCw, CheckCircle2, History, ExternalLink, AlertCircle, KeyRound, ShieldCheck, Unplug } from 'lucide-react';
 import ConnectionCard from '@/components/ConnectionCard';
 import type { UserSettings } from '@/pages/SettingsPage';
 import { forwardRef } from 'react';
@@ -26,6 +28,10 @@ const GoogleIndexingSettings = forwardRef<HTMLDivElement, Props>(({ settings, on
   const [history, setHistory] = useState<any[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [googleClientId, setGoogleClientId] = useState('');
+  const [googleClientSecret, setGoogleClientSecret] = useState('');
+  const [hasGoogleClientSecret, setHasGoogleClientSecret] = useState(false);
+  const [savingGoogleOAuth, setSavingGoogleOAuth] = useState(false);
   const connected = !!settings.google_indexing_key || hasGoogleToken;
 
   useEffect(() => {
@@ -33,9 +39,71 @@ const GoogleIndexingSettings = forwardRef<HTMLDivElement, Props>(({ settings, on
       const { data } = await supabase.functions.invoke('google-search-console-status');
       if (data?.connected) setHasGoogleToken(true);
     };
+
+    const loadOAuthCredentialsStatus = async () => {
+      try {
+        const { data, error } = await supabase.rpc('get_google_oauth_credentials_status' as any);
+        if (error) throw error;
+        const status = data as any;
+        setGoogleClientId(status?.client_id || '');
+        setHasGoogleClientSecret(!!status?.has_secret);
+      } catch (error) {
+        console.error('[GoogleOAuth] Failed to load credentials status:', error);
+      }
+    };
+
     checkConnector();
+    loadOAuthCredentialsStatus();
     fetchHistory();
   }, []);
+
+  const saveGoogleOAuthCredentials = async () => {
+    const clientId = googleClientId.trim();
+    const clientSecret = googleClientSecret.trim();
+
+    if (!clientId) {
+      toast({ title: 'Client ID obrigatório', description: 'Informe o Google OAuth Client ID.', variant: 'destructive' });
+      return;
+    }
+
+    if (!hasGoogleClientSecret && !clientSecret) {
+      toast({ title: 'Client Secret obrigatório', description: 'Informe o Google OAuth Client Secret.', variant: 'destructive' });
+      return;
+    }
+
+    setSavingGoogleOAuth(true);
+    try {
+      const { data, error } = await supabase.rpc('save_google_oauth_credentials' as any, {
+        p_client_id: clientId,
+        p_client_secret: clientSecret || null,
+      });
+      if (error) throw error;
+
+      setGoogleClientSecret('');
+      setHasGoogleClientSecret(!!(data as any)?.has_secret || hasGoogleClientSecret);
+      toast({
+        title: 'Credenciais Google protegidas',
+        description: 'Client ID salvo e Client Secret armazenado de forma criptografada no Supabase Vault.',
+      });
+    } catch (error: any) {
+      toast({ title: 'Erro ao salvar OAuth Google', description: error?.message || 'Não foi possível salvar as credenciais.', variant: 'destructive' });
+    } finally {
+      setSavingGoogleOAuth(false);
+    }
+  };
+
+  const disconnectGoogleOAuthCredentials = async () => {
+    try {
+      const { error } = await supabase.rpc('disconnect_google_oauth_credentials' as any);
+      if (error) throw error;
+      setGoogleClientId('');
+      setGoogleClientSecret('');
+      setHasGoogleClientSecret(false);
+      toast({ title: 'Credenciais removidas', description: 'As credenciais OAuth Google foram removidas do cofre seguro.' });
+    } catch (error: any) {
+      toast({ title: 'Erro ao remover', description: error?.message || 'Não foi possível remover as credenciais.', variant: 'destructive' });
+    }
+  };
 
   const fetchHistory = async () => {
     setLoadingHistory(true);
@@ -87,7 +155,7 @@ const GoogleIndexingSettings = forwardRef<HTMLDivElement, Props>(({ settings, on
       ref={ref}
       icon={<Search className="h-5 w-5 text-primary" />}
       title="Google Search Console / Indexing API"
-      description="Indexação imediata e monitoramento de novos posts no Google"
+      description="Indexação imediata, OAuth Google e monitoramento de novos posts"
       connected={connected}
       connectedInfo={connected ? (hasGoogleToken ? "Conectado via Google OAuth" : "Configurado (Chave JSON)") : undefined}
       onTest={handleGoogleConnect}
@@ -101,6 +169,73 @@ const GoogleIndexingSettings = forwardRef<HTMLDivElement, Props>(({ settings, on
       }}
     >
       <div className="space-y-4">
+        <div className="rounded-xl border border-primary/30 bg-primary/[0.04] p-4 space-y-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="rounded-lg border border-primary/20 bg-primary/10 p-2">
+                <KeyRound className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-semibold text-foreground">Credenciais Google OAuth do Sistema</p>
+                  {hasGoogleClientSecret && (
+                    <Badge variant="outline" className="border-success/40 text-success text-[10px]">
+                      <span className="relative mr-1.5 flex h-2 w-2">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-70" />
+                        <span className="relative inline-flex h-2 w-2 rounded-full bg-success" />
+                      </span>
+                      PROTEGIDO
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Use aqui o Client ID e o Client Secret do aplicativo OAuth 2.0 Web criado no Google Cloud.
+                </p>
+              </div>
+            </div>
+            <ShieldCheck className="h-5 w-5 text-success shrink-0" />
+          </div>
+
+          <div className="grid gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Google OAuth Client ID</Label>
+              <Input
+                value={googleClientId}
+                onChange={(e) => setGoogleClientId(e.target.value)}
+                placeholder="000000000000-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com"
+                autoComplete="off"
+                className="font-mono text-xs"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs">Google OAuth Client Secret</Label>
+              <PasswordInput
+                value={googleClientSecret}
+                onChange={(e) => setGoogleClientSecret(e.target.value)}
+                placeholder={hasGoogleClientSecret ? '••••••••••••••••  (já salvo — preencha apenas para substituir)' : 'GOCSPX-...'}
+                autoComplete="new-password"
+                className="font-mono text-xs"
+              />
+              <p className="text-[10px] text-muted-foreground">
+                O secret não é carregado de volta para esta tela. Ele é enviado diretamente ao banco e armazenado criptografado no Supabase Vault.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" size="sm" onClick={saveGoogleOAuthCredentials} disabled={savingGoogleOAuth} className="bg-primary font-semibold text-primary-foreground">
+              {savingGoogleOAuth ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <ShieldCheck className="h-4 w-4 mr-2" />}
+              Salvar credenciais com segurança
+            </Button>
+            {(googleClientId || hasGoogleClientSecret) && (
+              <Button type="button" size="sm" variant="outline" onClick={disconnectGoogleOAuthCredentials} disabled={savingGoogleOAuth}>
+                <Unplug className="h-4 w-4 mr-2" /> Remover credenciais
+              </Button>
+            )}
+          </div>
+        </div>
+
         <div className="p-3 rounded-lg border border-primary/40 bg-gradient-to-br from-primary/10 to-accent/10">
           <div className="flex items-start gap-3">
             <div className="flex-1 min-w-0">
@@ -218,4 +353,3 @@ const GoogleIndexingSettings = forwardRef<HTMLDivElement, Props>(({ settings, on
 GoogleIndexingSettings.displayName = 'GoogleIndexingSettings';
 
 export default GoogleIndexingSettings;
-
