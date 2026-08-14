@@ -85,7 +85,7 @@ serve(async (req) => {
       let errorDetail = `OpenAI retornou ${resp.status}`;
       
       // Cloudflare 522 checking
-      if (resp.status === 522) {
+      if (resp.status === 522 || errText.includes("Failed to send a request to the Edge Function")) {
         errorDetail = "Erro 522 (Connection Timed Out): A OpenAI está inacessível no momento ou a conexão expirou. Tente novamente em instantes.";
       } else {
         try {

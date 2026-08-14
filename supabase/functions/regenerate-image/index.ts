@@ -97,6 +97,9 @@ function toUserImageError(message: string) {
   if (/401|invalid api key|incorrect api key|unauthorized/i.test(message)) {
     return "A chave OpenAI configurada foi recusada. Verifique a chave salva em Configurações > OpenAI.";
   }
+  if (/522|Failed to send a request to the Edge Function/i.test(message)) {
+    return "Erro 522: A OpenAI está instável ou inacessível no momento. Tente novamente em instantes.";
+  }
   return message.replace(/\s+/g, " ").slice(0, 240);
 }
 
