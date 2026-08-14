@@ -104,15 +104,26 @@ serve(async (req) => {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) throw new Error("Unauthorized");
 
-    const authed = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
-      global: { headers: { Authorization: authHeader } },
-    });
-    const { data: auth } = await authed.auth.getUser(authHeader.replace("Bearer ", ""));
-    if (!auth?.user) throw new Error("Unauthorized");
+    const token = authHeader.replace("Bearer ", "").trim();
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    // Chamadas internas (pipeline automático via publish-article) usam a service role key.
+    const isServiceCall = token === serviceKey;
 
     const body = await req.json();
-    const userId = body.userId || auth.user.id;
-    if (userId !== auth.user.id) throw new Error("Forbidden");
+    let userId: string | null = body.userId || null;
+
+    if (!isServiceCall) {
+      const authed = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      const { data: auth } = await authed.auth.getUser(token);
+      if (!auth?.user) throw new Error("Unauthorized");
+      userId = userId || auth.user.id;
+      if (userId !== auth.user.id) throw new Error("Forbidden");
+    } else if (!userId) {
+      throw new Error("userId é obrigatório em chamadas internas");
+    }
+
 
     const articleId: string | null = body.articleId || null;
     const targetKeys: string[] = Array.isArray(body.targetKeys) ? body.targetKeys : [];
