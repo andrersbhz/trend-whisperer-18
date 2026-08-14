@@ -136,7 +136,7 @@ const GoogleIndexingSettings = forwardRef<HTMLDivElement, Props>(({ settings, on
         </div>
 
         <div className="space-y-1.5">
-          <Label className="text-xs">Chave JSON da Conta de Serviço (Avançado) - Seu ID: {supabase.auth.getUser().then(res => res.data.user?.id)}</Label>
+          <Label className="text-xs">Chave JSON da Conta de Serviço (Avançado)</Label>
           <Textarea
             placeholder='{"type": "service_account", "project_id": "...", ...}'
             value={settings.google_indexing_key || ''}
