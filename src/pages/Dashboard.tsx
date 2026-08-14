@@ -302,6 +302,7 @@ const Dashboard = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+          {blogSelector}
           <div className="flex items-center gap-4 px-4 py-2 bg-secondary/20 border border-white/5 glass-card">
             <div className="text-center">
               <p className="text-[9px] uppercase font-bold text-muted-foreground tracking-widest">Publicados</p>

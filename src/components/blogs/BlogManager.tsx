@@ -53,7 +53,9 @@ export function BlogManager() {
     if (error) {
       toast({ title: 'Erro ao adicionar blog', description: error.message, variant: 'destructive' });
     } else {
-      setBlogs([...blogs, (data as any)[0]]);
+      if (data && data.length > 0) {
+        setBlogs([...blogs, data[0]]);
+      }
       setNewBlog({ name: '', wordpress_url: '', wordpress_username: '', wordpress_app_password: '' });
       toast({ title: 'Sucesso', description: 'Blog adicionado com sucesso!' });
     }
@@ -86,30 +88,30 @@ export function BlogManager() {
               placeholder="Nome do Blog (ex: Meu Blog Tech)" 
               value={newBlog.name} 
               onChange={e => setNewBlog({...newBlog, name: e.target.value})}
-              className="bg-background/50"
+              className="bg-background/50 text-foreground"
             />
             <Input 
               placeholder="URL do WordPress (https://...)" 
               value={newBlog.wordpress_url} 
               onChange={e => setNewBlog({...newBlog, wordpress_url: e.target.value})}
-              className="bg-background/50"
+              className="bg-background/50 text-foreground"
             />
             <Input 
               placeholder="Usuário WordPress" 
               value={newBlog.wordpress_username} 
               onChange={e => setNewBlog({...newBlog, wordpress_username: e.target.value})}
-              className="bg-background/50"
+              className="bg-background/50 text-foreground"
             />
             <Input 
               type="password"
               placeholder="Senha de Aplicativo WP" 
               value={newBlog.wordpress_app_password} 
               onChange={e => setNewBlog({...newBlog, wordpress_app_password: e.target.value})}
-              className="bg-background/50"
+              className="bg-background/50 text-foreground"
             />
           </div>
           <Button onClick={handleAddBlog} disabled={adding} className="w-full bg-[#a3ff12] text-black hover:bg-[#a3ff12]/80">
-            {adding ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+            {adding ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
             Salvar Blog
           </Button>
         </CardContent>
