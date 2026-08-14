@@ -18,7 +18,6 @@ function getSafeReturnUrl(rawValue: unknown) {
   try {
     const url = new URL(rawValue);
     if (!["http:", "https:"].includes(url.protocol)) return DEFAULT_RETURN_URL;
-    // For local dev and lovable previews
     if (url.hostname.includes("lovable.app") || url.hostname === "localhost") return url.toString();
     if (!ALLOWED_RETURN_HOSTS.has(url.hostname)) return DEFAULT_RETURN_URL;
     return url.toString();
@@ -39,8 +38,9 @@ serve(async (req) => {
       });
     }
 
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
+      supabaseUrl,
       Deno.env.get("SUPABASE_ANON_KEY")!,
       { global: { headers: { Authorization: authHeader } } }
     );
@@ -55,8 +55,19 @@ serve(async (req) => {
     }
     const userId = userData.user.id;
 
-    const clientId = Deno.env.get("GOOGLE_CLIENT_ID");
-    if (!clientId) throw new Error("GOOGLE_CLIENT_ID not configured");
+    const adminSupabase = createClient(
+      supabaseUrl,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    const { data: savedCreds } = await adminSupabase.rpc("get_google_oauth_credentials_for_backend", {
+      p_user_id: userId,
+    });
+
+    const clientId = savedCreds?.client_id || Deno.env.get("GOOGLE_CLIENT_ID") || "";
+    if (!clientId) {
+      throw new Error("Google OAuth Client ID não configurado. Salve as credenciais em Configurações → Geral → Google Search Console.");
+    }
 
     const requestBody = req.method === "POST" ? await req.json().catch(() => ({})) : {};
     const returnUrl = getSafeReturnUrl(requestBody?.returnUrl);
@@ -64,17 +75,12 @@ serve(async (req) => {
     const stateNonce = crypto.randomUUID();
     const state = `${stateNonce}::${encodeURIComponent(returnUrl)}`;
 
-    const adminSupabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
-
     const { error: insertErr } = await adminSupabase
       .from("google_search_console_oauth_states")
       .insert({ state, user_id: userId });
     if (insertErr) throw insertErr;
 
-    const redirectUri = `${Deno.env.get("SUPABASE_URL")}/functions/v1/google-search-console-callback`;
+    const redirectUri = `${supabaseUrl}/functions/v1/google-search-console-callback`;
     const authUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
     authUrl.searchParams.set("client_id", clientId);
     authUrl.searchParams.set("redirect_uri", redirectUri);
