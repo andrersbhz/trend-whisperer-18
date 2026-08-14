@@ -6,6 +6,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  isAdmin: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -17,14 +18,31 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
 
-    const finishAuthLoading = (nextSession: Session | null) => {
+    const finishAuthLoading = async (nextSession: Session | null) => {
       if (!isMounted) return;
       setSession(nextSession);
       setUser(nextSession?.user ?? null);
+      
+      if (nextSession?.user) {
+        try {
+          const { data } = await supabase.rpc('has_role', { 
+            _user_id: nextSession.user.id, 
+            _role: 'admin' 
+          });
+          setIsAdmin(!!data);
+        } catch (err) {
+          console.error('[useAuth] Admin check error:', err);
+          setIsAdmin(false);
+        }
+      } else {
+        setIsAdmin(false);
+      }
+      
       setLoading(false);
     };
 
@@ -99,7 +117,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, isAdmin, signIn, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   );
@@ -115,6 +133,7 @@ export const useAuth = () => {
       user: null,
       session: null,
       loading: false,
+      isAdmin: false,
       signIn: async () => { throw new Error('AuthProvider not mounted'); },
       signUp: async () => { throw new Error('AuthProvider not mounted'); },
       signOut: async () => { throw new Error('AuthProvider not mounted'); },
