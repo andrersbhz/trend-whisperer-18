@@ -423,9 +423,6 @@ const SettingsPage = () => {
         <TabsContent value="blogs">
           <BlogManager />
         </TabsContent>
-            <Settings2 className="h-4 w-4 mr-2" /> Geral
-          </TabsTrigger>
-        </TabsList>
 
         <TabsContent value="ai" className="space-y-6 mt-0 animate-in fade-in-50 duration-300">
           <GeminiSettings settings={settings} onChange={updateSettings} hasGeminiKey={credStatus.has_gemini_key} onDisconnect={() => disconnectCredential({ gemini_api_key: '' }, 'Gemini')} />
