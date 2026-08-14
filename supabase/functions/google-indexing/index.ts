@@ -6,7 +6,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// --- Helper: obtain access token from a Service Account JSON string ---
 async function getAccessTokenFromServiceAccount(jsonKey: string): Promise<string> {
   const sa = JSON.parse(jsonKey);
   const { JWT } = await import("https://esm.sh/google-auth-library@9.4.1");
@@ -19,28 +18,33 @@ async function getAccessTokenFromServiceAccount(jsonKey: string): Promise<string
   return token.access_token || "";
 }
 
-// --- Helper: refresh OAuth token if expired, persist new token, return access token ---
+async function getOAuthClientCredentials(supabase: any, userId: string) {
+  const { data } = await supabase.rpc("get_google_oauth_credentials_for_backend", {
+    p_user_id: userId,
+  });
+  return {
+    clientId: data?.client_id || Deno.env.get("GOOGLE_CLIENT_ID") || "",
+    clientSecret: data?.client_secret || Deno.env.get("GOOGLE_CLIENT_SECRET") || "",
+  };
+}
+
 async function getAccessTokenFromOAuth(
   supabase: any,
   userId: string,
   tokenData: any
 ): Promise<string> {
-  // If token has expires_at and is still valid (>60s), use it
   const now = Date.now();
   if (tokenData.access_token && tokenData.expires_at && tokenData.expires_at > now + 60_000) {
     return tokenData.access_token;
   }
 
-  // Try to refresh
   if (!tokenData.refresh_token) {
-    // No refresh token — return whatever we have and let Google reject if expired
     return tokenData.access_token || "";
   }
 
-  const clientId = Deno.env.get("GOOGLE_CLIENT_ID");
-  const clientSecret = Deno.env.get("GOOGLE_CLIENT_SECRET");
+  const { clientId, clientSecret } = await getOAuthClientCredentials(supabase, userId);
   if (!clientId || !clientSecret) {
-    console.warn("GOOGLE_CLIENT_ID/SECRET not set — cannot refresh token");
+    console.warn("Google OAuth Client ID/Secret not configured — cannot refresh token");
     return tokenData.access_token || "";
   }
 
@@ -67,13 +71,11 @@ async function getAccessTokenFromOAuth(
     expires_at: Date.now() + (refreshed.expires_in ?? 3600) * 1000,
   };
 
-  // Persist refreshed token
   await supabase
     .from("user_settings")
     .update({ google_search_console_token: JSON.stringify(newToken) })
     .eq("user_id", userId);
 
-  console.log("OAuth token refreshed successfully");
   return refreshed.access_token;
 }
 
@@ -106,7 +108,6 @@ serve(async (req) => {
     let accessToken = "";
     let source = "";
 
-    // 1. Try Google Search Console OAuth (with automatic refresh)
     if (settings?.google_search_console_token) {
       try {
         const tokenData = JSON.parse(settings.google_search_console_token);
@@ -117,7 +118,6 @@ serve(async (req) => {
       }
     }
 
-    // 2. Fallback to user's Service Account JSON
     if (!accessToken && settings?.google_indexing_key) {
       try {
         let jsonKey = settings.google_indexing_key;
@@ -132,7 +132,6 @@ serve(async (req) => {
       }
     }
 
-    // 3. Final fallback: project-level GOOGLE_SERVICE_ACCOUNT_JSON secret
     if (!accessToken) {
       const projectSaJson = Deno.env.get("GOOGLE_SERVICE_ACCOUNT_JSON");
       if (projectSaJson) {
@@ -148,70 +147,66 @@ serve(async (req) => {
     if (!accessToken) {
       const msg = "Google Indexing não configurado. Configure em Configurações → Google Indexing (OAuth ou JSON de Service Account).";
       await supabase.from("automation_logs").insert({
-        user_id: userId, level: 'warning', module: 'robot',
+        user_id: userId, level: "warning", module: "robot",
         message: `⚠️ Indexação não enviada: ${msg}`,
-        details: { url }
+        details: { url },
       });
       return new Response(JSON.stringify({ success: false, message: msg }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // --- Call Google Indexing API ---
     const response = await fetch("https://indexing.googleapis.com/v1/urlNotifications:publish", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${accessToken}` },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
       body: JSON.stringify({ url, type: "URL_UPDATED" }),
     });
 
     const result = await response.json();
-    console.log(`Google Indexing API (source=${source}):`, response.status, result);
 
     if (response.ok) {
       await supabase.from("google_indexing_history").insert({
-        user_id: userId, article_id: articleId, url, status: 'success',
-        response_details: { source, ...result }
+        user_id: userId, article_id: articleId, url, status: "success",
+        response_details: { source, ...result },
       });
       await supabase.from("automation_logs").insert({
-        user_id: userId, level: 'info', module: 'robot',
+        user_id: userId, level: "info", module: "robot",
         message: `✅ Indexação enviada ao Google: ${url}`,
-        details: { source, result }
+        details: { source, result },
       });
       return new Response(JSON.stringify({ success: true, source, result }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Google returned an error — log it clearly
     const errorMsg = result?.error?.message || `HTTP ${response.status}`;
     const errorCode = result?.error?.code || response.status;
     await supabase.from("google_indexing_history").insert({
-      user_id: userId, article_id: articleId, url, status: 'error',
-      response_details: { source, status: response.status, ...result }
+      user_id: userId, article_id: articleId, url, status: "error",
+      response_details: { source, status: response.status, ...result },
     });
     await supabase.from("automation_logs").insert({
-      user_id: userId, level: 'error', module: 'robot',
+      user_id: userId, level: "error", module: "robot",
       message: `❌ Erro na Indexing API (${errorCode}): ${errorMsg}`,
-      details: { url, source, response: result }
+      details: { url, source, response: result },
     });
 
     return new Response(JSON.stringify({ success: false, error: errorMsg, code: errorCode, source }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-
   } catch (error: any) {
     console.error("Google Indexing fatal error:", error);
     if (supabase && userId) {
       try {
         await supabase.from("google_indexing_history").insert({
-          user_id: userId, article_id: articleId, url, status: 'error',
-          response_details: { fatal: error.message }
+          user_id: userId, article_id: articleId, url, status: "error",
+          response_details: { fatal: error.message },
         });
         await supabase.from("automation_logs").insert({
-          user_id: userId, level: 'error', module: 'robot',
+          user_id: userId, level: "error", module: "robot",
           message: `❌ Falha ao indexar: ${error.message}`,
-          details: { url }
+          details: { url },
         });
       } catch (_) {}
     }
