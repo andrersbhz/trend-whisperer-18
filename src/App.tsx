@@ -76,7 +76,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   
   if (loading) {
-    return <Preloader message="Validando acesso..." />;
+    return null; // Don't show preloader here, rely on Root/Auth routes
   }
   
   if (!user) {
@@ -97,7 +97,7 @@ const AuthRoute = () => {
     }
   }, [user, loading, navigate]);
 
-  if (loading) return <Preloader message="Carregando..." />;
+  if (loading) return null;
   return <Auth />;
 };
 
@@ -116,7 +116,7 @@ const RootRoute = () => {
     }
   }, [user, loading, navigate]);
 
-  if (loading) return <Preloader message="Carregando..." />;
+  if (loading) return null;
   return <SalesPage />;
 };
 
@@ -137,7 +137,7 @@ const App = () => (
         <BrowserRouter>
           <AuthProvider>
             <PresenceTracker />
-            <Suspense fallback={<Preloader message="Carregando..." />}>
+            <Suspense fallback={null}>
               <Routes>
                 <Route path="/" element={<RootRoute />} />
                 <Route path="/vendas" element={<SalesPage />} />

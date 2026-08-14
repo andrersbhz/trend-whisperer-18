@@ -37,6 +37,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
     
     setLoading(false);
+    console.log('[useAuth] Auth loading finished');
   }, []);
 
   useEffect(() => {
