@@ -64,6 +64,8 @@ const ArticlesPage = () => {
   const [knowledgeDialogOpen, setKnowledgeDialogOpen] = useState(false);
   const [titleInput, setTitleInput] = useState('');
   const [generatingByTitle, setGeneratingByTitle] = useState(false);
+  const [blogs, setBlogs] = useState<any[]>([]);
+  const [selectedBlogId, setSelectedBlogId] = useState<string>('all');
 
   const PAGE_SIZE = 20;
 
@@ -84,10 +86,10 @@ const ArticlesPage = () => {
       setInitialFetchDone(true); // Mark as done to prevent infinite retry loops on error
       
       // Parallelize article fetch and total count for speed
-      const [articlesResult, countResult] = await Promise.all([
+      const [articlesResult, countResult, blogsResult] = await Promise.all([
         supabase
           .from('articles')
-          .select('id, title, status, category, seo_keyword, meta_description, featured_image_url, scheduled_at')
+          .select('id, title, status, category, seo_keyword, meta_description, featured_image_url, scheduled_at, blog_id')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
           .range(from, to),
@@ -95,8 +97,17 @@ const ArticlesPage = () => {
         !append ? supabase
           .from('articles')
           .select('id', { count: 'exact', head: true })
-          .eq('user_id', user.id) : Promise.resolve({ count: totalCount, error: null })
+          .eq('user_id', user.id) : Promise.resolve({ count: totalCount, error: null }),
+        // Fetch blogs for filtering
+        !append ? supabase.from('user_blogs').select('id, name') : Promise.resolve({ data: blogs, error: null })
       ]);
+
+      if (blogsResult.data) setBlogs(blogsResult.data);
+
+      let filteredArticles = articlesResult.data || [];
+      if (selectedBlogId !== 'all') {
+        filteredArticles = filteredArticles.filter(a => a.blog_id === selectedBlogId);
+      }
 
       if (articlesResult.error) throw articlesResult.error;
 
