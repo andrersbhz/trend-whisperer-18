@@ -85,7 +85,10 @@ const ArticlesPage = () => {
       setErrorState(null);
       setInitialFetchDone(true); // Mark as done to prevent infinite retry loops on error
       
-      // Parallelize article fetch and total count for speed
+      // Sequential fetch if parallel fails or to avoid lock contention
+      const { data: blogsData } = await supabase.from('user_blogs').select('id, name');
+      if (blogsData) setBlogs(blogsData);
+
       let query = supabase
         .from('articles')
         .select('id, title, status, category, seo_keyword, meta_description, featured_image_url, scheduled_at, blog_id')
@@ -95,39 +98,41 @@ const ArticlesPage = () => {
         query = query.eq('blog_id', selectedBlogId);
       }
 
-      const [articlesResult, countResult, blogsResult] = await Promise.all([
-        query
-          .order('created_at', { ascending: false })
-          .range(from, to),
-        // Only fetch count if we're not appending, to save time
-        !append ? supabase
+      const { data: fetchedArticles, error: articlesError } = await query
+        .order('created_at', { ascending: false })
+        .range(from, to);
+
+      if (articlesError) throw articlesError;
+
+      if (!append) {
+        const { count, error: countError } = await supabase
           .from('articles')
           .select('id', { count: 'exact', head: true })
           .eq('user_id', user.id)
-          .match(selectedBlogId !== 'all' ? { blog_id: selectedBlogId } : {}) : Promise.resolve({ count: totalCount, error: null }),
-        // Fetch blogs for filtering
-        !append ? supabase.from('user_blogs').select('id, name') : Promise.resolve({ data: blogs, error: null })
-      ]);
-
-      if (blogsResult.data) setBlogs(blogsResult.data);
-
-      let fetchedArticles = articlesResult.data || [];
-
-      if (articlesResult.error) throw articlesResult.error;
+          .match(selectedBlogId !== 'all' ? { blog_id: selectedBlogId } : {});
+        
+        if (countError) console.warn('[ArticlesPage] Count error:', countError);
+        if (count !== null) setTotalCount(count);
+      }
 
       setHasMore(fetchedArticles.length === PAGE_SIZE);
       setArticles((current) => (append ? [...current, ...fetchedArticles] : fetchedArticles));
       
-      if (!append && countResult.count !== null) {
-        setTotalCount(countResult.count);
-      }
-      
       diagnostics.endTimer(startTime, 'Carregar Artigos', 'success', `${fetchedArticles.length} itens`);
     } catch (error: any) {
-      diagnostics.endTimer(startTime, 'Carregar Artigos', 'error', getErrorMessage(error));
+      const msg = getErrorMessage(error);
+      diagnostics.endTimer(startTime, 'Carregar Artigos', 'error', msg);
       console.error('[ArticlesPage] fetchArticles error:', error);
-      setErrorState(getErrorMessage(error));
-      toast({ title: 'Erro ao carregar artigos', description: getErrorMessage(error), variant: 'destructive' });
+      
+      // Se for o erro de lock, não mostramos a tela de erro fatal, apenas um toast silencioso
+      if (msg.includes('lock') || msg.includes('stole')) {
+        console.warn('[ArticlesPage] Supabase lock conflict detected, retrying silently...');
+        setTimeout(() => fetchArticles({ silent: true }), 1500);
+        return;
+      }
+
+      setErrorState(msg);
+      toast({ title: 'Erro ao carregar artigos', description: msg, variant: 'destructive' });
     } finally {
       setLoading(false);
       setLoadingMore(false);
