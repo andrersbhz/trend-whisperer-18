@@ -370,6 +370,22 @@
     border: 1px solid transparent;
   }
 
+  /* Global hover rules for buttons to ensure green/lilac text instead of white */
+  button:hover:not(.bg-primary):not(.bg-success):not(.bg-destructive):not(.gradient-primary):not(.bg-[#a3ff12]) {
+    color: #a3ff12 !important;
+  }
+  button:hover {
+    transition: all 0.3s ease;
+  }
+  
+  /* Buttons that get green background should have black text on hover */
+  button.bg-primary:hover, 
+  button.bg-success:hover, 
+  button.bg-[#a3ff12]:hover,
+  button.gradient-primary:hover {
+    color: black !important;
+  }
+
 
   /* Gradient text */
   .text-gradient-primary {
