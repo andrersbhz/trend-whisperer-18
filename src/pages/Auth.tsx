@@ -76,41 +76,27 @@ const Auth = () => {
     try {
       console.log('[Auth] Starting native Supabase Google OAuth:', redirectTo);
 
-      // Primary path: Supabase Auth. It is the same auth database used by the rest of the app
-      // and returns/redirects immediately instead of leaving the UI waiting on an external helper.
-      const nativeResult = await withTimeout(
-        supabase.auth.signInWithOAuth({
-          provider: 'google',
+      // Use Lovable Cloud's managed authentication.
+      // This handles the OAuth flow even if custom keys aren't configured in the DB yet.
+      const result = await withTimeout(
+        lovable.auth.signInWithOAuth('google', { 
+          redirect_uri: redirectTo,
+          // Ensure we don't end up in a loop if the user is already partially logged in
           options: {
-            redirectTo,
             queryParams: {
-              access_type: 'offline',
-              prompt: 'select_account',
-            },
-          },
+              prompt: 'select_account'
+            }
+          }
         }),
         OAUTH_TIMEOUT_MS,
       );
 
-      if (!nativeResult.error) {
-        // With browser redirect enabled Supabase normally navigates away before this line matters.
-        // If a session is already available, the useEffect above sends the user to /admin.
-        return;
+      if (result.error) {
+        throw result.error;
       }
 
-      console.warn('[Auth] Native Supabase OAuth failed, trying Lovable fallback:', nativeResult.error.message);
-
-      // Compatibility fallback for environments where Google is provisioned through Lovable Cloud.
-      const fallback = await withTimeout(
-        lovable.auth.signInWithOAuth('google', { redirect_uri: redirectTo }),
-        OAUTH_TIMEOUT_MS,
-      );
-
-      if (fallback.error) {
-        throw fallback.error;
-      }
-
-      if (!fallback.redirected) {
+      if (!result.redirected) {
+        // If not redirected, we might already have a session
         const { data } = await supabase.auth.getSession();
         if (data.session?.user) navigate(destination, { replace: true });
       }
