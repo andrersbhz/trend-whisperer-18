@@ -55,7 +55,7 @@ const GooglePage = () => {
             <Search className="h-6 w-6 text-primary" />
           </div>
           <div>
-            <h1 className="text-xl font-black uppercase tracking-tighter">Google Ecosystem</h1>
+            <h1 className="text-xl font-black uppercase tracking-tighter">Google Ecosystem (ID: {user?.id})</h1>
             <p className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Analytics & Search Console</p>
           </div>
         </div>
