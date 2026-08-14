@@ -118,7 +118,7 @@ const ArticlesPage = () => {
         setTotalCount(countResult.count);
       }
       
-      diagnostics.endTimer(startTime, 'Carregar Artigos', 'success', `${(data || []).length} itens`);
+      diagnostics.endTimer(startTime, 'Carregar Artigos', 'success', `${fetchedArticles.length} itens`);
     } catch (error: any) {
       diagnostics.endTimer(startTime, 'Carregar Artigos', 'error', getErrorMessage(error));
       console.error('[ArticlesPage] fetchArticles error:', error);
