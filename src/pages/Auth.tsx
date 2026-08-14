@@ -96,7 +96,7 @@ const Auth = () => {
             <Button
               type="button"
               variant="outline"
-              className="w-full border-border hover:bg-secondary/50"
+              className="w-full border-border hover:bg-white hover:text-black transition-colors"
               onClick={handleGoogleSignIn}
               disabled={googleLoading}
             >
