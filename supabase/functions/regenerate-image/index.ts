@@ -71,7 +71,7 @@ function isBillingIssue(status: number, details: string) {
 }
 
 function isRetryableIssue(status: number, details: string) {
-  return [408, 429, 500, 502, 503, 504].includes(status) || /temporar|timeout|unavailable|overloaded|rate limit/i.test(details);
+  return [408, 429, 500, 502, 503, 504, 522].includes(status) || /temporar|timeout|unavailable|overloaded|rate limit/i.test(details);
 }
 
 function createProviderError(provider: string, status: number, details: string) {

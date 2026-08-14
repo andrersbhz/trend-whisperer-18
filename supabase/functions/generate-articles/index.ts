@@ -29,7 +29,7 @@ function sanitizeSeoFields(parsed: AIResponse): AIResponse {
 // ── Retry helper ─────────────────────────────────────────────────────────
 
 function isTransientError(msg: string): boolean {
-  return /429|503|504|RESOURCE_EXHAUSTED|UNAVAILABLE|high demand|temporarily|timeout/i.test(msg);
+  return /429|503|504|522|RESOURCE_EXHAUSTED|UNAVAILABLE|high demand|temporarily|timeout/i.test(msg);
 }
 
 function isBillingError(msg: string): boolean {
