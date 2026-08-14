@@ -364,35 +364,40 @@ serve(async (req) => {
     // --- Determine auth and attempt publish ---
     let wpResponse: Response;
 
-    if (hasPlugin) {
-      // Try plugin first
-      const pluginEndpoint = `${wpUrl}/wp-json/autoblog-ai/v1/publish`;
-      const pluginBody = {
-        title: article.title,
-        content: stripDuplicateTitle(article.content || "", article.title || ""),
-        excerpt: article.excerpt || article.meta_description || "",
-        status: "publish",
-        seo_title: article.meta_title || article.seo_title || article.title,
-        meta_description: article.meta_description || "",
-        seo_keyword: article.focus_keyword || article.seo_keyword || "",
-        slug: buildSlug(article.slug || article.focus_keyword || article.seo_keyword || article.title || ""),
-        featured_image_url: article.featured_image_url || "",
-        categories: [article.category],
-      };
+    try {
+      if (hasPlugin) {
+        // Try plugin first
+        const pluginEndpoint = `${wpUrl}/wp-json/autoblog-ai/v1/publish`;
+        const pluginBody = {
+          title: article.title,
+          content: stripDuplicateTitle(article.content || "", article.title || ""),
+          excerpt: article.excerpt || article.meta_description || "",
+          status: "publish",
+          seo_title: article.meta_title || article.seo_title || article.title,
+          meta_description: article.meta_description || "",
+          seo_keyword: article.focus_keyword || article.seo_keyword || "",
+          slug: buildSlug(article.slug || article.focus_keyword || article.seo_keyword || article.title || ""),
+          featured_image_url: article.featured_image_url || "",
+          categories: [article.category],
+        };
 
-      console.log(`POST (plugin) ${pluginEndpoint}`);
-      wpResponse = await fetch(pluginEndpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "X-AutoBlog-Key": wpPassword },
-        body: JSON.stringify(pluginBody),
-      });
+        console.log(`POST (plugin) ${pluginEndpoint}`);
+        wpResponse = await fetch(pluginEndpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-AutoBlog-Key": wpPassword },
+          body: JSON.stringify(pluginBody),
+        });
 
-      if (wpResponse.status === 404) {
-        throw new Error("O plugin AutoBlog AI Connector não está instalado nesse WordPress. Conecte usando usuário real do WordPress + Senha de Aplicativo.");
+        if (wpResponse.status === 404) {
+          throw new Error("O plugin AutoBlog AI Connector não está instalado nesse WordPress. Conecte usando usuário real do WordPress + Senha de Aplicativo.");
+        }
+      } else {
+        const auth = btoa(`${normalizedUsername}:${wpPassword}`);
+        wpResponse = await publishStandard(`Basic ${auth}`);
       }
-    } else {
-      const auth = btoa(`${normalizedUsername}:${wpPassword}`);
-      wpResponse = await publishStandard(`Basic ${auth}`);
+    } catch (fetchErr: any) {
+      console.error("[publish-article] Fetch network error:", fetchErr);
+      throw new Error(`Falha na conexão: Não foi possível alcançar o servidor WordPress. Verifique se a URL "${wpUrl}" está correta e se o site permite conexões externas. Erro: ${fetchErr.message}`);
     }
 
     const responseText = await wpResponse.text();
