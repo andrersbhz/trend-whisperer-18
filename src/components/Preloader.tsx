@@ -16,8 +16,8 @@ const Preloader = ({ message, progress }: PreloaderProps) => {
     let start = performance.now();
     const tick = (now: number) => {
       const elapsed = now - start;
-      // Reach 100% fast but don't hang
-      const target = Math.min(100, 100 * (1 - Math.exp(-elapsed / 300)));
+      // Chega a 100% em aproximadamente 1 segundo para ser rápido
+      const target = Math.min(100, 100 * (1 - Math.exp(-elapsed / 400)));
       setAutoProgress(target);
       raf = requestAnimationFrame(tick);
     };
@@ -32,31 +32,31 @@ const Preloader = ({ message, progress }: PreloaderProps) => {
       role="status"
       aria-live="polite"
       aria-busy="true"
-      className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background/95 backdrop-blur-md animate-in fade-in duration-200"
+      className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black backdrop-blur-md animate-in fade-in duration-200"
     >
       <div className="flex flex-col items-center gap-4">
         {/* Subtle pulsing dot */}
         <div className="relative h-2 w-2">
-          <span className="absolute inset-0 rounded-full bg-primary animate-ping opacity-75" />
-          <span className="relative block h-2 w-2 rounded-full bg-primary" />
+          <span className="absolute inset-0 rounded-full bg-[#a3ff12] animate-ping opacity-75" />
+          <span className="relative block h-2 w-2 rounded-full bg-[#a3ff12]" />
         </div>
 
         {/* Determinate progress bar */}
-        <div className="h-[3px] w-44 overflow-hidden rounded-full bg-foreground/10">
+        <div className="h-[3px] w-44 overflow-hidden rounded-full bg-white/10">
           <div
-            className="h-full bg-primary transition-[width] duration-300 ease-out"
+            className="h-full bg-[#a3ff12] transition-[width] duration-200 ease-out"
             style={{ width: `${value}%` }}
           />
         </div>
 
         {/* Percentage */}
         <div className="flex items-baseline gap-2 tabular-nums">
-          <span className="text-2xl font-light text-foreground/90">{value}</span>
-          <span className="text-xs text-foreground/50">%</span>
+          <span className="text-2xl font-light text-white">{value}</span>
+          <span className="text-xs text-white/50">%</span>
         </div>
 
         {message && (
-          <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-foreground/60">
+          <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-[#a3ff12]/60">
             {message}
           </p>
         )}
