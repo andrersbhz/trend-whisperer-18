@@ -319,7 +319,7 @@ const SocialRobotPage = () => {
           <Button variant="outline" size="sm" onClick={() => setCompactMode(!compactMode)} className="text-[9px] font-black uppercase rounded-none border-2 border-white/10 h-8 px-2">
             {compactMode ? "COMPACTO" : "NORMAL"}
           </Button>
-          <Button variant="outline" size="sm" onClick={() => toggleAutomation(!automationEnabled)} className={cn("text-[9px] font-black uppercase rounded-none border-2 h-8 px-3", automationEnabled ? "border-success text-success" : "border-destructive text-destructive")}>
+          <Button variant="outline" size="sm" onClick={() => toggleAutomation(!automationEnabled)} className={cn("text-[9px] font-black uppercase rounded-none border-2 h-8 px-3 transition-colors", automationEnabled ? "border-success text-success hover:bg-success/5" : "border-destructive text-destructive hover:bg-destructive/5")}>
             {automationEnabled ? <Power className="h-3 w-3 mr-1" /> : <PowerOff className="h-3 w-3 mr-1" />}
             {automationEnabled ? "DESATIVAR" : "ATIVAR"}
           </Button>

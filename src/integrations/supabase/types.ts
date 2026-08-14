@@ -243,8 +243,11 @@ export type Database = {
         Row: {
           access_token: string
           created_at: string | null
+          disconnected_at: string | null
+          facebook_enabled: boolean
           id: string
           instagram_account_id: string | null
+          instagram_enabled: boolean
           is_active: boolean | null
           last_metrics: Json | null
           metrics_updated_at: string | null
@@ -257,8 +260,11 @@ export type Database = {
         Insert: {
           access_token: string
           created_at?: string | null
+          disconnected_at?: string | null
+          facebook_enabled?: boolean
           id?: string
           instagram_account_id?: string | null
+          instagram_enabled?: boolean
           is_active?: boolean | null
           last_metrics?: Json | null
           metrics_updated_at?: string | null
@@ -271,8 +277,11 @@ export type Database = {
         Update: {
           access_token?: string
           created_at?: string | null
+          disconnected_at?: string | null
+          facebook_enabled?: boolean
           id?: string
           instagram_account_id?: string | null
+          instagram_enabled?: boolean
           is_active?: boolean | null
           last_metrics?: Json | null
           metrics_updated_at?: string | null
@@ -1258,6 +1267,75 @@ export type Database = {
         }
         Relationships: []
       }
+      social_publications: {
+        Row: {
+          account_key: string
+          account_name: string | null
+          article_id: string | null
+          caption: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          image_url: string | null
+          link_url: string | null
+          permalink: string | null
+          platform: string
+          published_at: string | null
+          remote_id: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          account_key: string
+          account_name?: string | null
+          article_id?: string | null
+          caption?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          image_url?: string | null
+          link_url?: string | null
+          permalink?: string | null
+          platform: string
+          published_at?: string | null
+          remote_id?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          account_key?: string
+          account_name?: string | null
+          article_id?: string | null
+          caption?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          image_url?: string | null
+          link_url?: string | null
+          permalink?: string | null
+          platform?: string
+          published_at?: string | null
+          remote_id?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_publications_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "articles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_publications_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "public_articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscriptions: {
         Row: {
           cancel_at_period_end: boolean | null
@@ -1316,6 +1394,72 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      threads_accounts: {
+        Row: {
+          access_token: string
+          created_at: string
+          disconnected_at: string | null
+          id: string
+          is_active: boolean
+          scopes: string[]
+          threads_user_id: string
+          token_expires_at: string | null
+          updated_at: string
+          user_id: string
+          username: string | null
+        }
+        Insert: {
+          access_token: string
+          created_at?: string
+          disconnected_at?: string | null
+          id?: string
+          is_active?: boolean
+          scopes?: string[]
+          threads_user_id: string
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id: string
+          username?: string | null
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          disconnected_at?: string | null
+          id?: string
+          is_active?: boolean
+          scopes?: string[]
+          threads_user_id?: string
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
+      threads_oauth_states: {
+        Row: {
+          created_at: string
+          expires_at: string
+          return_url: string | null
+          state: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          return_url?: string | null
+          state: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          return_url?: string | null
+          state?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       trending_topics: {
         Row: {
