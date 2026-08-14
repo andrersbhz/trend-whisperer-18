@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,6 +17,7 @@ interface Blog {
 }
 
 export function BlogManager() {
+  const { user } = useAuth();
   const [blogs, setBlogs] = useState<Blog[]>([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
@@ -23,8 +25,10 @@ export function BlogManager() {
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchBlogs();
-  }, []);
+    if (user) {
+      fetchBlogs();
+    }
+  }, [user]);
 
   const fetchBlogs = async () => {
     const { data, error } = await supabase.from('user_blogs').select('*');
@@ -37,13 +41,14 @@ export function BlogManager() {
   };
 
   const handleAddBlog = async () => {
+    if (!user) return;
     if (!newBlog.name || !newBlog.wordpress_url) {
       toast({ title: 'Campos obrigatórios', description: 'Preencha o nome e a URL do blog.', variant: 'destructive' });
       return;
     }
 
     setAdding(true);
-    const { data, error } = await supabase.from('user_blogs').insert([newBlog]).select();
+    const { data, error } = await supabase.from('user_blogs').insert([{ ...newBlog, user_id: user.id }]).select();
     
     if (error) {
       toast({ title: 'Erro ao adicionar blog', description: error.message, variant: 'destructive' });
