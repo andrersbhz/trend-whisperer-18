@@ -45,8 +45,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      console.log('[useAuth] Auth state changed:', _event);
-      await finishAuthLoading(session);
+      console.log('[useAuth] Auth state changed:', _event, !!session);
+      if (_event === 'SIGNED_IN' || _event === 'TOKEN_REFRESHED' || _event === 'INITIAL_SESSION') {
+        await finishAuthLoading(session);
+      } else if (_event === 'SIGNED_OUT') {
+        setUser(null);
+        setSession(null);
+        setIsAdmin(false);
+        setLoading(false);
+      }
     });
 
     // Timeout safety
@@ -59,27 +66,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const initializeAuth = async () => {
       try {
-        // Optimized check: getSession is faster than full user load initially
         const { data, error } = await supabase.auth.getSession();
-
         if (error) {
           console.error('[useAuth] Session error:', error);
           await supabase.auth.signOut({ scope: 'local' });
-          finishAuthLoading(null);
+          if (isMounted) finishAuthLoading(null);
           return;
         }
 
-        if (data.session) {
-          finishAuthLoading(data.session);
-        } else {
-          // If no session found quickly, don't wait forever
-          finishAuthLoading(null);
+        if (isMounted) {
+          if (data.session) {
+            console.log('[useAuth] Session found on init');
+            await finishAuthLoading(data.session);
+          } else {
+            console.log('[useAuth] No session on init');
+            await finishAuthLoading(null);
+          }
         }
       } catch (err) {
         console.error('[useAuth] Init error:', err);
-        finishAuthLoading(null);
+        if (isMounted) finishAuthLoading(null);
       } finally {
-        window.clearTimeout(timeoutId);
+        if (isMounted) window.clearTimeout(timeoutId);
       }
     };
 

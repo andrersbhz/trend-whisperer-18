@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PasswordInput } from '@/components/ui/password-input';
@@ -19,6 +19,7 @@ const Auth = () => {
   const [googleLoading, setGoogleLoading] = useState(false);
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -28,7 +29,8 @@ const Auth = () => {
       if (isLogin) {
         await signIn(email, password);
         // Navigate to /admin instead of / to ensure we hit the dashboard directly
-        navigate('/admin', { replace: true });
+        const from = (location.state as any)?.from || '/admin';
+        navigate(from, { replace: true });
       } else {
 
         await signUp(email, password);
