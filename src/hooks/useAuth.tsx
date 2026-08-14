@@ -30,7 +30,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       if (nextSession?.user) {
         try {
-          const { data, error } = await supabase.from('user_roles').select('role').eq('user_id', nextSession.user.id).eq('role', 'admin').maybeSingle();
+          const { data } = await supabase.from('user_roles' as any).select('role').eq('user_id', nextSession.user.id).eq('role', 'admin').maybeSingle();
           setIsAdmin(!!data);
         } catch (err) {
           console.error('[useAuth] Admin check error:', err);
