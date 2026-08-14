@@ -545,7 +545,7 @@ const ArticlesPage = () => {
       <span className="text-xs font-medium text-foreground">Blog:</span>
       <select 
         value={selectedBlogId} 
-        onChange={(e) => setSelectedBlogId(e.target.value)}
+        onChange={(e) => handleUpdateBlogFilter(e.target.value)}
         className="bg-background border border-border rounded px-2 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary text-foreground"
       >
         <option value="all">Todos</option>
