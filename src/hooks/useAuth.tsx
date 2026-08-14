@@ -59,7 +59,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const initializeAuth = async () => {
       try {
-        // Obter a sessão atual de forma assíncrona mas imediata
         const { data: { session: currentSession }, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -79,7 +78,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     initializeAuth();
 
-    // Reduzido o timeout de segurança para 5s e removido o listener de manual skip
     const timeoutId = window.setTimeout(() => {
       if (isMounted && loading) {
         console.warn('[useAuth] Safety timeout: forcing loading false');
@@ -92,35 +90,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       window.clearTimeout(timeoutId);
       subscription.unsubscribe();
     };
-  }, [finishAuthLoading]); // Removido loading da dependência para evitar loops
-
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) throw error;
-  };
-
-  const signUp = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: window.location.origin,
-      },
-    });
-    if (error) throw error;
-  };
-
-  const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
-  };
-
-  return (
-    <AuthContext.Provider value={{ user, session, loading, isAdmin, signIn, signUp, signOut }}>
-      {children}
-    </AuthContext.Provider>
-  );
-};
+  }, [finishAuthLoading]);
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -153,8 +123,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    // Return a safe default instead of throwing to prevent blank screens
-    // during HMR or rendering edge cases
     console.warn('useAuth called outside AuthProvider — returning default state');
     return {
       user: null,
