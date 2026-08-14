@@ -111,9 +111,8 @@ const ArticlesPage = () => {
 
       if (articlesResult.error) throw articlesResult.error;
 
-      const data = articlesResult.data;
-      setHasMore((data || []).length === PAGE_SIZE);
-      setArticles((current) => (append ? [...current, ...(data || [])] : data || []));
+      setHasMore(fetchedArticles.length === PAGE_SIZE);
+      setArticles((current) => (append ? [...current, ...fetchedArticles] : fetchedArticles));
       
       if (!append && countResult.count !== null) {
         setTotalCount(countResult.count);
