@@ -120,17 +120,23 @@ const Dashboard = () => {
       setLoadingTrends(false);
       setTimeout(() => setLoading(false), 800);
 
+      const publishedCount = articles.filter((a: any) => a.status === 'published').length;
+      const pendingCount = articles.filter((a: any) => a.status === 'ready' || a.status === 'draft').length;
+      const directFailedCount = articles.filter((a: any) => a.status === 'failed').length;
+      const logFailedCount = (data_errors || []).length;
+
       setStats({
         total: articles.length,
-        published: articles.filter((a: any) => a.status === 'published').length,
-        pending: articles.filter((a: any) => a.status === 'ready' || a.status === 'draft').length,
+        published: publishedCount,
+        pending: pendingCount,
         trending: trendingCount,
-        failed: articles.filter((a: any) => a.status === 'failed').length,
+        failed: directFailedCount + logFailedCount,
       });
 
       const ALL_CATEGORIES = ['policia', 'celebridades', 'politica', 'esportes', 'saude', 'financas'];
       const byCat: Record<string, any> = {};
       ALL_CATEGORIES.forEach(cat => byCat[cat] = { total: 0, published: 0, pending: 0, failed: 0 });
+      
       articles.forEach((a: any) => {
         const cat = a.category || 'outros';
         if (!byCat[cat]) byCat[cat] = { total: 0, published: 0, pending: 0, failed: 0 };
@@ -139,14 +145,14 @@ const Dashboard = () => {
         else if (a.status === 'failed') byCat[cat].failed += 1;
         else byCat[cat].pending += 1;
       });
+
       // Também contabiliza falhas registradas em publish_log (por categoria do artigo relacionado)
       (data_errors || []).forEach((e: any) => {
         const cat = e.articles?.category || 'outros';
         if (!byCat[cat]) byCat[cat] = { total: 0, published: 0, pending: 0, failed: 0 };
         byCat[cat].failed += 1;
       });
-      const totalPublishFailed = (data_errors || []).length;
-      setStats(prev => ({ ...prev, failed: prev.failed + totalPublishFailed }));
+
       setCategoryStats(Object.entries(byCat).map(([category, v]) => ({ category, ...v })).sort((a, b) => b.total - a.total));
       setRecentArticles(data_recent);
       setRecentErrors((data_errors || []).slice(0, 5));
