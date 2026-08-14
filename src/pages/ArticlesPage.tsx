@@ -118,10 +118,6 @@ const ArticlesPage = () => {
       setHasMore(fetchedArticles.length === PAGE_SIZE);
       setArticles((current) => (append ? [...current, ...fetchedArticles] : fetchedArticles));
       
-      if (!append && countResult.count !== null) {
-        setTotalCount(countResult.count);
-      }
-      
       diagnostics.endTimer(startTime, 'Carregar Artigos', 'success', `${fetchedArticles.length} itens`);
     } catch (error: any) {
       const msg = getErrorMessage(error);
