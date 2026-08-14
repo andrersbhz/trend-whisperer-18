@@ -953,12 +953,16 @@ export type Database = {
           accent_color: string
           brand_name: string
           brand_short: string
+          button_hover_style: string | null
+          button_radius: string | null
           contact_email: string | null
           contact_phone: string | null
           cta_primary: string
           cta_secondary: string
           description: string
           favicon_url: string | null
+          font_color_base: string | null
+          font_color_muted: string | null
           footer_text: string | null
           hero_video_url: string | null
           id: string
@@ -975,12 +979,16 @@ export type Database = {
           accent_color?: string
           brand_name?: string
           brand_short?: string
+          button_hover_style?: string | null
+          button_radius?: string | null
           contact_email?: string | null
           contact_phone?: string | null
           cta_primary?: string
           cta_secondary?: string
           description?: string
           favicon_url?: string | null
+          font_color_base?: string | null
+          font_color_muted?: string | null
           footer_text?: string | null
           hero_video_url?: string | null
           id?: string
@@ -997,12 +1005,16 @@ export type Database = {
           accent_color?: string
           brand_name?: string
           brand_short?: string
+          button_hover_style?: string | null
+          button_radius?: string | null
           contact_email?: string | null
           contact_phone?: string | null
           cta_primary?: string
           cta_secondary?: string
           description?: string
           favicon_url?: string | null
+          font_color_base?: string | null
+          font_color_muted?: string | null
           footer_text?: string | null
           hero_video_url?: string | null
           id?: string
