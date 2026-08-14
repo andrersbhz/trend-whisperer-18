@@ -28,7 +28,7 @@ export default function AdminSystemPage() {
     const { count: artCount } = await supabase.from('articles').select('*', { count: 'exact', head: true });
     setArticlesCount(artCount || 0);
 
-    const { count: sCount } = await supabase.from('sales').select('*', { count: 'exact', head: true });
+    const { count: sCount } = await supabase.from('sales' as any).select('*', { count: 'exact', head: true });
     setSalesCount(sCount || 0);
 
     // Mock/placeholder for user management until Edge Function is ready
