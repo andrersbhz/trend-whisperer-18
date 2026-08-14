@@ -258,6 +258,23 @@ const Dashboard = () => {
   const statusColors: Record<string, string> = { draft: 'bg-muted', generating: 'bg-warning/20', ready: 'bg-primary/20', published: 'bg-success/20', failed: 'bg-destructive/20' };
   const categoryLabels: Record<string, string> = { policia: '🚔 Policial', celebridades: '⭐ Famosos', politica: '🏛️ Política', esportes: '⚽ Esportes', saude: '💚 Saúde', financas: '💰 Finanças' };
 
+  const blogSelector = blogs.length > 0 && (
+    <div className="flex items-center gap-2 bg-secondary/20 px-3 py-1.5 border border-white/5 glass-card">
+      <Bot className="h-4 w-4 text-primary" />
+      <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Blog:</span>
+      <select 
+        value={selectedBlogId} 
+        onChange={(e) => setSelectedBlogId(e.target.value)}
+        className="bg-transparent border-none text-xs font-bold focus:outline-none text-foreground cursor-pointer"
+      >
+        <option value="all" className="bg-[#0a1128]">Geral</option>
+        {blogs.map(blog => (
+          <option key={blog.id} value={blog.id} className="bg-[#0a1128]">{blog.name}</option>
+        ))}
+      </select>
+    </div>
+  );
+
   const statCards = [
     { icon: FileText, label: 'Total de Artigos', value: stats.total, color: 'text-primary', accent: 'from-primary/10', glow: 'neon-border-blue' },
     { icon: CheckCircle, label: 'Publicados', value: stats.published, color: 'text-success', accent: 'from-success/10', glow: 'neon-border-blue' },
