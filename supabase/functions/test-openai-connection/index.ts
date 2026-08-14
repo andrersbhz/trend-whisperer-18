@@ -83,16 +83,22 @@ serve(async (req) => {
     } else {
       const errText = await resp.text();
       let errorDetail = `OpenAI retornou ${resp.status}`;
-      try {
-        const errJson = JSON.parse(errText);
-        if (resp.status === 401) {
-          errorDetail = "Chave inválida ou expirada. Verifique sua chave em platform.openai.com/api-keys.";
-        } else if (resp.status === 429) {
-          errorDetail = "Limite de requisições atingido ou sem saldo. Verifique seu billing em platform.openai.com.";
-        } else if (errJson.error?.message) {
-          errorDetail = errJson.error.message;
-        }
-      } catch {}
+      
+      // Cloudflare 522 checking
+      if (resp.status === 522) {
+        errorDetail = "Erro 522 (Connection Timed Out): A OpenAI está inacessível no momento ou a conexão expirou. Tente novamente em instantes.";
+      } else {
+        try {
+          const errJson = JSON.parse(errText);
+          if (resp.status === 401) {
+            errorDetail = "Chave inválida ou expirada. Verifique sua chave em platform.openai.com/api-keys.";
+          } else if (resp.status === 429) {
+            errorDetail = "Limite de requisições atingido ou sem saldo. Verifique seu billing em platform.openai.com.";
+          } else if (errJson.error?.message) {
+            errorDetail = errJson.error.message;
+          }
+        } catch {}
+      }
 
       return new Response(
         JSON.stringify({ success: false, error: errorDetail }),
