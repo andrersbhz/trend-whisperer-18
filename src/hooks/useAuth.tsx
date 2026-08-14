@@ -56,21 +56,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     });
 
-    // Timeout safety
+    // Timeout safety - if initialization hangs, force loading false
     const timeoutId = window.setTimeout(async () => {
       if (loading) {
         console.warn('[useAuth] Auth timeout reached, forcing loading state to false');
-        if (isMounted) finishAuthLoading(null);
+        if (isMounted) {
+          setLoading(false);
+          // If we timed out, assume no session to avoid infinite preloader
+          if (!session) {
+            setSession(null);
+            setUser(null);
+          }
+        }
       }
-    }, 15000); // Aumentado para 15s para evitar travar em conexões lentas
+    }, 8000); // Reduced to 8s for faster recovery
 
     const initializeAuth = async () => {
       try {
         const { data, error } = await supabase.auth.getSession();
+        
         if (error) {
           console.error('[useAuth] Session error:', error);
-          await supabase.auth.signOut({ scope: 'local' });
-          if (isMounted) finishAuthLoading(null);
+          if (isMounted) await finishAuthLoading(null);
           return;
         }
 
@@ -85,7 +92,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
       } catch (err) {
         console.error('[useAuth] Init error:', err);
-        if (isMounted) finishAuthLoading(null);
+        if (isMounted) await finishAuthLoading(null);
       } finally {
         if (isMounted) window.clearTimeout(timeoutId);
       }

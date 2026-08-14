@@ -92,6 +92,7 @@ const AuthRoute = () => {
 
   useEffect(() => {
     if (!loading && user) {
+      console.log('[AuthRoute] Redirecting to /admin');
       navigate('/admin', { replace: true });
     }
   }, [user, loading, navigate]);

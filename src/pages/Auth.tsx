@@ -40,7 +40,9 @@ const Auth = () => {
     try {
       if (isLogin) {
         await signIn(email, password);
-        navigate(destination, { replace: true });
+        // Navigation is handled by the useEffect watching the session,
+        // but we add a manual fallback here just in case.
+        setTimeout(() => navigate(destination, { replace: true }), 500);
       } else {
         await signUp(email, password);
         toast({ title: 'Conta criada!', description: 'Verifique seu email para confirmar.' });
