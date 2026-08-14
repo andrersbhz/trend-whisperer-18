@@ -86,40 +86,43 @@ const ArticlesPage = () => {
       setInitialFetchDone(true); // Mark as done to prevent infinite retry loops on error
       
       // Parallelize article fetch and total count for speed
+      let query = supabase
+        .from('articles')
+        .select('id, title, status, category, seo_keyword, meta_description, featured_image_url, scheduled_at, blog_id')
+        .eq('user_id', user.id);
+
+      if (selectedBlogId !== 'all') {
+        query = query.eq('blog_id', selectedBlogId);
+      }
+
       const [articlesResult, countResult, blogsResult] = await Promise.all([
-        supabase
-          .from('articles')
-          .select('id, title, status, category, seo_keyword, meta_description, featured_image_url, scheduled_at, blog_id')
-          .eq('user_id', user.id)
+        query
           .order('created_at', { ascending: false })
           .range(from, to),
         // Only fetch count if we're not appending, to save time
         !append ? supabase
           .from('articles')
           .select('id', { count: 'exact', head: true })
-          .eq('user_id', user.id) : Promise.resolve({ count: totalCount, error: null }),
+          .eq('user_id', user.id)
+          .match(selectedBlogId !== 'all' ? { blog_id: selectedBlogId } : {}) : Promise.resolve({ count: totalCount, error: null }),
         // Fetch blogs for filtering
         !append ? supabase.from('user_blogs').select('id, name') : Promise.resolve({ data: blogs, error: null })
       ]);
 
       if (blogsResult.data) setBlogs(blogsResult.data);
 
-      let filteredArticles = articlesResult.data || [];
-      if (selectedBlogId !== 'all') {
-        filteredArticles = filteredArticles.filter(a => a.blog_id === selectedBlogId);
-      }
+      let fetchedArticles = articlesResult.data || [];
 
       if (articlesResult.error) throw articlesResult.error;
 
-      const data = articlesResult.data;
-      setHasMore((data || []).length === PAGE_SIZE);
-      setArticles((current) => (append ? [...current, ...(data || [])] : data || []));
+      setHasMore(fetchedArticles.length === PAGE_SIZE);
+      setArticles((current) => (append ? [...current, ...fetchedArticles] : fetchedArticles));
       
       if (!append && countResult.count !== null) {
         setTotalCount(countResult.count);
       }
       
-      diagnostics.endTimer(startTime, 'Carregar Artigos', 'success', `${(data || []).length} itens`);
+      diagnostics.endTimer(startTime, 'Carregar Artigos', 'success', `${fetchedArticles.length} itens`);
     } catch (error: any) {
       diagnostics.endTimer(startTime, 'Carregar Artigos', 'error', getErrorMessage(error));
       console.error('[ArticlesPage] fetchArticles error:', error);
@@ -132,11 +135,11 @@ const ArticlesPage = () => {
   };
 
   useEffect(() => {
-    if (user && !initialFetchDone) {
+    if (user) {
       setDiagMetrics(diagnostics.getMetrics());
       Promise.all([fetchArticles(), fetchCategories()]);
     }
-  }, [user, initialFetchDone]);
+  }, [user, selectedBlogId]);
 
   // Auto-close preview logic
   useEffect(() => {
@@ -308,6 +311,11 @@ const ArticlesPage = () => {
     } finally {
       setGeneratingByTitle(false);
     }
+  };
+
+  const handleUpdateBlogFilter = (blogId: string) => {
+    setSelectedBlogId(blogId);
+    setInitialFetchDone(false); // Reset to ensure fetch logic works cleanly if needed, though the useEffect dependency is enough
   };
 
   const handlePublish = async (articleId: string) => {
@@ -537,7 +545,7 @@ const ArticlesPage = () => {
       <span className="text-xs font-medium text-foreground">Blog:</span>
       <select 
         value={selectedBlogId} 
-        onChange={(e) => setSelectedBlogId(e.target.value)}
+        onChange={(e) => handleUpdateBlogFilter(e.target.value)}
         className="bg-background border border-border rounded px-2 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary text-foreground"
       >
         <option value="all">Todos</option>
