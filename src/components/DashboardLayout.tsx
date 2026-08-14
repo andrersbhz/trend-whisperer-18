@@ -5,7 +5,7 @@ import { useTheme } from '@/components/theme-provider';
 import {
   LayoutDashboard, FileText, Settings, TrendingUp, Clock, LogOut, Newspaper, Menu, X,
   Sparkles, Loader2, Bot, Activity, Globe, Download, Search, Facebook, Instagram,
-  User, Sun, Moon, ImageIcon, Palette, Wallet, Bell, Send,
+  User, Sun, Moon, ImageIcon, Palette, Wallet, Bell, Send, CalendarClock,
 } from 'lucide-react';
 import { useLicenseSessionGuard } from '@/hooks/useLicenseSessionGuard';
 import { getPerformanceLogs, exportLogsToCSV } from '@/lib/performance';
@@ -24,6 +24,7 @@ const navItems = [
   { icon: FileText, label: 'Artigos', path: '/articles' },
   { icon: ImageIcon, label: 'Estúdio de Imagens', path: '/image-studio' },
   { icon: Send, label: 'Publicador Social', path: '/social' },
+  { icon: CalendarClock, label: 'Social Planner', path: '/social/planner' },
   { icon: Search, label: 'Google', path: '/google' },
   { icon: Facebook, label: 'Facebook', path: '/meta' },
   { icon: Instagram, label: 'Instagram', path: '/instagram' },
