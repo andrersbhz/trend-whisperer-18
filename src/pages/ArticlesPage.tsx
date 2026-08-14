@@ -531,8 +531,22 @@ const ArticlesPage = () => {
     categoryColors[(cat || 'geral').toLowerCase()] || categoryColors.geral;
 
 
-
-
+  const blogFilter = blogs.length > 0 && (
+    <div className="flex items-center gap-2 mb-4 bg-accent/5 p-2 rounded-lg border border-accent/10 w-fit">
+      <Globe className="h-4 w-4 text-primary" />
+      <span className="text-xs font-medium text-foreground">Blog:</span>
+      <select 
+        value={selectedBlogId} 
+        onChange={(e) => setSelectedBlogId(e.target.value)}
+        className="bg-background border border-border rounded px-2 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary text-foreground"
+      >
+        <option value="all">Todos</option>
+        {blogs.map(blog => (
+          <option key={blog.id} value={blog.id}>{blog.name}</option>
+        ))}
+      </select>
+    </div>
+  );
   if (errorState) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
