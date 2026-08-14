@@ -86,18 +86,25 @@ const ArticlesPage = () => {
       setInitialFetchDone(true); // Mark as done to prevent infinite retry loops on error
       
       // Parallelize article fetch and total count for speed
+      let query = supabase
+        .from('articles')
+        .select('id, title, status, category, seo_keyword, meta_description, featured_image_url, scheduled_at, blog_id')
+        .eq('user_id', user.id);
+
+      if (selectedBlogId !== 'all') {
+        query = query.eq('blog_id', selectedBlogId);
+      }
+
       const [articlesResult, countResult, blogsResult] = await Promise.all([
-        supabase
-          .from('articles')
-          .select('id, title, status, category, seo_keyword, meta_description, featured_image_url, scheduled_at, blog_id')
-          .eq('user_id', user.id)
+        query
           .order('created_at', { ascending: false })
           .range(from, to),
         // Only fetch count if we're not appending, to save time
         !append ? supabase
           .from('articles')
           .select('id', { count: 'exact', head: true })
-          .eq('user_id', user.id) : Promise.resolve({ count: totalCount, error: null }),
+          .eq('user_id', user.id)
+          .match(selectedBlogId !== 'all' ? { blog_id: selectedBlogId } : {}) : Promise.resolve({ count: totalCount, error: null }),
         // Fetch blogs for filtering
         !append ? supabase.from('user_blogs').select('id, name') : Promise.resolve({ data: blogs, error: null })
       ]);
