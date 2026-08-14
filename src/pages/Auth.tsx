@@ -7,7 +7,7 @@ import { PasswordInput } from '@/components/ui/password-input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Newspaper, Sparkles, Loader2 } from 'lucide-react';
-import { lovable } from '@/integrations/lovable/index';
+import { supabase } from '@/integrations/supabase/client';
 import { Separator } from '@/components/ui/separator';
 import SpaceBackground from '@/components/SpaceBackground';
 
@@ -47,24 +47,16 @@ const Auth = () => {
     setGoogleLoading(true);
     try {
       console.log('[Auth] Starting Google sign in with origin:', window.location.origin);
-      const result = await lovable.auth.signInWithOAuth('google', {
-        redirect_uri: window.location.origin,
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth`,
+        },
       });
-      
-      console.log('[Auth] Google sign in result:', result);
-      
-      if (result.error) {
-        toast({ title: 'Erro', description: (result.error as Error).message, variant: 'destructive' });
+      if (error) {
+        toast({ title: 'Erro', description: error.message, variant: 'destructive' });
         return;
       }
-      
-      if (result.redirected) {
-        console.log('[Auth] Redirecting to external provider...');
-        return;
-      }
-      
-      console.log('[Auth] Sign in successful without redirect, navigating home');
-      navigate('/');
     } catch (error: any) {
       console.error('[Auth] Google sign in exception:', error);
       toast({ title: 'Erro', description: error.message, variant: 'destructive' });
