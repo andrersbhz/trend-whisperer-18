@@ -6,6 +6,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  isAdmin: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -17,28 +18,42 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
 
-    const finishAuthLoading = (nextSession: Session | null) => {
+    const finishAuthLoading = async (nextSession: Session | null) => {
       if (!isMounted) return;
       setSession(nextSession);
       setUser(nextSession?.user ?? null);
+      
+      if (nextSession?.user) {
+        try {
+          const { data } = await supabase.from('user_roles' as any).select('role').eq('user_id', nextSession.user.id).eq('role', 'admin').maybeSingle();
+          setIsAdmin(!!data);
+        } catch (err) {
+          console.error('[useAuth] Admin check error:', err);
+          setIsAdmin(false);
+        }
+      } else {
+        setIsAdmin(false);
+      }
+      
       setLoading(false);
     };
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       console.log('[useAuth] Auth state changed:', _event);
-      finishAuthLoading(session);
+      await finishAuthLoading(session);
     });
 
     // Timeout safety
-    const timeoutId = window.setTimeout(() => {
+    const timeoutId = window.setTimeout(async () => {
       if (loading) {
         console.warn('[useAuth] Auth timeout reached, forcing loading state to false');
-        finishAuthLoading(null);
+        await finishAuthLoading(null);
       }
     }, 5000);
 
@@ -99,7 +114,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, isAdmin, signIn, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   );
@@ -115,6 +130,7 @@ export const useAuth = () => {
       user: null,
       session: null,
       loading: false,
+      isAdmin: false,
       signIn: async () => { throw new Error('AuthProvider not mounted'); },
       signUp: async () => { throw new Error('AuthProvider not mounted'); },
       signOut: async () => { throw new Error('AuthProvider not mounted'); },

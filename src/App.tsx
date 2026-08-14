@@ -45,6 +45,7 @@ const PaymentMethodsPage = lazyRetry(() => import("@/pages/PaymentMethodsPage"))
 const AdminSalesPage = lazyRetry(() => import("@/pages/AdminSalesPage"));
 const LicenseActivatePage = lazyRetry(() => import("@/pages/LicenseActivatePage"));
 const CheckoutReturnPage = lazyRetry(() => import("@/pages/CheckoutReturnPage"));
+const AdminSystemPage = lazyRetry(() => import("@/pages/AdminSystemPage"));
 
 // NEXA Insight (Etapa 1 — fundação multiempresa)
 const NexaLogin = lazyRetry(() => import("@/nexa/pages/NexaLogin"));
@@ -140,6 +141,7 @@ const App = () => (
                 <Route path="/license" element={<LicenseActivatePage />} />
                 <Route path="/ativar" element={<LicenseActivatePage />} />
                 <Route path="/checkout/return" element={<CheckoutReturnPage />} />
+                <Route path="/admin/system" element={<ProtectedRoute><AdminSystemPage /></ProtectedRoute>} />
 
                 <Route path="/nexa" element={<Navigate to="/nexa/dashboard" replace />} />
                 <Route path="/nexa/login" element={<NexaLogin />} />

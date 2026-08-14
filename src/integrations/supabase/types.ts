@@ -1555,6 +1555,24 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_settings: {
         Row: {
           articles_per_day: number | null
@@ -1968,6 +1986,13 @@ export type Database = {
           country: string
         }[]
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       nexa_has_org_role: {
         Args: {
           _org_id: string
@@ -2014,6 +2039,7 @@ export type Database = {
       }
     }
     Enums: {
+      app_role: "admin" | "moderator" | "user"
       nexa_org_status: "active" | "suspended" | "trial" | "cancelled"
       nexa_role:
         | "super_admin"
@@ -2159,6 +2185,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "moderator", "user"],
       nexa_org_status: ["active", "suspended", "trial", "cancelled"],
       nexa_role: [
         "super_admin",
