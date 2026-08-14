@@ -44,6 +44,8 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ total: 0, published: 0, pending: 0, trending: 0, failed: 0 });
+  const [blogs, setBlogs] = useState<any[]>([]);
+  const [selectedBlogId, setSelectedBlogId] = useState<string>('all');
   const [allArticles, setAllArticles] = useState<any[]>([]);
   const [recentArticles, setRecentArticles] = useState<any[]>([]);
   const [recentErrors, setRecentErrors] = useState<any[]>([]);
@@ -224,7 +226,7 @@ const Dashboard = () => {
       .subscribe();
 
     return () => { supabase.removeChannel(articlesSubscription); };
-  }, [user]);
+  }, [user, selectedBlogId]);
 
   useEffect(() => {
     if (!user || refreshInterval <= 0) return;
