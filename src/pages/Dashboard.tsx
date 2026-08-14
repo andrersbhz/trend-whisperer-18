@@ -444,7 +444,23 @@ const Dashboard = () => {
           if (widgetId === 'categories' && widgets.categories) {
             return (
               <Suspense key="categories" fallback={<div className="h-[200px] animate-pulse bg-secondary/20 rounded-lg" />}>
-                <Card className="glass-card neon-border-pink"><CardHeader><CardTitle className="text-lg uppercase tracking-tighter flex items-center gap-2"><TrendingUp className="h-5 w-5 text-accent" />Métricas por Categoria</CardTitle></CardHeader><CardContent><div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">{categoryStats.length > 0 ? categoryStats.map(c => { const pct = stats.total > 0 ? Math.round((c.total / stats.total) * 100) : 0; return (<div key={c.category} className="p-4 bg-secondary/30 border border-primary/10 glass-card animate-float-up"><div className="flex justify-between mb-2"><span className="text-sm font-bold uppercase tracking-tighter truncate">{categoryLabels[c.category] || c.category}</span><Badge variant="secondary" className="bg-primary/15 text-primary text-[10px]">{pct}%</Badge></div><p className="text-2xl font-bold tabular-nums mb-3">{c.total}</p><div className="h-1.5 w-full bg-background/50 overflow-hidden mb-3"><div className="h-full gradient-primary" style={{ width: `${pct}%` }} /></div><div className="flex justify-between text-[11px] font-bold uppercase tracking-widest"><span className="text-success">{c.published} Publicados</span><span className="text-warning">{c.pending} Pendentes</span><span style={{ color: '#ff4444' }}>{c.failed} {c.failed === 1 ? 'Falha' : 'Falhas'}</span></div></div>); }) : <div className="col-span-full py-8 text-center text-muted-foreground uppercase text-xs font-bold tracking-widest opacity-50">Nenhuma métrica disponível no momento</div>}</div></CardContent></Card>
+                <Card className="glass-card neon-border-pink"><CardHeader><CardTitle className="text-lg uppercase tracking-tighter flex items-center gap-2"><TrendingUp className="h-5 w-5 text-accent" />Métricas por Categoria</CardTitle></CardHeader><CardContent><div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">{categoryStats.length > 0 ? categoryStats.map(c => { const pct = stats.total > 0 ? Math.round((c.total / stats.total) * 100) : 0; return (<div key={c.category} className="p-4 bg-secondary/30 border border-primary/10 glass-card animate-float-up"><div className="flex justify-between mb-2"><span className="text-sm font-bold uppercase tracking-tighter truncate">{categoryLabels[c.category] || c.category}</span><Badge variant="secondary" className="bg-primary/15 text-primary text-[10px]">{pct}%</Badge></div><p className="text-2xl font-bold tabular-nums mb-3">{c.total}</p><div className="h-1.5 w-full bg-background/50 overflow-hidden mb-3"><div className="h-full gradient-primary" style={{ width: `${pct}%` }} /></div><div className="flex justify-between text-[11px] font-bold uppercase tracking-widest"><span className="text-success">{c.published} Publicados</span><span className="text-warning">{c.pending} Pendentes</span><span style={{ color: '#ff4444' }}>{c.failed} {c.failed === 1 ? 'Falha' : 'Falhas'}</span></div></div>); }) : userCategories.map(cat => (
+                  <div key={cat} className="p-4 bg-secondary/30 border border-primary/10 glass-card opacity-50">
+                    <div className="flex justify-between mb-2">
+                      <span className="text-sm font-bold uppercase tracking-tighter truncate">{categoryLabels[cat] || cat}</span>
+                      <Badge variant="secondary" className="bg-primary/15 text-primary text-[10px]">0%</Badge>
+                    </div>
+                    <p className="text-2xl font-bold tabular-nums mb-3">0</p>
+                    <div className="h-1.5 w-full bg-background/50 overflow-hidden mb-3">
+                      <div className="h-full gradient-primary w-0" />
+                    </div>
+                    <div className="flex justify-between text-[11px] font-bold uppercase tracking-widest">
+                      <span className="text-success">0 Publicados</span>
+                      <span className="text-warning">0 Pendentes</span>
+                      <span style={{ color: '#ff4444' }}>0 Falhas</span>
+                    </div>
+                  </div>
+                ))}</div></CardContent></Card>
               </Suspense>
             );
           }
