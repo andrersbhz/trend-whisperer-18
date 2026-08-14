@@ -16,8 +16,8 @@ const Preloader = ({ message, progress }: PreloaderProps) => {
     let start = performance.now();
     const tick = (now: number) => {
       const elapsed = now - start;
-      // Ease toward 100% more naturally
-      const target = Math.min(100, 100 * (1 - Math.exp(-elapsed / 600)));
+      // Reach 100% fast but don't hang
+      const target = Math.min(100, 100 * (1 - Math.exp(-elapsed / 300)));
       setAutoProgress(target);
       raf = requestAnimationFrame(tick);
     };
