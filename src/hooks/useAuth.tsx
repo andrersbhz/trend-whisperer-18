@@ -56,20 +56,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     });
 
+    // Manual override to skip waiting
+    const handleSkipWait = () => {
+      console.log('[useAuth] Manual skip wait triggered');
+      setLoading(false);
+    };
+    window.addEventListener('auth-skip-wait', handleSkipWait);
+
     // Timeout safety - if initialization hangs, force loading false
     const timeoutId = window.setTimeout(async () => {
       if (loading) {
         console.warn('[useAuth] Auth timeout reached, forcing loading state to false');
         if (isMounted) {
           setLoading(false);
-          // If we timed out, assume no session to avoid infinite preloader
-          if (!session) {
-            setSession(null);
-            setUser(null);
-          }
         }
       }
-    }, 8000); // Reduced to 8s for faster recovery
+    }, 5000); // Reduced to 5s for even faster recovery
 
     const initializeAuth = async () => {
       try {
@@ -103,6 +105,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => {
       isMounted = false;
       window.clearTimeout(timeoutId);
+      window.removeEventListener('auth-skip-wait', handleSkipWait);
       subscription.unsubscribe();
     };
   }, []);
