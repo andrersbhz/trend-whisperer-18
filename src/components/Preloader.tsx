@@ -16,8 +16,8 @@ const Preloader = ({ message, progress }: PreloaderProps) => {
     let start = performance.now();
     const tick = (now: number) => {
       const elapsed = now - start;
-      // Ease toward 98% over ~2s, reaching it quickly to show progress, but never 100% until unmounted.
-      const target = Math.min(98, 98 * (1 - Math.exp(-elapsed / 500)));
+      // Ease toward 100% more naturally
+      const target = Math.min(100, 100 * (1 - Math.exp(-elapsed / 600)));
       setAutoProgress(target);
       raf = requestAnimationFrame(tick);
     };
@@ -32,7 +32,7 @@ const Preloader = ({ message, progress }: PreloaderProps) => {
       role="status"
       aria-live="polite"
       aria-busy="true"
-      className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background/85 backdrop-blur-md animate-in fade-in duration-200"
+      className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background/95 backdrop-blur-md animate-in fade-in duration-200"
     >
       <div className="flex flex-col items-center gap-4">
         {/* Subtle pulsing dot */}
@@ -56,21 +56,9 @@ const Preloader = ({ message, progress }: PreloaderProps) => {
         </div>
 
         {message && (
-          <div className="flex flex-col items-center gap-2">
-            <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-foreground/60">
-              {message}
-            </p>
-            <button 
-              onClick={() => {
-                // Force dispatch a custom event to tell App.tsx or useAuth to stop loading
-                console.log('[Preloader] User requested to skip waiting');
-                window.dispatchEvent(new CustomEvent('auth-skip-wait'));
-              }}
-              className="text-[9px] text-primary/70 hover:text-primary underline uppercase tracking-widest mt-2 transition-colors"
-            >
-              Entrar agora (concluir em 2º plano)
-            </button>
-          </div>
+          <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-foreground/60">
+            {message}
+          </p>
         )}
       </div>
     </div>
