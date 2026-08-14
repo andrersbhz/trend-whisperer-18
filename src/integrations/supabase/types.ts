@@ -33,6 +33,7 @@ export type Database = {
         Row: {
           ai_provider: string | null
           author_id: string | null
+          blog_id: string | null
           category: string
           content: string | null
           created_at: string
@@ -67,6 +68,7 @@ export type Database = {
         Insert: {
           ai_provider?: string | null
           author_id?: string | null
+          blog_id?: string | null
           category: string
           content?: string | null
           created_at?: string
@@ -101,6 +103,7 @@ export type Database = {
         Update: {
           ai_provider?: string | null
           author_id?: string | null
+          blog_id?: string | null
           category?: string
           content?: string | null
           created_at?: string
@@ -145,6 +148,13 @@ export type Database = {
             columns: ["author_id"]
             isOneToOne: false
             referencedRelation: "public_authors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "articles_blog_id_fkey"
+            columns: ["blog_id"]
+            isOneToOne: false
+            referencedRelation: "user_blogs"
             referencedColumns: ["id"]
           },
         ]
@@ -1506,6 +1516,42 @@ export type Database = {
           update_count?: number | null
           used?: boolean | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      user_blogs: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean | null
+          name: string
+          updated_at: string
+          user_id: string
+          wordpress_app_password: string
+          wordpress_url: string
+          wordpress_username: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          updated_at?: string
+          user_id: string
+          wordpress_app_password: string
+          wordpress_url: string
+          wordpress_username: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          updated_at?: string
+          user_id?: string
+          wordpress_app_password?: string
+          wordpress_url?: string
+          wordpress_username?: string
         }
         Relationships: []
       }

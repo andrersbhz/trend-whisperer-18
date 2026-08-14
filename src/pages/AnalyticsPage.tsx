@@ -98,6 +98,8 @@ const AnalyticsPage = ({ isModal = false, pageId }: { isModal?: boolean; pageId?
   const queryParams = new URLSearchParams(location.search);
   const selectedPageId = pageId || queryParams.get('page');
   
+  const [blogs, setBlogs] = useState<any[]>([]);
+  const [selectedBlogId, setSelectedBlogId] = useState<string>('all');
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [socialMetrics, setSocialMetrics] = useState<SocialMetrics | null>(null);
   const [tips, setTips] = useState<AiTip[]>([]);
@@ -115,18 +117,30 @@ const AnalyticsPage = ({ isModal = false, pageId }: { isModal?: boolean; pageId?
 
   useEffect(() => {
     if (!user) return;
+    fetchBlogs();
     checkGaConnection();
     fetchArticleStats();
     fetchSocialMetrics();
     fetchMetaMetrics();
     fetchJetpackStats();
-  }, [user, dateRange]);
+  }, [user, dateRange, selectedBlogId]);
+
+  const fetchBlogs = async () => {
+    const { data } = await supabase.from('user_blogs').select('id, name');
+    setBlogs(data || []);
+  };
 
   const fetchArticleStats = async () => {
     if (!user) return;
 
     try {
-      const data = await runBackendQuery(() => supabase.from('articles').select('status').eq('user_id', user.id));
+      let query = supabase.from('articles').select('status', { count: 'exact' }).eq('user_id', user.id);
+      
+      if (selectedBlogId !== 'all') {
+        query = query.eq('blog_id', selectedBlogId);
+      }
+
+      const data = await runBackendQuery(() => query);
       
       const stats = {
         total: data?.length || 0,
@@ -290,6 +304,23 @@ const AnalyticsPage = ({ isModal = false, pageId }: { isModal?: boolean; pageId?
       </div>
     );
   }
+
+  const blogSelector = blogs.length > 0 && (
+    <div className="flex items-center gap-2 mb-6 bg-accent/5 p-3 rounded-lg border border-accent/10">
+      <Globe className="h-4 w-4 text-primary" />
+      <span className="text-sm font-medium text-foreground">Filtrar por Blog:</span>
+      <select 
+        value={selectedBlogId} 
+        onChange={(e) => setSelectedBlogId(e.target.value)}
+        className="bg-background border border-border rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary text-foreground"
+      >
+        <option value="all">Todos os Blogs</option>
+        {blogs.map(blog => (
+          <option key={blog.id} value={blog.id}>{blog.name}</option>
+        ))}
+      </select>
+    </div>
+  );
 
   const sm = socialMetrics?.summary;
   const jp = socialMetrics?.jetpack;
@@ -1108,6 +1139,7 @@ const AnalyticsPage = ({ isModal = false, pageId }: { isModal?: boolean; pageId?
             <p className="text-muted-foreground text-sm mt-1">Métricas completas e insights do seu blog</p>
           </div>
         )}
+        {blogSelector}
         
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2 bg-secondary/30 p-1 rounded-lg border border-white/5">

@@ -20,7 +20,8 @@ import DashboardWidgetSettings from '@/components/settings/DashboardWidgetSettin
 import InstagramDirectSettings from '@/components/settings/InstagramDirectSettings';
 import YouTubeSettings from '@/components/settings/YouTubeSettings';
 import KnowledgeBaseSettings from '@/components/settings/KnowledgeBaseSettings';
-import { BookOpen } from 'lucide-react';
+import { BlogManager } from '@/components/blogs/BlogManager';
+import { BookOpen, Layout } from 'lucide-react';
 
 export interface UserSettings {
   wordpress_url: string;
@@ -399,6 +400,9 @@ const SettingsPage = () => {
           <TabsTrigger value="ai" className="py-2.5 rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
             <Cpu className="h-4 w-4 mr-2" /> Inteligência Artificial
           </TabsTrigger>
+          <TabsTrigger value="blogs" className="py-2.5 rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
+            <Layout className="h-4 w-4 mr-2" /> Meus Blogs
+          </TabsTrigger>
           <TabsTrigger value="knowledge" className="py-2.5 rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
             <BookOpen className="h-4 w-4 mr-2" /> Conhecimento
           </TabsTrigger>
@@ -415,6 +419,10 @@ const SettingsPage = () => {
             <Settings2 className="h-4 w-4 mr-2" /> Geral
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="blogs">
+          <BlogManager />
+        </TabsContent>
 
         <TabsContent value="ai" className="space-y-6 mt-0 animate-in fade-in-50 duration-300">
           <GeminiSettings settings={settings} onChange={updateSettings} hasGeminiKey={credStatus.has_gemini_key} onDisconnect={() => disconnectCredential({ gemini_api_key: '' }, 'Gemini')} />

@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Send, Eye, Trash2, Loader2, FileText, RotateCcw, ImagePlus, Sparkles, Database, Layers, Activity, Clock, ChevronDown, ChevronUp, Image as ImageIcon, CheckCircle } from 'lucide-react';
+import { Send, Eye, Trash2, Loader2, FileText, RotateCcw, ImagePlus, Sparkles, Database, Layers, Activity, Clock, ChevronDown, ChevronUp, Image as ImageIcon, CheckCircle, Globe } from 'lucide-react';
 import { getErrorMessage, runBackendMutation, runBackendQuery } from '@/lib/backend';
 import { diagnostics } from '@/lib/diagnostics';
 import {
@@ -64,6 +64,8 @@ const ArticlesPage = () => {
   const [knowledgeDialogOpen, setKnowledgeDialogOpen] = useState(false);
   const [titleInput, setTitleInput] = useState('');
   const [generatingByTitle, setGeneratingByTitle] = useState(false);
+  const [blogs, setBlogs] = useState<any[]>([]);
+  const [selectedBlogId, setSelectedBlogId] = useState<string>('all');
 
   const PAGE_SIZE = 20;
 
@@ -84,10 +86,10 @@ const ArticlesPage = () => {
       setInitialFetchDone(true); // Mark as done to prevent infinite retry loops on error
       
       // Parallelize article fetch and total count for speed
-      const [articlesResult, countResult] = await Promise.all([
+      const [articlesResult, countResult, blogsResult] = await Promise.all([
         supabase
           .from('articles')
-          .select('id, title, status, category, seo_keyword, meta_description, featured_image_url, scheduled_at')
+          .select('id, title, status, category, seo_keyword, meta_description, featured_image_url, scheduled_at, blog_id')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
           .range(from, to),
@@ -95,8 +97,17 @@ const ArticlesPage = () => {
         !append ? supabase
           .from('articles')
           .select('id', { count: 'exact', head: true })
-          .eq('user_id', user.id) : Promise.resolve({ count: totalCount, error: null })
+          .eq('user_id', user.id) : Promise.resolve({ count: totalCount, error: null }),
+        // Fetch blogs for filtering
+        !append ? supabase.from('user_blogs').select('id, name') : Promise.resolve({ data: blogs, error: null })
       ]);
+
+      if (blogsResult.data) setBlogs(blogsResult.data);
+
+      let filteredArticles = articlesResult.data || [];
+      if (selectedBlogId !== 'all') {
+        filteredArticles = filteredArticles.filter(a => a.blog_id === selectedBlogId);
+      }
 
       if (articlesResult.error) throw articlesResult.error;
 
@@ -520,8 +531,22 @@ const ArticlesPage = () => {
     categoryColors[(cat || 'geral').toLowerCase()] || categoryColors.geral;
 
 
-
-
+  const blogFilter = blogs.length > 0 && (
+    <div className="flex items-center gap-2 mb-4 bg-accent/5 p-2 rounded-lg border border-accent/10 w-fit">
+      <Globe className="h-4 w-4 text-primary" />
+      <span className="text-xs font-medium text-foreground">Blog:</span>
+      <select 
+        value={selectedBlogId} 
+        onChange={(e) => setSelectedBlogId(e.target.value)}
+        className="bg-background border border-border rounded px-2 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary text-foreground"
+      >
+        <option value="all">Todos</option>
+        {blogs.map(blog => (
+          <option key={blog.id} value={blog.id}>{blog.name}</option>
+        ))}
+      </select>
+    </div>
+  );
   if (errorState) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
@@ -725,6 +750,8 @@ const ArticlesPage = () => {
       </Collapsible>
 
 
+
+      {blogFilter}
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
