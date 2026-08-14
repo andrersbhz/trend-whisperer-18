@@ -1,6 +1,6 @@
 import { useEffect, lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate, useNavigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { HelmetProvider } from "react-helmet-async";
 import { Toaster } from "@/components/ui/toaster";
@@ -81,21 +81,37 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 const AuthRoute = () => {
   const { user, loading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && user) {
+      navigate('/admin', { replace: true });
+    }
+  }, [user, loading, navigate]);
+
   if (loading) return <Preloader message="Carregando..." />;
-  if (user) return <Navigate to="/admin" replace />;
   return <Auth />;
 };
 
+
 const RootRoute = () => {
   const { user, loading } = useAuth();
+  const navigate = useNavigate();
+  
   useEffect(() => {
     refreshGeoLangInBackground();
   }, []);
 
+  useEffect(() => {
+    if (!loading && user) {
+      navigate('/admin', { replace: true });
+    }
+  }, [user, loading, navigate]);
+
   if (loading) return <Preloader message="Carregando..." />;
-  if (user) return <Navigate to="/admin" replace />;
   return <SalesPage />;
 };
+
 
 const PresenceTracker = () => {
   useOnlinePresence();

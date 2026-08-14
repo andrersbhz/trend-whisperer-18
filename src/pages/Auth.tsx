@@ -27,8 +27,10 @@ const Auth = () => {
     try {
       if (isLogin) {
         await signIn(email, password);
-        navigate('/');
+        // Navigate to /admin instead of / to ensure we hit the dashboard directly
+        navigate('/admin', { replace: true });
       } else {
+
         await signUp(email, password);
         toast({ title: 'Conta criada!', description: 'Verifique seu email para confirmar.' });
         setIsLogin(true);
