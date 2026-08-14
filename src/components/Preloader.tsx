@@ -16,8 +16,8 @@ const Preloader = ({ message, progress }: PreloaderProps) => {
     let start = performance.now();
     const tick = (now: number) => {
       const elapsed = now - start;
-      // Ease toward 95% over ~2.5s, never reaching 100% until unmount.
-      const target = Math.min(95, 95 * (1 - Math.exp(-elapsed / 900)));
+      // Ease toward 95% over ~5s (mais lento para dar tempo do auth carregar), nunca chegando em 100%.
+      const target = Math.min(95, 95 * (1 - Math.exp(-elapsed / 1800)));
       setAutoProgress(target);
       raf = requestAnimationFrame(tick);
     };

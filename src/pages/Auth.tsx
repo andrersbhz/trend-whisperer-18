@@ -29,6 +29,7 @@ const Auth = () => {
 
   useEffect(() => {
     if (session?.user) {
+      console.log('[Auth] Session detected, navigating to:', destination);
       navigate(destination, { replace: true });
     }
   }, [session, navigate, destination]);
