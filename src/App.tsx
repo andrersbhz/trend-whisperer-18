@@ -88,14 +88,22 @@ const AuthRoute = () => {
 
 const RootRoute = () => {
   const { user, loading } = useAuth();
+  const navigate = useNavigate();
+  
   useEffect(() => {
     refreshGeoLangInBackground();
   }, []);
 
+  useEffect(() => {
+    if (!loading && user) {
+      navigate('/admin', { replace: true });
+    }
+  }, [user, loading, navigate]);
+
   if (loading) return <Preloader message="Carregando..." />;
-  if (user) return <Navigate to="/admin" replace />;
   return <SalesPage />;
 };
+
 
 const PresenceTracker = () => {
   useOnlinePresence();
