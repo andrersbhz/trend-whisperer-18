@@ -30,8 +30,13 @@ export interface PlatformSettings {
   cta_secondary: string;
   offer_badge: string | null;
   footer_text: string | null;
+  button_radius: string;
+  button_hover_style: string;
+  font_color_base: string;
+  font_color_muted: string;
   plans_json: PlanTier[];
 }
+
 
 export const DEFAULT_PLANS: PlanTier[] = [
   {
@@ -113,8 +118,13 @@ const DEFAULTS: PlatformSettings = {
   cta_secondary: "Ver planos e preços",
   offer_badge: "OFERTA DE LANÇAMENTO — apenas 47 vagas restantes",
   footer_text: null,
+  button_radius: "0.5rem",
+  button_hover_style: "glow",
+  font_color_base: "#ffffff",
+  font_color_muted: "rgba(255,255,255,0.6)",
   plans_json: DEFAULT_PLANS,
 };
+
 
 
 export function usePlatformSettings() {
@@ -126,7 +136,7 @@ export function usePlatformSettings() {
     const { data } = await supabase
       .from("platform_settings")
       .select(
-        "id,brand_name,brand_short,tagline,description,logo_url,favicon_url,hero_video_url,primary_color,accent_color,cta_primary,cta_secondary,offer_badge,footer_text,plans_json,updated_at"
+        "id,brand_name,brand_short,tagline,description,logo_url,favicon_url,hero_video_url,primary_color,accent_color,cta_primary,cta_secondary,offer_badge,footer_text,button_radius,button_hover_style,font_color_base,font_color_muted,plans_json,updated_at"
       )
       .limit(1)
       .maybeSingle();

@@ -119,8 +119,10 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Montserrat', system-ui, sans-serif;
+    color: var(--foreground) !important;
     overflow-x: hidden;
   }
+
 
   h1 + p.text-sm.mt-1 {
     color: hsl(var(--subtitle-highlight));
@@ -376,7 +378,9 @@
   }
   button:hover {
     transition: all 0.3s ease;
+    border-radius: var(--radius);
   }
+
   
   /* Buttons that get green background should have black text on hover */
   button.bg-primary:hover, 
