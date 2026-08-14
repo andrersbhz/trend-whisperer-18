@@ -1,29 +1,22 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react"
 
 type Theme = "dark" | "light" | "system"
-type PaletteName = "lime" | "indigo" | "ocean" | "violet" | "rose" | "emerald" | "cyan" | "amber" | "graphite" | "coral" | "custom"
+type PaletteName = "custom"
 
-type Palette = {
-  name: PaletteName
-  label: string
+type SystemColors = {
+  background: string
+  surface: string
+  surfaceAlt: string
+  border: string
   primary: string
-  primaryForeground: string
   accent: string
-  accentForeground: string
+  textPrimary: string
+  textMuted: string
+  textOnPrimary: string
+  textOnAccent: string
+  sidebarBackground: string
+  sidebarText: string
 }
-
-export const UI_PALETTES: Palette[] = [
-  { name: "lime", label: "Lime Tech", primary: "83 100% 54%", primaryForeground: "0 0% 4%", accent: "83 100% 54%", accentForeground: "0 0% 4%" },
-  { name: "indigo", label: "Indigo Pro", primary: "239 84% 67%", primaryForeground: "0 0% 100%", accent: "245 78% 72%", accentForeground: "245 35% 12%" },
-  { name: "ocean", label: "Ocean Blue", primary: "211 100% 52%", primaryForeground: "0 0% 100%", accent: "198 91% 55%", accentForeground: "206 45% 10%" },
-  { name: "violet", label: "Modern Violet", primary: "267 84% 61%", primaryForeground: "0 0% 100%", accent: "280 78% 65%", accentForeground: "280 42% 10%" },
-  { name: "rose", label: "Rose Studio", primary: "346 77% 58%", primaryForeground: "0 0% 100%", accent: "331 78% 62%", accentForeground: "335 40% 10%" },
-  { name: "emerald", label: "Emerald SaaS", primary: "158 64% 45%", primaryForeground: "0 0% 100%", accent: "151 55% 52%", accentForeground: "155 45% 9%" },
-  { name: "cyan", label: "Cyan Future", primary: "188 86% 45%", primaryForeground: "190 50% 8%", accent: "181 78% 50%", accentForeground: "185 50% 8%" },
-  { name: "amber", label: "Amber Premium", primary: "38 92% 50%", primaryForeground: "30 45% 8%", accent: "45 93% 58%", accentForeground: "35 48% 8%" },
-  { name: "graphite", label: "Graphite", primary: "215 20% 65%", primaryForeground: "222 47% 8%", accent: "215 16% 58%", accentForeground: "222 47% 8%" },
-  { name: "coral", label: "Coral Product", primary: "14 90% 62%", primaryForeground: "0 0% 100%", accent: "24 95% 60%", accentForeground: "20 45% 8%" },
-]
 
 interface ThemeProviderProps {
   children: React.ReactNode
@@ -39,39 +32,56 @@ interface ThemeProviderState {
   customPrimary: string
   customAccent: string
   setCustomColors: (primary: string, accent: string) => void
+  systemColors: SystemColors
+  setSystemColors: (colors: Partial<SystemColors>) => void
   interfaceSettings: {
-    buttonRadius: string;
-    buttonHoverStyle: string;
-    fontColorBase: string;
-    fontColorMuted: string;
-  };
-  setInterfaceSettings: (settings: Partial<ThemeProviderState["interfaceSettings"]>) => void;
+    buttonRadius: string
+    buttonHoverStyle: string
+    fontColorBase: string
+    fontColorMuted: string
+  }
+  setInterfaceSettings: (settings: Partial<ThemeProviderState["interfaceSettings"]>) => void
 }
 
+const DEFAULT_SYSTEM_COLORS: SystemColors = {
+  background: "#000000",
+  surface: "#050505",
+  surfaceAlt: "#101010",
+  border: "#202020",
+  primary: "#a3ff12",
+  accent: "#7c3aed",
+  textPrimary: "#ffffff",
+  textMuted: "#b8b8b8",
+  textOnPrimary: "#000000",
+  textOnAccent: "#ffffff",
+  sidebarBackground: "#000000",
+  sidebarText: "#f5f5f5",
+}
 
 const initialState: ThemeProviderState = {
   theme: "system",
   setTheme: () => null,
-  palette: "lime",
+  palette: "custom",
   setPalette: () => null,
-  customPrimary: "#a3ff12",
-  customAccent: "#7c3aed",
+  customPrimary: DEFAULT_SYSTEM_COLORS.primary,
+  customAccent: DEFAULT_SYSTEM_COLORS.accent,
   setCustomColors: () => null,
+  systemColors: DEFAULT_SYSTEM_COLORS,
+  setSystemColors: () => null,
   interfaceSettings: {
     buttonRadius: "0.5rem",
     buttonHoverStyle: "glow",
-    fontColorBase: "#ffffff",
-    fontColorMuted: "rgba(255,255,255,0.6)",
+    fontColorBase: DEFAULT_SYSTEM_COLORS.textPrimary,
+    fontColorMuted: DEFAULT_SYSTEM_COLORS.textMuted,
   },
   setInterfaceSettings: () => null,
 }
-
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
 
 function hexToHsl(hex: string) {
   const clean = hex.replace("#", "")
-  if (!/^[0-9a-fA-F]{6}$/.test(clean)) return "83 100% 54%"
+  if (!/^[0-9a-fA-F]{6}$/.test(clean)) return "0 0% 0%"
   const r = parseInt(clean.slice(0, 2), 16) / 255
   const g = parseInt(clean.slice(2, 4), 16) / 255
   const b = parseInt(clean.slice(4, 6), 16) / 255
@@ -81,6 +91,7 @@ function hexToHsl(hex: string) {
   let s = 0
   const l = (max + min) / 2
   const d = max - min
+
   if (d !== 0) {
     s = d / (1 - Math.abs(2 * l - 1))
     switch (max) {
@@ -89,32 +100,30 @@ function hexToHsl(hex: string) {
       default: h = 60 * ((r - g) / d + 4)
     }
   }
+
   if (h < 0) h += 360
   return `${Math.round(h)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`
 }
 
-function foregroundForHex(hex: string) {
-  const clean = hex.replace("#", "")
-  if (!/^[0-9a-fA-F]{6}$/.test(clean)) return "0 0% 4%"
-  const r = parseInt(clean.slice(0, 2), 16)
-  const g = parseInt(clean.slice(2, 4), 16)
-  const b = parseInt(clean.slice(4, 6), 16)
-  const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255
-  return luminance > 0.58 ? "0 0% 5%" : "0 0% 100%"
+function readStoredColors(): SystemColors {
+  try {
+    const raw = localStorage.getItem("a3-ui-system-colors")
+    if (!raw) return DEFAULT_SYSTEM_COLORS
+    return { ...DEFAULT_SYSTEM_COLORS, ...JSON.parse(raw) }
+  } catch {
+    return DEFAULT_SYSTEM_COLORS
+  }
 }
 
 export function ThemeProvider({ children, defaultTheme = "system", storageKey = "a3-dashboard-theme", ...props }: ThemeProviderProps) {
   const [theme, setThemeState] = useState<Theme>(() => (localStorage.getItem(storageKey) as Theme) || defaultTheme)
-  const [palette, setPaletteState] = useState<PaletteName>(() => (localStorage.getItem("a3-ui-palette") as PaletteName) || "lime")
-  const [customPrimary, setCustomPrimary] = useState(() => localStorage.getItem("a3-ui-custom-primary") || "#a3ff12")
-  const [customAccent, setCustomAccent] = useState(() => localStorage.getItem("a3-ui-custom-accent") || "#7c3aed")
+  const [systemColors, setSystemColorsState] = useState<SystemColors>(() => readStoredColors())
   const [interfaceSettings, setInterfaceSettingsState] = useState({
     buttonRadius: localStorage.getItem("a3-ui-radius") || "0.5rem",
     buttonHoverStyle: localStorage.getItem("a3-ui-hover-style") || "glow",
-    fontColorBase: localStorage.getItem("a3-ui-font-base") || "#ffffff",
-    fontColorMuted: localStorage.getItem("a3-ui-font-muted") || "rgba(255,255,255,0.6)",
+    fontColorBase: readStoredColors().textPrimary,
+    fontColorMuted: readStoredColors().textMuted,
   })
-
 
   useEffect(() => {
     const root = window.document.documentElement
@@ -128,25 +137,42 @@ export function ThemeProvider({ children, defaultTheme = "system", storageKey = 
 
   useEffect(() => {
     const root = window.document.documentElement
-    const current = palette === "custom"
-      ? { primary: hexToHsl(customPrimary), primaryForeground: foregroundForHex(customPrimary), accent: hexToHsl(customAccent), accentForeground: foregroundForHex(customAccent) }
-      : UI_PALETTES.find((item) => item.name === palette) || UI_PALETTES[0]
+    const c = systemColors
 
-    root.style.setProperty("--primary", current.primary)
-    root.style.setProperty("--primary-foreground", current.primaryForeground)
-    root.style.setProperty("--accent", current.accent)
-    root.style.setProperty("--accent-foreground", current.accentForeground)
-    root.style.setProperty("--ring", current.primary)
-    root.style.setProperty("--sidebar-primary", current.primary)
-    root.style.setProperty("--sidebar-primary-foreground", current.primaryForeground)
-    root.style.setProperty("--subtitle-highlight", current.primary)
-    
-    // Injetar interface settings
+    root.style.setProperty("--background", hexToHsl(c.background))
+    root.style.setProperty("--foreground", hexToHsl(c.textPrimary))
+
+    root.style.setProperty("--card", hexToHsl(c.surface))
+    root.style.setProperty("--card-foreground", hexToHsl(c.textPrimary))
+    root.style.setProperty("--popover", hexToHsl(c.surface))
+    root.style.setProperty("--popover-foreground", hexToHsl(c.textPrimary))
+
+    root.style.setProperty("--primary", hexToHsl(c.primary))
+    root.style.setProperty("--primary-foreground", hexToHsl(c.textOnPrimary))
+    root.style.setProperty("--accent", hexToHsl(c.accent))
+    root.style.setProperty("--accent-foreground", hexToHsl(c.textOnAccent))
+
+    root.style.setProperty("--secondary", hexToHsl(c.surfaceAlt))
+    root.style.setProperty("--secondary-foreground", hexToHsl(c.textPrimary))
+    root.style.setProperty("--muted", hexToHsl(c.surfaceAlt))
+    root.style.setProperty("--muted-foreground", hexToHsl(c.textMuted))
+
+    root.style.setProperty("--border", hexToHsl(c.border))
+    root.style.setProperty("--input", hexToHsl(c.border))
+    root.style.setProperty("--ring", hexToHsl(c.primary))
+
+    root.style.setProperty("--sidebar-background", hexToHsl(c.sidebarBackground))
+    root.style.setProperty("--sidebar-foreground", hexToHsl(c.sidebarText))
+    root.style.setProperty("--sidebar-primary", hexToHsl(c.primary))
+    root.style.setProperty("--sidebar-primary-foreground", hexToHsl(c.textOnPrimary))
+    root.style.setProperty("--sidebar-accent", hexToHsl(c.surfaceAlt))
+    root.style.setProperty("--sidebar-accent-foreground", hexToHsl(c.sidebarText))
+    root.style.setProperty("--sidebar-border", hexToHsl(c.border))
+    root.style.setProperty("--sidebar-ring", hexToHsl(c.primary))
+
+    root.style.setProperty("--subtitle-highlight", hexToHsl(c.primary))
     root.style.setProperty("--radius", interfaceSettings.buttonRadius)
-    root.style.setProperty("--foreground", hexToHsl(interfaceSettings.fontColorBase))
-    root.style.setProperty("--muted-foreground", hexToHsl(interfaceSettings.fontColorMuted))
-  }, [palette, customPrimary, customAccent, theme, interfaceSettings])
-
+  }, [systemColors, interfaceSettings.buttonRadius, theme])
 
   const value = useMemo(() => ({
     theme,
@@ -154,34 +180,52 @@ export function ThemeProvider({ children, defaultTheme = "system", storageKey = 
       localStorage.setItem(storageKey, next)
       setThemeState(next)
     },
-    palette,
-    setPalette: (next: PaletteName) => {
-      localStorage.setItem("a3-ui-palette", next)
-      setPaletteState(next)
-    },
-    customPrimary,
-    customAccent,
-    setCustomColors: (primary: string, accent: string) => {
-      localStorage.setItem("a3-ui-custom-primary", primary)
-      localStorage.setItem("a3-ui-custom-accent", accent)
+    palette: "custom" as PaletteName,
+    setPalette: (_next: PaletteName) => {
       localStorage.setItem("a3-ui-palette", "custom")
-      setCustomPrimary(primary)
-      setCustomAccent(accent)
-      setPaletteState("custom")
     },
-    interfaceSettings,
+    customPrimary: systemColors.primary,
+    customAccent: systemColors.accent,
+    setCustomColors: (primary: string, accent: string) => {
+      const updated = { ...systemColors, primary, accent }
+      localStorage.setItem("a3-ui-system-colors", JSON.stringify(updated))
+      localStorage.setItem("a3-ui-palette", "custom")
+      setSystemColorsState(updated)
+    },
+    systemColors,
+    setSystemColors: (next: Partial<SystemColors>) => {
+      setSystemColorsState(prev => {
+        const updated = { ...prev, ...next }
+        localStorage.setItem("a3-ui-system-colors", JSON.stringify(updated))
+        localStorage.setItem("a3-ui-palette", "custom")
+        return updated
+      })
+    },
+    interfaceSettings: {
+      ...interfaceSettings,
+      fontColorBase: systemColors.textPrimary,
+      fontColorMuted: systemColors.textMuted,
+    },
     setInterfaceSettings: (next: Partial<ThemeProviderState["interfaceSettings"]>) => {
       setInterfaceSettingsState(prev => {
-        const updated = { ...prev, ...next };
-        if (next.buttonRadius) localStorage.setItem("a3-ui-radius", next.buttonRadius);
-        if (next.buttonHoverStyle) localStorage.setItem("a3-ui-hover-style", next.buttonHoverStyle);
-        if (next.fontColorBase) localStorage.setItem("a3-ui-font-base", next.fontColorBase);
-        if (next.fontColorMuted) localStorage.setItem("a3-ui-font-muted", next.fontColorMuted);
-        return updated;
-      });
-    }
-  }), [theme, storageKey, palette, customPrimary, customAccent, interfaceSettings])
+        const updated = { ...prev, ...next }
+        if (next.buttonRadius) localStorage.setItem("a3-ui-radius", next.buttonRadius)
+        if (next.buttonHoverStyle) localStorage.setItem("a3-ui-hover-style", next.buttonHoverStyle)
+        return updated
+      })
 
+      const colorUpdates: Partial<SystemColors> = {}
+      if (next.fontColorBase) colorUpdates.textPrimary = next.fontColorBase
+      if (next.fontColorMuted) colorUpdates.textMuted = next.fontColorMuted
+      if (Object.keys(colorUpdates).length) {
+        setSystemColorsState(prev => {
+          const updated = { ...prev, ...colorUpdates }
+          localStorage.setItem("a3-ui-system-colors", JSON.stringify(updated))
+          return updated
+        })
+      }
+    }
+  }), [theme, storageKey, systemColors, interfaceSettings])
 
   return <ThemeProviderContext.Provider {...props} value={value}>{children}</ThemeProviderContext.Provider>
 }
