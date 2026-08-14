@@ -58,3 +58,9 @@ USING (public.has_role(auth.uid(), 'admin'));
 -- but we can provide a script/RPC to elevate them or the user can do it via code.
 
 COMMIT;
+
+-- 8. Assign admin role to the specified user
+-- UUID: 1c45fe95-636f-4118-a4b6-1f36e2c69c8e (andrers.bhz@gmail.com)
+INSERT INTO public.user_roles (user_id, role)
+VALUES ('1c45fe95-636f-4118-a4b6-1f36e2c69c8e', 'admin')
+ON CONFLICT (user_id, role) DO NOTHING;
