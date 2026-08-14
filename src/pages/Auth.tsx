@@ -80,10 +80,7 @@ const Auth = () => {
       // This handles the OAuth flow even if custom keys aren't configured in the DB yet.
       const result = await withTimeout(
         lovable.auth.signInWithOAuth('google', { 
-          redirect_uri: redirectTo,
-          queryParams: {
-            prompt: 'select_account'
-          }
+          redirect_uri: redirectTo
         }),
         OAUTH_TIMEOUT_MS,
       );
