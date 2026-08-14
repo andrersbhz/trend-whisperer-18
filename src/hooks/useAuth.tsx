@@ -21,6 +21,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isAdmin, setIsAdmin] = useState(false);
 
   const finishAuthLoading = useCallback(async (nextSession: Session | null) => {
+    console.log('[useAuth] Finishing auth loading with session:', !!nextSession);
     setSession(nextSession);
     setUser(nextSession?.user ?? null);
     
@@ -36,14 +37,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setIsAdmin(false);
     }
     
-    setLoading(false);
-    console.log('[useAuth] Auth loading finished');
+    // Pequeno delay para garantir que o Preloader chegue a 100% visualmente
+    setTimeout(() => {
+      setLoading(false);
+    }, 800);
   }, []);
 
   useEffect(() => {
     let isMounted = true;
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       console.log('[useAuth] Auth state changed:', _event, !!session);
       if (_event === 'SIGNED_IN' || _event === 'TOKEN_REFRESHED' || _event === 'INITIAL_SESSION') {
@@ -61,16 +63,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const initializeAuth = async () => {
       try {
         const { data: { session: currentSession }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error('[useAuth] Session error:', error);
-          if (isMounted) await finishAuthLoading(null);
-          return;
-        }
-
-        if (isMounted) {
-          await finishAuthLoading(currentSession);
-        }
+        if (error) throw error;
+        if (isMounted) await finishAuthLoading(currentSession);
       } catch (err) {
         console.error('[useAuth] Init error:', err);
         if (isMounted) await finishAuthLoading(null);
@@ -102,9 +96,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const { error } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        emailRedirectTo: window.location.origin,
-      },
+      options: { emailRedirectTo: window.location.origin },
     });
     if (error) throw error;
   };
@@ -124,15 +116,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    console.warn('useAuth called outside AuthProvider — returning default state');
     return {
       user: null,
       session: null,
       loading: false,
       isAdmin: false,
-      signIn: async () => { throw new Error('AuthProvider not mounted'); },
-      signUp: async () => { throw new Error('AuthProvider not mounted'); },
-      signOut: async () => { throw new Error('AuthProvider not mounted'); },
+      signIn: async () => {},
+      signUp: async () => {},
+      signOut: async () => {},
     };
   }
   return context;
