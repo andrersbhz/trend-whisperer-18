@@ -70,19 +70,19 @@ export default function ManualPixTab({ plan, amountBRL, buyer, validateBuyer, on
     if (!cfg?.pix_enabled || !cfg.pix_key) return toast.error("Pix manual não está habilitado. Fale com o suporte.");
     setLoading(true);
     try {
-      const { data, error } = await supabase.from("sale_notifications").insert({
-        buyer_email: buyer.email,
-        buyer_name: buyer.name,
-        buyer_phone: onlyDigits(buyer.phone),
-        plan,
-        amount_cents: Math.round(amountBRL * 100),
-        currency: "BRL",
-        payment_method: "pix_manual",
-        status: "pending",
-        metadata: { document: onlyDigits(buyer.document) },
-      }).select("id").single();
+      const { data, error } = await supabase.rpc("create_pending_sale" as any, {
+        p_buyer_email: buyer.email,
+        p_buyer_name: buyer.name,
+        p_buyer_phone: onlyDigits(buyer.phone),
+        p_plan: plan,
+        p_amount_cents: Math.round(amountBRL * 100),
+        p_payment_method: "pix_manual",
+        p_reference: null,
+        p_metadata: { document: onlyDigits(buyer.document) },
+      });
       if (error || !data) throw new Error(error?.message || "Falha ao registrar");
-      setSaleId(data.id);
+      setSaleId(data as unknown as string);
+
       toast.success("Venda registrada! Envie o comprovante abaixo.");
     } catch (e: any) {
       toast.error(e.message || "Erro ao registrar venda");

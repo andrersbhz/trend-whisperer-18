@@ -1999,6 +1999,19 @@ export type Database = {
         }
         Returns: Json
       }
+      create_pending_sale: {
+        Args: {
+          p_amount_cents: number
+          p_buyer_email: string
+          p_buyer_name: string
+          p_buyer_phone: string
+          p_metadata?: Json
+          p_payment_method?: string
+          p_plan: string
+          p_reference?: string
+        }
+        Returns: string
+      }
       decrypt_credential: {
         Args: { enc_key: string; val: string }
         Returns: string
@@ -2066,6 +2079,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_open_sale_folder: { Args: { p_name: string }; Returns: boolean }
       nexa_has_org_role: {
         Args: {
           _org_id: string
