@@ -386,9 +386,9 @@
   /* Global hover rules for buttons to ensure high contrast and neon effect */
   button:hover {
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    background-color: #a3ff12 !important;
-    color: #000000 !important;
-    box-shadow: 0 0 20px rgba(163, 255, 18, 0.6);
+    background-color: #b57bff !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 20px rgba(181, 123, 255, 0.6);
   }
 
   button:active {
@@ -401,7 +401,7 @@
   button.bg-success:hover, 
   button.bg-[#a3ff12]:hover,
   button.gradient-primary:hover {
-    color: black !important;
+    color: white !important;
   }
 
 
