@@ -985,8 +985,7 @@ const ArticlesPage = () => {
                         </div>
                         <Button
                           size="sm"
-                          variant="outline"
-                          className={`gap-2 ${c.border} ${c.text} hover:brightness-125`}
+                          className="gap-2 bg-[#a3ff12] text-black font-bold hover:bg-[#a3ff12]/90"
                           onClick={() => handleGenerateByCategory(category)}
                           disabled={generating}
                         >
