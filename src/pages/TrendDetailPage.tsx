@@ -105,7 +105,7 @@ export default function TrendDetailPage() {
 
   return (
     <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-6">
-      <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="uppercase tracking-widest text-xs">
+      <Button variant="outline" size="sm" onClick={() => navigate(-1)} className="uppercase tracking-widest text-xs border-primary/40 text-primary hover:bg-primary hover:text-black transition-all">
         <ArrowLeft className="h-4 w-4 mr-2" /> Voltar
       </Button>
 
