@@ -132,23 +132,23 @@ export default function AdminSystemPage() {
                   <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Carregando dados...</TableCell></TableRow>
                 ) : users.map((u) => (
                   <TableRow key={u.id} className="border-white/5 hover:bg-white/[0.02] transition-colors">
-                    <TableCell className="font-bold text-xs">{u.email}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{new Date(u.created_at).toLocaleDateString()}</TableCell>
+                    <TableCell className="font-bold text-xs text-white">{u.email}</TableCell>
+                    <TableCell className="text-xs text-white/70">{new Date(u.created_at).toLocaleDateString()}</TableCell>
                     <TableCell>
                       <Badge className={
                         u.subscription_plan === 'enterprise' ? 'bg-[#b57bff]/20 text-[#b57bff] border-[#b57bff]/30' :
                         u.subscription_plan === 'avancado' ? 'bg-[#a3ff12]/20 text-[#a3ff12] border-[#a3ff12]/30' :
                         'bg-white/10 text-white border-white/20'
                       }>
-                        {u.subscription_plan?.toUpperCase()}
+                        {u.subscription_plan?.toUpperCase() || 'BÁSICO'}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-xs font-mono">{u.blog_limit}</TableCell>
+                    <TableCell className="text-xs font-mono text-white/90">{u.blog_limit || 1}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <select 
-                          className="bg-black border border-white/10 text-[10px] rounded px-2 py-1 outline-none focus:border-[#a3ff12]"
-                          value={u.subscription_plan}
+                          className="bg-black border border-white/20 text-[10px] rounded px-2 py-1 outline-none focus:border-[#a3ff12] text-white"
+                          value={u.subscription_plan || 'basico'}
                           onChange={(e) => updateUserPlan(u.id, e.target.value as 'basico' | 'avancado' | 'enterprise')}
                         >
                           <option value="basico">Básico</option>
