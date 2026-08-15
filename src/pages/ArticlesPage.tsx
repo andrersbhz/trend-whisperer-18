@@ -674,7 +674,7 @@ const ArticlesPage = () => {
                 size="sm" 
                 variant="outline" 
                 onClick={() => handlePreview(article.id)} 
-                className="h-8 gap-2 text-xs font-semibold border-primary/30 text-primary hover:bg-primary/10 shadow-sm"
+                className="h-8 gap-2 text-xs font-semibold border-[#a3ff12]/30 text-[#a3ff12] hover:bg-[#a3ff12] hover:text-black shadow-sm transition-colors"
               >
                 <Eye className="h-3.5 w-3.5" />
                 Revisar
