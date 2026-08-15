@@ -44,7 +44,7 @@ export default function AdminSystemPage() {
     }
   };
 
-  const updateUserPlan = async (userId: string, plan: string) => {
+  const updateUserPlan = async (userId: string, plan: 'basico' | 'avancado' | 'enterprise') => {
     const limit = plan === 'basico' ? 1 : plan === 'avancado' ? 10 : 50;
     const { error } = await supabase
       .from('profiles')
