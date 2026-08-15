@@ -387,10 +387,9 @@ export const ManualArticleDialog = ({ open, onOpenChange, categories, onSuccess 
           </Button>
           <div className="flex gap-2">
             <Button 
-              variant="secondary"
               onClick={() => handleSave(false)} 
               disabled={loading}
-              className="flex-1 sm:flex-none gap-2"
+              className="flex-1 sm:flex-none gap-2 bg-[#a3ff12] text-black hover:bg-[#a3ff12]/90"
             >
               {loading && !isPublishingNow ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
               {scheduledDate ? 'Agendar Artigo' : 'Salvar como Pronto'}
@@ -398,7 +397,7 @@ export const ManualArticleDialog = ({ open, onOpenChange, categories, onSuccess 
             <Button 
               onClick={() => handleSave(true)} 
               disabled={loading}
-              className="flex-1 sm:flex-none gap-2"
+              className="flex-1 sm:flex-none gap-2 bg-[#a3ff12] text-black hover:bg-[#a3ff12]/90"
             >
               {loading && isPublishingNow ? <Loader2 className="h-4 w-4 animate-spin" /> : <Globe className="h-4 w-4" />}
               Publicar Agora no WP
