@@ -1,4 +1,4 @@
--- Create an enum for subscription plans if it doesn't exist
+-- Create an enum for subscription plans
 DO $$ 
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'subscription_plan') THEN
@@ -6,7 +6,7 @@ BEGIN
     END IF;
 END $$;
 
--- Add subscription_plan and blog_limit to profiles (or use a separate table if preferred, but profiles is simpler for now)
+-- Update profiles table
 ALTER TABLE public.profiles 
 ADD COLUMN IF NOT EXISTS subscription_plan public.subscription_plan DEFAULT 'basico',
 ADD COLUMN IF NOT EXISTS blog_limit INTEGER DEFAULT 1;
@@ -16,14 +16,8 @@ UPDATE public.profiles SET blog_limit = 1 WHERE subscription_plan = 'basico';
 UPDATE public.profiles SET blog_limit = 10 WHERE subscription_plan = 'avancado';
 UPDATE public.profiles SET blog_limit = 50 WHERE subscription_plan = 'enterprise';
 
--- Ensure the admin user exists and has the admin role
--- We need to check for andrers.bhz@gmail.com in auth.users
--- This part is usually handled via an Edge Function or manual insert since we can't easily query auth.users here,
--- but we can ensure the public.user_roles entry is there if the ID is known.
--- As a safeguard, we'll create a function that the admin can call or that runs on login.
-
--- Grant permissions for admin to see all profiles and blogs
-CREATE OR REPLACE FUNCTION public.get_all_users_admin()
+-- Secure admin-only profile viewing
+CREATE OR REPLACE FUNCTION public.get_admin_profiles()
 RETURNS TABLE (
     id UUID,
     email TEXT,
@@ -47,4 +41,4 @@ BEGIN
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION public.get_all_users_admin() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_admin_profiles() TO authenticated;
