@@ -841,7 +841,7 @@ const ArticlesPage = () => {
           <Button
             onClick={handleGenerate}
             disabled={generating}
-            className="gradient-primary gap-2 shadow-neon-lilac hover:scale-[1.02] transition-transform"
+            className="bg-[#a3ff12] text-black font-bold hover:bg-[#a3ff12]/90 gap-2 shadow-neon-lilac hover:scale-[1.02] transition-transform"
           >
             {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
             {generating ? 'Gerando...' : 'Gerar Artigos'}
