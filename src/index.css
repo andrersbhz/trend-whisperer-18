@@ -58,28 +58,28 @@
 
 
   .dark {
-    /* Pure black background */
+    /* Pure black background for maximum neon contrast */
     --background: 0 0% 0%;
     --foreground: 0 0% 100%;
 
-    --card: 0 0% 0%;
+    --card: 0 0% 2%; /* Very dark graphite for cards */
     --card-foreground: 0 0% 100%;
 
-    --popover: 0 0% 0%;
+    --popover: 0 0% 2%;
     --popover-foreground: 0 0% 100%;
 
-    /* Primary lime #a3ff12 */
+    /* Primary lime #a3ff12 - used for high action buttons */
     --primary: 83 100% 54%;
     --primary-foreground: 0 0% 0%;
 
-    --secondary: 0 0% 6%;
+    --secondary: 0 0% 8%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 0 0% 8%;
-    --muted-foreground: 0 0% 85%;
+    --muted: 0 0% 10%;
+    --muted-foreground: 240 5% 85%;
 
-    /* Accent lime #a3ff12 */
-    --accent: 83 100% 54%;
+    /* Accent lilac #b57bff */
+    --accent: 266 100% 74%;
     --accent-foreground: 0 0% 0%;
 
     --destructive: 0 84% 60%;
@@ -371,12 +371,16 @@
     border: 1px solid transparent;
   }
 
-  /* Global hover rules for buttons to ensure high contrast */
+  /* Global hover rules for buttons to ensure high contrast and neon effect */
   button:hover {
-    transition: all 0.3s ease;
-    border-radius: var(--radius);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     background-color: #a3ff12 !important;
     color: #000000 !important;
+    box-shadow: 0 0 20px rgba(163, 255, 18, 0.6);
+  }
+
+  button:active {
+    transform: translateY(1px);
   }
 
   

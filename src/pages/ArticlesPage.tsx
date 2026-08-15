@@ -85,7 +85,7 @@ const ArticlesPage = () => {
       setErrorState(null);
       setInitialFetchDone(true); // Mark as done to prevent infinite retry loops on error
       
-      // Sequential fetch if parallel fails or to avoid lock contention
+      // Sequential fetch to avoid lock contention
       const { data: blogsData } = await supabase.from('user_blogs').select('id, name');
       if (blogsData) setBlogs(blogsData);
 
@@ -104,17 +104,16 @@ const ArticlesPage = () => {
 
       if (articlesError) throw articlesError;
 
-      if (!append) {
-        const { count, error: countError } = await supabase
-          .from('articles')
-          .select('id', { count: 'exact', head: true })
-          .eq('user_id', user.id)
-          .match(selectedBlogId !== 'all' ? { blog_id: selectedBlogId } : {});
-        
-        if (countError) console.warn('[ArticlesPage] Count error:', countError);
-        if (count !== null) setTotalCount(count);
-      }
-
+      // Single count query
+      const { count, error: countError } = await supabase
+        .from('articles')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .match(selectedBlogId !== 'all' ? { blog_id: selectedBlogId } : {});
+      
+      if (countError) console.warn('[ArticlesPage] Count error:', countError);
+      if (count !== null) setTotalCount(count);
+      
       setHasMore(fetchedArticles.length === PAGE_SIZE);
       setArticles((current) => (append ? [...current, ...fetchedArticles] : fetchedArticles));
       

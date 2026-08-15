@@ -9,12 +9,12 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "border border-primary bg-primary text-black shadow-sm hover:bg-primary/90 hover:text-black",
-        destructive: "border border-destructive bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90 hover:text-white",
-        outline: "border border-primary bg-transparent text-primary shadow-sm hover:bg-primary hover:text-black",
-        secondary: "border border-border/70 bg-secondary text-secondary-foreground shadow-sm hover:bg-primary hover:text-black",
+        default: "border border-primary bg-primary text-black shadow-sm hover:bg-primary/90 hover:text-black hover:shadow-[0_0_15px_rgba(163,255,18,0.5)]",
+        destructive: "border border-destructive bg-destructive text-white shadow-sm hover:bg-destructive/90 hover:text-white",
+        outline: "border border-primary bg-transparent text-primary shadow-sm hover:bg-primary hover:text-black hover:shadow-[0_0_15px_rgba(163,255,18,0.5)]",
+        secondary: "border border-accent bg-accent/10 text-accent shadow-sm hover:bg-accent hover:text-black hover:shadow-[0_0_15px_rgba(181,123,255,0.5)]",
         ghost: "border border-transparent bg-transparent text-foreground hover:bg-primary hover:text-black",
-        link: "h-auto border-0 bg-transparent p-0 text-primary underline-offset-4 shadow-none hover:text-primary hover:underline",
+        link: "h-auto border-0 bg-transparent p-0 text-primary underline-offset-4 shadow-none hover:text-primary/90 hover:underline",
       },
       size: {
         default: "h-10 px-4 py-2",
