@@ -112,24 +112,19 @@ export default function CheckoutModal({ open, onOpenChange, plan, planLabel, amo
     setRegistering(true);
     try {
       const ref = `pixman_${crypto.randomUUID()}`;
-      const { data, error } = await supabase
-        .from("sale_notifications")
-        .insert({
-          buyer_email: form.email,
-          buyer_name: form.name,
-          buyer_phone: onlyDigits(form.phone),
-          plan,
-          amount_cents: Math.round(amountBRL * 100),
-          currency: "BRL",
-          payment_method: "pix_manual",
-          status: "pending",
-          mp_payment_id: ref,
-          metadata: { document: onlyDigits(form.document), plan_label: planLabel },
-        })
-        .select("id")
-        .single();
+      const { data, error } = await supabase.rpc("create_pending_sale" as any, {
+        p_buyer_email: form.email,
+        p_buyer_name: form.name,
+        p_buyer_phone: onlyDigits(form.phone),
+        p_plan: plan,
+        p_amount_cents: Math.round(amountBRL * 100),
+        p_payment_method: "pix_manual",
+        p_reference: ref,
+        p_metadata: { document: onlyDigits(form.document), plan_label: planLabel },
+      });
       if (error || !data) throw new Error(error?.message || "Falha ao registrar a venda");
-      setSaleId(data.id);
+      setSaleId(data as unknown as string);
+
       setSaleRef(ref);
       toast.success("Pagamento registrado! Envie o comprovante para agilizar a liberação.");
     } catch (e: any) {
