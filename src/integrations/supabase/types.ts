@@ -964,6 +964,15 @@ export type Database = {
           font_color_base: string | null
           font_color_muted: string | null
           footer_text: string | null
+          hero_button_bg_color: string | null
+          hero_button_text_color: string | null
+          hero_description_color: string | null
+          hero_description_size: number | null
+          hero_image_url: string | null
+          hero_link_label: string | null
+          hero_link_url: string | null
+          hero_title_color: string | null
+          hero_title_size: number | null
           hero_video_url: string | null
           id: string
           logo_url: string | null
@@ -990,6 +999,15 @@ export type Database = {
           font_color_base?: string | null
           font_color_muted?: string | null
           footer_text?: string | null
+          hero_button_bg_color?: string | null
+          hero_button_text_color?: string | null
+          hero_description_color?: string | null
+          hero_description_size?: number | null
+          hero_image_url?: string | null
+          hero_link_label?: string | null
+          hero_link_url?: string | null
+          hero_title_color?: string | null
+          hero_title_size?: number | null
           hero_video_url?: string | null
           id?: string
           logo_url?: string | null
@@ -1016,6 +1034,15 @@ export type Database = {
           font_color_base?: string | null
           font_color_muted?: string | null
           footer_text?: string | null
+          hero_button_bg_color?: string | null
+          hero_button_text_color?: string | null
+          hero_description_color?: string | null
+          hero_description_size?: number | null
+          hero_image_url?: string | null
+          hero_link_label?: string | null
+          hero_link_url?: string | null
+          hero_title_color?: string | null
+          hero_title_size?: number | null
           hero_video_url?: string | null
           id?: string
           logo_url?: string | null
@@ -1972,6 +1999,10 @@ export type Database = {
       }
       generate_license_key: { Args: never; Returns: string }
       get_credentials_status: { Args: never; Returns: Json }
+      get_google_oauth_credentials_for_backend: {
+        Args: { p_user_id: string }
+        Returns: Json
+      }
       get_google_oauth_credentials_status: { Args: never; Returns: Json }
       get_online_locations: {
         Args: { p_minutes: number }
