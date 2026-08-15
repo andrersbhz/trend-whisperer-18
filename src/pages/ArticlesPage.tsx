@@ -695,7 +695,7 @@ const ArticlesPage = () => {
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="h-8 w-8 p-0 text-primary hover:text-primary hover:bg-primary/10 transition-colors"
+                  className="h-8 w-8 p-0 text-[#a3ff12] hover:text-black hover:bg-[#a3ff12] transition-colors"
                   onClick={() => handlePublish(article.id)}
                   disabled={publishing === article.id}
                   title="Publicar agora"
