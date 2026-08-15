@@ -384,19 +384,32 @@
   }
 
   /* Global hover rules for buttons to ensure high contrast and neon effect */
-  button:hover {
+  button:hover, 
+  a:hover {
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     background-color: #b57bff !important;
     color: #ffffff !important;
     box-shadow: 0 0 20px rgba(181, 123, 255, 0.6);
   }
 
+  /* Ensure text links also have visible hover states */
+  a:hover {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+
   button:active {
     transform: translateY(1px);
   }
 
-  
-  /* Buttons that get green background should have black text on hover */
+  /* Specific handling for links in navigation/lists that might not want bg-color */
+  .nav-link:hover {
+    background-color: hsla(266, 100%, 74%, 0.15) !important;
+    color: hsl(var(--accent)) !important;
+    box-shadow: none;
+  }
+
+  /* Buttons that get green background should have white text on hover (if not lilac) */
   button.bg-primary:hover, 
   button.bg-success:hover, 
   button.bg-[#a3ff12]:hover,
