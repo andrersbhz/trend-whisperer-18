@@ -137,7 +137,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                 key={item.path}
                 to={item.path}
                 className={cn(
-                  'group flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold transition-colors duration-150',
+                  'group flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold transition-all duration-200 ease-out hover:scale-[1.02] active:scale-[0.98]',
                   active
                     ? 'bg-foreground text-background'
                     : 'text-muted-foreground hover:bg-muted hover:text-foreground'

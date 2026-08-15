@@ -345,19 +345,31 @@
 }
 
 .animate-fade-in {
-  animation: fade-in 0.4s ease-out;
+  animation: fade-in 0.3s cubic-bezier(0.2, 0, 0, 1) forwards;
 }
 
 .animate-float-up {
-  animation: float-up 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: float-up 0.4s cubic-bezier(0.2, 0, 0, 1) forwards;
 }
 
 .animate-pulse-dot {
-  animation: pulse-dot 2s ease-in-out infinite;
+  animation: pulse-dot 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 .animate-glow {
-  animation: glow-pulse 3s ease-in-out infinite;
+  animation: glow-pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.micro-interaction-hover {
+  @apply transition-all duration-200 ease-out;
+}
+
+.micro-interaction-hover:hover {
+  @apply -translate-y-[2px] scale-[1.02];
+}
+
+.micro-interaction-active:active {
+  @apply translate-y-[1px] scale-[0.98];
 }
 
 @layer utilities {
