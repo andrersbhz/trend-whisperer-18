@@ -60,48 +60,48 @@
   .dark {
     /* Pure black background */
     --background: 0 0% 0%;
-    --foreground: 0 0% 98%;
+    --foreground: 0 0% 100%;
 
     --card: 0 0% 0%;
-    --card-foreground: 0 0% 98%;
+    --card-foreground: 0 0% 100%;
 
     --popover: 0 0% 0%;
-    --popover-foreground: 0 0% 98%;
+    --popover-foreground: 0 0% 100%;
 
     /* Primary lime #a3ff12 */
     --primary: 83 100% 54%;
     --primary-foreground: 0 0% 0%;
 
     --secondary: 0 0% 6%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary-foreground: 0 0% 100%;
 
     --muted: 0 0% 8%;
-    --muted-foreground: 0 0% 78%;
+    --muted-foreground: 0 0% 85%;
 
     /* Accent lime #a3ff12 */
     --accent: 83 100% 54%;
     --accent-foreground: 0 0% 0%;
 
     --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive-foreground: 0 0% 100%;
 
     --success: 142.1 70.6% 45.3%;
-    --success-foreground: 144.4 61.4% 10.5%;
+    --success-foreground: 0 0% 0%;
 
     --warning: 48 96% 89%;
-    --warning-foreground: 38 92% 50%;
+    --warning-foreground: 0 0% 0%;
 
-    --border: 0 0% 12%;
-    --input: 0 0% 12%;
+    --border: 0 0% 15%;
+    --input: 0 0% 15%;
     --ring: 83 100% 54%;
 
     --sidebar-background: 0 0% 0%;
-    --sidebar-foreground: 0 0% 96%;
+    --sidebar-foreground: 0 0% 100%;
     --sidebar-primary: 83 100% 54%;
     --sidebar-primary-foreground: 0 0% 0%;
-    --sidebar-accent: 0 0% 6%;
-    --sidebar-accent-foreground: 0 0% 96%;
-    --sidebar-border: 0 0% 10%;
+    --sidebar-accent: 0 0% 10%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 0 0% 15%;
     --sidebar-ring: 83 100% 54%;
   }
 
@@ -119,7 +119,6 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Montserrat', system-ui, sans-serif;
-    color: var(--foreground) !important;
     overflow-x: hidden;
   }
 
@@ -372,14 +371,12 @@
     border: 1px solid transparent;
   }
 
-  /* Global hover rules for buttons to ensure green/lilac text instead of white */
-  button:hover:not(.bg-primary):not(.bg-success):not(.bg-destructive):not(.gradient-primary):not(.bg-[#a3ff12]):not(.bg-secondary) {
-    color: #000000 !important;
-  }
+  /* Global hover rules for buttons to ensure high contrast */
   button:hover {
     transition: all 0.3s ease;
     border-radius: var(--radius);
     background-color: #a3ff12 !important;
+    color: #000000 !important;
   }
 
   
