@@ -410,6 +410,24 @@ const ArticlesPage = () => {
     }
   };
 
+  const handleUpdateArticle = async (articleId: string, updates: any) => {
+    try {
+      setPreviewLoading(true);
+      const { error } = await supabase.from('articles').update(updates).eq('id', articleId);
+      if (error) throw error;
+      
+      setArticles(prev => prev.map(a => a.id === articleId ? { ...a, ...updates } : a));
+      setPreview(prev => ({ ...prev, ...updates }));
+      toast({ title: 'Artigo atualizado!' });
+      setPreviewOpen(false);
+    } catch (error) {
+      toast({ title: 'Erro ao atualizar', description: getErrorMessage(error), variant: 'destructive' });
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+
   const handleRegenerateImages = async () => {
     const withoutImage = articles.filter(a => !a.featured_image_url && a.status !== 'generating');
     if (!user || withoutImage.length === 0) return;
