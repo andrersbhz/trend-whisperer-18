@@ -164,7 +164,7 @@ const BrandingPage = () => {
           <Link to="/vendas" target="_blank">
             <Button variant="outline" className="border-white/20 bg-white/5 text-white"><ExternalLink className="h-4 w-4 mr-2" /> Ver página</Button>
           </Link>
-          <Button onClick={save} disabled={saving} className="bg-[#a3ff12] text-[#0a1128] font-bold hover:bg-[#a3ff12] hover:shadow-[0_0_16px_rgba(163,255,18,0.7)] hover:-translate-y-0.5 transition-all">
+          <Button onClick={save} disabled={saving} className="bg-[#a3ff12] text-black font-bold hover:bg-[#a3ff12]/90 hover:shadow-[0_0_16px_rgba(163,255,18,0.7)] hover:-translate-y-0.5 transition-all">
             <Save className="h-4 w-4 mr-2" />{saving ? "Salvando..." : "Salvar alterações"}
           </Button>
         </div>
