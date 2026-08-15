@@ -797,7 +797,7 @@ const ArticlesPage = () => {
             onClick={() => setManualDialogOpen(true)}
             variant="outline"
             size="sm"
-            className="gap-2 border-primary/40 text-primary hover:bg-primary/10"
+            className="gap-2 border-[#a3ff12]/40 text-[#a3ff12] hover:bg-[#a3ff12] hover:text-black transition-colors"
           >
             <Plus className="h-4 w-4" />
             <span className="hidden sm:inline">Adicionar Manual</span>
@@ -807,7 +807,7 @@ const ArticlesPage = () => {
             onClick={() => setKnowledgeDialogOpen(true)}
             variant="outline"
             size="sm"
-            className="gap-2 border-primary/40 text-primary hover:bg-primary/10"
+            className="gap-2 border-[#a3ff12]/40 text-[#a3ff12] hover:bg-[#a3ff12] hover:text-black transition-colors"
           >
             <BookOpen className="h-4 w-4" />
             <span className="hidden sm:inline">Criar do Conhecimento</span>
