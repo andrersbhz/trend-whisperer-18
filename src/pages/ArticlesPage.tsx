@@ -867,7 +867,7 @@ const ArticlesPage = () => {
             <Button
               onClick={handleGenerateByTitle}
               disabled={generatingByTitle || titleInput.trim().length < 5}
-              className="gradient-primary gap-2 shadow-neon-lilac whitespace-nowrap"
+              className="bg-[#a3ff12] text-black hover:bg-[#a3ff12]/90 gap-2 shadow-neon-lilac whitespace-nowrap"
             >
               {generatingByTitle ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
               {generatingByTitle ? 'Gerando...' : 'Gerar Artigo por Título'}
@@ -1036,7 +1036,7 @@ const ArticlesPage = () => {
                     setPreviewOpen(false);
                   }}
                   disabled={publishing === preview.id}
-                  className="gradient-primary shadow-neon-lilac"
+                  className="bg-[#a3ff12] text-black font-bold hover:bg-[#a3ff12]/90 shadow-neon-lilac"
                 >
                   {publishing === preview.id ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
                   Confirmar e Publicar Agora
