@@ -192,7 +192,7 @@ const InstagramPage = () => {
           <Button
             size="sm"
             onClick={() => setAddOpen(true)}
-            className="bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] text-white text-[10px] font-bold uppercase tracking-widest hover:opacity-90"
+            className="bg-[#a3ff12] text-black text-[10px] font-bold uppercase tracking-widest hover:bg-[#a3ff12]/90"
           >
             <KeyRound className="h-3.5 w-3.5 mr-2" />
             Adicionar (Login/Senha)
@@ -263,7 +263,7 @@ const InstagramPage = () => {
             <Button
               onClick={handleAddDirect}
               disabled={addSaving}
-              className="bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] text-white"
+              className="bg-[#a3ff12] text-black hover:bg-[#a3ff12]/90"
             >
               {addSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Plus className="h-4 w-4 mr-2" />}
               Salvar conta
@@ -352,7 +352,7 @@ const InstagramPage = () => {
             </p>
             <Button
               onClick={() => (window.location.href = '/settings')}
-              className="bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] text-white uppercase tracking-widest text-[10px] font-bold"
+              className="bg-[#a3ff12] text-black uppercase tracking-widest text-[10px] font-bold hover:bg-[#a3ff12]/90"
             >
               Conectar Facebook
             </Button>
@@ -400,7 +400,7 @@ const InstagramPage = () => {
                       size="sm"
                       onClick={() => handleTestPost(pg.page_id, ig.username || ig.name || '')}
                       disabled={testingPageId === pg.page_id}
-                      className="bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] text-white text-[10px] font-bold uppercase tracking-widest h-8"
+                      className="bg-[#a3ff12] text-black text-[10px] font-bold uppercase tracking-widest h-8 hover:bg-[#a3ff12]/90"
                     >
                       {testingPageId === pg.page_id ? (
                         <><Loader2 className="h-3 w-3 mr-2 animate-spin" /> Postando...</>

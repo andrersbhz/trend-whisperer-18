@@ -410,6 +410,24 @@ const ArticlesPage = () => {
     }
   };
 
+  const handleUpdateArticle = async (articleId: string, updates: any) => {
+    try {
+      setPreviewLoading(true);
+      const { error } = await supabase.from('articles').update(updates).eq('id', articleId);
+      if (error) throw error;
+      
+      setArticles(prev => prev.map(a => a.id === articleId ? { ...a, ...updates } : a));
+      setPreview(prev => ({ ...prev, ...updates }));
+      toast({ title: 'Artigo atualizado!' });
+      setPreviewOpen(false);
+    } catch (error) {
+      toast({ title: 'Erro ao atualizar', description: getErrorMessage(error), variant: 'destructive' });
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+
   const handleRegenerateImages = async () => {
     const withoutImage = articles.filter(a => !a.featured_image_url && a.status !== 'generating');
     if (!user || withoutImage.length === 0) return;
@@ -647,7 +665,7 @@ const ArticlesPage = () => {
                 size="sm" 
                 variant="outline" 
                 onClick={() => handlePreview(article.id)} 
-                className="h-8 gap-2 text-xs font-semibold border-primary/30 text-primary hover:bg-primary/10 shadow-sm"
+                className="h-8 gap-2 text-xs font-semibold border-[#a3ff12]/30 text-[#a3ff12] hover:bg-[#a3ff12] hover:text-black shadow-sm transition-colors"
               >
                 <ImageIcon className="h-3.5 w-3.5" />
                 <span className="hidden xs:inline">Upload</span>
@@ -656,7 +674,7 @@ const ArticlesPage = () => {
                 size="sm" 
                 variant="outline" 
                 onClick={() => handlePreview(article.id)} 
-                className="h-8 gap-2 text-xs font-semibold border-primary/30 text-primary hover:bg-primary/10 shadow-sm"
+                className="h-8 gap-2 text-xs font-semibold border-[#a3ff12]/30 text-[#a3ff12] hover:bg-[#a3ff12] hover:text-black shadow-sm transition-colors"
               >
                 <Eye className="h-3.5 w-3.5" />
                 Revisar
@@ -677,7 +695,7 @@ const ArticlesPage = () => {
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="h-8 w-8 p-0 text-primary hover:text-primary hover:bg-primary/10 transition-colors"
+                  className="h-8 w-8 p-0 text-[#a3ff12] hover:text-black hover:bg-[#a3ff12] transition-colors"
                   onClick={() => handlePublish(article.id)}
                   disabled={publishing === article.id}
                   title="Publicar agora"
@@ -779,7 +797,7 @@ const ArticlesPage = () => {
             onClick={() => setManualDialogOpen(true)}
             variant="outline"
             size="sm"
-            className="gap-2 border-primary/40 text-primary hover:bg-primary/10"
+            className="gap-2 border-[#a3ff12]/40 text-[#a3ff12] hover:bg-[#a3ff12] hover:text-black transition-colors"
           >
             <Plus className="h-4 w-4" />
             <span className="hidden sm:inline">Adicionar Manual</span>
@@ -789,7 +807,7 @@ const ArticlesPage = () => {
             onClick={() => setKnowledgeDialogOpen(true)}
             variant="outline"
             size="sm"
-            className="gap-2 border-primary/40 text-primary hover:bg-primary/10"
+            className="gap-2 border-[#a3ff12]/40 text-[#a3ff12] hover:bg-[#a3ff12] hover:text-black transition-colors"
           >
             <BookOpen className="h-4 w-4" />
             <span className="hidden sm:inline">Criar do Conhecimento</span>
@@ -823,7 +841,7 @@ const ArticlesPage = () => {
           <Button
             onClick={handleGenerate}
             disabled={generating}
-            className="gradient-primary gap-2 shadow-neon-lilac hover:scale-[1.02] transition-transform"
+            className="bg-[#a3ff12] text-black font-bold hover:bg-[#a3ff12]/90 gap-2 shadow-neon-lilac hover:scale-[1.02] transition-transform"
           >
             {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
             {generating ? 'Gerando...' : 'Gerar Artigos'}
@@ -849,7 +867,7 @@ const ArticlesPage = () => {
             <Button
               onClick={handleGenerateByTitle}
               disabled={generatingByTitle || titleInput.trim().length < 5}
-              className="gradient-primary gap-2 shadow-neon-lilac whitespace-nowrap"
+              className="bg-[#a3ff12] text-black hover:bg-[#a3ff12]/90 gap-2 shadow-neon-lilac whitespace-nowrap"
             >
               {generatingByTitle ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
               {generatingByTitle ? 'Gerando...' : 'Gerar Artigo por Título'}
@@ -967,8 +985,7 @@ const ArticlesPage = () => {
                         </div>
                         <Button
                           size="sm"
-                          variant="outline"
-                          className={`gap-2 ${c.border} ${c.text} hover:brightness-125`}
+                          className="gap-2 bg-[#a3ff12] text-black font-bold hover:bg-[#a3ff12]/90"
                           onClick={() => handleGenerateByCategory(category)}
                           disabled={generating}
                         >
@@ -1018,7 +1035,7 @@ const ArticlesPage = () => {
                     setPreviewOpen(false);
                   }}
                   disabled={publishing === preview.id}
-                  className="gradient-primary shadow-neon-lilac"
+                  className="bg-[#a3ff12] text-black font-bold hover:bg-[#a3ff12]/90 shadow-neon-lilac"
                 >
                   {publishing === preview.id ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
                   Confirmar e Publicar Agora

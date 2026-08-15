@@ -374,11 +374,12 @@
 
   /* Global hover rules for buttons to ensure green/lilac text instead of white */
   button:hover:not(.bg-primary):not(.bg-success):not(.bg-destructive):not(.gradient-primary):not(.bg-[#a3ff12]):not(.bg-secondary) {
-    color: #a3ff12 !important;
+    color: #000000 !important;
   }
   button:hover {
     transition: all 0.3s ease;
     border-radius: var(--radius);
+    background-color: #a3ff12 !important;
   }
 
   

@@ -347,7 +347,7 @@ const Dashboard = () => {
             </div>
           </div>
 
-          <Button onClick={handleGenerateArticles} disabled={generating} className="gradient-primary uppercase tracking-widest text-[10px] h-10 px-6 rounded-none font-bold shadow-neon-lilac border-none transition-all hover:text-black">
+          <Button onClick={handleGenerateArticles} disabled={generating} className="bg-[#a3ff12] text-black hover:bg-[#a3ff12]/90 uppercase tracking-widest text-[10px] h-10 px-6 rounded-none font-bold shadow-neon-lilac border-none transition-all">
             {generating ? <RefreshCw className="h-3 w-3 mr-2 animate-spin" /> : <Sparkles className="h-3 w-3 mr-2" />}
             Gerar Artigos
           </Button>
