@@ -141,7 +141,7 @@ const SalesPage = () => {
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
             <Link to="/auth">
-              <Button size="lg" className="bg-[#a3ff12] text-[#0a1128] font-black text-base px-8 py-6 hover:bg-[#a3ff12] hover:shadow-[0_0_32px_rgba(163,255,18,0.8),0_0_64px_rgba(163,255,18,0.3)] hover:-translate-y-1 transition-all">
+              <Button size="lg" className="bg-[#a3ff12] text-black font-black text-base px-8 py-6 hover:bg-[#a3ff12]/90 hover:shadow-[0_0_32px_rgba(163,255,18,0.8),0_0_64px_rgba(163,255,18,0.3)] hover:-translate-y-1 transition-all">
                 {s.cta_primary}<ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
