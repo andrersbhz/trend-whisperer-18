@@ -824,7 +824,7 @@ const SchedulePage = () => {
                         <Button
                           size="sm"
                           variant="ghost"
-                          className="h-8 px-2 text-primary hover:text-primary/80"
+                          className="h-8 px-2 text-[#a3ff12] hover:bg-[#a3ff12] hover:text-black transition-colors"
                           onClick={() => handlePreview(article.id)}
                           title="Upload de Imagem"
                         >
@@ -834,7 +834,7 @@ const SchedulePage = () => {
                         <Button
                           size="sm"
                           variant="ghost"
-                          className="h-8 px-2 text-primary hover:text-primary/80"
+                          className="h-8 px-2 text-[#a3ff12] hover:bg-[#a3ff12] hover:text-black transition-colors"
                           onClick={() => handlePreview(article.id)}
                           title="Visualizar e Editar Artigo"
                         >
