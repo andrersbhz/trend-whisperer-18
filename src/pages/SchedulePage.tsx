@@ -633,8 +633,7 @@ const SchedulePage = () => {
             <Button
               onClick={handleReschedule}
               disabled={isRescheduling}
-              style={{ backgroundColor: '#a3ff12', color: '#000000' }}
-              className="font-semibold border border-transparent hover:border-[#a3ff12] hover:shadow-[0_0_18px_rgba(163,255,18,0.7)] transition-all"
+              className="bg-[#a3ff12] text-black font-semibold border border-transparent hover:bg-[#a3ff12]/90 hover:shadow-[0_0_18px_rgba(163,255,18,0.7)] transition-all"
             >
               {isRescheduling ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : 'Confirmar Reagendamento'}
             </Button>
