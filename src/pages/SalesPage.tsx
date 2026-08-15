@@ -84,7 +84,7 @@ const SalesPage = () => {
             <a href="#depoimentos" className="hover:text-[#a3ff12] transition">Clientes</a>
           </nav>
           <Link to="/auth">
-            <Button className="bg-[#a3ff12] text-[#0a1128] font-bold hover:bg-[#a3ff12] hover:shadow-[0_0_20px_rgba(163,255,18,0.7)] hover:-translate-y-0.5 transition-all">Entrar</Button>
+            <Button className="bg-[#a3ff12] text-black font-bold hover:bg-[#a3ff12]/90 hover:shadow-[0_0_20px_rgba(163,255,18,0.7)] hover:-translate-y-0.5 transition-all">Entrar</Button>
           </Link>
         </div>
       </header>
