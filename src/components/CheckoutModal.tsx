@@ -206,7 +206,7 @@ export default function CheckoutModal({ open, onOpenChange, plan, planLabel, amo
                 </Button>
               </div>
             )}
-            <Button onClick={() => (window.location.href = "/ativar")} className="bg-[#a3ff12] text-black font-bold">
+            <Button onClick={() => (window.location.href = "/ativar")} className="bg-[#a3ff12] text-black font-bold hover:bg-[#a3ff12]/90">
               Ativar agora
             </Button>
           </div>
@@ -250,7 +250,7 @@ export default function CheckoutModal({ open, onOpenChange, plan, planLabel, amo
                     <p className="text-xs text-white/50 pt-1">Titular: {pixCfg.owner}{pixCfg.bank ? ` — ${pixCfg.bank}` : ""}</p>
 
                     {!saleRef ? (
-                      <Button onClick={registerPixSale} disabled={registering} className="w-full bg-[#a3ff12] text-black font-bold py-6 hover:text-black">
+                      <Button onClick={registerPixSale} disabled={registering} className="w-full bg-[#a3ff12] text-black font-bold py-6 hover:bg-[#a3ff12]/90">
                         {registering ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
                         Já fiz o pagamento
                       </Button>
@@ -278,7 +278,7 @@ export default function CheckoutModal({ open, onOpenChange, plan, planLabel, amo
               {stripeEnabled && (
                 <TabsContent value="card" className="mt-4">
                   <p className="text-sm text-white/60 mb-3">Cobrança mensal automática via Stripe. Cancele quando quiser pelo portal.</p>
-                  <Button onClick={startCard} disabled={loading} className="w-full bg-[#a3ff12] text-black font-bold py-6">
+                  <Button onClick={startCard} disabled={loading} className="w-full bg-[#a3ff12] text-black font-bold py-6 hover:bg-[#a3ff12]/90">
                     {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CreditCard className="w-4 h-4 mr-2" />}
                     Pagar com cartão
                   </Button>

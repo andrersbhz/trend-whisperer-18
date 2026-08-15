@@ -152,7 +152,7 @@ export default function ManualPixTab({ plan, amountBRL, buyer, validateBuyer, on
       </ol>
 
       {!saleId ? (
-        <Button onClick={createSale} disabled={loading} className="w-full bg-[#a3ff12] text-black font-bold py-6 hover:bg-[#c8ff5c]">
+        <Button onClick={createSale} disabled={loading} className="w-full bg-[#a3ff12] text-black font-bold py-6 hover:bg-[#a3ff12]/90">
           {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <QrCode className="w-4 h-4 mr-2" />}
           Registrar venda e liberar upload
         </Button>
