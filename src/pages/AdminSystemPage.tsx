@@ -149,7 +149,7 @@ export default function AdminSystemPage() {
                         <select 
                           className="bg-black border border-white/10 text-[10px] rounded px-2 py-1 outline-none focus:border-[#a3ff12]"
                           value={u.subscription_plan}
-                          onChange={(e) => updateUserPlan(u.id, e.target.value)}
+                          onChange={(e) => updateUserPlan(u.id, e.target.value as 'basico' | 'avancado' | 'enterprise')}
                         >
                           <option value="basico">Básico</option>
                           <option value="avancado">Avançado</option>
