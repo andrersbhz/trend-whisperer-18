@@ -211,7 +211,41 @@ const SalesPage = () => {
       <section id="planos" className="relative z-10 max-w-7xl mx-auto px-6 py-24">
         <div className="text-center mb-16"><div className="inline-block text-xs uppercase tracking-widest text-[#a3ff12] font-bold mb-4">Planos e preços</div><h2 className="text-4xl md:text-5xl font-black mb-4">Investimento que <span className="text-[#a3ff12]">se paga em 15 dias</span></h2><p className="text-white/60 text-lg">Sem taxas escondidas. Cancele quando quiser.</p></div>
         <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto justify-center">
-          {(s.plans_json || []).map((t) => (
+          {[
+            {
+              name: "Básico",
+              price: "R$ 39,90",
+              amountBRL: 39.9,
+              period: "/mês",
+              plan: "starter_monthly",
+              highlight: false,
+              tag: "Starter",
+              features: ["Conectar 1 Blog", "Geração de Artigos IA", "SEO Yoast", "Suporte Base"],
+              cta: "Assinar Agora"
+            },
+            {
+              name: "Avançado",
+              price: "R$ 89,90",
+              amountBRL: 89.9,
+              period: "/mês",
+              plan: "pro_monthly",
+              highlight: true,
+              tag: "Popular",
+              features: ["Até 10 Blogs", "Geração Priority IA", "Social Robot Full", "Robô Social Integrado", "Suporte Prioritário"],
+              cta: "Assinar Agora"
+            },
+            {
+              name: "Enterprise",
+              price: "R$ 149,90",
+              amountBRL: 149.9,
+              period: "/mês",
+              plan: null,
+              highlight: false,
+              tag: "Empresarial",
+              features: ["Até 50 Blogs", "API White-label", "Infra Dedicada", "Consultoria SEO Mensal"],
+              cta: "Falar com Vendas"
+            }
+          ].map((t) => (
             <div key={t.name} className={`relative p-8 rounded-3xl border backdrop-blur-sm transition-all hover:-translate-y-2 ${t.highlight ? "border-[#a3ff12] bg-gradient-to-b from-[#a3ff12]/10 to-transparent shadow-[0_0_60px_rgba(163,255,18,0.2)] scale-105" : "border-white/10 bg-white/[0.02] hover:border-white/20"}`}>
               {t.highlight && <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-[#a3ff12] text-[#0a1128] text-xs font-black uppercase tracking-wider flex items-center gap-1"><Crown className="h-3.5 w-3.5" /> {t.tag}</div>}
               {!t.highlight && <div className="text-xs uppercase tracking-widest text-white/40 mb-2">{t.tag}</div>}

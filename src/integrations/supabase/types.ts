@@ -1059,30 +1059,42 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          blog_limit: number | null
           created_at: string
           email: string | null
           full_name: string | null
           id: string
+          subscription_plan:
+            | Database["public"]["Enums"]["subscription_plan"]
+            | null
           updated_at: string
           user_id: string
           whatsapp: string | null
         }
         Insert: {
           avatar_url?: string | null
+          blog_limit?: number | null
           created_at?: string
           email?: string | null
           full_name?: string | null
           id?: string
+          subscription_plan?:
+            | Database["public"]["Enums"]["subscription_plan"]
+            | null
           updated_at?: string
           user_id: string
           whatsapp?: string | null
         }
         Update: {
           avatar_url?: string | null
+          blog_limit?: number | null
           created_at?: string
           email?: string | null
           full_name?: string | null
           id?: string
+          subscription_plan?:
+            | Database["public"]["Enums"]["subscription_plan"]
+            | null
           updated_at?: string
           user_id?: string
           whatsapp?: string | null
@@ -1998,6 +2010,16 @@ export type Database = {
         Returns: undefined
       }
       generate_license_key: { Args: never; Returns: string }
+      get_admin_profiles: {
+        Args: never
+        Returns: {
+          blog_limit: number
+          created_at: string
+          email: string
+          id: string
+          subscription_plan: Database["public"]["Enums"]["subscription_plan"]
+        }[]
+      }
       get_credentials_status: { Args: never; Returns: Json }
       get_google_oauth_credentials_for_backend: {
         Args: { p_user_id: string }
@@ -2113,6 +2135,7 @@ export type Database = {
         | "education"
         | "telecom"
         | "other"
+      subscription_plan: "basico" | "avancado" | "enterprise"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2261,6 +2284,7 @@ export const Constants = {
         "telecom",
         "other",
       ],
+      subscription_plan: ["basico", "avancado", "enterprise"],
     },
   },
 } as const
