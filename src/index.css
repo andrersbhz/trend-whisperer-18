@@ -384,12 +384,22 @@
   }
 
   /* Global hover rules for buttons to ensure high contrast and neon effect */
-  button:hover, 
-  a:hover {
+  /* High-contrast neon hover effects for interactive elements */
+  button:hover,
+  .btn-neon:hover {
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     background-color: #b57bff !important;
     color: #ffffff !important;
     box-shadow: 0 0 20px rgba(181, 123, 255, 0.6);
+  }
+
+  /* Specific text link hover behavior - subtle and accessible */
+  a:hover:not(.button-like):not(.nav-link) {
+    color: #b57bff !important;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    background-color: transparent !important;
+    box-shadow: none !important;
   }
 
   /* Ensure text links also have visible hover states */
@@ -409,7 +419,9 @@
     box-shadow: none;
   }
 
-  /* Buttons that get green background should have white text on hover (if not lilac) */
+  /* Restore brand visibility for primary CTAs on hover if using custom classes */
+  .btn-primary:hover,
+  .btn-success:hover,
   button.bg-primary:hover, 
   button.bg-success:hover, 
   button.bg-[#a3ff12]:hover,
