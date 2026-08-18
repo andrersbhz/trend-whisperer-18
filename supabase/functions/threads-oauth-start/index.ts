@@ -56,7 +56,9 @@ serve(async (req) => {
     const url = new URL("https://threads.net/oauth/authorize");
     url.searchParams.set("client_id", appId);
     url.searchParams.set("redirect_uri", redirectUri);
-    url.searchParams.set("scope", "threads_basic,threads_content_publish");
+    // O usuário digita login/senha somente na tela oficial do Threads.
+    // O PostWP recebe apenas o token OAuth e nunca armazena a senha.
+    url.searchParams.set("scope", "threads_basic,threads_content_publish,threads_manage_insights");
     url.searchParams.set("response_type", "code");
     url.searchParams.set("state", state);
 
