@@ -12,6 +12,7 @@ export class AuthorizationError extends Error {
 
 export type AuthorizedUser = {
   userId: string;
+  email?: string;
   isServiceCall: boolean;
 };
 
@@ -52,5 +53,9 @@ export async function authorizeUserRequest(
     throw new AuthorizationError("Forbidden", 403);
   }
 
-  return { userId: data.user.id, isServiceCall: false };
+  return {
+    userId: data.user.id,
+    email: data.user.email || undefined,
+    isServiceCall: false,
+  };
 }
