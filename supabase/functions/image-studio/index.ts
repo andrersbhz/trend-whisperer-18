@@ -19,16 +19,10 @@ async function tryLovable(prompt: string): Promise<ProviderResult> {
   for (const model of models) {
     try {
       const isOpenAI = model.startsWith("openai/");
-      const url = isOpenAI
-        ? "https://ai.gateway.lovable.dev/v1/images/generations"
-        : "https://ai.gateway.lovable.dev/v1/chat/completions";
+      const url = isOpenAI ? "https://ai.gateway.lovable.dev/v1/images/generations" : "https://ai.gateway.lovable.dev/v1/chat/completions";
       const body = isOpenAI
         ? { model, prompt, size: "1024x1024", n: 1 }
-        : {
-            model,
-            messages: [{ role: "user", content: [{ type: "text", text: prompt }] }],
-            modalities: ["image", "text"],
-          };
+        : { model, messages: [{ role: "user", content: [{ type: "text", text: prompt }] }], modalities: ["image", "text"] };
       const resp = await fetch(url, {
         method: "POST",
         headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
@@ -36,9 +30,7 @@ async function tryLovable(prompt: string): Promise<ProviderResult> {
       });
       if (!resp.ok) {
         const text = (await resp.text()).slice(0, 300);
-        if (resp.status === 402 || resp.status === 429 || resp.status >= 500) {
-          paused = true;
-        }
+        if (resp.status === 402 || resp.status === 429 || resp.status >= 500) paused = true;
         errs.push(`Lovable ${model}: ${resp.status} ${text}`);
         continue;
       }
@@ -80,33 +72,26 @@ async function tryOpenAI(apiKey: string, prompt: string): Promise<ProviderResult
   }
 }
 
-async function tryGemini(apiKey: string, prompt: string): Promise<ProviderResult> {
-  const models = ["gemini-2.0-flash-exp", "gemini-2.5-flash"];
-  const errs: string[] = [];
-  for (const model of models) {
-    try {
-      const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { responseModalities: ["IMAGE"] },
-        }),
-      });
-      if (!resp.ok) {
-        errs.push(`Gemini ${model}: ${resp.status} ${(await resp.text()).slice(0, 200)}`);
-        continue;
-      }
-      const data = await resp.json();
-      const parts = data.candidates?.[0]?.content?.parts || [];
-      const img = parts.find((p: any) => p.inlineData?.mimeType?.startsWith("image/"));
-      if (img?.inlineData) return { imageUrl: `data:${img.inlineData.mimeType};base64,${img.inlineData.data}` };
-      errs.push(`Gemini ${model}: sem imagem`);
-    } catch (e) {
-      errs.push(`Gemini ${model}: ${e instanceof Error ? e.message : String(e)}`);
-    }
+async function tryGemini(apiKey: string, prompt: string, modelName = "gemini-3.6-flash"): Promise<ProviderResult> {
+  const model = modelName || "gemini-3.6-flash";
+  try {
+    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { responseModalities: ["IMAGE"] },
+      }),
+    });
+    if (!resp.ok) return { error: `Gemini ${model}: ${resp.status} ${(await resp.text()).slice(0, 200)}` };
+    const data = await resp.json();
+    const parts = data.candidates?.[0]?.content?.parts || [];
+    const img = parts.find((p: any) => p.inlineData?.mimeType?.startsWith("image/"));
+    if (img?.inlineData) return { imageUrl: `data:${img.inlineData.mimeType};base64,${img.inlineData.data}` };
+    return { error: `Gemini ${model}: sem imagem` };
+  } catch (e) {
+    return { error: `Gemini ${model}: ${e instanceof Error ? e.message : String(e)}` };
   }
-  return { error: errs.join(" | ") };
 }
 
 serve(async (req) => {
@@ -122,8 +107,21 @@ serve(async (req) => {
     }
 
     const errors: string[] = [];
+    let settings: any = null;
+    let supabase: any = null;
 
-    // 1) Lovable AI (primary)
+    if (userId) {
+      const supaUrl = Deno.env.get("SUPABASE_URL")!;
+      const supaKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      supabase = createClient(supaUrl, supaKey);
+      const result = await supabase
+        .from("user_settings")
+        .select("openai_api_key, openai_model, gemini_api_key, gemini_model")
+        .eq("user_id", userId)
+        .single();
+      settings = result.data;
+    }
+
     const lovable = await tryLovable(prompt);
     if (lovable.imageUrl) {
       return new Response(JSON.stringify({ imageUrl: lovable.imageUrl, provider: "lovable" }), {
@@ -132,7 +130,6 @@ serve(async (req) => {
     }
     if (lovable.error) errors.push(lovable.error);
 
-    // 2a) Fallback via secrets do projeto (mais confiável)
     if (lovable.paused || !lovable.imageUrl) {
       const envOpenAI = Deno.env.get("OPENAI_API_KEY");
       if (envOpenAI) {
@@ -146,7 +143,7 @@ serve(async (req) => {
       }
       const envGemini = Deno.env.get("GEMINI_API_KEY");
       if (envGemini) {
-        const r = await tryGemini(envGemini, prompt);
+        const r = await tryGemini(envGemini, prompt, settings?.gemini_model || "gemini-3.6-flash");
         if (r.imageUrl) {
           return new Response(JSON.stringify({ imageUrl: r.imageUrl, provider: "gemini-env", notice: "Lovable AI pausado — usando Gemini (secret do projeto)." }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -156,18 +153,7 @@ serve(async (req) => {
       }
     }
 
-    // 2b) Fallback: user-configured OpenAI / Gemini (only when Lovable is paused/unavailable)
-    if (lovable.paused && userId) {
-      const supaUrl = Deno.env.get("SUPABASE_URL")!;
-      const supaKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-      const supabase = createClient(supaUrl, supaKey);
-
-      const { data: settings } = await supabase
-        .from("user_settings")
-        .select("openai_api_key, gemini_api_key")
-        .eq("user_id", userId)
-        .single();
-
+    if (lovable.paused && userId && supabase && settings) {
       const decrypt = async (val: string | null | undefined): Promise<string | null> => {
         if (!val) return null;
         try {
@@ -180,7 +166,7 @@ serve(async (req) => {
       if (openaiKey) {
         const r = await tryOpenAI(openaiKey, prompt);
         if (r.imageUrl) {
-          return new Response(JSON.stringify({ imageUrl: r.imageUrl, provider: "openai", notice: "Lovable AI pausado — usando OpenAI configurado." }), {
+          return new Response(JSON.stringify({ imageUrl: r.imageUrl, provider: "openai", notice: `Lovable AI pausado — usando OpenAI configurado${settings?.openai_model ? ` (${settings.openai_model})` : ''}.` }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
@@ -189,9 +175,9 @@ serve(async (req) => {
 
       const geminiKey = await decrypt(settings?.gemini_api_key);
       if (geminiKey) {
-        const r = await tryGemini(geminiKey, prompt);
+        const r = await tryGemini(geminiKey, prompt, settings?.gemini_model || "gemini-3.6-flash");
         if (r.imageUrl) {
-          return new Response(JSON.stringify({ imageUrl: r.imageUrl, provider: "gemini", notice: "Lovable AI pausado — usando Gemini configurado." }), {
+          return new Response(JSON.stringify({ imageUrl: r.imageUrl, provider: "gemini", notice: `Lovable AI pausado — usando Gemini configurado (${settings?.gemini_model || "gemini-3.6-flash"}).` }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
