@@ -13,6 +13,16 @@ const ALLOWED_RETURN_HOSTS = new Set([
   "forex.a3solucoesdigitais.com",
 ]);
 
+// These permissions match the features already implemented by the system:
+// publishing, reading replies, replying to comments and reading insights.
+const THREADS_SCOPES = [
+  "threads_basic",
+  "threads_content_publish",
+  "threads_read_replies",
+  "threads_manage_replies",
+  "threads_manage_insights",
+].join(",");
+
 function safeReturnUrl(raw: unknown) {
   if (typeof raw !== "string" || !raw) return DEFAULT_RETURN_URL;
   try {
@@ -56,7 +66,7 @@ serve(async (req) => {
     const url = new URL("https://threads.net/oauth/authorize");
     url.searchParams.set("client_id", appId);
     url.searchParams.set("redirect_uri", redirectUri);
-    url.searchParams.set("scope", "threads_basic,threads_content_publish");
+    url.searchParams.set("scope", THREADS_SCOPES);
     url.searchParams.set("response_type", "code");
     url.searchParams.set("state", state);
 
