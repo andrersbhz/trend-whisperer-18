@@ -12,6 +12,7 @@ interface ProviderInfo {
   connected: boolean;
   lastUsed: string | null;
   articleCount: number;
+  activeModel?: string;
 }
 
 const AIProvidersPanel = () => {
@@ -24,7 +25,7 @@ const AIProvidersPanel = () => {
 
     const fetchData = async () => {
       try {
-        const [credStatus, articles] = await Promise.all([
+        const [credStatus, articles, settings] = await Promise.all([
           runBackendQuery(() => supabase.rpc('get_credentials_status')),
           runBackendQuery(() =>
             supabase
@@ -35,10 +36,18 @@ const AIProvidersPanel = () => {
               .order('created_at', { ascending: false })
               .limit(500),
           ),
+          runBackendQuery(() =>
+            supabase
+              .from('user_settings')
+              .select('gemini_model, openai_model, groq_model')
+              .eq('user_id', user.id)
+              .maybeSingle()
+          ),
         ]);
 
         const cred = (credStatus as any) || {};
         const arts = (articles || []) as Array<{ ai_provider: string; created_at: string }>;
+        const userSets = (settings as any) || {};
 
         const countByProvider: Record<string, number> = {};
         const lastByProvider: Record<string, string> = {};
@@ -56,6 +65,7 @@ const AIProvidersPanel = () => {
             connected: !!cred.has_gemini_key,
             lastUsed: lastByProvider['Gemini'] || null,
             articleCount: countByProvider['Gemini'] || 0,
+            activeModel: userSets.gemini_model,
           },
           {
             name: 'OpenAI',
@@ -63,6 +73,7 @@ const AIProvidersPanel = () => {
             connected: !!cred.has_openai_key,
             lastUsed: lastByProvider['OpenAI'] || null,
             articleCount: countByProvider['OpenAI'] || 0,
+            activeModel: userSets.openai_model,
           },
           {
             name: 'Groq',
@@ -70,6 +81,7 @@ const AIProvidersPanel = () => {
             connected: !!cred.has_groq_key,
             lastUsed: lastByProvider['Groq'] || null,
             articleCount: countByProvider['Groq'] || 0,
+            activeModel: userSets.groq_model,
           },
           {
             name: 'Lovable AI',
@@ -150,9 +162,10 @@ const AIProvidersPanel = () => {
                 )}
               </div>
               <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-                {p.articleCount > 0 && <span>{p.articleCount} artigos</span>}
+                {p.activeModel && <span className="text-primary/70">{p.activeModel}</span>}
+                {p.articleCount > 0 && <span>• {p.articleCount} artigos</span>}
                 {p.lastUsed && <span>• {formatDate(p.lastUsed)}</span>}
-                {p.articleCount === 0 && !p.lastUsed && <span>Sem uso</span>}
+                {p.articleCount === 0 && !p.lastUsed && !p.activeModel && <span>Sem uso</span>}
               </div>
             </div>
             <div className="flex items-center gap-1.5">
