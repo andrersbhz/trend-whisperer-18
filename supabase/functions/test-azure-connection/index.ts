@@ -50,29 +50,63 @@ serve(async (req) => {
       );
     }
 
-    const url = `${endpoint.replace(/\/$/, "")}/openai/deployments/${deployment}/chat/completions?api-version=2024-02-01`;
-    
-    const resp = await fetch(url, {
+    const baseEndpoint = endpoint.replace(/\/$/, "");
+    const testUrl = `${baseEndpoint}/openai/deployments/${encodeURIComponent(deployment)}/chat/completions?api-version=2024-02-01`;
+    const testResp = await fetch(testUrl, {
       method: "POST",
       headers: { "api-key": apiKey, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        messages: [{ role: "user", content: "Say 'OK'" }],
-        max_tokens: 5
-      }),
+      body: JSON.stringify({ messages: [{ role: "user", content: "Say 'OK'" }], max_tokens: 5 }),
     });
 
-    if (resp.ok) {
+    if (!testResp.ok) {
+      const errText = await testResp.text();
       return new Response(
-        JSON.stringify({ success: true, message: "Conexão Azure Copilot OK!" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    } else {
-      const errText = await resp.text();
-      return new Response(
-        JSON.stringify({ success: false, error: `Azure erro ${resp.status}: ${errText.substring(0, 100)}` }),
+        JSON.stringify({ success: false, error: `Azure erro ${testResp.status}: ${errText.substring(0, 180)}` }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    let models = [{ id: deployment, name: deployment }];
+    let recommended = deployment;
+
+    // Azure exposes deployments through the resource deployment endpoint when the key/resource supports it.
+    // If listing is not permitted, keep the already validated configured deployment as the available option.
+    try {
+      const deploymentsResp = await fetch(`${baseEndpoint}/openai/deployments?api-version=2023-03-15-preview`, {
+        headers: { "api-key": apiKey },
+      });
+      if (deploymentsResp.ok) {
+        const deploymentsData = await deploymentsResp.json();
+        const items = deploymentsData.data || deploymentsData.value || [];
+        const mapped = items
+          .map((item: any) => ({
+            id: item.id || item.name,
+            name: item.id || item.name,
+            created: item.created_at || item.createdAt || item.created || 0,
+          }))
+          .filter((item: any) => !!item.id)
+          .sort((a: any, b: any) => {
+            const aTime = typeof a.created === "number" ? a.created : Date.parse(a.created || "") || 0;
+            const bTime = typeof b.created === "number" ? b.created : Date.parse(b.created || "") || 0;
+            return bTime - aTime || a.id.localeCompare(b.id);
+          });
+        if (mapped.length > 0) {
+          models = mapped.map(({ id, name }: any) => ({ id, name }));
+          recommended = mapped[0].id;
+        }
+      }
+    } catch (listError) {
+      console.warn("Azure deployment listing unavailable; using configured deployment.", listError);
+    }
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: "Conexão Azure Copilot OK!",
+        data: { models, recommended },
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   } catch (error) {
     return new Response(
       JSON.stringify({ success: false, error: error instanceof Error ? error.message : "Erro desconhecido" }),
