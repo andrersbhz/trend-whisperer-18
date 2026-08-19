@@ -617,7 +617,7 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const { data: settings } = await supabase.from("user_settings").select("*").eq("user_id", userId).single();
+    const { data: settings } = await supabase.from("user_settings").select("*, gemini_model, openai_model, groq_model, azure_openai_model").eq("user_id", userId).single();
     const writerPrompt = settings?.writer_prompt || null;
     const systemPrompt = buildSystemPrompt(writerPrompt);
     const imageMode = settings?.image_mode || "ai";
@@ -665,17 +665,17 @@ serve(async (req) => {
     // 1. Gemini (Agora o primeiro a ser executado)
     if (geminiApiKey) {
       console.log(`[Pipeline] Adding Gemini provider as primary execution...`);
-      providers.push({ name: "Gemini", call: (s, u) => callGeminiDirect(geminiApiKey!, s, u) });
+      providers.push({ name: "Gemini", call: (s, u) => callGeminiDirect(geminiApiKey!, s, u, settings?.gemini_model) });
     }
     
     // 2. OpenAI / ChatGPT (Segundo)
     if (openaiApiKey) {
-      providers.push({ name: "OpenAI", call: (s, u) => callOpenAIDirect(openaiApiKey!, s, u) });
+      providers.push({ name: "OpenAI", call: (s, u) => callOpenAIDirect(openaiApiKey!, s, u, settings?.openai_model) });
     }
     
     // 3. Groq (Terceiro - Fallback de texto)
     if (groqApiKey) {
-      providers.push({ name: "Groq", call: (s, u) => callGroqDirect(groqApiKey!, s, u) });
+      providers.push({ name: "Groq", call: (s, u) => callGroqDirect(groqApiKey!, s, u, settings?.groq_model) });
     }
     
     // 4. Azure Copilot (Final fallback)
