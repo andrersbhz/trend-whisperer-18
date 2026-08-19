@@ -67,15 +67,21 @@ serve(async (req) => {
 
     if (resp.ok) {
       const data = await resp.json();
-      const modelCount = data.data?.length || 0;
-      const hasGpt4o = data.data?.some((m: any) => m.id.includes("gpt-4o"));
+      const allModels = data.data || [];
+      const models = allModels
+        .filter((m: any) => m.id.includes("gpt"))
+        .map((m: any) => ({
+          id: m.id,
+          name: m.id,
+        }));
+
       return new Response(
         JSON.stringify({
           success: true,
           message: "Conexão OK!",
           data: {
-            models_available: `${modelCount} modelos`,
-            gpt4o_access: hasGpt4o ? "sim" : "não",
+            models,
+            recommended: "gpt-4o-mini",
           },
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }

@@ -51,22 +51,27 @@ serve(async (req) => {
       );
     }
 
-    // Test with a minimal list models call
+    // Test with a list models call
     const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
 
     if (resp.ok) {
       const data = await resp.json();
-      const models = data.models || [];
-      const hasFlash = models.some((m: any) => m.name?.includes("gemini-2.5-flash") || m.name?.includes("gemini-2.0-flash"));
-      const hasPro = models.some((m: any) => m.name?.includes("gemini-1.5-pro"));
+      const allModels = data.models || [];
+      // Filter for chat-compatible models
+      const models = allModels
+        .filter((m: any) => m.supportedGenerationMethods?.includes("generateContent"))
+        .map((m: any) => ({
+          id: m.name.split("/").pop(),
+          name: m.displayName || m.name,
+        }));
+      
       return new Response(
         JSON.stringify({
           success: true,
           message: "Conexão OK!",
           data: {
-            models_available: `${models.length} modelos`,
-            gemini_flash: hasFlash ? "disponível" : "não encontrado",
-            gemini_pro: hasPro ? "disponível" : "não encontrado",
+            models,
+            recommended: "gemini-1.5-flash",
           },
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
