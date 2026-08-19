@@ -1632,6 +1632,7 @@ export type Database = {
           azure_openai_api_key: string | null
           azure_openai_deployment_name: string | null
           azure_openai_endpoint: string | null
+          azure_openai_model: string | null
           categories: string[] | null
           created_at: string
           dashboard_order: string[] | null
@@ -1641,12 +1642,14 @@ export type Database = {
           facebook_page_id: string | null
           follower_growth_mode: boolean | null
           gemini_api_key: string | null
+          gemini_model: string | null
           google_analytics_property_id: string | null
           google_indexing_key: string | null
           google_oauth_client_id: string | null
           google_oauth_secret_vault_id: string | null
           google_search_console_token: string | null
           groq_api_key: string | null
+          groq_model: string | null
           id: string
           image_format: string
           image_knowledge_urls: string[]
@@ -1665,6 +1668,7 @@ export type Database = {
           linkedin_org_id: string | null
           metrics_refresh_interval: number | null
           openai_api_key: string | null
+          openai_model: string | null
           priority_categories: string[]
           social_posting_mode: string
           social_reply_prompt: string | null
@@ -1685,6 +1689,7 @@ export type Database = {
           azure_openai_api_key?: string | null
           azure_openai_deployment_name?: string | null
           azure_openai_endpoint?: string | null
+          azure_openai_model?: string | null
           categories?: string[] | null
           created_at?: string
           dashboard_order?: string[] | null
@@ -1694,12 +1699,14 @@ export type Database = {
           facebook_page_id?: string | null
           follower_growth_mode?: boolean | null
           gemini_api_key?: string | null
+          gemini_model?: string | null
           google_analytics_property_id?: string | null
           google_indexing_key?: string | null
           google_oauth_client_id?: string | null
           google_oauth_secret_vault_id?: string | null
           google_search_console_token?: string | null
           groq_api_key?: string | null
+          groq_model?: string | null
           id?: string
           image_format?: string
           image_knowledge_urls?: string[]
@@ -1718,6 +1725,7 @@ export type Database = {
           linkedin_org_id?: string | null
           metrics_refresh_interval?: number | null
           openai_api_key?: string | null
+          openai_model?: string | null
           priority_categories?: string[]
           social_posting_mode?: string
           social_reply_prompt?: string | null
@@ -1738,6 +1746,7 @@ export type Database = {
           azure_openai_api_key?: string | null
           azure_openai_deployment_name?: string | null
           azure_openai_endpoint?: string | null
+          azure_openai_model?: string | null
           categories?: string[] | null
           created_at?: string
           dashboard_order?: string[] | null
@@ -1747,12 +1756,14 @@ export type Database = {
           facebook_page_id?: string | null
           follower_growth_mode?: boolean | null
           gemini_api_key?: string | null
+          gemini_model?: string | null
           google_analytics_property_id?: string | null
           google_indexing_key?: string | null
           google_oauth_client_id?: string | null
           google_oauth_secret_vault_id?: string | null
           google_search_console_token?: string | null
           groq_api_key?: string | null
+          groq_model?: string | null
           id?: string
           image_format?: string
           image_knowledge_urls?: string[]
@@ -1771,6 +1782,7 @@ export type Database = {
           linkedin_org_id?: string | null
           metrics_refresh_interval?: number | null
           openai_api_key?: string | null
+          openai_model?: string | null
           priority_categories?: string[]
           social_posting_mode?: string
           social_reply_prompt?: string | null

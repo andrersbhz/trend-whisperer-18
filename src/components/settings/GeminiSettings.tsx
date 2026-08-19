@@ -2,11 +2,12 @@ import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Sparkles, Loader2, CheckCircle2, XCircle, Wifi } from 'lucide-react';
-import { forwardRef, useState } from 'react';
+import { forwardRef, useState, useEffect } from 'react';
 import ConnectionCard from '@/components/ConnectionCard';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { UserSettings } from '@/pages/SettingsPage';
+import { AIModelSelector } from './AIModelSelector';
 
 interface Props {
   settings: UserSettings;
@@ -19,7 +20,17 @@ const GeminiSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChange, 
   const connected = !!(settings.gemini_api_key || hasGeminiKey);
   const { toast } = useToast();
   const [testing, setTesting] = useState(false);
-  const [testResult, setTestResult] = useState<{ success: boolean; message: string; data?: Record<string, string> } | null>(null);
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string; data?: any } | null>(null);
+  const [availableModels, setAvailableModels] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (testResult?.success && testResult.data?.models) {
+      setAvailableModels(testResult.data.models);
+      if (!settings.gemini_model && testResult.data.recommended) {
+        onChange({ gemini_model: testResult.data.recommended });
+      }
+    }
+  }, [testResult, settings.gemini_model, onChange]);
 
   const handleTest = async () => {
     setTesting(true);
@@ -100,13 +111,26 @@ const GeminiSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChange, 
           )}
         </div>
 
-        {testResult?.success && testResult.data && (
+        {testResult?.success && availableModels.length > 0 && (
+          <AIModelSelector
+            label="Gemini"
+            models={availableModels}
+            value={settings.gemini_model || ''}
+            recommendedModel={testResult.data?.recommended}
+            onChange={(val) => onChange({ gemini_model: val })}
+            disabled={testing}
+          />
+        )}
+
+        {testResult?.success && testResult.data && !testResult.data.models && (
           <div className="p-2.5 rounded-lg bg-success/10 border border-success/30 text-xs space-y-1">
             {Object.entries(testResult.data).map(([key, value]) => (
-              <div key={key} className="flex justify-between">
-                <span className="text-muted-foreground capitalize">{key.replace(/_/g, ' ')}:</span>
-                <span className="text-foreground font-medium">{value}</span>
-              </div>
+              typeof value === 'string' && (
+                <div key={key} className="flex justify-between">
+                  <span className="text-muted-foreground capitalize">{key.replace(/_/g, ' ')}:</span>
+                  <span className="text-foreground font-medium">{value}</span>
+                </div>
+              )
             ))}
           </div>
         )}

@@ -65,17 +65,19 @@ serve(async (req) => {
 
     if (resp.ok) {
       const data = await resp.json();
-      const models = data.data || [];
-      const hasLlama = models.some((m: any) => m.id?.includes("llama"));
-      const hasMixtral = models.some((m: any) => m.id?.includes("mixtral"));
+      const allModels = data.data || [];
+      const models = allModels.map((m: any) => ({
+        id: m.id,
+        name: m.id,
+      }));
+
       return new Response(
         JSON.stringify({
           success: true,
           message: "Conexão OK!",
           data: {
-            models_available: `${models.length} modelos`,
-            llama: hasLlama ? "disponível" : "não encontrado",
-            mixtral: hasMixtral ? "disponível" : "não encontrado",
+            models,
+            recommended: "llama-3.3-70b-versatile",
           },
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }

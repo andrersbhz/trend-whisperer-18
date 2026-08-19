@@ -38,6 +38,10 @@ export interface UserSettings {
   azure_openai_endpoint: string;
   azure_openai_deployment_name: string;
   groq_api_key: string;
+  gemini_model?: string;
+  openai_model?: string;
+  groq_model?: string;
+  azure_openai_model?: string;
   youtube_api_key: string;
   categories: string[];
   priority_categories: string[];
@@ -79,6 +83,10 @@ const defaultSettings: UserSettings = {
   azure_openai_endpoint: '',
   azure_openai_deployment_name: '',
   groq_api_key: '',
+  gemini_model: 'gemini-1.5-flash',
+  openai_model: 'gpt-4o-mini',
+  groq_model: 'llama-3.3-70b-versatile',
+  azure_openai_model: '',
   youtube_api_key: '',
   categories: ['esportes', 'politica', 'policia', 'saude', 'celebridades', 'financas'],
   priority_categories: [],
@@ -141,7 +149,7 @@ const SettingsPage = () => {
       try {
         const { data: userData, error: userError } = await supabase
           .from('user_settings')
-          .select('id, user_id, wordpress_url, wordpress_username, facebook_page_id, instagram_account_id, google_analytics_property_id, google_indexing_key, azure_openai_endpoint, azure_openai_deployment_name, categories, priority_categories, articles_per_day, auto_publish, writer_prompt, image_mode, image_prompt, image_format, image_knowledge_urls, interaction_mode, dashboard_widgets, dashboard_order')
+          .select('id, user_id, wordpress_url, wordpress_username, facebook_page_id, instagram_account_id, google_analytics_property_id, google_indexing_key, azure_openai_endpoint, azure_openai_deployment_name, categories, priority_categories, articles_per_day, auto_publish, writer_prompt, image_mode, image_prompt, image_format, image_knowledge_urls, interaction_mode, dashboard_widgets, dashboard_order, gemini_model, openai_model, groq_model, azure_openai_model')
           .eq('user_id', user.id)
           .maybeSingle();
 

@@ -353,7 +353,7 @@ serve(async (req) => {
     let openaiApiKey: string | null = null;
     const { data: settings } = await supabase
       .from("user_settings")
-      .select("gemini_api_key, openai_api_key, writer_prompt, image_mode, image_prompt, image_format, image_knowledge_urls")
+      .select("gemini_api_key, openai_api_key, writer_prompt, image_mode, image_prompt, image_format, image_knowledge_urls, gemini_model, openai_model, groq_model, azure_openai_model")
       .eq("user_id", userId)
       .single();
     

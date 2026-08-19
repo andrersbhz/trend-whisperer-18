@@ -73,13 +73,13 @@ const ARTICLE_TOOL_PARAMS = {
   visual_elements: "3 a 5 elementos visuais específicos do artigo (pessoas, cenário, ações, objetos) separados por vírgula",
 };
 
-async function callGeminiDirect(apiKey: string, systemPrompt: string, userPrompt: string): Promise<AIResponse> {
-  const model = "gemini-2.5-flash";
+async function callGeminiDirect(apiKey: string, systemPrompt: string, userPrompt: string, modelName = "gemini-1.5-flash"): Promise<AIResponse> {
+  const model = modelName || "gemini-1.5-flash";
   let lastError: any = null;
 
   try {
     // Simple fetch with generic model for best compatibility
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
     const body = {
       contents: [{ 
         role: "user", 
@@ -110,12 +110,12 @@ async function callGeminiDirect(apiKey: string, systemPrompt: string, userPrompt
   }
 }
 
-async function callOpenAIDirect(apiKey: string, systemPrompt: string, userPrompt: string): Promise<AIResponse> {
+async function callOpenAIDirect(apiKey: string, systemPrompt: string, userPrompt: string, modelName = "gpt-4o-mini"): Promise<AIResponse> {
   const resp = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "gpt-4o-mini",
+      model: modelName || "gpt-4o-mini",
       messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }],
       tools: [{
         type: "function",
@@ -147,12 +147,12 @@ async function callOpenAIDirect(apiKey: string, systemPrompt: string, userPrompt
   return JSON.parse(content);
 }
 
-async function callGroqDirect(apiKey: string, systemPrompt: string, userPrompt: string): Promise<AIResponse> {
+async function callGroqDirect(apiKey: string, systemPrompt: string, userPrompt: string, modelName = "llama-3.3-70b-versatile"): Promise<AIResponse> {
   const resp = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "llama-3.3-70b-versatile",
+      model: modelName || "llama-3.3-70b-versatile",
       messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }],
       tools: [{
         type: "function",
@@ -617,7 +617,7 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const { data: settings } = await supabase.from("user_settings").select("*").eq("user_id", userId).single();
+    const { data: settings } = await supabase.from("user_settings").select("*, gemini_model, openai_model, groq_model, azure_openai_model").eq("user_id", userId).single();
     const writerPrompt = settings?.writer_prompt || null;
     const systemPrompt = buildSystemPrompt(writerPrompt);
     const imageMode = settings?.image_mode || "ai";
@@ -665,17 +665,17 @@ serve(async (req) => {
     // 1. Gemini (Agora o primeiro a ser executado)
     if (geminiApiKey) {
       console.log(`[Pipeline] Adding Gemini provider as primary execution...`);
-      providers.push({ name: "Gemini", call: (s, u) => callGeminiDirect(geminiApiKey!, s, u) });
+      providers.push({ name: "Gemini", call: (s, u) => callGeminiDirect(geminiApiKey!, s, u, settings?.gemini_model) });
     }
     
     // 2. OpenAI / ChatGPT (Segundo)
     if (openaiApiKey) {
-      providers.push({ name: "OpenAI", call: (s, u) => callOpenAIDirect(openaiApiKey!, s, u) });
+      providers.push({ name: "OpenAI", call: (s, u) => callOpenAIDirect(openaiApiKey!, s, u, settings?.openai_model) });
     }
     
     // 3. Groq (Terceiro - Fallback de texto)
     if (groqApiKey) {
-      providers.push({ name: "Groq", call: (s, u) => callGroqDirect(groqApiKey!, s, u) });
+      providers.push({ name: "Groq", call: (s, u) => callGroqDirect(groqApiKey!, s, u, settings?.groq_model) });
     }
     
     // 4. Azure Copilot (Final fallback)
