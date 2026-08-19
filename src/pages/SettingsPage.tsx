@@ -13,6 +13,7 @@ import AutomationSettings from '@/components/settings/AutomationSettings';
 import GeminiSettings from '@/components/settings/GeminiSettings';
 import OpenAISettings from '@/components/settings/OpenAISettings';
 import GroqSettings from '@/components/settings/GroqSettings';
+import AzureCopilotSettings from '@/components/settings/AzureCopilotSettings';
 import JetpackSettings from '@/components/settings/JetpackSettings';
 import FacebookSettings from '@/components/settings/FacebookSettings';
 import { getErrorMessage, runBackendMutation, runBackendQuery } from '@/lib/backend';
@@ -83,7 +84,7 @@ const defaultSettings: UserSettings = {
   azure_openai_endpoint: '',
   azure_openai_deployment_name: '',
   groq_api_key: '',
-  gemini_model: 'gemini-1.5-flash',
+  gemini_model: 'gemini-3.6-flash',
   openai_model: 'gpt-4o-mini',
   groq_model: 'llama-3.3-70b-versatile',
   azure_openai_model: '',
@@ -130,12 +131,12 @@ const SettingsPage = () => {
   const [saving, setSaving] = useState(false);
   const [hasExistingSettings, setHasExistingSettings] = useState(false);
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
-  const [credStatus, setCredStatus] = useState<CredentialsStatus>({ 
-    has_wp_password: false, 
-    has_fb_token: false, 
-    has_gemini_key: false, 
-    has_openai_key: false, 
-    has_azure_key: false, 
+  const [credStatus, setCredStatus] = useState<CredentialsStatus>({
+    has_wp_password: false,
+    has_fb_token: false,
+    has_gemini_key: false,
+    has_openai_key: false,
+    has_azure_key: false,
     has_groq_key: false,
     has_linkedin_token: false,
     has_google_indexing_key: false,
@@ -155,9 +156,7 @@ const SettingsPage = () => {
 
         if (userError) throw userError;
 
-        const { data: statusData, error: statusError } = await supabase.rpc('get_credentials_status');
-        // Ignore status error for now if RPC doesn't exist yet
-
+        const { data: statusData } = await supabase.rpc('get_credentials_status');
         setHasExistingSettings(!!userData);
 
         if (userData) {
@@ -176,6 +175,10 @@ const SettingsPage = () => {
             azure_openai_endpoint: userData.azure_openai_endpoint || '',
             azure_openai_deployment_name: userData.azure_openai_deployment_name || '',
             groq_api_key: '',
+            gemini_model: userData.gemini_model || defaultSettings.gemini_model,
+            openai_model: userData.openai_model || defaultSettings.openai_model,
+            groq_model: userData.groq_model || defaultSettings.groq_model,
+            azure_openai_model: userData.azure_openai_model || userData.azure_openai_deployment_name || '',
             youtube_api_key: '',
             categories: userData.categories || defaultSettings.categories,
             priority_categories: (userData as any).priority_categories || [],
@@ -192,9 +195,7 @@ const SettingsPage = () => {
           });
         }
 
-        if (statusData) {
-          setCredStatus(statusData as unknown as CredentialsStatus);
-        }
+        if (statusData) setCredStatus(statusData as unknown as CredentialsStatus);
       } catch (error) {
         console.error("Fetch settings error:", error);
         toast({ title: 'Erro ao carregar configurações', description: getErrorMessage(error), variant: 'destructive' });
@@ -209,21 +210,20 @@ const SettingsPage = () => {
   const handleSave = async () => {
     if (!user) return;
 
-    // Validação rigorosa dos Prompts de IA conforme solicitado
     if (!settings.writer_prompt || settings.writer_prompt.trim().length < 100) {
-      toast({ 
-        title: 'Perfil do Escritor Obrigatório', 
-        description: 'O "Perfil do Escritor" deve ser detalhado (mínimo 100 caracteres) para garantir a qualidade e evitar fake news.', 
-        variant: 'destructive' 
+      toast({
+        title: 'Perfil do Escritor Obrigatório',
+        description: 'O "Perfil do Escritor" deve ser detalhado (mínimo 100 caracteres) para garantir a qualidade e evitar fake news.',
+        variant: 'destructive'
       });
       return;
     }
 
     if (!settings.image_prompt || settings.image_prompt.trim().length < 50) {
-      toast({ 
-        title: 'Prompt de Imagem Obrigatório', 
-        description: 'O "Prompt de Imagem IA" deve ser preenchido para evitar imagens desconexas.', 
-        variant: 'destructive' 
+      toast({
+        title: 'Prompt de Imagem Obrigatório',
+        description: 'O "Prompt de Imagem IA" deve ser preenchido para evitar imagens desconexas.',
+        variant: 'destructive'
       });
       return;
     }
@@ -231,10 +231,10 @@ const SettingsPage = () => {
     const mandatoryKeywords = ['SEO', 'jornalista', 'verdade', 'fato'];
     const missingKeywords = mandatoryKeywords.filter(k => !settings.writer_prompt.toLowerCase().includes(k.toLowerCase()));
     if (missingKeywords.length > 0) {
-      toast({ 
-        title: 'Prompt sem diretrizes de veracidade', 
-        description: `Para evitar fake news, seu prompt deve conter termos como: ${missingKeywords.join(', ')}.`, 
-        variant: 'destructive' 
+      toast({
+        title: 'Prompt sem diretrizes de veracidade',
+        description: `Para evitar fake news, seu prompt deve conter termos como: ${missingKeywords.join(', ')}.`,
+        variant: 'destructive'
       });
       return;
     }
@@ -250,6 +250,10 @@ const SettingsPage = () => {
         google_indexing_key: settings.google_indexing_key,
         azure_openai_endpoint: settings.azure_openai_endpoint,
         azure_openai_deployment_name: settings.azure_openai_deployment_name,
+        gemini_model: settings.gemini_model || 'gemini-3.6-flash',
+        openai_model: settings.openai_model || null,
+        groq_model: settings.groq_model || null,
+        azure_openai_model: settings.azure_openai_model || settings.azure_openai_deployment_name || null,
         categories: settings.categories,
         priority_categories: settings.priority_categories,
         articles_per_day: settings.articles_per_day,
@@ -264,27 +268,13 @@ const SettingsPage = () => {
         dashboard_order: settings.dashboard_order,
       };
 
-      if (settings.wordpress_app_password) {
-        payload.wordpress_app_password = settings.wordpress_app_password;
-      }
-      if (settings.facebook_access_token) {
-        payload.facebook_access_token = settings.facebook_access_token;
-      }
-      if (settings.gemini_api_key) {
-        payload.gemini_api_key = settings.gemini_api_key;
-      }
-      if (settings.openai_api_key) {
-        payload.openai_api_key = settings.openai_api_key;
-      }
-      if (settings.azure_openai_api_key) {
-        payload.azure_openai_api_key = settings.azure_openai_api_key;
-      }
-      if (settings.groq_api_key) {
-        payload.groq_api_key = settings.groq_api_key;
-      }
-      if (settings.youtube_api_key) {
-        payload.youtube_api_key = settings.youtube_api_key;
-      }
+      if (settings.wordpress_app_password) payload.wordpress_app_password = settings.wordpress_app_password;
+      if (settings.facebook_access_token) payload.facebook_access_token = settings.facebook_access_token;
+      if (settings.gemini_api_key) payload.gemini_api_key = settings.gemini_api_key;
+      if (settings.openai_api_key) payload.openai_api_key = settings.openai_api_key;
+      if (settings.azure_openai_api_key) payload.azure_openai_api_key = settings.azure_openai_api_key;
+      if (settings.groq_api_key) payload.groq_api_key = settings.groq_api_key;
+      if (settings.youtube_api_key) payload.youtube_api_key = settings.youtube_api_key;
 
       const { data: existing } = await supabase
         .from('user_settings')
@@ -293,16 +283,10 @@ const SettingsPage = () => {
         .maybeSingle();
 
       if (existing) {
-        await runBackendMutation(() =>
-          supabase.from('user_settings').update(payload as any).eq('user_id', user.id),
-        );
+        await runBackendMutation(() => supabase.from('user_settings').update(payload as any).eq('user_id', user.id));
       } else {
-        await runBackendMutation(() =>
-          supabase.from('user_settings').insert({ user_id: user.id, ...payload } as any),
-        );
+        await runBackendMutation(() => supabase.from('user_settings').insert({ user_id: user.id, ...payload } as any));
       }
-
-      // Audit logging happens server-side via edge functions / service role.
 
       setHasExistingSettings(true);
       toast({ title: 'Salvo!', description: 'Configurações atualizadas com sucesso.' });
@@ -313,7 +297,6 @@ const SettingsPage = () => {
       setSettings(prev => ({ ...prev, wordpress_app_password: '', facebook_access_token: '', gemini_api_key: '', openai_api_key: '', azure_openai_api_key: '', groq_api_key: '', google_indexing_key: '', youtube_api_key: '' }));
     } catch (error) {
       if (getErrorMessage(error).includes('duplicate key')) {
-        // Retry with update if insert failed due to race condition
         const payload: Record<string, unknown> = {
           wordpress_url: settings.wordpress_url,
           wordpress_username: settings.wordpress_username,
@@ -321,6 +304,12 @@ const SettingsPage = () => {
           instagram_account_id: settings.instagram_account_id,
           google_analytics_property_id: settings.google_analytics_property_id,
           google_indexing_key: settings.google_indexing_key,
+          azure_openai_endpoint: settings.azure_openai_endpoint,
+          azure_openai_deployment_name: settings.azure_openai_deployment_name,
+          gemini_model: settings.gemini_model || 'gemini-3.6-flash',
+          openai_model: settings.openai_model || null,
+          groq_model: settings.groq_model || null,
+          azure_openai_model: settings.azure_openai_model || settings.azure_openai_deployment_name || null,
           categories: settings.categories,
           priority_categories: settings.priority_categories,
           articles_per_day: settings.articles_per_day,
@@ -330,12 +319,11 @@ const SettingsPage = () => {
           image_prompt: settings.image_prompt,
           image_format: settings.image_format,
           image_knowledge_urls: settings.image_knowledge_urls,
+          interaction_mode: settings.interaction_mode,
           dashboard_widgets: settings.dashboard_widgets,
           dashboard_order: settings.dashboard_order,
         };
-        await runBackendMutation(() =>
-          supabase.from('user_settings').update(payload as any).eq('user_id', user.id),
-        );
+        await runBackendMutation(() => supabase.from('user_settings').update(payload as any).eq('user_id', user.id));
         toast({ title: 'Salvo!', description: 'Configurações atualizadas.' });
       } else {
         toast({ title: 'Erro', description: getErrorMessage(error), variant: 'destructive' });
@@ -356,11 +344,8 @@ const SettingsPage = () => {
     if (!user) return;
     try {
       if (hasExistingSettings) {
-        await runBackendMutation(() =>
-          supabase.from('user_settings').update(fields as any).eq('user_id', user.id),
-        );
+        await runBackendMutation(() => supabase.from('user_settings').update(fields as any).eq('user_id', user.id));
       }
-      // Reset local UI state for those fields
       const localReset: Partial<UserSettings> = {};
       for (const k of Object.keys(fields) as (keyof UserSettings)[]) {
         const v = fields[k];
@@ -368,7 +353,6 @@ const SettingsPage = () => {
       }
       setSettings((prev) => ({ ...prev, ...localReset }));
 
-      // Refresh credentials status from server
       const status = await runBackendQuery(() => supabase.rpc('get_credentials_status'));
       if (status) setCredStatus(status as unknown as CredentialsStatus);
 
@@ -397,50 +381,33 @@ const SettingsPage = () => {
         <Sparkles className="h-5 w-5 text-accent shrink-0 mt-0.5" />
         <div>
           <strong className="text-foreground block mb-1">🔄 Sistema Multi-IA Inteligente</strong>
-          O sistema alterna automaticamente entre os provedores configurados para garantir alta disponibilidade. 
-          Ordem de Escrita: <span className="text-foreground">Gemini → OpenAI → Groq</span>. 
-          Imagens: <span className="text-foreground">DALL-E 3 → Lovable</span>.
+          O sistema alterna automaticamente entre os provedores configurados para garantir alta disponibilidade.
+          Ordem de Escrita: <span className="text-foreground">Gemini → OpenAI → Groq → Azure</span>.
+          Imagens: <span className="text-foreground">provedores configurados e fallbacks existentes</span>.
         </div>
       </div>
 
       <Tabs defaultValue="ai" className="w-full space-y-6">
         <TabsList className="grid grid-cols-2 md:grid-cols-6 h-auto p-1 bg-background/50 border border-border/50 backdrop-blur-sm rounded-xl">
-          <TabsTrigger value="ai" className="py-2.5 rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
-            <Cpu className="h-4 w-4 mr-2" /> Inteligência Artificial
-          </TabsTrigger>
-          <TabsTrigger value="blogs" className="py-2.5 rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
-            <Layout className="h-4 w-4 mr-2" /> Meus Blogs
-          </TabsTrigger>
-          <TabsTrigger value="knowledge" className="py-2.5 rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
-            <BookOpen className="h-4 w-4 mr-2" /> Conhecimento
-          </TabsTrigger>
-          <TabsTrigger value="wordpress" className="py-2.5 rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
-            <Globe className="h-4 w-4 mr-2" /> WordPress
-          </TabsTrigger>
-          <TabsTrigger value="social" className="py-2.5 rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
-            <Share2 className="h-4 w-4 mr-2" /> Redes Sociais
-          </TabsTrigger>
-          <TabsTrigger value="appearance" className="py-2.5 rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
-            <BarChart3 className="h-4 w-4 mr-2" /> Interface
-          </TabsTrigger>
-          <TabsTrigger value="general" className="py-2.5 rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
-            <Settings2 className="h-4 w-4 mr-2" /> Geral
-          </TabsTrigger>
+          <TabsTrigger value="ai" className="py-2.5 rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary"><Cpu className="h-4 w-4 mr-2" /> Inteligência Artificial</TabsTrigger>
+          <TabsTrigger value="blogs" className="py-2.5 rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary"><Layout className="h-4 w-4 mr-2" /> Meus Blogs</TabsTrigger>
+          <TabsTrigger value="knowledge" className="py-2.5 rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary"><BookOpen className="h-4 w-4 mr-2" /> Conhecimento</TabsTrigger>
+          <TabsTrigger value="wordpress" className="py-2.5 rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary"><Globe className="h-4 w-4 mr-2" /> WordPress</TabsTrigger>
+          <TabsTrigger value="social" className="py-2.5 rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary"><Share2 className="h-4 w-4 mr-2" /> Redes Sociais</TabsTrigger>
+          <TabsTrigger value="appearance" className="py-2.5 rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary"><BarChart3 className="h-4 w-4 mr-2" /> Interface</TabsTrigger>
+          <TabsTrigger value="general" className="py-2.5 rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary"><Settings2 className="h-4 w-4 mr-2" /> Geral</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="blogs">
-          <BlogManager />
-        </TabsContent>
+        <TabsContent value="blogs"><BlogManager /></TabsContent>
 
         <TabsContent value="ai" className="space-y-6 mt-0 animate-in fade-in-50 duration-300">
-          <GeminiSettings settings={settings} onChange={updateSettings} hasGeminiKey={credStatus.has_gemini_key} onDisconnect={() => disconnectCredential({ gemini_api_key: '' }, 'Gemini')} />
-          <OpenAISettings settings={settings} onChange={updateSettings} hasOpenaiKey={credStatus.has_openai_key} onDisconnect={() => disconnectCredential({ openai_api_key: '' }, 'OpenAI')} />
-          <GroqSettings settings={settings} onChange={updateSettings} hasGroqKey={credStatus.has_groq_key} onDisconnect={() => disconnectCredential({ groq_api_key: '' }, 'Groq')} />
+          <GeminiSettings settings={settings} onChange={updateSettings} hasGeminiKey={credStatus.has_gemini_key} onDisconnect={() => disconnectCredential({ gemini_api_key: '', gemini_model: '' }, 'Gemini')} />
+          <OpenAISettings settings={settings} onChange={updateSettings} hasOpenaiKey={credStatus.has_openai_key} onDisconnect={() => disconnectCredential({ openai_api_key: '', openai_model: '' }, 'OpenAI')} />
+          <GroqSettings settings={settings} onChange={updateSettings} hasGroqKey={credStatus.has_groq_key} onDisconnect={() => disconnectCredential({ groq_api_key: '', groq_model: '' }, 'Groq')} />
+          <AzureCopilotSettings settings={settings} onChange={updateSettings} hasAzureKey={credStatus.has_azure_key} onDisconnect={() => disconnectCredential({ azure_openai_api_key: '', azure_openai_endpoint: '', azure_openai_deployment_name: '', azure_openai_model: '' }, 'Azure OpenAI')} />
         </TabsContent>
 
-        <TabsContent value="knowledge" className="space-y-6 mt-0 animate-in fade-in-50 duration-300">
-          <KnowledgeBaseSettings />
-        </TabsContent>
+        <TabsContent value="knowledge" className="space-y-6 mt-0 animate-in fade-in-50 duration-300"><KnowledgeBaseSettings /></TabsContent>
 
         <TabsContent value="wordpress" className="space-y-6 mt-0 animate-in fade-in-50 duration-300">
           <WordPressSettings settings={settings} onChange={updateSettings} hasWpPassword={credStatus.has_wp_password} onDisconnect={() => disconnectCredential({ wordpress_url: '', wordpress_username: '', wordpress_app_password: '' }, 'WordPress')} />
@@ -454,10 +421,10 @@ const SettingsPage = () => {
         </TabsContent>
 
         <TabsContent value="appearance" className="space-y-6 mt-0 animate-in fade-in-50 duration-300">
-          <DashboardWidgetSettings 
-            widgets={settings.dashboard_widgets} 
+          <DashboardWidgetSettings
+            widgets={settings.dashboard_widgets}
             order={settings.dashboard_order}
-            onChange={(w) => updateSettings({ dashboard_widgets: w })} 
+            onChange={(w) => updateSettings({ dashboard_widgets: w })}
             onOrderChange={(o) => updateSettings({ dashboard_order: o })}
           />
         </TabsContent>
