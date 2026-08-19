@@ -6,6 +6,13 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+function selectRecommendedLlama(models: any[]): string | null {
+  const llama = models
+    .filter((m: any) => /llama/i.test(m.id))
+    .sort((a: any, b: any) => (b.created || 0) - (a.created || 0) || b.id.localeCompare(a.id));
+  return llama[0]?.id || models[0]?.id || null;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -38,9 +45,7 @@ serve(async (req) => {
           enc_key: "",
           val: settings.groq_api_key,
         });
-        if (decrypted && typeof decrypted === "string" && decrypted.length > 5) {
-          apiKey = decrypted;
-        }
+        if (decrypted && typeof decrypted === "string" && decrypted.length > 5) apiKey = decrypted;
       }
     }
 
@@ -58,7 +63,6 @@ serve(async (req) => {
       );
     }
 
-    // Test with models list endpoint
     const resp = await fetch("https://api.groq.com/openai/v1/models", {
       headers: { Authorization: `Bearer ${apiKey}` },
     });
@@ -66,41 +70,38 @@ serve(async (req) => {
     if (resp.ok) {
       const data = await resp.json();
       const allModels = data.data || [];
-      const models = allModels.map((m: any) => ({
-        id: m.id,
-        name: m.id,
-      }));
+      const models = allModels
+        .map((m: any) => ({ id: m.id, name: m.id, created: m.created || 0 }))
+        .sort((a: any, b: any) => (b.created || 0) - (a.created || 0) || a.id.localeCompare(b.id));
+      const recommended = selectRecommendedLlama(allModels);
 
       return new Response(
         JSON.stringify({
           success: true,
-          message: "Conexão OK!",
-          data: {
-            models,
-            recommended: "llama-3.3-70b-versatile",
-          },
+          message: "Conexão OK! Modelos carregados.",
+          data: { models: models.map(({ id, name }: any) => ({ id, name })), recommended },
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
-    } else {
-      const errText = await resp.text();
-      let errorDetail = `Groq retornou ${resp.status}`;
-      try {
-        const errJson = JSON.parse(errText);
-        if (resp.status === 401) {
-          errorDetail = "Chave inválida ou expirada. Verifique sua chave em console.groq.com/keys.";
-        } else if (resp.status === 429) {
-          errorDetail = "Limite de requisições atingido. Aguarde e tente novamente.";
-        } else if (errJson.error?.message) {
-          errorDetail = errJson.error.message;
-        }
-      } catch {}
-
-      return new Response(
-        JSON.stringify({ success: false, error: errorDetail }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
     }
+
+    const errText = await resp.text();
+    let errorDetail = `Groq retornou ${resp.status}`;
+    try {
+      const errJson = JSON.parse(errText);
+      if (resp.status === 401) {
+        errorDetail = "Chave inválida ou expirada. Verifique sua chave em console.groq.com/keys.";
+      } else if (resp.status === 429) {
+        errorDetail = "Limite de requisições atingido. Aguarde e tente novamente.";
+      } else if (errJson.error?.message) {
+        errorDetail = errJson.error.message;
+      }
+    } catch {}
+
+    return new Response(
+      JSON.stringify({ success: false, error: errorDetail }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   } catch (error) {
     console.error("test-groq-connection error:", error);
     return new Response(
