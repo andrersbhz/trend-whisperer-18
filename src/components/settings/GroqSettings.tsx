@@ -65,10 +65,10 @@ const GroqSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChange, ha
       title="Groq (LLaMA / Mixtral)"
       description="Use sua chave gratuita do Groq como provedor de IA adicional — modelos open-source ultrarrápidos"
       connected={connected}
-      connectedInfo={connected ? 'Chave Groq configurada ✓' : undefined}
+      connectedInfo={connected ? `Chave Groq configurada ✓${settings.groq_model ? ` • ${settings.groq_model}` : ''}` : undefined}
       onTest={handleTest}
       testing={testing}
-      onDisconnect={async () => { await onDisconnect?.(); onChange({ groq_api_key: '' }); setTestResult(null); }}
+      onDisconnect={async () => { await onDisconnect?.(); onChange({ groq_api_key: '', groq_model: '' }); setTestResult(null); setAvailableModels([]); }}
     >
       <div className="space-y-3">
         <div className="p-2.5 rounded-lg bg-accent/30 border border-accent/50 text-xs text-muted-foreground">
