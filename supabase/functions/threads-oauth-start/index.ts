@@ -6,11 +6,15 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const DEFAULT_RETURN_URL = "https://trend-whisperer-18.lovable.app/social";
+const DEFAULT_RETURN_URL = Deno.env.get("THREADS_DEFAULT_RETURN_URL") || "https://trend-whisperer-18.lovable.app/social";
 const ALLOWED_RETURN_HOSTS = new Set([
   "trend-whisperer-18.lovable.app",
   "id-preview--9ad27b4d-8990-47e9-8d43-311f0f7d2680.lovable.app",
   "forex.a3solucoesdigitais.com",
+  ...(Deno.env.get("THREADS_ALLOWED_RETURN_HOSTS") || "")
+    .split(",")
+    .map((host) => host.trim().toLowerCase())
+    .filter(Boolean),
 ]);
 
 function safeReturnUrl(raw: unknown) {
@@ -18,7 +22,8 @@ function safeReturnUrl(raw: unknown) {
   try {
     const url = new URL(raw);
     if (!["http:", "https:"].includes(url.protocol)) return DEFAULT_RETURN_URL;
-    return ALLOWED_RETURN_HOSTS.has(url.hostname) ? url.toString() : DEFAULT_RETURN_URL;
+    if (url.hostname === "localhost" || url.hostname === "127.0.0.1") return url.toString();
+    return ALLOWED_RETURN_HOSTS.has(url.hostname.toLowerCase()) ? url.toString() : DEFAULT_RETURN_URL;
   } catch {
     return DEFAULT_RETURN_URL;
   }
