@@ -3,11 +3,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Database, Loader2, CheckCircle2, XCircle, Wifi } from 'lucide-react';
-import { forwardRef, useState } from 'react';
+import { forwardRef, useEffect, useState } from 'react';
 import ConnectionCard from '@/components/ConnectionCard';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import type { UserSettings } from '@/pages/SettingsPage';
+import { AIModelSelector } from './AIModelSelector';
 
 interface Props {
   settings: any;
@@ -20,7 +20,17 @@ const AzureCopilotSettings = forwardRef<HTMLDivElement, Props>(({ settings, onCh
   const connected = !!(settings.azure_openai_api_key || hasAzureKey);
   const { toast } = useToast();
   const [testing, setTesting] = useState(false);
-  const [testResult, setTestResult] = useState<{ success: boolean; message: string; data?: Record<string, string> } | null>(null);
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string; data?: any } | null>(null);
+  const [availableModels, setAvailableModels] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (testResult?.success && testResult.data?.models) {
+      setAvailableModels(testResult.data.models);
+      if (!settings.azure_openai_model && testResult.data.recommended) {
+        onChange({ azure_openai_model: testResult.data.recommended });
+      }
+    }
+  }, [testResult, settings.azure_openai_model, onChange]);
 
   const handleTest = async () => {
     setTesting(true);
@@ -61,13 +71,14 @@ const AzureCopilotSettings = forwardRef<HTMLDivElement, Props>(({ settings, onCh
       title="Microsoft Copilot (Azure OpenAI)"
       description="Redundância enterprise via Azure para garantir 100% de disponibilidade"
       connected={connected}
-      connectedInfo={connected ? 'Azure Copilot configurado ✓' : undefined}
+      connectedInfo={connected ? `Azure Copilot configurado ✓${settings.azure_openai_model ? ` • ${settings.azure_openai_model}` : ''}` : undefined}
       onTest={handleTest}
       testing={testing}
       onDisconnect={async () => {
         await onDisconnect?.();
-        onChange({ azure_openai_api_key: '', azure_openai_endpoint: '', azure_openai_deployment_name: '' });
+        onChange({ azure_openai_api_key: '', azure_openai_endpoint: '', azure_openai_deployment_name: '', azure_openai_model: '' });
         setTestResult(null);
+        setAvailableModels([]);
       }}
     >
       <div className="space-y-3">
@@ -81,7 +92,7 @@ const AzureCopilotSettings = forwardRef<HTMLDivElement, Props>(({ settings, onCh
             <Input
               placeholder="https://seu-recurso.openai.azure.com/"
               value={settings.azure_openai_endpoint || ''}
-              onChange={(e) => onChange({ azure_openai_endpoint: e.target.value })}
+              onChange={(e) => { onChange({ azure_openai_endpoint: e.target.value }); setTestResult(null); }}
               className="h-9 text-sm"
             />
           </div>
@@ -90,7 +101,7 @@ const AzureCopilotSettings = forwardRef<HTMLDivElement, Props>(({ settings, onCh
             <Input
               placeholder="ex: gpt-4o"
               value={settings.azure_openai_deployment_name || ''}
-              onChange={(e) => onChange({ azure_openai_deployment_name: e.target.value })}
+              onChange={(e) => { onChange({ azure_openai_deployment_name: e.target.value }); setTestResult(null); }}
               className="h-9 text-sm"
             />
           </div>
@@ -125,10 +136,21 @@ const AzureCopilotSettings = forwardRef<HTMLDivElement, Props>(({ settings, onCh
           {testResult && (
             <div className={`flex items-center gap-1.5 text-xs ${testResult.success ? 'text-success' : 'text-destructive'}`}>
               {testResult.success ? <CheckCircle2 className="h-3.5 w-3.5" /> : <XCircle className="h-3.5 w-3.5" />}
-              <span>{testResult.success ? testResult.message : testResult.message}</span>
+              <span>{testResult.message}</span>
             </div>
           )}
         </div>
+
+        {testResult?.success && availableModels.length > 0 && (
+          <AIModelSelector
+            label="Azure OpenAI"
+            models={availableModels}
+            value={settings.azure_openai_model || ''}
+            recommendedModel={testResult.data?.recommended}
+            onChange={(val) => onChange({ azure_openai_model: val })}
+            disabled={testing}
+          />
+        )}
       </div>
     </ConnectionCard>
   );
