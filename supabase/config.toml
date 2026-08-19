@@ -6,6 +6,9 @@ verify_jwt = false
 [functions.threads-oauth-callback]
 verify_jwt = false
 
+[functions.google-search-console-callback]
+verify_jwt = false
+
 [functions.automation-engine]
 verify_jwt = false
 
