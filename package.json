@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "preflight:prod": "node scripts/production-preflight.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -78,7 +79,7 @@
     "sonner": "^1.7.4",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
-    "topojson-client": "^3.1.0",
+    "topojson-client": "^3.1.1",
     "vaul": "^0.9.9",
     "zod": "^3.25.76"
   },
@@ -89,8 +90,10 @@
     "@testing-library/jest-dom": "^6.6.0",
     "@testing-library/react": "^16.0.0",
     "@types/node": "^22.16.5",
-    "@types/react": "^18.3.23",
     "@types/react-dom": "^18.3.7",
+    "@types/react": "^18.3.23",
+    "@types/react-simple-maps": "^3.0.6",
+    "@types/topojson-client": "^3.1.5",
     "@vitejs/plugin-react-swc": "^3.11.0",
     "autoprefixer": "^10.4.21",
     "eslint": "^9.32.0",
