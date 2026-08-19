@@ -1,5 +1,25 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Facebook, Instagram, MessageSquareText, Plus, RefreshCw, Send, CheckCircle2, AlertCircle, Power } from 'lucide-react';
+import {
+  Facebook,
+  Instagram,
+  MessageSquareText,
+  Plus,
+  RefreshCw,
+  Send,
+  CheckCircle2,
+  AlertCircle,
+  Power,
+  BarChart3,
+  Eye,
+  Heart,
+  MessageCircle,
+  Repeat2,
+  Users,
+  ShieldCheck,
+  LogIn,
+  Quote,
+  FileText,
+} from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,6 +39,34 @@ type SocialAccount = {
   active: boolean;
 };
 
+type ThreadsMetricsAccount = {
+  id: string;
+  threads_user_id: string;
+  username?: string | null;
+  connected: boolean;
+  has_insights_permission: boolean;
+  token_expired: boolean;
+  needs_reconnect?: boolean;
+  error?: string;
+  updated_at?: string;
+  profile?: {
+    username?: string | null;
+    picture_url?: string | null;
+    biography?: string | null;
+  };
+  metrics?: {
+    views?: number;
+    likes?: number;
+    replies?: number;
+    reposts?: number;
+    quotes?: number;
+    followers_count?: number;
+    recent_posts?: number;
+  } | null;
+};
+
+const formatMetric = (value?: number) => new Intl.NumberFormat('pt-BR', { notation: 'compact', maximumFractionDigits: 1 }).format(value || 0);
+
 const SocialPublisherPage = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -30,12 +78,15 @@ const SocialPublisherPage = () => {
   const [imageUrl, setImageUrl] = useState('');
   const [linkUrl, setLinkUrl] = useState('');
   const [results, setResults] = useState<any[]>([]);
+  const [threadsMetrics, setThreadsMetrics] = useState<ThreadsMetricsAccount[]>([]);
+  const [loadingThreadsMetrics, setLoadingThreadsMetrics] = useState(false);
+  const [connectingThreads, setConnectingThreads] = useState(false);
 
   const loadAccounts = async () => {
     if (!user) return;
     setLoading(true);
     try {
-      const [{ data: meta }, { data: threads, error: threadsError }] = await Promise.all([
+      const [{ data: meta, error: metaError }, { data: threads, error: threadsError }] = await Promise.all([
         supabase
           .from('facebook_accounts')
           .select('id,page_id,page_name,picture_url,instagram_account_id,is_active,facebook_enabled,instagram_enabled')
@@ -45,6 +96,7 @@ const SocialPublisherPage = () => {
           .select('id,threads_user_id,username,is_active')
           .eq('user_id', user.id),
       ]);
+      if (metaError) throw metaError;
       if (threadsError) throw threadsError;
 
       const next: SocialAccount[] = [];
@@ -90,14 +142,38 @@ const SocialPublisherPage = () => {
     }
   };
 
-  useEffect(() => { loadAccounts(); }, [user]);
+  const loadThreadsMetrics = async (silent = false) => {
+    if (!user) return;
+    setLoadingThreadsMetrics(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('fetch-threads-metrics', {
+        body: { userId: user.id },
+      });
+      if (error) throw error;
+      setThreadsMetrics(data?.accounts || []);
+      if (!silent && (data?.accounts || []).length > 0) {
+        toast({ title: 'Métricas atualizadas', description: 'Os dados das contas Threads foram atualizados.' });
+      }
+    } catch (e: any) {
+      if (!silent) toast({ title: 'Métricas do Threads indisponíveis', description: e.message, variant: 'destructive' });
+    } finally {
+      setLoadingThreadsMetrics(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!user) return;
+    loadAccounts();
+    loadThreadsMetrics(true);
+  }, [user]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const threads = params.get('threads');
     if (threads === 'connected') {
-      toast({ title: 'Threads conectado', description: 'A conexão foi salva no banco e permanecerá ativa até você desconectar.' });
+      toast({ title: 'Threads conectado', description: 'Conta autorizada com segurança. Sua senha não foi armazenada no PostWP.' });
       loadAccounts();
+      loadThreadsMetrics(true);
       window.history.replaceState({}, '', '/social');
     } else if (threads === 'error') {
       toast({ title: 'Falha ao conectar Threads', description: params.get('message') || 'Verifique o app da Meta.', variant: 'destructive' });
@@ -106,6 +182,8 @@ const SocialPublisherPage = () => {
   }, []);
 
   const selectedAccounts = useMemo(() => accounts.filter((account) => selected.includes(account.key)), [accounts, selected]);
+  const threadsConnectedCount = accounts.filter((account) => account.platform === 'threads' && account.active).length;
+
   const toggle = (account: SocialAccount) => {
     if (!account.active) return;
     setSelected((current) => current.includes(account.key) ? current.filter((key) => key !== account.key) : [...current, account.key]);
@@ -123,18 +201,23 @@ const SocialPublisherPage = () => {
   };
 
   const connectThreads = async () => {
-    const { data, error } = await supabase.functions.invoke('threads-oauth-start', {
-      body: { returnUrl: `${window.location.origin}/social` },
-    });
-    if (error || !data?.authUrl) {
-      toast({ title: 'Falha ao iniciar Threads', description: error?.message || data?.error || 'OAuth indisponível', variant: 'destructive' });
-      return;
+    setConnectingThreads(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('threads-oauth-start', {
+        body: { returnUrl: `${window.location.origin}/social` },
+      });
+      if (error || !data?.authUrl) {
+        toast({ title: 'Falha ao iniciar Threads', description: error?.message || data?.error || 'OAuth indisponível', variant: 'destructive' });
+        return;
+      }
+      window.location.href = data.authUrl;
+    } finally {
+      setConnectingThreads(false);
     }
-    window.location.href = data.authUrl;
   };
 
   const disconnectAccount = async (account: SocialAccount) => {
-    if (!account.active) return;
+    if (!account.active || !user) return;
     if (!window.confirm(`Desconectar ${account.name}? A conexão continuará salva no banco e poderá ser reativada ao conectar novamente.`)) return;
 
     try {
@@ -142,7 +225,8 @@ const SocialPublisherPage = () => {
         const { error } = await supabase
           .from('threads_accounts' as any)
           .update({ is_active: false, disconnected_at: new Date().toISOString() } as any)
-          .eq('id', account.sourceId);
+          .eq('id', account.sourceId)
+          .eq('user_id', user.id);
         if (error) throw error;
       } else {
         const patch = account.platform === 'facebook'
@@ -151,12 +235,14 @@ const SocialPublisherPage = () => {
         const { error } = await supabase
           .from('facebook_accounts')
           .update(patch as any)
-          .eq('id', account.sourceId);
+          .eq('id', account.sourceId)
+          .eq('user_id', user.id);
         if (error) throw error;
       }
       setSelected((current) => current.filter((key) => key !== account.key));
       toast({ title: 'Desconectado', description: 'A conexão foi preservada no banco e não será usada até ser reconectada.' });
       await loadAccounts();
+      if (account.platform === 'threads') await loadThreadsMetrics(true);
     } catch (e: any) {
       toast({ title: 'Erro ao desconectar', description: e.message, variant: 'destructive' });
     }
@@ -184,6 +270,9 @@ const SocialPublisherPage = () => {
         description: data?.message,
         variant: data?.success ? 'default' : 'destructive',
       });
+      if (data?.success && selectedAccounts.some((account) => account.platform === 'threads')) {
+        loadThreadsMetrics(true);
+      }
     } catch (e: any) {
       toast({ title: 'Erro ao publicar', description: e.message, variant: 'destructive' });
     } finally {
@@ -193,6 +282,16 @@ const SocialPublisherPage = () => {
 
   const iconFor = (platform: SocialAccount['platform']) => platform === 'facebook' ? Facebook : platform === 'instagram' ? Instagram : MessageSquareText;
   const activeCount = accounts.filter((account) => account.active).length;
+
+  const metricCards = (item: ThreadsMetricsAccount) => [
+    { label: 'Visualizações', value: item.metrics?.views, icon: Eye },
+    { label: 'Curtidas', value: item.metrics?.likes, icon: Heart },
+    { label: 'Respostas', value: item.metrics?.replies, icon: MessageCircle },
+    { label: 'Reposts', value: item.metrics?.reposts, icon: Repeat2 },
+    { label: 'Citações', value: item.metrics?.quotes, icon: Quote },
+    { label: 'Seguidores', value: item.metrics?.followers_count, icon: Users },
+    { label: 'Posts recentes', value: item.metrics?.recent_posts, icon: FileText },
+  ];
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -205,9 +304,51 @@ const SocialPublisherPage = () => {
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={loadAccounts} disabled={loading}><RefreshCw className={loading ? 'animate-spin' : ''} />Atualizar</Button>
           <Button variant="outline" onClick={connectMeta}><Plus />Adicionar Meta</Button>
-          <Button onClick={connectThreads}><Plus />Adicionar Threads</Button>
+          <Button onClick={connectThreads} disabled={connectingThreads}>
+            {connectingThreads ? <RefreshCw className="animate-spin" /> : <LogIn />}
+            Entrar com Threads
+          </Button>
         </div>
       </div>
+
+      <Card className="border-border/60 bg-card/70 shadow-sm overflow-hidden">
+        <CardContent className="p-0">
+          <div className="grid gap-0 lg:grid-cols-[1.2fr_0.8fr]">
+            <div className="p-5 border-b lg:border-b-0 lg:border-r border-border/60">
+              <div className="flex items-start gap-3">
+                <div className="h-10 w-10 rounded-lg border border-border/60 bg-background flex items-center justify-center shrink-0">
+                  <MessageSquareText className="h-5 w-5" />
+                </div>
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="font-semibold">Conectar conta Threads</h2>
+                    <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-500">Seguro</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
+                    Clique em “Entrar com Threads”. O login e a senha são digitados somente na página oficial do Threads. O PostWP não recebe nem armazena sua senha; salva apenas a autorização necessária para publicar e ler métricas.
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                    <span className="inline-flex items-center gap-1.5 rounded-md border border-border/60 px-2 py-1"><Send className="h-3 w-3" />Publicação</span>
+                    <span className="inline-flex items-center gap-1.5 rounded-md border border-border/60 px-2 py-1"><BarChart3 className="h-3 w-3" />Métricas</span>
+                    <span className="inline-flex items-center gap-1.5 rounded-md border border-border/60 px-2 py-1"><ShieldCheck className="h-3 w-3" />Senha não armazenada</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="p-5 flex items-center justify-between gap-4 bg-muted/10">
+              <div>
+                <p className="text-xs uppercase tracking-widest text-muted-foreground font-semibold">Threads</p>
+                <p className="text-2xl font-semibold mt-1">{threadsConnectedCount}</p>
+                <p className="text-xs text-muted-foreground">conta(s) conectada(s)</p>
+              </div>
+              <Button onClick={connectThreads} disabled={connectingThreads}>
+                {connectingThreads ? <RefreshCw className="animate-spin" /> : <LogIn />}
+                {threadsConnectedCount > 0 ? 'Adicionar outra conta' : 'Entrar'}
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="rounded-lg border border-border/60 bg-card/50 px-4 py-3 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
@@ -224,7 +365,7 @@ const SocialPublisherPage = () => {
         <Card className="border-border/60 bg-card/70 shadow-sm">
           <CardHeader><CardTitle className="text-base font-semibold">Contas salvas</CardTitle></CardHeader>
           <CardContent className="space-y-2">
-            {accounts.length === 0 && !loading && <div className="rounded-lg border border-dashed border-border p-6 text-sm text-muted-foreground text-center">Nenhuma conta salva. Use “Adicionar Meta” ou “Adicionar Threads”.</div>}
+            {accounts.length === 0 && !loading && <div className="rounded-lg border border-dashed border-border p-6 text-sm text-muted-foreground text-center">Nenhuma conta salva. Use “Adicionar Meta” ou “Entrar com Threads”.</div>}
             {accounts.map((account) => {
               const Icon = iconFor(account.platform);
               const checked = selected.includes(account.key);
@@ -270,6 +411,71 @@ const SocialPublisherPage = () => {
           </CardContent>
         </Card>
       </div>
+
+      <Card className="border-border/60 bg-card/70 shadow-sm">
+        <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
+          <div>
+            <CardTitle className="text-base font-semibold flex items-center gap-2"><BarChart3 className="h-4 w-4" />Métricas do Threads</CardTitle>
+            <p className="text-xs text-muted-foreground mt-1">Dados oficiais das contas autorizadas. Contas antigas podem precisar reconectar uma vez para liberar insights.</p>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => loadThreadsMetrics(false)} disabled={loadingThreadsMetrics || threadsConnectedCount === 0}>
+            <RefreshCw className={loadingThreadsMetrics ? 'animate-spin' : ''} />Atualizar métricas
+          </Button>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {threadsConnectedCount === 0 && (
+            <div className="rounded-lg border border-dashed border-border p-6 text-sm text-muted-foreground text-center">
+              Conecte uma conta Threads para começar a acompanhar visualizações, curtidas, respostas, reposts, citações e seguidores.
+            </div>
+          )}
+
+          {threadsConnectedCount > 0 && threadsMetrics.length === 0 && !loadingThreadsMetrics && (
+            <div className="rounded-lg border border-dashed border-border p-6 text-sm text-muted-foreground text-center">
+              Clique em “Atualizar métricas” para carregar os dados do Threads.
+            </div>
+          )}
+
+          {threadsMetrics.map((item) => (
+            <div key={item.id} className="rounded-xl border border-border/60 bg-background/30 overflow-hidden">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-border/60 p-4">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="h-11 w-11 rounded-lg border border-border/60 bg-background flex items-center justify-center overflow-hidden shrink-0">
+                    {item.profile?.picture_url ? <img src={item.profile.picture_url} alt="" className="h-full w-full object-cover" /> : <MessageSquareText className="h-5 w-5" />}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-semibold truncate">@{item.profile?.username || item.username || item.threads_user_id}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-500"><CheckCircle2 className="h-3 w-3" />Conectado</span>
+                      {item.updated_at && <span className="text-[10px] text-muted-foreground">Atualizado {new Date(item.updated_at).toLocaleString('pt-BR')}</span>}
+                    </div>
+                  </div>
+                </div>
+                {item.needs_reconnect && (
+                  <Button size="sm" onClick={connectThreads}><RefreshCw className="h-4 w-4" />Reconectar para métricas</Button>
+                )}
+              </div>
+
+              {item.error && !item.metrics ? (
+                <div className="p-4">
+                  <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm flex items-start gap-2">
+                    <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                    <div><p className="font-medium">Métricas ainda não disponíveis</p><p className="text-muted-foreground text-xs mt-1">{item.error}</p></div>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-px bg-border/60">
+                  {metricCards(item).map(({ label, value, icon: Icon }) => (
+                    <div key={label} className="bg-card p-4 min-h-24 flex flex-col justify-between">
+                      <div className="flex items-center gap-2 text-muted-foreground"><Icon className="h-3.5 w-3.5" /><span className="text-[10px] uppercase tracking-wider font-semibold">{label}</span></div>
+                      <p className="text-xl font-semibold mt-3">{formatMetric(value)}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </CardContent>
+      </Card>
 
       {results.length > 0 && (
         <Card className="border-border/60 bg-card/70 shadow-sm">

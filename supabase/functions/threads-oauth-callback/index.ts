@@ -46,7 +46,7 @@ serve(async (req) => {
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: tokenBody,
     });
-    if (!tokenResp.ok) throw new Error(`Threads token: ${await tokenResp.text()}`);
+    if (!tokenResp.ok) throw new Error("Falha ao autorizar a conta Threads");
     const tokenData = await tokenResp.json();
     const accessToken = tokenData.access_token as string;
     if (!accessToken) throw new Error("Threads não retornou access_token");
@@ -54,7 +54,7 @@ serve(async (req) => {
     const profileResp = await fetch(
       `https://graph.threads.net/v1.0/me?fields=id,username&access_token=${encodeURIComponent(accessToken)}`
     );
-    if (!profileResp.ok) throw new Error(`Threads profile: ${await profileResp.text()}`);
+    if (!profileResp.ok) throw new Error("Não foi possível ler o perfil Threads");
     const profile = await profileResp.json();
 
     const expiresAt = tokenData.expires_in
@@ -68,8 +68,9 @@ serve(async (req) => {
         username: profile.username || null,
         access_token: accessToken,
         token_expires_at: expiresAt,
-        scopes: ["threads_basic", "threads_content_publish"],
+        scopes: ["threads_basic", "threads_content_publish", "threads_manage_insights"],
         is_active: true,
+        disconnected_at: null,
         updated_at: new Date().toISOString(),
       },
       { onConflict: "user_id,threads_user_id" }

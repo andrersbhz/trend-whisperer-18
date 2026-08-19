@@ -6,28 +6,46 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, content-type",
 };
 
-const GRAPH_API = "https://graph.facebook.com/v21.0";
+const GRAPH_VERSION = Deno.env.get("META_GRAPH_VERSION") || "v21.0";
+const GRAPH_API = `https://graph.facebook.com/${GRAPH_VERSION}`;
 const DEFAULT_RETURN_URL = "https://forex.a3solucoesdigitais.com/settings";
+const ALLOWED_RETURN_HOSTS = new Set([
+  "forex.a3solucoesdigitais.com",
+  "trend-whisperer-18.lovable.app",
+  "id-preview--9ad27b4d-8990-47e9-8d43-311f0f7d2680.lovable.app",
+]);
+
+function getSafeReturnUrl(rawValue: string | null) {
+  if (!rawValue) return DEFAULT_RETURN_URL;
+  try {
+    const url = new URL(rawValue);
+    if (!["http:", "https:"].includes(url.protocol)) return DEFAULT_RETURN_URL;
+    if (!ALLOWED_RETURN_HOSTS.has(url.hostname)) return DEFAULT_RETURN_URL;
+    return url.toString();
+  } catch {
+    return DEFAULT_RETURN_URL;
+  }
+}
 
 function getReturnUrlFromState(state: string | null) {
   if (!state) return DEFAULT_RETURN_URL;
-
   const parts = state.split("::");
   if (parts.length < 2) return DEFAULT_RETURN_URL;
-
   try {
-    return decodeURIComponent(parts.slice(1).join("::"));
+    return getSafeReturnUrl(decodeURIComponent(parts.slice(1).join("::")));
   } catch {
     return DEFAULT_RETURN_URL;
   }
 }
 
 function htmlResponse(title: string, message: string, success: boolean, redirectUrl = DEFAULT_RETURN_URL) {
-  // Build the redirect URL back to the app (settings page, facebook tab)
+  const safeRedirectUrl = getSafeReturnUrl(redirectUrl);
+  const targetOrigin = new URL(safeRedirectUrl).origin;
   const html = `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
+  <meta name="referrer" content="no-referrer" />
   <title>${title}</title>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0b0b14; color: #e5e5e5; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 1rem; }
@@ -44,21 +62,39 @@ function htmlResponse(title: string, message: string, success: boolean, redirect
     <div class="icon">${success ? "✅" : "❌"}</div>
     <h1>${title}</h1>
     <p>${message}</p>
-    <button onclick="window.opener ? window.close() : window.location.assign(${JSON.stringify(redirectUrl)}); window.opener && window.opener.postMessage({ type: 'fb-oauth-done', success: ${success} }, '*');">${success ? "Voltar ao app" : "Tentar novamente"}</button>
+    <button id="oauth-finish">${success ? "Voltar ao app" : "Tentar novamente"}</button>
   </div>
   <script>
+    const redirectUrl = ${JSON.stringify(safeRedirectUrl)};
+    const targetOrigin = ${JSON.stringify(targetOrigin)};
+    const payload = { type: 'fb-oauth-done', success: ${success} };
+    const finish = () => {
+      if (window.opener) {
+        window.opener.postMessage(payload, targetOrigin);
+        window.close();
+      } else {
+        window.location.assign(redirectUrl);
+      }
+    };
+    document.getElementById('oauth-finish')?.addEventListener('click', finish);
     if (window.opener) {
-      window.opener.postMessage({ type: 'fb-oauth-done', success: ${success} }, '*');
+      window.opener.postMessage(payload, targetOrigin);
       setTimeout(() => window.close(), 1500);
     } else {
-      setTimeout(() => window.location.assign(${JSON.stringify(redirectUrl)}), 1800);
+      setTimeout(() => window.location.assign(redirectUrl), 1800);
     }
   </script>
 </body>
 </html>`;
   return new Response(html, {
     status: 200,
-    headers: { ...corsHeaders, "Content-Type": "text/html; charset=utf-8" },
+    headers: {
+      ...corsHeaders,
+      "Content-Type": "text/html; charset=utf-8",
+      "Referrer-Policy": "no-referrer",
+      "X-Content-Type-Options": "nosniff",
+      "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+    },
   });
 }
 
@@ -84,7 +120,7 @@ serve(async (req) => {
     const appId = Deno.env.get("FACEBOOK_APP_ID");
     const appSecret = Deno.env.get("FACEBOOK_APP_SECRET");
     if (!appId || !appSecret) {
-        return htmlResponse("Erro de configuração", "FACEBOOK_APP_ID ou FACEBOOK_APP_SECRET não estão configurados.", false, returnUrl);
+      return htmlResponse("Erro de configuração", "FACEBOOK_APP_ID ou FACEBOOK_APP_SECRET não estão configurados.", false, returnUrl);
     }
 
     const supabase = createClient(
@@ -92,7 +128,6 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Validate state
     const { data: stateRow } = await supabase
       .from("facebook_oauth_states")
       .select("user_id, expires_at")
@@ -108,12 +143,10 @@ serve(async (req) => {
     }
 
     const userId = stateRow.user_id;
-    // Consume state immediately
     await supabase.from("facebook_oauth_states").delete().eq("state", state);
 
     const redirectUri = `${Deno.env.get("SUPABASE_URL")}/functions/v1/facebook-oauth-callback`;
 
-    // Exchange code for short-lived user token
     const tokenUrl = new URL(`${GRAPH_API}/oauth/access_token`);
     tokenUrl.searchParams.set("client_id", appId);
     tokenUrl.searchParams.set("client_secret", appSecret);
@@ -124,12 +157,11 @@ serve(async (req) => {
     if (!tokenResp.ok) {
       const errBody = await tokenResp.text();
       console.error("Token exchange failed:", errBody);
-      return htmlResponse("Erro ao trocar código", errBody.substring(0, 200), false, returnUrl);
+      return htmlResponse("Erro ao trocar código", "Não foi possível concluir a autenticação com a Meta.", false, returnUrl);
     }
     const tokenData = await tokenResp.json();
     const shortToken = tokenData.access_token;
 
-    // Exchange for long-lived (60 days) user token
     const longUrl = new URL(`${GRAPH_API}/oauth/access_token`);
     longUrl.searchParams.set("grant_type", "fb_exchange_token");
     longUrl.searchParams.set("client_id", appId);
@@ -139,7 +171,6 @@ serve(async (req) => {
     const longData = longResp.ok ? await longResp.json() : { access_token: shortToken };
     const userToken = longData.access_token || shortToken;
 
-    // Fetch all pages user manages (page tokens are already long-lived when derived from a long-lived user token)
     const fields = "id,name,access_token,category,picture{url},fan_count,instagram_business_account{id,name,username,profile_picture_url,followers_count}";
     const pagesResp = await fetch(
       `${GRAPH_API}/me/accounts?fields=${fields}&limit=200&access_token=${encodeURIComponent(userToken)}`
@@ -147,7 +178,7 @@ serve(async (req) => {
     if (!pagesResp.ok) {
       const errBody = await pagesResp.text();
       console.error("Pages fetch failed:", errBody);
-      return htmlResponse("Erro ao buscar páginas", errBody.substring(0, 200), false, returnUrl);
+      return htmlResponse("Erro ao buscar páginas", "Não foi possível carregar as páginas administradas por esta conta.", false, returnUrl);
     }
     const pagesData = await pagesResp.json();
     const pages = pagesData.data || [];
@@ -156,7 +187,6 @@ serve(async (req) => {
       return htmlResponse("Nenhuma página", "Sua conta não administra nenhuma página do Facebook. Verifique no Business Manager.", false, returnUrl);
     }
 
-    // Upsert each page into facebook_accounts (encryption trigger handles the access_token)
     let savedCount = 0;
     for (const page of pages) {
       const igId = page.instagram_business_account?.id || null;
@@ -165,7 +195,6 @@ serve(async (req) => {
       const pageToken = page.access_token;
       const pictureUrl = page.picture?.data?.url || null;
 
-      // Check if exists
       const { data: existing } = await supabase
         .from("facebook_accounts")
         .select("id")
@@ -203,12 +232,12 @@ serve(async (req) => {
 
     return htmlResponse(
       "Conectado com sucesso!",
-      `${savedCount} de ${pages.length} página(s) do Facebook conectadas. Os tokens são válidos por 60 dias.`,
+      `${savedCount} de ${pages.length} página(s) do Facebook conectadas.`,
       true,
       returnUrl
     );
   } catch (err: any) {
     console.error("facebook-oauth-callback error:", err);
-    return htmlResponse("Erro inesperado", err.message || "Tente novamente.", false);
+    return htmlResponse("Erro inesperado", "Não foi possível concluir a conexão. Tente novamente.", false);
   }
 });

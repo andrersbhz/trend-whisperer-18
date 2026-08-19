@@ -21,6 +21,16 @@ export default tseslint.config(
       ...reactHooks.configs.recommended.rules,
       "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
       "@typescript-eslint/no-unused-vars": "off",
+
+      // Legacy PostWP code uses `any` extensively. Keep visibility without
+      // blocking production fixes; tighten module-by-module as code is touched.
+      "@typescript-eslint/no-explicit-any": "warn",
+
+      // shadcn primitives intentionally use marker interfaces in a few places.
+      "@typescript-eslint/no-empty-object-type": "warn",
+
+      // CommonJS is still used by the existing Tailwind config.
+      "@typescript-eslint/no-require-imports": "warn",
     },
   },
 );

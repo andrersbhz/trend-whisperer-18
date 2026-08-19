@@ -1,10 +1,20 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { AuthorizationError, authorizeUserRequest } from "../_shared/authorize-user.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+const jsonHeaders = {
+  ...corsHeaders,
+  "Content-Type": "application/json",
+  "Cache-Control": "no-store",
+};
+
+const META_GRAPH_VERSION = Deno.env.get("META_GRAPH_VERSION") || "v21.0";
+const META_GRAPH = `https://graph.facebook.com/${META_GRAPH_VERSION}`;
 
 async function fetchWithTimeout(url: string, ms = 8000): Promise<Response | null> {
   const ctrl = new AbortController();
@@ -12,7 +22,7 @@ async function fetchWithTimeout(url: string, ms = 8000): Promise<Response | null
   try {
     return await fetch(url, { signal: ctrl.signal });
   } catch (e) {
-    console.error("[fetchWithTimeout] aborted/failed:", url, (e as any)?.message);
+    console.error("[fetchWithTimeout] aborted/failed:", (e as Error)?.message || "request failed");
     return null;
   } finally {
     clearTimeout(t);
@@ -33,16 +43,21 @@ async function processPage(
     const { data: decryptedToken } = await supabase.rpc("decrypt_credential", { val: token, enc_key: "" });
     finalToken = decryptedToken || token;
   }
+  if (!finalToken) return { processed, postsScanned };
 
+  const encodedToken = encodeURIComponent(finalToken);
   const postsResp = await fetchWithTimeout(
-    `https://graph.facebook.com/v21.0/${pageId}/feed?fields=id,permalink_url&limit=8&access_token=${finalToken}`
+    `${META_GRAPH}/${encodeURIComponent(pageId)}/feed?fields=id,permalink_url&limit=8&access_token=${encodedToken}`
   );
-  
+
   if (!postsResp || !postsResp.ok) {
     const errText = postsResp ? await postsResp.text() : "timeout";
-    console.error(`[handle-social-interactions] Feed error ${pageId}:`, errText);
-    let details: any = errText;
-    try { details = JSON.parse(errText); } catch {}
+    console.error(`[handle-social-interactions] Feed error ${pageId}:`, postsResp?.status || "timeout");
+    let details: any = { status: postsResp?.status || null };
+    try {
+      const parsed = JSON.parse(errText);
+      details = { status: postsResp?.status || null, code: parsed?.error?.code || null, type: parsed?.error?.type || null };
+    } catch { /* do not persist raw token-bearing responses */ }
     await supabase.from("automation_logs").insert({
       user_id: userId,
       level: "error",
@@ -56,16 +71,23 @@ async function processPage(
   const postsList = (await postsResp.json()).data || [];
   postsScanned = postsList.length;
 
-  // Log detalhado no formato solicitado pelo usuário
-  const { data: settings } = await supabase.from("user_settings").select("follower_growth_mode").eq("user_id", userId).single();
+  const { data: settings } = await supabase
+    .from("user_settings")
+    .select("follower_growth_mode")
+    .eq("user_id", userId)
+    .maybeSingle();
   const isGrowthMode = settings?.follower_growth_mode;
 
-  // Carregar métricas reais se disponíveis
-  const { data: pageRecord } = await supabase.from("facebook_accounts").select("last_metrics").eq("page_id", pageId).maybeSingle();
+  const { data: pageRecord } = await supabase
+    .from("facebook_accounts")
+    .select("last_metrics")
+    .eq("user_id", userId)
+    .eq("page_id", pageId)
+    .maybeSingle();
   const metrics = pageRecord?.last_metrics;
-  
-  const fanCount = metrics?.facebook?.fan_count || page.facebook?.fan_count || 0;
-  const followersCount = metrics?.facebook?.followers_count || page.facebook?.followers_count || 0;
+
+  const fanCount = metrics?.facebook?.fan_count || 0;
+  const followersCount = metrics?.facebook?.followers_count || 0;
   const totalPosts = metrics?.facebook?.post_stats?.total_posts || postsList.length;
   const totalLikes = metrics?.facebook?.post_stats?.total_likes || 0;
   const totalComments = metrics?.facebook?.post_stats?.total_comments || 0;
@@ -75,7 +97,7 @@ async function processPage(
     user_id: userId,
     level: "info",
     module: "robot",
-    message: isGrowthMode 
+    message: isGrowthMode
       ? `Analisando página: ${pageName || pageId} (Modo Crescimento Ativo 🚀)`
       : `Analisando página: ${pageName || pageId}`,
     details: {
@@ -84,22 +106,23 @@ async function processPage(
       compartilhamentos: totalShares,
       comentarios: totalComments,
       numero_postagens: totalPosts,
-      analise: isGrowthMode 
+      analise: isGrowthMode
         ? "Iniciando varredura para interagir e convidar novos seguidores"
-        : "Iniciando varredura de postagens para interação com IA"
-    }
+        : "Iniciando varredura de postagens para interação com IA",
+    },
   });
 
-  const pageAvatar = pagePicture || `https://graph.facebook.com/${pageId}/picture?type=large`;
+  const pageAvatar = pagePicture || `https://graph.facebook.com/${encodeURIComponent(pageId)}/picture?type=large`;
 
   await Promise.all(
     postsList.map(async (post: any) => {
+      const postId = encodeURIComponent(post.id);
       const [commentsResp, reactionsResp] = await Promise.all([
         fetchWithTimeout(
-          `https://graph.facebook.com/v21.0/${post.id}/comments?fields=id,message,from{name,picture},created_time,permalink_url&limit=10&access_token=${finalToken}`
+          `${META_GRAPH}/${postId}/comments?fields=id,message,from{name,picture},created_time,permalink_url&limit=10&access_token=${encodedToken}`
         ),
         fetchWithTimeout(
-          `https://graph.facebook.com/v21.0/${post.id}/reactions?fields=id,name,type,pic_large&limit=5&access_token=${finalToken}`
+          `${META_GRAPH}/${postId}/reactions?fields=id,name,type,pic_large&limit=5&access_token=${encodedToken}`
         ),
       ]);
 
@@ -149,6 +172,7 @@ async function processPage(
       const { data: existing } = await supabase
         .from("social_interactions")
         .select("external_id")
+        .eq("user_id", userId)
         .in("external_id", ids);
       const existingSet = new Set((existing || []).map((e: any) => e.external_id));
       const toInsert = newRows.filter((r) => !existingSet.has(r.external_id));
@@ -166,21 +190,25 @@ async function processPage(
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
+  if (req.method !== "POST") {
+    return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: jsonHeaders });
+  }
+
   try {
-    const { userId } = await req.json();
-    if (!userId) throw new Error("userId is required");
+    const body = await req.json().catch(() => ({}));
+    const { userId } = await authorizeUserRequest(req, body?.userId || null);
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!supabaseUrl || !serviceRoleKey) throw new Error("Configuração interna do Supabase ausente");
 
-    console.log(`[handle-social-interactions] Sync para usuário: ${userId}`);
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    const [{ data: accounts }, { data: settings }] = await Promise.all([
+    const [{ data: accounts, error: accountsError }, { data: settings }] = await Promise.all([
       supabase.from("facebook_accounts").select("*").eq("user_id", userId).eq("is_active", true),
-      supabase.from("user_settings").select("facebook_page_id, facebook_access_token").eq("user_id", userId).single(),
+      supabase.from("user_settings").select("facebook_page_id, facebook_access_token").eq("user_id", userId).maybeSingle(),
     ]);
+    if (accountsError) throw accountsError;
 
     const allPages: Array<{ page_id: string; access_token: string; page_name?: string; picture_url?: string | null }> = [];
     if (accounts && accounts.length > 0) {
@@ -201,14 +229,14 @@ serve(async (req) => {
 
     if (allPages.length === 0) {
       return new Response(JSON.stringify({ message: "Nenhuma página conectada", newInteractions: 0 }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: jsonHeaders,
       });
     }
 
     const results = await Promise.all(
       allPages.map((p) =>
         processPage(supabase, userId, p).catch((err) => {
-          console.error(`[handle-social-interactions] Erro página ${p.page_id}:`, err);
+          console.error(`[handle-social-interactions] Erro página ${p.page_id}:`, err instanceof Error ? err.message : "erro");
           return { processed: 0, postsScanned: 0 };
         })
       )
@@ -217,18 +245,18 @@ serve(async (req) => {
     const totalProcessed = results.reduce((a, b) => a + b.processed, 0);
     const totalPosts = results.reduce((a, b) => a + b.postsScanned, 0);
 
-    return new Response(JSON.stringify({ 
-      success: true, 
+    return new Response(JSON.stringify({
+      success: true,
       newInteractions: totalProcessed,
-      postsScanned: totalPosts 
-    }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  } catch (error: any) {
-    console.error("[handle-social-interactions] Erro fatal:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      postsScanned: totalPosts,
+    }), { headers: jsonHeaders });
+  } catch (error) {
+    const status = error instanceof AuthorizationError ? error.status : 500;
+    const message = error instanceof AuthorizationError ? error.message : "Falha ao sincronizar interações";
+    if (!(error instanceof AuthorizationError)) console.error("[handle-social-interactions] Erro fatal:", error);
+    return new Response(JSON.stringify({ error: message }), {
+      status,
+      headers: jsonHeaders,
     });
   }
 });

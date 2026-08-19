@@ -55,7 +55,6 @@ const NexaAgents = lazyRetry(() => import("@/nexa/pages/NexaAgents"));
 const NexaSettings = lazyRetry(() => import("@/nexa/pages/NexaSettings"));
 const NexaAudit = lazyRetry(() => import("@/nexa/pages/NexaAudit"));
 const NexaAdmin = lazyRetry(() => import("@/nexa/pages/NexaAdmin"));
-const NexaPlaceholder = lazyRetry(() => import("@/nexa/pages/NexaPlaceholder"));
 const ProtectedNexaRoute = lazyRetry(() => import("@/nexa/components/ProtectedNexaRoute"));
 
 const NotFound = lazyRetry(() => import("./pages/NotFound"));
@@ -73,10 +72,16 @@ const queryClient = new QueryClient({
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
-  
   if (loading) return <Preloader message="Validando acesso..." />;
   if (!user) return <Navigate to="/auth" replace />;
-  
+  return <DashboardLayout>{children}</DashboardLayout>;
+};
+
+const AdminRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading, isAdmin } = useAuth();
+  if (loading) return <Preloader message="Validando acesso administrativo..." />;
+  if (!user) return <Navigate to="/auth" replace />;
+  if (!isAdmin) return <Navigate to="/admin" replace />;
   return <DashboardLayout>{children}</DashboardLayout>;
 };
 
@@ -86,7 +91,6 @@ const AuthRoute = () => {
 
   useEffect(() => {
     if (!loading && user) {
-      console.log('[AuthRoute] Redirecting to /admin');
       navigate('/admin', { replace: true });
     }
   }, [user, loading, navigate]);
@@ -98,7 +102,7 @@ const AuthRoute = () => {
 const RootRoute = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  
+
   useEffect(() => {
     refreshGeoLangInBackground();
   }, []);
@@ -152,12 +156,12 @@ const App = () => (
                     <Route path="/image-studio" element={<ProtectedRoute><ImageStudioPage /></ProtectedRoute>} />
                     <Route path="/branding" element={<ProtectedRoute><BrandingPage /></ProtectedRoute>} />
                     <Route path="/payment-methods" element={<ProtectedRoute><PaymentMethodsPage /></ProtectedRoute>} />
-                    <Route path="/admin-sales" element={<ProtectedRoute><AdminSalesPage /></ProtectedRoute>} />
+                    <Route path="/admin-sales" element={<AdminRoute><AdminSalesPage /></AdminRoute>} />
                     <Route path="/license" element={<LicenseActivatePage />} />
                     <Route path="/ativar" element={<LicenseActivatePage />} />
                     <Route path="/checkout/return" element={<CheckoutReturnPage />} />
-                    <Route path="/admin/system" element={<ProtectedRoute><AdminSystemPage /></ProtectedRoute>} />
-                    
+                    <Route path="/admin/system" element={<AdminRoute><AdminSystemPage /></AdminRoute>} />
+
                     <Route path="/nexa" element={<Navigate to="/nexa/dashboard" replace />} />
                     <Route path="/nexa/login" element={<NexaLogin />} />
                     <Route path="/nexa/onboarding" element={<ProtectedNexaRoute><NexaOnboarding /></ProtectedNexaRoute>} />

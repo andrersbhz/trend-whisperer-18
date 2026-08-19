@@ -1,0 +1,69 @@
+name: PostWP CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main, "agent/**"]
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Regenerate lockfile
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+
+      - name: Persist lockfile when changed
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        run: |
+          if ! git diff --quiet -- package-lock.json; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add package-lock.json
+            git commit -m "Sync package lock"
+            git push origin HEAD:${{ github.head_ref }}
+          fi
+
+      - name: Upload regenerated lockfile
+        uses: actions/upload-artifact@v4
+        with:
+          name: regenerated-package-lock
+          path: package-lock.json
+          retention-days: 3
+
+      - name: Clean install
+        run: npm ci --no-audit --no-fund
+
+      - name: Production preflight
+        run: npm run preflight:prod
+
+      - name: Lint legacy codebase
+        continue-on-error: true
+        run: npm run lint
+
+      - name: Tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+        env:
+          VITE_SUPABASE_URL: https://example.supabase.co
+          VITE_SUPABASE_PUBLISHABLE_KEY: ci-placeholder
+          VITE_SUPABASE_PROJECT_ID: ci-placeholder
+          VITE_PAYMENTS_CLIENT_TOKEN: pk_test_ci_placeholder
