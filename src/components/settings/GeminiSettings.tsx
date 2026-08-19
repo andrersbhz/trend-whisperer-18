@@ -65,8 +65,8 @@ const GeminiSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChange, 
       title="Google Gemini (IA)"
       description="Use sua própria chave do Google Gemini para gerar artigos sem gastar créditos extras"
       connected={connected}
-      connectedInfo={connected ? 'Chave Gemini configurada ✓' : undefined}
-      onDisconnect={async () => { await onDisconnect?.(); onChange({ gemini_api_key: '' }); setTestResult(null); }}
+      connectedInfo={connected ? `Chave Gemini configurada ✓${settings.gemini_model ? ` • ${settings.gemini_model}` : ''}` : undefined}
+      onDisconnect={async () => { await onDisconnect?.(); onChange({ gemini_api_key: '', gemini_model: '' }); setTestResult(null); setAvailableModels([]); }}
       onTest={handleTest}
       testing={testing}
     >
