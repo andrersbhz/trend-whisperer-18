@@ -1,0 +1,138 @@
+name: Deploy Supabase Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Digite DEPLOY para liberar o deploy de produção'
+        required: true
+        type: string
+      deploy_database:
+        description: 'Aplicar migrations do banco'
+        required: true
+        default: true
+        type: boolean
+      deploy_functions:
+        description: 'Publicar Edge Functions revisadas'
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: postwp-supabase-production
+  cancel-in-progress: false
+
+env:
+  SUPABASE_PROJECT_ID: bvvhgwkjyfnjroudtbav
+
+jobs:
+  validate:
+    if: ${{ inputs.confirmation == 'DEPLOY' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Clean install
+        run: npm ci --no-audit --no-fund
+
+      - name: Production preflight
+        run: npm run preflight:prod
+
+      - name: Tests
+        run: npm test
+
+      - name: Production build
+        run: npm run build
+        env:
+          VITE_SUPABASE_URL: https://bvvhgwkjyfnjroudtbav.supabase.co
+          VITE_SUPABASE_PUBLISHABLE_KEY: ci-production-preflight-placeholder
+          VITE_SUPABASE_PROJECT_ID: bvvhgwkjyfnjroudtbav
+          VITE_PAYMENTS_CLIENT_TOKEN: pk_test_preflight_placeholder
+
+  deploy:
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment: production
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate deployment secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${SUPABASE_ACCESS_TOKEN:-}" ]; then
+            echo "::error::GitHub secret SUPABASE_ACCESS_TOKEN não configurado."
+            exit 1
+          fi
+          if [ "${{ inputs.deploy_database }}" = "true" ] && [ -z "${SUPABASE_DB_PASSWORD:-}" ]; then
+            echo "::error::GitHub secret SUPABASE_DB_PASSWORD não configurado para executar migrations."
+            exit 1
+          fi
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link production project
+        run: supabase link --project-ref "$SUPABASE_PROJECT_ID"
+
+      - name: Apply database migrations
+        if: ${{ inputs.deploy_database }}
+        run: supabase db push
+
+      - name: Deploy reviewed Edge Functions
+        if: ${{ inputs.deploy_functions }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          functions=(
+            automation-engine
+            create-checkout
+            create-portal-session
+            facebook-oauth-callback
+            facebook-oauth-start
+            fetch-meta-metrics
+            fetch-threads-metrics
+            google-search-console-callback
+            google-search-console-status
+            handle-instagram-interactions
+            handle-social-growth
+            handle-social-interactions
+            handle-threads-interactions
+            process-human-social-replies
+            process-social-replies
+            publish-social
+            send-email
+            threads-oauth-callback
+            threads-oauth-start
+          )
+
+          for fn in "${functions[@]}"; do
+            echo "Deploying $fn..."
+            supabase functions deploy "$fn" --project-ref "$SUPABASE_PROJECT_ID" --use-api
+          done
+
+      - name: Deployment summary
+        run: |
+          echo "### PostWP / Supabase Production" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Project: \`$SUPABASE_PROJECT_ID\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Database migrations: \`${{ inputs.deploy_database }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Edge Functions: \`${{ inputs.deploy_functions }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Preflight, tests and build: passed before deploy" >> "$GITHUB_STEP_SUMMARY"
