@@ -50,6 +50,9 @@ jobs:
       - name: Clean install
         run: npm ci --no-audit --no-fund
 
+      - name: Production preflight
+        run: npm run preflight:prod
+
       - name: Lint legacy codebase
         continue-on-error: true
         run: npm run lint
