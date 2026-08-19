@@ -37,9 +37,7 @@ const OpenAISettings = forwardRef<HTMLDivElement, Props>(({ settings, onChange, 
     setTestResult(null);
     try {
       const { data, error } = await supabase.functions.invoke('test-openai-connection', {
-        body: {
-          openai_api_key: settings.openai_api_key || undefined,
-        },
+        body: { openai_api_key: settings.openai_api_key || undefined },
       });
 
       if (error) {
@@ -69,13 +67,14 @@ const OpenAISettings = forwardRef<HTMLDivElement, Props>(({ settings, onChange, 
       title="OpenAI (ChatGPT)"
       description="Use sua própria chave da OpenAI como provedor alternativo de IA para gerar artigos"
       connected={connected}
-      connectedInfo={connected ? 'Chave OpenAI configurada ✓' : undefined}
+      connectedInfo={connected ? `Chave OpenAI configurada ✓${settings.openai_model ? ` • ${settings.openai_model}` : ''}` : undefined}
       onTest={handleTest}
       testing={testing}
       onDisconnect={async () => {
         await onDisconnect?.();
-        onChange({ openai_api_key: '' });
+        onChange({ openai_api_key: '', openai_model: '' });
         setTestResult(null);
+        setAvailableModels([]);
       }}
     >
       <div className="space-y-3">
@@ -107,7 +106,6 @@ const OpenAISettings = forwardRef<HTMLDivElement, Props>(({ settings, onChange, 
           </p>
         </div>
 
-        {/* Test connection button */}
         <div className="flex items-center gap-3">
           <Button
             type="button"
@@ -124,12 +122,11 @@ const OpenAISettings = forwardRef<HTMLDivElement, Props>(({ settings, onChange, 
           {testResult && (
             <div className={`flex items-center gap-1.5 text-xs ${testResult.success ? 'text-success' : 'text-destructive'}`}>
               {testResult.success ? <CheckCircle2 className="h-3.5 w-3.5" /> : <XCircle className="h-3.5 w-3.5" />}
-              <span>{testResult.success ? testResult.message : testResult.message}</span>
+              <span>{testResult.message}</span>
             </div>
           )}
         </div>
 
-        {/* Test result details */}
         {testResult?.success && availableModels.length > 0 && (
           <AIModelSelector
             label="OpenAI"
