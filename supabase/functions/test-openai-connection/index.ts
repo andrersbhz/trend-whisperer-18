@@ -6,6 +6,13 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+function selectRecommendedGPT(models: any[]): string | null {
+  const candidates = models
+    .filter((m: any) => /^gpt-/i.test(m.id) && !/(audio|realtime|transcribe|tts|image|search|embedding)/i.test(m.id))
+    .sort((a: any, b: any) => (b.created || 0) - (a.created || 0));
+  return candidates[0]?.id || models.find((m: any) => /^gpt-/i.test(m.id))?.id || null;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -24,7 +31,6 @@ serve(async (req) => {
     let bodyParams: any = {};
     try { bodyParams = await req.json(); } catch {}
 
-    // Use key from body (live form) or decrypt from DB
     let apiKey: string | null = bodyParams.openai_api_key || null;
 
     if (!apiKey) {
@@ -39,9 +45,7 @@ serve(async (req) => {
           enc_key: "",
           val: settings.openai_api_key,
         });
-        if (decrypted && typeof decrypted === "string" && decrypted.length > 5) {
-          apiKey = decrypted;
-        }
+        if (decrypted && typeof decrypted === "string" && decrypted.length > 5) apiKey = decrypted;
       }
     }
 
@@ -52,7 +56,6 @@ serve(async (req) => {
       );
     }
 
-    // Validate key format
     if (!apiKey.startsWith("sk-")) {
       return new Response(
         JSON.stringify({ success: false, error: "Formato de chave inválido. A chave da OpenAI deve começar com 'sk-'." }),
@@ -60,7 +63,6 @@ serve(async (req) => {
       );
     }
 
-    // Test with a minimal models list call (cheapest endpoint)
     const resp = await fetch("https://api.openai.com/v1/models", {
       headers: { Authorization: `Bearer ${apiKey}` },
     });
@@ -68,49 +70,43 @@ serve(async (req) => {
     if (resp.ok) {
       const data = await resp.json();
       const allModels = data.data || [];
-      const models = allModels
-        .filter((m: any) => m.id.includes("gpt"))
-        .map((m: any) => ({
-          id: m.id,
-          name: m.id,
-        }));
+      const gptModels = allModels.filter((m: any) => /^gpt-/i.test(m.id));
+      const models = gptModels
+        .map((m: any) => ({ id: m.id, name: m.id, created: m.created || 0 }))
+        .sort((a: any, b: any) => (b.created || 0) - (a.created || 0) || a.id.localeCompare(b.id));
+      const recommended = selectRecommendedGPT(gptModels);
 
       return new Response(
         JSON.stringify({
           success: true,
-          message: "Conexão OK!",
-          data: {
-            models,
-            recommended: "gpt-4o-mini",
-          },
+          message: "Conexão OK! Modelos carregados.",
+          data: { models: models.map(({ id, name }: any) => ({ id, name })), recommended },
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
-    } else {
-      const errText = await resp.text();
-      let errorDetail = `OpenAI retornou ${resp.status}`;
-      
-      // Cloudflare 522 checking
-      if (resp.status === 522 || errText.includes("Failed to send a request to the Edge Function") || resp.status === 503 || resp.status === 504) {
-        errorDetail = "Falha na conexão: A API está temporariamente inacessível ou houve um timeout na rede. Verifique se o seu host permite conexões externas ou tente novamente em instantes.";
-      } else {
-        try {
-          const errJson = JSON.parse(errText);
-          if (resp.status === 401) {
-            errorDetail = "Chave inválida ou expirada. Verifique sua chave em platform.openai.com/api-keys.";
-          } else if (resp.status === 429) {
-            errorDetail = "Limite de requisições atingido ou sem saldo. Verifique seu billing em platform.openai.com.";
-          } else if (errJson.error?.message) {
-            errorDetail = errJson.error.message;
-          }
-        } catch {}
-      }
-
-      return new Response(
-        JSON.stringify({ success: false, error: errorDetail }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
     }
+
+    const errText = await resp.text();
+    let errorDetail = `OpenAI retornou ${resp.status}`;
+    if (resp.status === 522 || errText.includes("Failed to send a request to the Edge Function") || resp.status === 503 || resp.status === 504) {
+      errorDetail = "Falha na conexão: A API está temporariamente inacessível ou houve um timeout na rede. Verifique se o seu host permite conexões externas ou tente novamente em instantes.";
+    } else {
+      try {
+        const errJson = JSON.parse(errText);
+        if (resp.status === 401) {
+          errorDetail = "Chave inválida ou expirada. Verifique sua chave em platform.openai.com/api-keys.";
+        } else if (resp.status === 429) {
+          errorDetail = "Limite de requisições atingido ou sem saldo. Verifique seu billing em platform.openai.com.";
+        } else if (errJson.error?.message) {
+          errorDetail = errJson.error.message;
+        }
+      } catch {}
+    }
+
+    return new Response(
+      JSON.stringify({ success: false, error: errorDetail }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   } catch (error) {
     console.error("test-openai-connection error:", error);
     return new Response(
