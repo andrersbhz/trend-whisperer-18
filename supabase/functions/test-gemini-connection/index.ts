@@ -6,6 +6,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const RECOMMENDED_GEMINI_MODEL = "gemini-3.6-flash";
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -51,50 +53,50 @@ serve(async (req) => {
       );
     }
 
-    // Test with a list models call
-    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}`);
 
     if (resp.ok) {
       const data = await resp.json();
       const allModels = data.models || [];
-      // Filter for chat-compatible models
       const models = allModels
         .filter((m: any) => m.supportedGenerationMethods?.includes("generateContent"))
         .map((m: any) => ({
           id: m.name.split("/").pop(),
-          name: m.displayName || m.name,
-        }));
-      
+          name: m.displayName || m.name.split("/").pop(),
+        }))
+        .filter((m: any) => !!m.id)
+        .sort((a: any, b: any) => a.id.localeCompare(b.id));
+
       return new Response(
         JSON.stringify({
           success: true,
-          message: "Conexão OK!",
+          message: "Conexão OK! Modelos carregados.",
           data: {
             models,
-            recommended: "gemini-1.5-flash",
+            recommended: RECOMMENDED_GEMINI_MODEL,
           },
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
-    } else {
-      const errText = await resp.text();
-      let errorDetail = `Gemini retornou ${resp.status}`;
-      try {
-        const errJson = JSON.parse(errText);
-        if (resp.status === 400 || resp.status === 403) {
-          errorDetail = "Chave inválida ou sem permissão. Verifique sua chave em aistudio.google.com/apikey.";
-        } else if (resp.status === 429) {
-          errorDetail = "Limite de requisições atingido. Aguarde alguns minutos e tente novamente.";
-        } else if (errJson.error?.message) {
-          errorDetail = errJson.error.message;
-        }
-      } catch {}
-
-      return new Response(
-        JSON.stringify({ success: false, error: errorDetail }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
     }
+
+    const errText = await resp.text();
+    let errorDetail = `Gemini retornou ${resp.status}`;
+    try {
+      const errJson = JSON.parse(errText);
+      if (resp.status === 400 || resp.status === 403) {
+        errorDetail = "Chave inválida ou sem permissão. Verifique sua chave em aistudio.google.com/apikey.";
+      } else if (resp.status === 429) {
+        errorDetail = "Limite de requisições atingido. Aguarde alguns minutos e tente novamente.";
+      } else if (errJson.error?.message) {
+        errorDetail = errJson.error.message;
+      }
+    } catch {}
+
+    return new Response(
+      JSON.stringify({ success: false, error: errorDetail }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   } catch (error) {
     console.error("test-gemini-connection error:", error);
     return new Response(
