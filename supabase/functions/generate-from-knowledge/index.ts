@@ -116,7 +116,8 @@ serve(async (req) => {
     let parsed: any = null;
 
     if (geminiKey && !parsed) {
-      const model = settings?.gemini_model || "gemini-3.6-flash";
+      const rawModel = settings?.gemini_model;
+      const model = rawModel && !/^gemini-(1\.0|1\.5|pro|ultra)/i.test(rawModel) ? rawModel : "gemini-3.6-flash";
       try {
         const parts: any[] = [{ text: promptText }];
         if (fileData) parts.push({ inlineData: { mimeType: fileData.mime, data: fileData.b64 } });

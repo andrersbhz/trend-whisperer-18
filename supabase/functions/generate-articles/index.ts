@@ -73,6 +73,9 @@ const ARTICLE_TOOL_PARAMS = {
   visual_elements: "3 a 5 elementos visuais específicos do artigo (pessoas, cenário, ações, objetos) separados por vírgula",
 };
 
+const OBSOLETE_GEMINI = /^gemini-(1\.0|1\.5|pro|ultra)/i;
+function sanitizeGeminiModel(m?: string | null) { return m && !OBSOLETE_GEMINI.test(m) ? m : ""; }
+
 async function callGeminiDirect(apiKey: string, systemPrompt: string, userPrompt: string, modelName = ""): Promise<AIResponse> {
   const model = modelName || "gemini-3.6-flash";
   let lastError: any = null;
@@ -668,7 +671,7 @@ serve(async (req) => {
     // 1. Gemini (Agora o primeiro a ser executado)
     if (geminiApiKey) {
       console.log(`[Pipeline] Adding Gemini provider as primary execution...`);
-      providers.push({ name: "Gemini", call: (s, u) => callGeminiDirect(geminiApiKey!, s, u, settings?.gemini_model) });
+      providers.push({ name: "Gemini", call: (s, u) => callGeminiDirect(geminiApiKey!, s, u, sanitizeGeminiModel(settings?.gemini_model)) });
     }
     
     // 2. OpenAI / ChatGPT (Segundo)
