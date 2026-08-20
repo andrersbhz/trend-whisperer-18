@@ -50,6 +50,11 @@ serve(async (req) => {
       );
     }
 
+    // Azure doesn't have a standardized "list models" endpoint like OpenAI.
+    // However, we can use the deployments list if the user has a Management API setup,
+    // but here we usually have a specific deployment name.
+    // For now, we'll return the current deployment as the active model and a few common options.
+    
     const url = `${endpoint.replace(/\/$/, "")}/openai/deployments/${deployment}/chat/completions?api-version=2024-02-01`;
     
     const resp = await fetch(url, {
@@ -63,7 +68,19 @@ serve(async (req) => {
 
     if (resp.ok) {
       return new Response(
-        JSON.stringify({ success: true, message: "Conexão Azure Copilot OK!" }),
+        JSON.stringify({ 
+          success: true, 
+          message: "Conexão Azure Copilot OK!",
+          data: {
+            models: [
+              { id: deployment, name: `Deployment Atual: ${deployment}` },
+              { id: "gpt-4o", name: "GPT-4o (Azure)" },
+              { id: "gpt-4-turbo", name: "GPT-4 Turbo (Azure)" },
+              { id: "gpt-35-turbo", name: "GPT-3.5 Turbo (Azure)" }
+            ],
+            recommended: deployment
+          }
+        }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     } else {
