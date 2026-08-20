@@ -12,7 +12,7 @@ async function tryLovable(prompt: string): Promise<ProviderResult> {
   const key = Deno.env.get("LOVABLE_API_KEY");
   if (!key) return { error: "LOVABLE_API_KEY ausente", paused: true };
 
-  const models = ["openai/gpt-image-2", "openai/gpt-image-1-mini", "google/gemini-3.1-flash-image", "google/gemini-2.5-flash-image", "google/gemini-3-pro-image"];
+  const models = ["openai/gpt-image-2", "openai/gpt-image-1-mini", "google/gemini-3.1-flash-image", "google/gemini-3-pro-image"];
   const errs: string[] = [];
   let paused = false;
 
@@ -36,9 +36,7 @@ async function tryLovable(prompt: string): Promise<ProviderResult> {
       });
       if (!resp.ok) {
         const text = (await resp.text()).slice(0, 300);
-        if (resp.status === 402 || resp.status === 429 || resp.status >= 500) {
-          paused = true;
-        }
+        if (resp.status === 402 || resp.status === 429 || resp.status >= 500) paused = true;
         errs.push(`Lovable ${model}: ${resp.status} ${text}`);
         continue;
       }
@@ -61,27 +59,30 @@ async function tryLovable(prompt: string): Promise<ProviderResult> {
   return { error: errs.join(" | "), paused };
 }
 
-async function tryOpenAI(apiKey: string, prompt: string): Promise<ProviderResult> {
+async function tryOpenAI(apiKey: string, prompt: string, selectedModel?: string | null): Promise<ProviderResult> {
+  const model = selectedModel && /image/i.test(selectedModel) ? selectedModel : "gpt-image-1";
   try {
     const resp = await fetch("https://api.openai.com/v1/images/generations", {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ model: "gpt-image-1", prompt, size: "1024x1024", n: 1 }),
+      body: JSON.stringify({ model, prompt, size: "1024x1024", n: 1 }),
     });
-    if (!resp.ok) return { error: `OpenAI: ${resp.status} ${(await resp.text()).slice(0, 250)}` };
+    if (!resp.ok) return { error: `OpenAI ${model}: ${resp.status} ${(await resp.text()).slice(0, 250)}` };
     const data = await resp.json();
     const b64 = data.data?.[0]?.b64_json;
     const url = data.data?.[0]?.url;
     if (b64) return { imageUrl: `data:image/png;base64,${b64}` };
     if (url) return { imageUrl: url };
-    return { error: "OpenAI: sem imagem no retorno" };
+    return { error: `OpenAI ${model}: sem imagem no retorno` };
   } catch (e) {
-    return { error: `OpenAI: ${e instanceof Error ? e.message : String(e)}` };
+    return { error: `OpenAI ${model}: ${e instanceof Error ? e.message : String(e)}` };
   }
 }
 
-async function tryGemini(apiKey: string, prompt: string): Promise<ProviderResult> {
-  const models = ["gemini-2.0-flash-exp", "gemini-2.5-flash"];
+async function tryGemini(apiKey: string, prompt: string, selectedModel?: string | null): Promise<ProviderResult> {
+  const models = selectedModel && /image/i.test(selectedModel)
+    ? [selectedModel]
+    : ["gemini-3.1-flash-image", "gemini-3-pro-image"];
   const errs: string[] = [];
   for (const model of models) {
     try {
@@ -122,54 +123,21 @@ serve(async (req) => {
     }
 
     const errors: string[] = [];
+    let hasUserProvider = false;
 
-    // 1) Lovable AI (primary)
-    const lovable = await tryLovable(prompt);
-    if (lovable.imageUrl) {
-      return new Response(JSON.stringify({ imageUrl: lovable.imageUrl, provider: "lovable" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    if (lovable.error) errors.push(lovable.error);
-
-    // 2a) Fallback via secrets do projeto (mais confiável)
-    if (lovable.paused || !lovable.imageUrl) {
-      const envOpenAI = Deno.env.get("OPENAI_API_KEY");
-      if (envOpenAI) {
-        const r = await tryOpenAI(envOpenAI, prompt);
-        if (r.imageUrl) {
-          return new Response(JSON.stringify({ imageUrl: r.imageUrl, provider: "openai-env", notice: "Lovable AI pausado — usando OpenAI (secret do projeto)." }), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
-        if (r.error) errors.push(r.error);
-      }
-      const envGemini = Deno.env.get("GEMINI_API_KEY");
-      if (envGemini) {
-        const r = await tryGemini(envGemini, prompt);
-        if (r.imageUrl) {
-          return new Response(JSON.stringify({ imageUrl: r.imageUrl, provider: "gemini-env", notice: "Lovable AI pausado — usando Gemini (secret do projeto)." }), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
-        if (r.error) errors.push(r.error);
-      }
-    }
-
-    // 2b) Fallback: user-configured OpenAI / Gemini (only when Lovable is paused/unavailable)
-    if (lovable.paused && userId) {
+    if (userId) {
       const supaUrl = Deno.env.get("SUPABASE_URL")!;
       const supaKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
       const supabase = createClient(supaUrl, supaKey);
-
       const { data: settings } = await supabase
         .from("user_settings")
-        .select("openai_api_key, gemini_api_key")
+        .select("openai_api_key, gemini_api_key, openai_model, gemini_model")
         .eq("user_id", userId)
         .single();
 
       const decrypt = async (val: string | null | undefined): Promise<string | null> => {
         if (!val) return null;
+        if (!val.startsWith("ENCRYPTED:")) return val;
         try {
           const { data } = await supabase.rpc("decrypt_credential", { enc_key: "", val });
           return typeof data === "string" && data.length > 5 ? data : null;
@@ -178,9 +146,10 @@ serve(async (req) => {
 
       const openaiKey = await decrypt(settings?.openai_api_key);
       if (openaiKey) {
-        const r = await tryOpenAI(openaiKey, prompt);
+        hasUserProvider = true;
+        const r = await tryOpenAI(openaiKey, prompt, settings?.openai_model);
         if (r.imageUrl) {
-          return new Response(JSON.stringify({ imageUrl: r.imageUrl, provider: "openai", notice: "Lovable AI pausado — usando OpenAI configurado." }), {
+          return new Response(JSON.stringify({ imageUrl: r.imageUrl, provider: "openai" }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
@@ -189,21 +158,47 @@ serve(async (req) => {
 
       const geminiKey = await decrypt(settings?.gemini_api_key);
       if (geminiKey) {
-        const r = await tryGemini(geminiKey, prompt);
+        hasUserProvider = true;
+        const r = await tryGemini(geminiKey, prompt, settings?.gemini_model);
         if (r.imageUrl) {
-          return new Response(JSON.stringify({ imageUrl: r.imageUrl, provider: "gemini", notice: "Lovable AI pausado — usando Gemini configurado." }), {
+          return new Response(JSON.stringify({ imageUrl: r.imageUrl, provider: "gemini" }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
         if (r.error) errors.push(r.error);
       }
-
-      if (!openaiKey && !geminiKey) {
-        return new Response(JSON.stringify({
-          error: "Lovable AI está pausado/sem saldo e nenhuma IA alternativa (OpenAI ou Gemini) está configurada. Cadastre uma chave em Configurações para usar como fallback.",
-        }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
     }
+
+    const envOpenAI = Deno.env.get("OPENAI_API_KEY");
+    if (!hasUserProvider && envOpenAI) {
+      const r = await tryOpenAI(envOpenAI, prompt);
+      if (r.imageUrl) {
+        return new Response(JSON.stringify({ imageUrl: r.imageUrl, provider: "openai-env" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (r.error) errors.push(r.error);
+    }
+
+    const envGemini = Deno.env.get("GEMINI_API_KEY");
+    if (!hasUserProvider && envGemini) {
+      const r = await tryGemini(envGemini, prompt);
+      if (r.imageUrl) {
+        return new Response(JSON.stringify({ imageUrl: r.imageUrl, provider: "gemini-env" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (r.error) errors.push(r.error);
+    }
+
+    // Último fallback somente quando não há chave própria funcional.
+    const lovable = await tryLovable(prompt);
+    if (lovable.imageUrl) {
+      return new Response(JSON.stringify({ imageUrl: lovable.imageUrl, provider: "lovable" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (lovable.error) errors.push(lovable.error);
 
     return new Response(JSON.stringify({
       error: `Falha ao gerar imagem em todos os provedores. ${errors.join(" | ").slice(0, 500)}`,

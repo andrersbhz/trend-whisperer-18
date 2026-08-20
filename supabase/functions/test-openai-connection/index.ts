@@ -24,7 +24,6 @@ serve(async (req) => {
     let bodyParams: any = {};
     try { bodyParams = await req.json(); } catch {}
 
-    // Use key from body (live form) or decrypt from DB
     let apiKey: string | null = bodyParams.openai_api_key || null;
 
     if (!apiKey) {
@@ -52,7 +51,6 @@ serve(async (req) => {
       );
     }
 
-    // Validate key format
     if (!apiKey.startsWith("sk-")) {
       return new Response(
         JSON.stringify({ success: false, error: "Formato de chave inválido. A chave da OpenAI deve começar com 'sk-'." }),
@@ -60,7 +58,6 @@ serve(async (req) => {
       );
     }
 
-    // Test with a minimal models list call (cheapest endpoint)
     const resp = await fetch("https://api.openai.com/v1/models", {
       headers: { Authorization: `Bearer ${apiKey}` },
     });
@@ -69,19 +66,21 @@ serve(async (req) => {
       const data = await resp.json();
       const allModels = data.data || [];
       const models = allModels
-        .filter((m: any) => m.id.includes("gpt"))
-        .map((m: any) => ({
-          id: m.id,
-          name: m.id,
-        }));
+        .map((m: any) => ({ id: m.id, name: m.id, created: Number(m.created || 0) }))
+        .sort((a: any, b: any) => b.created - a.created || a.id.localeCompare(b.id));
+
+      const recommended = models.find((m: any) =>
+        /^gpt-/i.test(m.id) &&
+        !/image|audio|realtime|transcribe|tts|search|instruct|preview|mini|nano/i.test(m.id)
+      )?.id || models.find((m: any) => /^gpt-/i.test(m.id) && !/image|audio|realtime|transcribe|tts/i.test(m.id))?.id || models[0]?.id;
 
       return new Response(
         JSON.stringify({
           success: true,
           message: "Conexão OK!",
           data: {
-            models,
-            recommended: "gpt-4o-mini",
+            models: models.map(({ id, name }: any) => ({ id, name })),
+            recommended,
           },
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -90,7 +89,6 @@ serve(async (req) => {
       const errText = await resp.text();
       let errorDetail = `OpenAI retornou ${resp.status}`;
       
-      // Cloudflare 522 checking
       if (resp.status === 522 || errText.includes("Failed to send a request to the Edge Function") || resp.status === 503 || resp.status === 504) {
         errorDetail = "Falha na conexão: A API está temporariamente inacessível ou houve um timeout na rede. Verifique se o seu host permite conexões externas ou tente novamente em instantes.";
       } else {

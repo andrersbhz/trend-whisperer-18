@@ -15,9 +15,9 @@ serve(async (req) => {
     const { analytics, socialMetrics } = await req.json();
     if (!analytics && !socialMetrics) throw new Error("analytics or socialMetrics data is required");
 
-    // Get user's Gemini API key from settings
     const authHeader = req.headers.get("Authorization");
     let geminiApiKey: string | null = null;
+    let geminiModel = "gemini-3.6-flash";
 
     if (authHeader) {
       const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -27,9 +27,9 @@ serve(async (req) => {
       });
       const { data: { user } } = await sb.auth.getUser();
       if (user) {
-        const { data: settings } = await sb.from("user_settings").select("gemini_api_key").eq("user_id", user.id).maybeSingle();
+        const { data: settings } = await sb.from("user_settings").select("gemini_api_key, gemini_model").eq("user_id", user.id).maybeSingle();
+        geminiModel = settings?.gemini_model || geminiModel;
         if (settings?.gemini_api_key) {
-          // Decrypt if needed
           const raw = settings.gemini_api_key;
           if (raw.startsWith("ENCRYPTED:")) {
             const { data: decrypted } = await sb.rpc("decrypt_credential", { val: raw, enc_key: "" });
@@ -41,37 +41,14 @@ serve(async (req) => {
       }
     }
 
-    const prompt = `Analise estes dados de Analytics e Redes Sociais de um blog brasileiro de notícias e gere exatamente 5 dicas práticas e acionáveis para melhorar o engajamento e crescimento:
-
-Dados do Site:
-${analytics ? `- Pageviews: ${analytics.pageviews}
-- Sessões: ${analytics.sessions}
-- Usuários: ${analytics.users}
-- Taxa de Rejeição: ${analytics.bounceRate}%
-- Duração Média: ${analytics.avgSessionDuration}
-- Páginas mais visitadas: ${JSON.stringify(analytics.topPages)}
-- Fontes de tráfego: ${JSON.stringify(analytics.trafficSources)}` : "Dados do site não disponíveis."}
-
-Dados de Redes Sociais:
-${socialMetrics ? `- Facebook Engajamento: ${socialMetrics.summary?.total_facebook || 0} posts
-- Instagram Engajamento: ${socialMetrics.summary?.total_instagram || 0} posts
-- Compartilhamentos: ${socialMetrics.summary?.total_shared_social || 0}
-- Redes conectadas: ${JSON.stringify(socialMetrics.jetpack?.shares_by_network || {})}` : "Dados de redes sociais não disponíveis."}
-
-Responda APENAS com um JSON array, sem markdown, sem explicação. Cada item deve ter:
-- "category": uma dessas (SEO, Conteúdo, Redes Sociais, Experiência do Usuário, Tráfego)
-- "tip": a dica em português do Brasil, clara e específica  
-- "priority": "alta", "média" ou "baixa"
-
-Exemplo: [{"category":"SEO","tip":"Otimize os meta descriptions...","priority":"alta"}]`;
+    const prompt = `Analise estes dados de Analytics e Redes Sociais de um blog brasileiro de notícias e gere exatamente 5 dicas práticas e acionáveis para melhorar o engajamento e crescimento:\n\nDados do Site:\n${analytics ? `- Pageviews: ${analytics.pageviews}\n- Sessões: ${analytics.sessions}\n- Usuários: ${analytics.users}\n- Taxa de Rejeição: ${analytics.bounceRate}%\n- Duração Média: ${analytics.avgSessionDuration}\n- Páginas mais visitadas: ${JSON.stringify(analytics.topPages)}\n- Fontes de tráfego: ${JSON.stringify(analytics.trafficSources)}` : "Dados do site não disponíveis."}\n\nDados de Redes Sociais:\n${socialMetrics ? `- Facebook Engajamento: ${socialMetrics.summary?.total_facebook || 0} posts\n- Instagram Engajamento: ${socialMetrics.summary?.total_instagram || 0} posts\n- Compartilhamentos: ${socialMetrics.summary?.total_shared_social || 0}\n- Redes conectadas: ${JSON.stringify(socialMetrics.jetpack?.shares_by_network || {})}` : "Dados de redes sociais não disponíveis."}\n\nResponda APENAS com um JSON array, sem markdown, sem explicação. Cada item deve ter:\n- "category": uma dessas (SEO, Conteúdo, Redes Sociais, Experiência do Usuário, Tráfego)\n- "tip": a dica em português do Brasil, clara e específica  \n- "priority": "alta", "média" ou "baixa"\n\nExemplo: [{"category":"SEO","tip":"Otimize os meta descriptions...","priority":"alta"}]`;
 
     let content: string | null = null;
 
-    // Try user's Gemini API key first
     if (geminiApiKey) {
       try {
         const res = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`,
+          `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(geminiModel)}:generateContent?key=${encodeURIComponent(geminiApiKey)}`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -84,7 +61,7 @@ Exemplo: [{"category":"SEO","tip":"Otimize os meta descriptions...","priority":"
         if (res.ok) {
           const d = await res.json();
           content = d.candidates?.[0]?.content?.parts?.[0]?.text || null;
-          console.log("Tips generated via user Gemini key");
+          console.log(`Tips generated via user Gemini key (${geminiModel})`);
         } else {
           console.warn("Gemini API failed:", res.status);
         }
@@ -93,7 +70,6 @@ Exemplo: [{"category":"SEO","tip":"Otimize os meta descriptions...","priority":"
       }
     }
 
-    // Fallback dicas locais (usadas quando IA não disponível ou sem créditos)
     const fallbackTips = [
       { category: "SEO", tip: "Otimize meta descriptions e títulos das páginas mais visitadas para aumentar o CTR nos resultados de busca.", priority: "alta" },
       { category: "Conteúdo", tip: `Sua taxa de rejeição está em ${analytics.bounceRate}%. Melhore a introdução dos artigos e adicione links internos para reter leitores.`, priority: "alta" },
@@ -104,52 +80,12 @@ Exemplo: [{"category":"SEO","tip":"Otimize os meta descriptions...","priority":"
 
     let warning: string | null = null;
 
-    // Fallback to Lovable AI
     if (!content) {
-      const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-      if (!LOVABLE_API_KEY) {
-        return new Response(JSON.stringify({ tips: fallbackTips, warning: "Nenhuma chave de IA configurada. Mostrando dicas padrão." }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
-      try {
-        const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${LOVABLE_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "google/gemini-2.5-flash",
-            messages: [{ role: "user", content: prompt }],
-            temperature: 0.7,
-          }),
-        });
-
-        if (response.status === 402) {
-          return new Response(JSON.stringify({ tips: fallbackTips, warning: "Créditos de IA esgotados. Configure sua chave Gemini gratuita nas Configurações para dicas personalizadas." }), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
-        if (response.status === 429) {
-          return new Response(JSON.stringify({ tips: fallbackTips, warning: "Limite de requisições atingido. Tente novamente em alguns minutos." }), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
-        if (!response.ok) {
-          warning = `IA indisponível (${response.status}). Mostrando dicas padrão.`;
-        } else {
-          const data = await response.json();
-          content = data.choices?.[0]?.message?.content || null;
-        }
-      } catch (e) {
-        console.error("Lovable AI error:", e);
-        warning = "Erro ao contatar IA. Mostrando dicas padrão.";
-      }
+      warning = geminiApiKey
+        ? `Gemini (${geminiModel}) indisponível. Mostrando dicas padrão.`
+        : "Nenhuma chave Gemini configurada. Mostrando dicas padrão.";
     }
 
-    // Parse the JSON from the AI response
     let tips = fallbackTips;
     if (content) {
       const jsonMatch = content.match(/\[[\s\S]*\]/);

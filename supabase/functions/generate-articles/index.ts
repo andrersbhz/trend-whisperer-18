@@ -74,7 +74,7 @@ const ARTICLE_TOOL_PARAMS = {
 };
 
 async function callGeminiDirect(apiKey: string, systemPrompt: string, userPrompt: string, modelName = ""): Promise<AIResponse> {
-  const model = modelName || "gemini-1.5-flash";
+  const model = modelName || "gemini-3.6-flash";
   let lastError: any = null;
 
   try {
@@ -188,7 +188,7 @@ async function callGroqDirect(apiKey: string, systemPrompt: string, userPrompt: 
 
 async function callAzureOpenAIDirect(apiKey: string, endpoint: string, deployment: string, systemPrompt: string, userPrompt: string, modelName = ""): Promise<AIResponse> {
   const deploymentToUse = modelName || deployment;
-  const url = `${endpoint.replace(/\/$/, "")}/openai/deployments/${deploymentToUse}/chat/completions?api-version=2024-02-01`;
+  const url = `${endpoint.replace(/\/$/, "")}/openai/deployments/${deploymentToUse}/chat/completions?api-version=2024-10-21`;
   const resp = await fetch(url, {
     method: "POST",
     headers: { "api-key": apiKey, "Content-Type": "application/json" },

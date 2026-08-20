@@ -29,6 +29,20 @@ async function fileToBase64(url: string): Promise<string> {
   return btoa(binary);
 }
 
+async function decryptCredential(supabase: any, value?: string | null) {
+  if (!value) return null;
+  if (!value.startsWith("ENCRYPTED:")) return value;
+  const { data } = await supabase.rpc("decrypt_credential", { enc_key: "", val: value });
+  return typeof data === "string" && data.length > 5 ? data : null;
+}
+
+function parseJson(raw: any) {
+  if (typeof raw !== "string") return raw || {};
+  try { return JSON.parse(raw); } catch {}
+  const match = raw.match(/\{[\s\S]*\}/);
+  return match ? JSON.parse(match[0]) : {};
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -57,7 +71,7 @@ serve(async (req) => {
 
     const { data: settings } = await supabase
       .from("user_settings")
-      .select("writer_prompt, categories")
+      .select("writer_prompt, categories, gemini_api_key, openai_api_key, groq_api_key, azure_openai_api_key, azure_openai_endpoint, azure_openai_deployment_name, gemini_model, openai_model, groq_model, azure_openai_model")
       .eq("user_id", userId)
       .maybeSingle();
 
@@ -67,80 +81,103 @@ serve(async (req) => {
     const finalCategory = category && cats.includes(category) ? category : (cats[0] || "geral");
     const finalTitleHint = title?.trim() || entry.title;
 
-    // Build user prompt content blocks
-    const contentBlocks: any[] = [
-      {
-        type: "text",
-        text:
-          `${settings?.writer_prompt || "Você é um jornalista experiente. Escreva com fatos, SEO e verdade."}\n\n` +
-          `Baseie-se ESTRITAMENTE no material de referência a seguir (base de conhecimento do usuário).\n` +
-          `Título sugerido: "${finalTitleHint}"\n` +
-          `Categoria: "${finalCategory}"\n\n` +
-          `Retorne SOMENTE um JSON válido com os campos:\n` +
-          `{"title":"...","content":"HTML completo do artigo, 1500-2500 palavras, com <h2>, <h3>, <p>, <ul>","excerpt":"...","seo_keyword":"...","seo_title":"...","meta_description":"...","slug":"...","image_alt":"...","image_caption":""}`,
-      },
-    ];
+    const basePrompt =
+      `${settings?.writer_prompt || "Você é um jornalista experiente. Escreva com fatos, SEO e verdade."}\n\n` +
+      `Baseie-se ESTRITAMENTE no material de referência a seguir (base de conhecimento do usuário).\n` +
+      `Título sugerido: "${finalTitleHint}"\n` +
+      `Categoria: "${finalCategory}"\n\n` +
+      `Retorne SOMENTE um JSON válido com os campos:\n` +
+      `{"title":"...","content":"HTML completo do artigo, 1500-2500 palavras, com <h2>, <h3>, <p>, <ul>","excerpt":"...","seo_keyword":"...","seo_title":"...","meta_description":"...","slug":"...","image_alt":"...","image_caption":""}`;
 
-    if (entry.content && entry.content.trim().length > 0) {
-      contentBlocks.push({
-        type: "text",
-        text: `\n\n=== MATERIAL DE REFERÊNCIA (texto) ===\n${entry.content.slice(0, 60000)}`,
-      });
-    }
+    const textMaterial = entry.content && entry.content.trim().length > 0
+      ? `\n\n=== MATERIAL DE REFERÊNCIA (texto) ===\n${entry.content.slice(0, 60000)}`
+      : "";
+    const promptText = `${basePrompt}${textMaterial}`;
 
+    let fileData: { mime: string; b64: string } | null = null;
     if (entry.file_path) {
       const { data: signed } = await supabase.storage
         .from("knowledge-files")
         .createSignedUrl(entry.file_path, 300);
       if (signed?.signedUrl) {
-        const b64 = await fileToBase64(signed.signedUrl);
-        const mime = entry.file_type || "application/pdf";
-        contentBlocks.push({
-          type: "file",
-          file: {
-            filename: entry.file_name || "referencia.pdf",
-            file_data: `data:${mime};base64,${b64}`,
-          },
-        });
+        fileData = {
+          mime: entry.file_type || "application/pdf",
+          b64: await fileToBase64(signed.signedUrl),
+        };
       }
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY não configurada");
+    const geminiKey = await decryptCredential(supabase, settings?.gemini_api_key);
+    const openaiKey = await decryptCredential(supabase, settings?.openai_api_key);
+    const groqKey = await decryptCredential(supabase, settings?.groq_api_key);
+    const azureKey = await decryptCredential(supabase, settings?.azure_openai_api_key);
 
-    const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [{ role: "user", content: contentBlocks }],
-        response_format: { type: "json_object" },
-      }),
-    });
+    const errors: string[] = [];
+    let parsed: any = null;
 
-    if (!aiRes.ok) {
-      const text = await aiRes.text();
-      if (aiRes.status === 429) throw new Error("Limite de requisições da IA atingido. Aguarde e tente novamente.");
-      if (aiRes.status === 402) throw new Error("Créditos da IA esgotados. Adicione créditos no workspace.");
-      throw new Error(`IA retornou ${aiRes.status}: ${text.slice(0, 300)}`);
+    if (geminiKey && !parsed) {
+      const model = settings?.gemini_model || "gemini-3.6-flash";
+      try {
+        const parts: any[] = [{ text: promptText }];
+        if (fileData) parts.push({ inlineData: { mimeType: fileData.mime, data: fileData.b64 } });
+        const aiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(geminiKey)}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ contents: [{ parts }], generationConfig: { responseMimeType: "application/json" } }),
+        });
+        if (!aiRes.ok) throw new Error(`Gemini ${aiRes.status}: ${(await aiRes.text()).slice(0, 240)}`);
+        const aiJson = await aiRes.json();
+        parsed = parseJson(aiJson?.candidates?.[0]?.content?.parts?.[0]?.text || "{}");
+      } catch (e) { errors.push(e instanceof Error ? e.message : String(e)); }
     }
 
-    const aiJson = await aiRes.json();
-    const raw = aiJson?.choices?.[0]?.message?.content || "{}";
-    let parsed: any = {};
-    try {
-      parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
-    } catch {
-      const match = String(raw).match(/\{[\s\S]*\}/);
-      parsed = match ? JSON.parse(match[0]) : {};
+    if (openaiKey && !parsed) {
+      const model = settings?.openai_model || "gpt-4o-mini";
+      try {
+        if (fileData && !textMaterial) throw new Error("OpenAI fallback requer conteúdo textual nesta base de conhecimento.");
+        const aiRes = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${openaiKey}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ model, messages: [{ role: "user", content: promptText }], response_format: { type: "json_object" } }),
+        });
+        if (!aiRes.ok) throw new Error(`OpenAI ${aiRes.status}: ${(await aiRes.text()).slice(0, 240)}`);
+        const aiJson = await aiRes.json();
+        parsed = parseJson(aiJson?.choices?.[0]?.message?.content || "{}");
+      } catch (e) { errors.push(e instanceof Error ? e.message : String(e)); }
     }
 
-    if (!parsed.title || !parsed.content) {
-      throw new Error("A IA não retornou um artigo válido.");
+    if (groqKey && !parsed) {
+      const model = settings?.groq_model || "llama-3.3-70b-versatile";
+      try {
+        if (fileData && !textMaterial) throw new Error("Groq fallback requer conteúdo textual nesta base de conhecimento.");
+        const aiRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${groqKey}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ model, messages: [{ role: "user", content: promptText }], response_format: { type: "json_object" } }),
+        });
+        if (!aiRes.ok) throw new Error(`Groq ${aiRes.status}: ${(await aiRes.text()).slice(0, 240)}`);
+        const aiJson = await aiRes.json();
+        parsed = parseJson(aiJson?.choices?.[0]?.message?.content || "{}");
+      } catch (e) { errors.push(e instanceof Error ? e.message : String(e)); }
     }
+
+    if (azureKey && settings?.azure_openai_endpoint && settings?.azure_openai_deployment_name && !parsed) {
+      const deployment = settings?.azure_openai_model || settings.azure_openai_deployment_name;
+      try {
+        if (fileData && !textMaterial) throw new Error("Azure fallback requer conteúdo textual nesta base de conhecimento.");
+        const aiRes = await fetch(`${settings.azure_openai_endpoint.replace(/\/$/, "")}/openai/deployments/${encodeURIComponent(deployment)}/chat/completions?api-version=2024-10-21`, {
+          method: "POST",
+          headers: { "api-key": azureKey, "Content-Type": "application/json" },
+          body: JSON.stringify({ messages: [{ role: "user", content: promptText }], response_format: { type: "json_object" } }),
+        });
+        if (!aiRes.ok) throw new Error(`Azure ${aiRes.status}: ${(await aiRes.text()).slice(0, 240)}`);
+        const aiJson = await aiRes.json();
+        parsed = parseJson(aiJson?.choices?.[0]?.message?.content || "{}");
+      } catch (e) { errors.push(e instanceof Error ? e.message : String(e)); }
+    }
+
+    if (!parsed) throw new Error(`Nenhum provedor de IA disponível ou todos falharam. ${errors.join(" | ")}`);
+    if (!parsed.title || !parsed.content) throw new Error("A IA não retornou um artigo válido.");
 
     const slug = parsed.slug ? slugify(parsed.slug) : slugify(parsed.title);
 
@@ -163,7 +200,6 @@ serve(async (req) => {
 
     if (insertErr) throw insertErr;
 
-    // Kick off image generation (fire-and-forget)
     try {
       await supabase.functions.invoke("regenerate-image", {
         body: { userId, articleIds: [inserted.id], force: true },
