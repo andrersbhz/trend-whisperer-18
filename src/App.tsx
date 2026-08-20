@@ -119,10 +119,17 @@ const PresenceTracker = () => {
   return null;
 };
 
-const App = () => (
-  <AppErrorBoundary>
+const AppContent = () => {
+  const { settings } = usePlatformSettings();
+
+  return (
     <QueryClientProvider client={queryClient}>
       <HelmetProvider>
+        {settings.google_site_verification && (
+          <Helmet>
+            <meta name="google-site-verification" content={settings.google_site_verification} />
+          </Helmet>
+        )}
         <ThemeProvider defaultTheme="dark" storageKey="a3-dashboard-theme">
           <TooltipProvider>
             <Toaster />
@@ -177,6 +184,12 @@ const App = () => (
         </ThemeProvider>
       </HelmetProvider>
     </QueryClientProvider>
+  );
+};
+
+const App = () => (
+  <AppErrorBoundary>
+    <AppContent />
   </AppErrorBoundary>
 );
 
