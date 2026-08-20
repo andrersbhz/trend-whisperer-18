@@ -122,7 +122,7 @@ const GeminiSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChange, 
           <AIModelSelector
             label="Gemini"
             models={availableModels}
-            value={settings.gemini_model || ''}
+            value={activeModel}
             recommendedModel={testResult.data?.recommended}
             onChange={(val) => onChange({ gemini_model: val })}
             disabled={testing}
