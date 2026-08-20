@@ -1,41 +1,31 @@
-# Plano de Melhoria Visual e Correção de Contrastes
+# Plano para Resolver Anexação no Search Console
 
-Este plano detalha as ações para garantir que o sistema siga padrões rigorosos de UX/UI, com foco em contrastes acessíveis, legibilidade e padronização visual neon (Verde Limão e Lilás Neon) sobre fundo preto absoluto.
+O usuário reportou que o sistema não está "anexando" no Search Console. Isso geralmente se refere à falta de verificação de propriedade (meta tag `google-site-verification`) ou falha no envio de sitemaps/URLs para a Indexing API.
 
-## Alterações Visuais e UX/UI
+## Alterações Propostas
 
-### 1. Padronização Global de Cores e Contrastes
-- **Fundo:** Garantir que o fundo de todas as páginas e cards seja preto absoluto (`#000000`) ou grafite muito escuro para cards (`#0a0a0a`).
-- **Cores de Destaque:** Uso consistente de Verde Limão (`#a3ff12`) para ações primárias e Lilás Neon (`#b57bff`) para elementos secundários e detalhes.
-- **Regra de Contraste Oposta:** 
-  - Fundo Escuro → Texto Branco ou Verde Limão.
-  - Fundo Claro (Hover/Active) → Texto Preto Absoluto.
-  - Botões brancos serão convertidos para Verde Limão com texto preto no hover.
+### 1. Banco de Dados (Manual via UI se necessário, mas planejado aqui)
+- Adicionar coluna `google_site_verification` na tabela `platform_settings`.
+- Garantir permissões de leitura `anon` para este campo para que a meta tag apareça no frontend.
 
-### 2. Refinamento de Componentes e Feedback Visual
-- **Botões:** Todos os botões seguirão o padrão `neon-border-cycle` com bordas que alternam entre verde e lilás.
-- **Hover States:** O estado de hover será agressivo e claro: fundo sólido verde limão com texto preto, garantindo que o usuário saiba exatamente onde está clicando.
-- **Inputs e Cards:** Bordas neon sutis que brilham no foco ou hover.
+### 2. Frontend - Interface Administrativa
+- **BrandingPage.tsx**: Adicionar um campo na seção "Identidade Visual" para o administrador inserir o código de verificação do Google Search Console.
+- **usePlatformSettings.ts**: Atualizar a interface e o carregamento de dados para incluir o novo campo.
 
-### 3. Correção de Erros Reportados
-- **Métricas por Categoria:** Corrigir a lógica de agregação que exibe "0 ERR".
-- **UX de Agendamento:** Melhorar o contraste dos botões de reagendamento para evitar texto escuro sobre fundo escuro.
-- **Geração de Imagens:** Garantir que o sistema utilize o `image_prompt` das configurações de forma obrigatória, integrando o conhecimento da base de dados.
+### 3. Frontend - Integração Search Console
+- **App.tsx**: Utilizar o `Helmet` ou uma lógica no `index.html` (via script ou componente root) para injetar a meta tag `<meta name="google-site-verification" content="..." />` dinamicamente baseada nas configurações da plataforma.
+- **index.html**: Adicionar um comentário/espaço reservado para a meta tag.
+
+### 4. Verificação de Indexação
+- Garantir que o `sitemap.xml` em `public/sitemap.xml` esteja acessível e atualizado (o arquivo atual parece estático, mas funcional).
+- Revisar se a Indexing API em `GoogleIndexingSettings.tsx` está funcionando corretamente (já existem campos para Chave JSON e OAuth).
 
 ## Detalhes Técnicos
+- A meta tag deve ser renderizada no `<head>` para que o rastreador do Google a encontre.
+- O campo no banco deve ser `text`.
 
-### CSS Global (`src/index.css`)
-- Atualização das variáveis de tema `.dark` para reforçar o contraste.
-- Implementação de classes utilitárias para "Cores Opostas" automáticas.
-
-### Componentes de UI (`src/components/ui/button.tsx`)
-- Revisão das variantes `default`, `outline` e `ghost` para seguir o novo esquema de cores.
-
-### Páginas de Gestão
-- **AdminSystemPage:** Melhorar o contraste da tabela de usuários.
-- **ArticlesPage:** Ajustar o feedback de carregamento e mensagens de erro (PT-BR).
-
-### Backend (Edge Functions)
-- **generate-articles & regenerate-image:** Reforçar a leitura do `image_prompt` e integração com `knowledge_entries`.
-
-Aguardando aprovação para iniciar a implementação de todas as correções de UX/UI solicitadas.
+## Passo a Passo
+1. Criar migração para adicionar o campo (tentar via RPC ou avisar que requer alteração no banco).
+2. Atualizar o hook `usePlatformSettings`.
+3. Adicionar o campo na UI de `BrandingPage`.
+4. Injetar a meta tag no `App.tsx` usando os dados do hook.
