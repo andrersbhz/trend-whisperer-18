@@ -51,19 +51,24 @@ serve(async (req) => {
       );
     }
 
-    // Test with a list models call
-    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}`);
 
     if (resp.ok) {
       const data = await resp.json();
       const allModels = data.models || [];
-      // Filter for chat-compatible models
       const models = allModels
         .filter((m: any) => m.supportedGenerationMethods?.includes("generateContent"))
         .map((m: any) => ({
           id: m.name.split("/").pop(),
-          name: m.displayName || m.name,
-        }));
+          name: m.displayName || m.name.split("/").pop(),
+        }))
+        .sort((a: any, b: any) => a.id.localeCompare(b.id));
+
+      const preferred = models.find((m: any) => m.id === "gemini-3.6-flash")?.id;
+      const latestFlash = [...models]
+        .filter((m: any) => /gemini-.*flash/i.test(m.id) && !/image|lite|preview|exp/i.test(m.id))
+        .sort((a: any, b: any) => b.id.localeCompare(a.id))[0]?.id;
+      const recommended = preferred || latestFlash || models[0]?.id || "gemini-3.6-flash";
       
       return new Response(
         JSON.stringify({
@@ -71,7 +76,7 @@ serve(async (req) => {
           message: "Conexão OK!",
           data: {
             models,
-            recommended: "gemini-1.5-flash",
+            recommended,
           },
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
