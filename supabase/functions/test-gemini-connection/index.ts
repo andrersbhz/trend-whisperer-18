@@ -56,12 +56,15 @@ serve(async (req) => {
     if (resp.ok) {
       const data = await resp.json();
       const allModels = data.models || [];
+      // Modelos obsoletos/descontinuados que não devem ser exibidos nem selecionados
+      const OBSOLETE = /^(models\/)?gemini-(1\.0|1\.5|pro|ultra)/i;
       const models = allModels
         .filter((m: any) => m.supportedGenerationMethods?.includes("generateContent"))
         .map((m: any) => ({
           id: m.name.split("/").pop(),
           name: m.displayName || m.name.split("/").pop(),
         }))
+        .filter((m: any) => !OBSOLETE.test(m.id))
         .sort((a: any, b: any) => a.id.localeCompare(b.id));
 
       const preferred = models.find((m: any) => m.id === "gemini-3.6-flash")?.id;
@@ -69,6 +72,7 @@ serve(async (req) => {
         .filter((m: any) => /gemini-.*flash/i.test(m.id) && !/image|lite|preview|exp/i.test(m.id))
         .sort((a: any, b: any) => b.id.localeCompare(a.id))[0]?.id;
       const recommended = preferred || latestFlash || models[0]?.id || "gemini-3.6-flash";
+
       
       return new Response(
         JSON.stringify({
