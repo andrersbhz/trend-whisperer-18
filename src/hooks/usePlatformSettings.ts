@@ -44,6 +44,7 @@ export interface PlatformSettings {
   font_color_base: string;
   font_color_muted: string;
   plans_json: PlanTier[];
+  google_site_verification?: string | null;
 }
 
 export const DEFAULT_PLANS: PlanTier[] = [
@@ -92,6 +93,7 @@ const DEFAULTS: PlatformSettings = {
   font_color_base: "#ffffff",
   font_color_muted: "rgba(255,255,255,0.6)",
   plans_json: DEFAULT_PLANS,
+  google_site_verification: null,
 };
 
 export function usePlatformSettings() {
@@ -102,7 +104,7 @@ export function usePlatformSettings() {
     setLoading(true);
     const { data } = await supabase
       .from("platform_settings")
-      .select("id,brand_name,brand_short,tagline,description,logo_url,favicon_url,hero_video_url,hero_image_url,hero_title_color,hero_title_size,hero_description_color,hero_description_size,hero_link_url,hero_link_label,hero_button_bg_color,hero_button_text_color,primary_color,accent_color,cta_primary,cta_secondary,offer_badge,footer_text,button_radius,button_hover_style,font_color_base,font_color_muted,plans_json,updated_at")
+      .select("id,brand_name,brand_short,tagline,description,logo_url,favicon_url,hero_video_url,hero_image_url,hero_title_color,hero_title_size,hero_description_color,hero_description_size,hero_link_url,hero_link_label,hero_button_bg_color,hero_button_text_color,primary_color,accent_color,cta_primary,cta_secondary,offer_badge,footer_text,button_radius,button_hover_style,font_color_base,font_color_muted,plans_json,updated_at,google_site_verification")
       .limit(1)
       .maybeSingle();
 

@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
-import { Upload, Save, ExternalLink, Palette, Image as ImageIcon, ShieldCheck, DollarSign, Plus, Trash2, Star, MousePointer2, Type, MonitorPlay, Link2 } from "lucide-react";
+import { Upload, Save, ExternalLink, Palette, Image as ImageIcon, ShieldCheck, DollarSign, Plus, Trash2, Star, MousePointer2, Type, MonitorPlay, Link2, Search } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const BrandingPage = () => {
@@ -129,6 +129,7 @@ const BrandingPage = () => {
         plans_json: form.plans_json as any,
         updated_by: user?.id,
         updated_at: new Date().toISOString(),
+        google_site_verification: form.google_site_verification,
       } as any)
       .eq("id", settings.id);
     setSaving(false);
@@ -193,6 +194,25 @@ const BrandingPage = () => {
             </div>
             <Input value={form.favicon_url || ""} onChange={(e) => update("favicon_url", e.target.value)} placeholder="ou cole uma URL" className="bg-slate-950 border-slate-700 text-white mt-2 text-xs" />
           </div>
+        </div>
+      </Card>
+
+      <Card className="p-6 bg-slate-900/60 border-slate-800 space-y-4">
+        <div className="flex items-center gap-2 pb-2 border-b border-slate-800">
+          <Search className="h-5 w-5 text-lime-400" />
+          <h2 className="text-lg font-bold text-white">Google Search Console</h2>
+        </div>
+        <div>
+          <Label className="text-white">Código de Verificação (google-site-verification)</Label>
+          <p className="text-[11px] text-white/50 mb-2">
+            Insira apenas o código da meta tag (ex: 1234567890abcdef).
+          </p>
+          <Input 
+            value={form.google_site_verification || ""} 
+            onChange={(e) => update("google_site_verification", e.target.value)} 
+            placeholder="Ex: P6u_Z1uX2W..."
+            className="bg-slate-950 border-slate-700 text-white" 
+          />
         </div>
       </Card>
 

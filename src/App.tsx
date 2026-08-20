@@ -1,12 +1,13 @@
-import { useEffect, lazy, Suspense } from "react";
+import { useEffect, lazy, Suspense, useMemo } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, Navigate, useNavigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
-import { HelmetProvider } from "react-helmet-async";
+import { HelmetProvider, Helmet } from "react-helmet-async";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import { usePlatformSettings } from "@/hooks/usePlatformSettings";
 import { useOnlinePresence } from "@/hooks/useOnlinePresence";
 import Preloader from "@/components/Preloader";
 import AppErrorBoundary from "@/components/AppErrorBoundary";
@@ -118,10 +119,17 @@ const PresenceTracker = () => {
   return null;
 };
 
-const App = () => (
-  <AppErrorBoundary>
+const AppContent = () => {
+  const { settings } = usePlatformSettings();
+
+  return (
     <QueryClientProvider client={queryClient}>
       <HelmetProvider>
+        {settings.google_site_verification && (
+          <Helmet>
+            <meta name="google-site-verification" content={settings.google_site_verification} />
+          </Helmet>
+        )}
         <ThemeProvider defaultTheme="dark" storageKey="a3-dashboard-theme">
           <TooltipProvider>
             <Toaster />
@@ -176,6 +184,12 @@ const App = () => (
         </ThemeProvider>
       </HelmetProvider>
     </QueryClientProvider>
+  );
+};
+
+const App = () => (
+  <AppErrorBoundary>
+    <AppContent />
   </AppErrorBoundary>
 );
 
