@@ -13,6 +13,7 @@ import AutomationSettings from '@/components/settings/AutomationSettings';
 import GeminiSettings from '@/components/settings/GeminiSettings';
 import OpenAISettings from '@/components/settings/OpenAISettings';
 import GroqSettings from '@/components/settings/GroqSettings';
+import AzureCopilotSettings from '@/components/settings/AzureCopilotSettings';
 import JetpackSettings from '@/components/settings/JetpackSettings';
 import FacebookSettings from '@/components/settings/FacebookSettings';
 import { getErrorMessage, runBackendMutation, runBackendQuery } from '@/lib/backend';
@@ -83,9 +84,9 @@ const defaultSettings: UserSettings = {
   azure_openai_endpoint: '',
   azure_openai_deployment_name: '',
   groq_api_key: '',
-  gemini_model: 'gemini-1.5-flash',
-  openai_model: 'gpt-4o-mini',
-  groq_model: 'llama-3.3-70b-versatile',
+  gemini_model: 'gemini-3.6-flash',
+  openai_model: '',
+  groq_model: '',
   azure_openai_model: '',
   youtube_api_key: '',
   categories: ['esportes', 'politica', 'policia', 'saude', 'celebridades', 'financas'],
@@ -176,6 +177,10 @@ const SettingsPage = () => {
             azure_openai_endpoint: userData.azure_openai_endpoint || '',
             azure_openai_deployment_name: userData.azure_openai_deployment_name || '',
             groq_api_key: '',
+            gemini_model: (userData as any).gemini_model || defaultSettings.gemini_model,
+            openai_model: (userData as any).openai_model || '',
+            groq_model: (userData as any).groq_model || '',
+            azure_openai_model: (userData as any).azure_openai_model || userData.azure_openai_deployment_name || '',
             youtube_api_key: '',
             categories: userData.categories || defaultSettings.categories,
             priority_categories: (userData as any).priority_categories || [],
@@ -250,6 +255,10 @@ const SettingsPage = () => {
         google_indexing_key: settings.google_indexing_key,
         azure_openai_endpoint: settings.azure_openai_endpoint,
         azure_openai_deployment_name: settings.azure_openai_deployment_name,
+        gemini_model: settings.gemini_model || 'gemini-3.6-flash',
+        openai_model: settings.openai_model || null,
+        groq_model: settings.groq_model || null,
+        azure_openai_model: settings.azure_openai_model || settings.azure_openai_deployment_name || null,
         categories: settings.categories,
         priority_categories: settings.priority_categories,
         articles_per_day: settings.articles_per_day,
@@ -321,6 +330,12 @@ const SettingsPage = () => {
           instagram_account_id: settings.instagram_account_id,
           google_analytics_property_id: settings.google_analytics_property_id,
           google_indexing_key: settings.google_indexing_key,
+          azure_openai_endpoint: settings.azure_openai_endpoint,
+          azure_openai_deployment_name: settings.azure_openai_deployment_name,
+          gemini_model: settings.gemini_model || 'gemini-3.6-flash',
+          openai_model: settings.openai_model || null,
+          groq_model: settings.groq_model || null,
+          azure_openai_model: settings.azure_openai_model || settings.azure_openai_deployment_name || null,
           categories: settings.categories,
           priority_categories: settings.priority_categories,
           articles_per_day: settings.articles_per_day,
@@ -436,6 +451,7 @@ const SettingsPage = () => {
           <GeminiSettings settings={settings} onChange={updateSettings} hasGeminiKey={credStatus.has_gemini_key} onDisconnect={() => disconnectCredential({ gemini_api_key: '' }, 'Gemini')} />
           <OpenAISettings settings={settings} onChange={updateSettings} hasOpenaiKey={credStatus.has_openai_key} onDisconnect={() => disconnectCredential({ openai_api_key: '' }, 'OpenAI')} />
           <GroqSettings settings={settings} onChange={updateSettings} hasGroqKey={credStatus.has_groq_key} onDisconnect={() => disconnectCredential({ groq_api_key: '' }, 'Groq')} />
+          <AzureCopilotSettings settings={settings} onChange={updateSettings} hasAzureKey={credStatus.has_azure_key} onDisconnect={() => disconnectCredential({ azure_openai_api_key: '', azure_openai_endpoint: '', azure_openai_deployment_name: '', azure_openai_model: '' }, 'Azure OpenAI')} />
         </TabsContent>
 
         <TabsContent value="knowledge" className="space-y-6 mt-0 animate-in fade-in-50 duration-300">
