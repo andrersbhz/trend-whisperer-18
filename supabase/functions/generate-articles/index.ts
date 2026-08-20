@@ -9,6 +9,7 @@ const corsHeaders = {
 // ── Helpers ───────────────────────────────────────────────────────────────
 
 function stripHtml(text: string): string {
+  if (!text) return "";
   return text.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
 }
 
