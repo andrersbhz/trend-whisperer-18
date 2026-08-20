@@ -685,7 +685,7 @@ serve(async (req) => {
     if (azureApiKey && settings?.azure_openai_endpoint && settings?.azure_openai_deployment_name) {
       providers.push({ 
         name: "Azure Copilot", 
-        call: (s, u) => callAzureOpenAIDirect(azureApiKey!, settings.azure_openai_endpoint, settings.azure_openai_deployment_name, s, u) 
+        call: (s, u) => callAzureOpenAIDirect(azureApiKey!, settings.azure_openai_endpoint, settings.azure_openai_deployment_name, s, u, settings?.azure_openai_model) 
       });
     }
 
