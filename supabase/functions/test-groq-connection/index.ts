@@ -58,7 +58,6 @@ serve(async (req) => {
       );
     }
 
-    // Test with models list endpoint
     const resp = await fetch("https://api.groq.com/openai/v1/models", {
       headers: { Authorization: `Bearer ${apiKey}` },
     });
@@ -66,18 +65,19 @@ serve(async (req) => {
     if (resp.ok) {
       const data = await resp.json();
       const allModels = data.data || [];
-      const models = allModels.map((m: any) => ({
-        id: m.id,
-        name: m.id,
-      }));
+      const models = allModels
+        .map((m: any) => ({ id: m.id, name: m.id, created: Number(m.created || 0) }))
+        .sort((a: any, b: any) => b.created - a.created || a.id.localeCompare(b.id));
+
+      const recommended = models.find((m: any) => /llama/i.test(m.id) && !/guard|prompt-guard/i.test(m.id))?.id || models[0]?.id;
 
       return new Response(
         JSON.stringify({
           success: true,
           message: "Conexão OK!",
           data: {
-            models,
-            recommended: "llama-3.3-70b-versatile",
+            models: models.map(({ id, name }: any) => ({ id, name })),
+            recommended,
           },
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
