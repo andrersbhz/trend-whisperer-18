@@ -23,14 +23,21 @@ const GeminiSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChange, 
   const [testResult, setTestResult] = useState<{ success: boolean; message: string; data?: any } | null>(null);
   const [availableModels, setAvailableModels] = useState<any[]>([]);
 
+  const OBSOLETE_GEMINI = /^gemini-(1\.0|1\.5|pro|ultra)/i;
+  const activeModel = settings.gemini_model && !OBSOLETE_GEMINI.test(settings.gemini_model) ? settings.gemini_model : '';
+
   useEffect(() => {
     if (testResult?.success && testResult.data?.models) {
-      setAvailableModels(testResult.data.models);
-      if (!settings.gemini_model && testResult.data.recommended) {
+      const list = testResult.data.models as { id: string }[];
+      setAvailableModels(list);
+      const current = settings.gemini_model;
+      const isValid = !!current && !OBSOLETE_GEMINI.test(current) && list.some((m) => m.id === current);
+      if (!isValid && testResult.data.recommended) {
         onChange({ gemini_model: testResult.data.recommended });
       }
     }
   }, [testResult, settings.gemini_model, onChange]);
+
 
   const handleTest = async () => {
     setTesting(true);
