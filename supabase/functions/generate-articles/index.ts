@@ -73,7 +73,7 @@ const ARTICLE_TOOL_PARAMS = {
   visual_elements: "3 a 5 elementos visuais específicos do artigo (pessoas, cenário, ações, objetos) separados por vírgula",
 };
 
-async function callGeminiDirect(apiKey: string, systemPrompt: string, userPrompt: string, modelName = "gemini-1.5-flash"): Promise<AIResponse> {
+async function callGeminiDirect(apiKey: string, systemPrompt: string, userPrompt: string, modelName = ""): Promise<AIResponse> {
   const model = modelName || "gemini-1.5-flash";
   let lastError: any = null;
 
@@ -110,12 +110,13 @@ async function callGeminiDirect(apiKey: string, systemPrompt: string, userPrompt
   }
 }
 
-async function callOpenAIDirect(apiKey: string, systemPrompt: string, userPrompt: string, modelName = "gpt-4o-mini"): Promise<AIResponse> {
+async function callOpenAIDirect(apiKey: string, systemPrompt: string, userPrompt: string, modelName = ""): Promise<AIResponse> {
+  const model = modelName || "gpt-4o-mini";
   const resp = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: modelName || "gpt-4o-mini",
+      model: model,
       messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }],
       tools: [{
         type: "function",
@@ -147,12 +148,13 @@ async function callOpenAIDirect(apiKey: string, systemPrompt: string, userPrompt
   return JSON.parse(content);
 }
 
-async function callGroqDirect(apiKey: string, systemPrompt: string, userPrompt: string, modelName = "llama-3.3-70b-versatile"): Promise<AIResponse> {
+async function callGroqDirect(apiKey: string, systemPrompt: string, userPrompt: string, modelName = ""): Promise<AIResponse> {
+  const model = modelName || "llama-3.3-70b-versatile";
   const resp = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: modelName || "llama-3.3-70b-versatile",
+      model: model,
       messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }],
       tools: [{
         type: "function",
@@ -184,8 +186,9 @@ async function callGroqDirect(apiKey: string, systemPrompt: string, userPrompt: 
   return JSON.parse(content);
 }
 
-async function callAzureOpenAIDirect(apiKey: string, endpoint: string, deployment: string, systemPrompt: string, userPrompt: string): Promise<AIResponse> {
-  const url = `${endpoint.replace(/\/$/, "")}/openai/deployments/${deployment}/chat/completions?api-version=2024-02-01`;
+async function callAzureOpenAIDirect(apiKey: string, endpoint: string, deployment: string, systemPrompt: string, userPrompt: string, modelName = ""): Promise<AIResponse> {
+  const deploymentToUse = modelName || deployment;
+  const url = `${endpoint.replace(/\/$/, "")}/openai/deployments/${deploymentToUse}/chat/completions?api-version=2024-02-01`;
   const resp = await fetch(url, {
     method: "POST",
     headers: { "api-key": apiKey, "Content-Type": "application/json" },
@@ -682,7 +685,7 @@ serve(async (req) => {
     if (azureApiKey && settings?.azure_openai_endpoint && settings?.azure_openai_deployment_name) {
       providers.push({ 
         name: "Azure Copilot", 
-        call: (s, u) => callAzureOpenAIDirect(azureApiKey!, settings.azure_openai_endpoint, settings.azure_openai_deployment_name, s, u) 
+        call: (s, u) => callAzureOpenAIDirect(azureApiKey!, settings.azure_openai_endpoint, settings.azure_openai_deployment_name, s, u, settings?.azure_openai_model) 
       });
     }
 
