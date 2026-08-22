@@ -11,38 +11,28 @@ export default function BrandThemeRuntime() {
   useEffect(() => {
     if (!settings.id) return;
     let active = true;
-
     async function loadTheme() {
-      const { data } = await supabase
-        .from("platform_settings")
-        .select("theme_json")
-        .eq("id", settings.id)
-        .maybeSingle();
+      const { data } = await supabase.from("platform_settings").select("theme_json").eq("id", settings.id).maybeSingle();
       if (active) setTheme(normalizeBrandTheme((data as any)?.theme_json));
     }
-
     loadTheme();
-    const onThemeUpdate = (event: Event) => {
-      const custom = event as CustomEvent<BrandThemeSettings>;
-      setTheme(normalizeBrandTheme(custom.detail));
-    };
+    const onThemeUpdate = (event: Event) => setTheme(normalizeBrandTheme((event as CustomEvent<BrandThemeSettings>).detail));
     window.addEventListener("brand-theme-updated", onThemeUpdate);
-    return () => {
-      active = false;
-      window.removeEventListener("brand-theme-updated", onThemeUpdate);
-    };
+    return () => { active = false; window.removeEventListener("brand-theme-updated", onThemeUpdate); };
   }, [settings.id]);
 
   useEffect(() => {
     const root = document.documentElement;
     const primary = settings.primary_color || "#a3ff12";
     const accent = settings.accent_color || "#b57bff";
+    const primaryForeground = contrastForeground(primary);
+    const accentForeground = contrastForeground(accent);
 
     const variables: Record<string, string> = {
       "--primary": hexToHsl(primary, "83 100% 54%"),
-      "--primary-foreground": contrastForeground(primary),
+      "--primary-foreground": primaryForeground,
       "--accent": hexToHsl(accent, "266 100% 74%"),
-      "--accent-foreground": contrastForeground(accent),
+      "--accent-foreground": accentForeground,
       "--ring": hexToHsl(primary, "83 100% 54%"),
       "--background": hexToHsl(theme.background_color, "0 0% 0%"),
       "--foreground": hexToHsl(theme.text_color, "0 0% 100%"),
@@ -65,7 +55,7 @@ export default function BrandThemeRuntime() {
       "--sidebar-background": hexToHsl(theme.sidebar_color, "0 0% 0%"),
       "--sidebar-foreground": hexToHsl(theme.text_color, "0 0% 100%"),
       "--sidebar-primary": hexToHsl(primary, "83 100% 54%"),
-      "--sidebar-primary-foreground": contrastForeground(primary),
+      "--sidebar-primary-foreground": primaryForeground,
       "--sidebar-accent": hexToHsl(theme.secondary_color, "0 0% 8%"),
       "--sidebar-accent-foreground": hexToHsl(theme.text_color, "0 0% 100%"),
       "--sidebar-border": hexToHsl(theme.border_color, "0 0% 15%"),
@@ -86,27 +76,23 @@ export default function BrandThemeRuntime() {
       "--brand-sales-surface": theme.sales_surface_color,
       "--brand-sales-text": theme.sales_text_color,
       "--brand-sales-muted": theme.sales_muted_text_color,
-      "--brand-button-primary-bg": theme.primary_button_bg,
-      "--brand-button-primary-text": theme.primary_button_text,
-      "--brand-button-primary-hover-bg": theme.primary_button_hover_bg,
-      "--brand-button-primary-hover-text": theme.primary_button_hover_text,
+      "--brand-button-primary-bg": theme.primary_button_bg || primary,
+      "--brand-button-primary-text": theme.primary_button_text || `hsl(${primaryForeground})`,
+      "--brand-button-primary-hover-bg": theme.primary_button_hover_bg || accent,
+      "--brand-button-primary-hover-text": theme.primary_button_hover_text || `hsl(${accentForeground})`,
       "--brand-button-secondary-bg": theme.secondary_button_bg,
       "--brand-button-secondary-text": theme.secondary_button_text,
       "--brand-button-secondary-hover-bg": theme.secondary_button_hover_bg,
       "--brand-button-secondary-hover-text": theme.secondary_button_hover_text,
+      "--brand-tab-active-bg": primary,
+      "--brand-tab-active-text": `hsl(${primaryForeground})`,
+      "--brand-tab-hover-bg": theme.secondary_color,
+      "--brand-tab-hover-text": theme.text_color,
     };
 
     Object.entries(variables).forEach(([name, value]) => root.style.setProperty(name, value));
-
-    const hoverShadow = settings.button_hover_style === "glow"
-      ? `0 0 18px ${primary}66`
-      : settings.button_hover_style === "outline"
-        ? "none"
-        : settings.button_hover_style === "scale"
-          ? "0 10px 24px rgba(0,0,0,.18)"
-          : theme.panel_shadow;
+    const hoverShadow = settings.button_hover_style === "glow" ? `0 0 18px ${primary}66` : settings.button_hover_style === "outline" ? "none" : settings.button_hover_style === "scale" ? "0 10px 24px rgba(0,0,0,.18)" : theme.panel_shadow;
     root.style.setProperty("--brand-button-hover-shadow", hoverShadow);
-
     document.body.dataset.buttonHoverStyle = settings.button_hover_style || "standard";
   }, [settings, theme]);
 
