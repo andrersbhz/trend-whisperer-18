@@ -11,6 +11,7 @@ import { usePlatformSettings } from "@/hooks/usePlatformSettings";
 import { useOnlinePresence } from "@/hooks/useOnlinePresence";
 import Preloader from "@/components/Preloader";
 import AppErrorBoundary from "@/components/AppErrorBoundary";
+import BrandThemeRuntime from "@/components/BrandThemeRuntime";
 import { refreshGeoLangInBackground } from "@/lib/geo-language";
 
 /** Lazy com 1 retry — evita tela branca quando um chunk falha por rede/deploy. */
@@ -21,7 +22,6 @@ const lazyRetry = (factory: () => Promise<any>) =>
     )
   );
 
-// Lazy components
 const DashboardLayout = lazyRetry(() => import("@/components/DashboardLayout"));
 const Auth = lazyRetry(() => import("@/pages/Auth"));
 const Dashboard = lazyRetry(() => import("@/pages/Dashboard"));
@@ -47,7 +47,6 @@ const LicenseActivatePage = lazyRetry(() => import("@/pages/LicenseActivatePage"
 const CheckoutReturnPage = lazyRetry(() => import("@/pages/CheckoutReturnPage"));
 const AdminSystemPage = lazyRetry(() => import("@/pages/AdminSystemPage"));
 
-// NEXA
 const NexaLogin = lazyRetry(() => import("@/nexa/pages/NexaLogin"));
 const NexaOnboarding = lazyRetry(() => import("@/nexa/pages/NexaOnboarding"));
 const NexaDashboard = lazyRetry(() => import("@/nexa/pages/NexaDashboard"));
@@ -74,10 +73,8 @@ const queryClient = new QueryClient({
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
-  
   if (loading) return <Preloader message="Validando acesso..." />;
   if (!user) return <Navigate to="/auth" replace />;
-  
   return <DashboardLayout>{children}</DashboardLayout>;
 };
 
@@ -86,10 +83,7 @@ const AuthRoute = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!loading && user) {
-      console.log('[AuthRoute] Redirecting to /admin');
-      navigate('/admin', { replace: true });
-    }
+    if (!loading && user) navigate('/admin', { replace: true });
   }, [user, loading, navigate]);
 
   if (loading) return <Preloader message="Autenticando..." />;
@@ -99,15 +93,10 @@ const AuthRoute = () => {
 const RootRoute = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  
-  useEffect(() => {
-    refreshGeoLangInBackground();
-  }, []);
 
+  useEffect(() => { refreshGeoLangInBackground(); }, []);
   useEffect(() => {
-    if (!loading && user) {
-      navigate('/admin', { replace: true });
-    }
+    if (!loading && user) navigate('/admin', { replace: true });
   }, [user, loading, navigate]);
 
   if (loading) return <Preloader message="Carregando..." />;
@@ -131,6 +120,7 @@ const AppContent = () => {
           </Helmet>
         )}
         <ThemeProvider defaultTheme="dark" storageKey="a3-dashboard-theme">
+          <BrandThemeRuntime />
           <TooltipProvider>
             <Toaster />
             <Sonner />
@@ -165,7 +155,6 @@ const AppContent = () => {
                     <Route path="/ativar" element={<LicenseActivatePage />} />
                     <Route path="/checkout/return" element={<CheckoutReturnPage />} />
                     <Route path="/admin/system" element={<ProtectedRoute><AdminSystemPage /></ProtectedRoute>} />
-                    
                     <Route path="/nexa" element={<Navigate to="/nexa/dashboard" replace />} />
                     <Route path="/nexa/login" element={<NexaLogin />} />
                     <Route path="/nexa/onboarding" element={<ProtectedNexaRoute><NexaOnboarding /></ProtectedNexaRoute>} />
