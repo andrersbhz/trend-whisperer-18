@@ -12,29 +12,29 @@
 }
 
 [data-ui-button="true"][data-variant="default"]:hover {
-  background: hsl(var(--background)) !important;
-  color: hsl(var(--primary)) !important;
-  border-color: hsl(var(--primary)) !important;
-  box-shadow: 0 8px 24px -12px hsl(var(--primary) / 0.55) !important;
+  background: hsl(var(--accent)) !important;
+  color: hsl(var(--accent-foreground)) !important;
+  border-color: hsl(var(--accent)) !important;
+  box-shadow: var(--brand-button-hover-shadow, 0 8px 24px -12px hsl(var(--primary) / 0.55)) !important;
 }
 
 [data-ui-button="true"][data-variant="outline"]:hover,
 [data-ui-button="true"][data-variant="secondary"]:hover,
 [data-ui-button="true"][data-variant="ghost"]:hover {
-  background: hsl(var(--foreground)) !important;
-  color: hsl(var(--background)) !important;
-  border-color: hsl(var(--foreground)) !important;
+  background: hsl(var(--accent)) !important;
+  color: hsl(var(--accent-foreground)) !important;
+  border-color: hsl(var(--accent)) !important;
 }
 
 [data-ui-button="true"][data-variant="destructive"]:hover {
-  background: hsl(var(--background)) !important;
-  color: hsl(var(--destructive)) !important;
+  background: hsl(var(--destructive) / 0.9) !important;
+  color: hsl(var(--destructive-foreground)) !important;
   border-color: hsl(var(--destructive)) !important;
 }
 
 [data-ui-button="true"][data-variant="link"]:hover {
   background: transparent !important;
-  color: hsl(var(--foreground)) !important;
+  color: hsl(var(--accent)) !important;
   text-decoration: underline;
   transform: none;
 }
@@ -43,30 +43,19 @@
   transform: none;
 }
 
-/* Articles + Schedule: CTA labels and icons are ALWAYS white on hover.
-   This intentionally overrides local Tailwind classes such as hover:text-primary,
-   hover:text-black and inline inherited text colors used by legacy buttons. */
-.page-cta-scheme button[data-ui-button="true"]:hover,
-.page-cta-scheme button[data-ui-button="true"]:hover > *,
-.page-cta-scheme [data-ui-button="true"]:hover,
-.page-cta-scheme [data-ui-button="true"]:hover * {
-  color: #ffffff !important;
-  -webkit-text-fill-color: #ffffff !important;
+body[data-button-hover-style="outline"] [data-ui-button="true"]:hover {
+  background: transparent !important;
+  color: hsl(var(--primary)) !important;
+  border-color: hsl(var(--primary)) !important;
+  box-shadow: none !important;
 }
 
-.page-cta-scheme button[data-ui-button="true"]:hover svg,
-.page-cta-scheme [data-ui-button="true"]:hover svg {
-  color: #ffffff !important;
-  stroke: #ffffff !important;
+body[data-button-hover-style="scale"] [data-ui-button="true"]:hover {
+  transform: translateY(-1px) scale(1.05);
 }
 
-/* Social Robot header: the second button is the automation toggle (Ligar/Desativar Robô).
-   Keep label/icon white on hover regardless of success/destructive local colors. */
-.space-y-6.lg\:space-y-8.animate-float-up > .glass-card:first-of-type > div:last-child > [data-ui-button="true"]:nth-child(2):hover,
-.space-y-6.lg\:space-y-8.animate-float-up > .glass-card:first-of-type > div:last-child > [data-ui-button="true"]:nth-child(2):hover * {
-  color: #ffffff !important;
-  -webkit-text-fill-color: #ffffff !important;
-  stroke: #ffffff !important;
+body[data-button-hover-style="standard"] [data-ui-button="true"]:hover {
+  box-shadow: 0 8px 20px rgb(0 0 0 / 0.16) !important;
 }
 
 /* Social Robot ONLINE status: visible green connection lamp. */
@@ -94,7 +83,6 @@
   }
 }
 
-/* Inputs remain readable in both themes. */
 input:not([type="color"]),
 textarea,
 [role="combobox"] {
@@ -114,7 +102,6 @@ textarea:focus,
   border-color: hsl(var(--primary) / 0.72) !important;
 }
 
-/* Cleaner cards and panels. */
 .glass-card,
 [data-radix-popper-content-wrapper] > div {
   border-radius: 0.8rem;
@@ -132,7 +119,6 @@ textarea:focus,
   box-shadow: 0 14px 38px -28px hsl(var(--primary) / 0.35);
 }
 
-/* Tabs: active state gets guaranteed contrast; inactive stays neutral. */
 [role="tab"] {
   color: hsl(var(--muted-foreground));
   transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease;
@@ -149,7 +135,6 @@ textarea:focus,
   box-shadow: inset 0 0 0 1px hsl(var(--primary) / 0.28);
 }
 
-/* Menus and selectable rows. */
 [role="menuitem"],
 [role="option"] {
   border-radius: 0.45rem;
@@ -158,11 +143,10 @@ textarea:focus,
 [role="menuitem"]:hover,
 [role="option"]:hover,
 [role="option"][data-highlighted] {
-  background: hsl(var(--foreground)) !important;
-  color: hsl(var(--background)) !important;
+  background: hsl(var(--accent)) !important;
+  color: hsl(var(--accent-foreground)) !important;
 }
 
-/* Better hierarchy and spacing without changing layout structure. */
 .page-container {
   width: 100%;
   max-width: 1540px;
