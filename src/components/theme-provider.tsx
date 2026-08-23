@@ -138,40 +138,45 @@ export function ThemeProvider({ children, defaultTheme = "system", storageKey = 
   useEffect(() => {
     const root = window.document.documentElement
     const c = systemColors
+    const isDark = root.classList.contains("dark")
 
-    root.style.setProperty("--background", hexToHsl(c.background))
-    root.style.setProperty("--foreground", hexToHsl(c.textPrimary))
-
-    root.style.setProperty("--card", hexToHsl(c.surface))
-    root.style.setProperty("--card-foreground", hexToHsl(c.textPrimary))
-    root.style.setProperty("--popover", hexToHsl(c.surface))
-    root.style.setProperty("--popover-foreground", hexToHsl(c.textPrimary))
-
+    // Tokens de marca: valem nos dois modos
     root.style.setProperty("--primary", hexToHsl(c.primary))
     root.style.setProperty("--primary-foreground", hexToHsl(c.textOnPrimary))
     root.style.setProperty("--accent", hexToHsl(c.accent))
     root.style.setProperty("--accent-foreground", hexToHsl(c.textOnAccent))
-
-    root.style.setProperty("--secondary", hexToHsl(c.surfaceAlt))
-    root.style.setProperty("--secondary-foreground", hexToHsl(c.textPrimary))
-    root.style.setProperty("--muted", hexToHsl(c.surfaceAlt))
-    root.style.setProperty("--muted-foreground", hexToHsl(c.textMuted))
-
-    root.style.setProperty("--border", hexToHsl(c.border))
-    root.style.setProperty("--input", hexToHsl(c.border))
     root.style.setProperty("--ring", hexToHsl(c.primary))
-
-    root.style.setProperty("--sidebar-background", hexToHsl(c.sidebarBackground))
-    root.style.setProperty("--sidebar-foreground", hexToHsl(c.sidebarText))
     root.style.setProperty("--sidebar-primary", hexToHsl(c.primary))
     root.style.setProperty("--sidebar-primary-foreground", hexToHsl(c.textOnPrimary))
-    root.style.setProperty("--sidebar-accent", hexToHsl(c.surfaceAlt))
-    root.style.setProperty("--sidebar-accent-foreground", hexToHsl(c.sidebarText))
-    root.style.setProperty("--sidebar-border", hexToHsl(c.border))
     root.style.setProperty("--sidebar-ring", hexToHsl(c.primary))
-
     root.style.setProperty("--subtitle-highlight", hexToHsl(c.primary))
     root.style.setProperty("--radius", interfaceSettings.buttonRadius)
+
+    // Tokens de superfície: apenas no modo escuro, para não sobrepor a paleta clara do index.css
+    const surfaceTokens: Record<string, string> = {
+      "--background": hexToHsl(c.background),
+      "--foreground": hexToHsl(c.textPrimary),
+      "--card": hexToHsl(c.surface),
+      "--card-foreground": hexToHsl(c.textPrimary),
+      "--popover": hexToHsl(c.surface),
+      "--popover-foreground": hexToHsl(c.textPrimary),
+      "--secondary": hexToHsl(c.surfaceAlt),
+      "--secondary-foreground": hexToHsl(c.textPrimary),
+      "--muted": hexToHsl(c.surfaceAlt),
+      "--muted-foreground": hexToHsl(c.textMuted),
+      "--border": hexToHsl(c.border),
+      "--input": hexToHsl(c.border),
+      "--sidebar-background": hexToHsl(c.sidebarBackground),
+      "--sidebar-foreground": hexToHsl(c.sidebarText),
+      "--sidebar-accent": hexToHsl(c.surfaceAlt),
+      "--sidebar-accent-foreground": hexToHsl(c.sidebarText),
+      "--sidebar-border": hexToHsl(c.border),
+    }
+
+    Object.entries(surfaceTokens).forEach(([name, value]) => {
+      if (isDark) root.style.setProperty(name, value)
+      else root.style.removeProperty(name)
+    })
   }, [systemColors, interfaceSettings.buttonRadius, theme])
 
   const value = useMemo(() => ({
