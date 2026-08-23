@@ -65,7 +65,7 @@ const AIProvidersPanel = () => {
             connected: !!cred.has_gemini_key,
             lastUsed: lastByProvider['Gemini'] || null,
             articleCount: countByProvider['Gemini'] || 0,
-            activeModel: userSets.gemini_model,
+            activeModel: userSets.gemini_model === 'gemini-1.5-flash' ? 'gemini-2.0-flash-exp' : userSets.gemini_model,
           },
           {
             name: 'OpenAI',
@@ -81,7 +81,7 @@ const AIProvidersPanel = () => {
             connected: !!cred.has_groq_key,
             lastUsed: lastByProvider['Groq'] || null,
             articleCount: countByProvider['Groq'] || 0,
-            activeModel: userSets.groq_model,
+            activeModel: userSets.groq_model === 'llama-3.3-70b-versatile' ? 'llama-3.1-8b-instant' : userSets.groq_model,
           },
           {
             name: 'Lovable AI',
