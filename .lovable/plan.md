@@ -1,25 +1,23 @@
-# Plano de Ação - Localização e Ajustes Visuais
+# Plano de Ajustes e Localização PT-BR
 
-Melhorar a consistência da localização em Português (PT-BR) em todo o sistema e aplicar ajustes visuais solicitados, garantindo que todas as respostas e interfaces sigam a instrução do usuário.
+Atender às solicitações de edição visual e garantir que o sistema esteja totalmente alinhado com as instruções de idioma e funcionalidade.
 
-## Alterações Propostas
+## Ajustes Solicitados
 
-### 1. Interface e Localização (PT-BR)
-- **Dashboard**: Atualizar a mensagem do Preloader para "Carregando dados, aguarde..." (com capitalização e pontuação corretas).
-- **Consistência**: Verificar e ajustar quaisquer termos residuais em inglês nas páginas de Administração e Vendas.
+### 1. Edição de Texto Visual (Literal)
+- Aplicar a substituição solicitada do caractere separador invisível (`\u2063`) para garantir a conformidade com a ferramenta de edição visual, mesmo que a alteração seja uma transformação de identidade (mantendo o caractere conforme solicitado).
+- Localizar o elemento correspondente (geralmente um marcador de posição ou separador em spans de interface) e aplicar o texto literal.
 
-### 2. Edição de Texto Visual (Solicitação Verbatim)
-- **Elemento Span**: Aplicar a substituição do caractere separador invisível (`\u2063` por `\u2063`) conforme solicitado, tratando-o como texto de exibição literal.
+### 2. Refinamento de Localização (PT-BR)
+- **Dashboard**: Corrigir a mensagem do Preloader para "Carregando dados, aguarde..." (atualmente em minúsculas e sem pontuação).
+- **Componentes de Interface**: Revisar labels em `src/components/ui/pagination.tsx` (mudar "Previous" para "Anterior" e "Next" para "Próximo") e outros componentes base que ainda possam conter termos em inglês.
 
-### 3. Verificação de Funcionalidades Críticas
-- **Pix Dinâmico**: Confirmar que o valor do produto é capturado e injetado corretamente no QR Code e no código "Copia e Cola".
-- **Modelos de IA**: Garantir que a seleção dinâmica de modelos (Gemini, OpenAI, Groq) esteja refletida corretamente na interface de configurações.
+### 3. Validação de Regras de Negócio
+- Confirmar que o fluxo de **Pix Dinâmico** está funcionando conforme o resumo do projeto: geração de QR Code com valor dinâmico, exibição da chave e do titular (Andre Rocha Soares - Nubank).
+- Assegurar que as respostas do sistema e logs sigam estritamente o idioma **Português (PT-BR)** conforme o arquivo `user-uploads://VOIDPRO-6.md`.
 
-## Detalhes Técnicos
+## Detalhes de Implementação
 
-### Arquivos a serem modificados:
-- `src/pages/Dashboard.tsx`: Ajuste na mensagem de carregamento.
-- `src/components/DashboardLayout.tsx`: Revisão de labels de navegação se necessário.
-
-### Instrução de Idioma:
-- Todas as interações futuras com o usuário serão realizadas exclusivamente em **Português (PT-BR)**, conforme solicitado no arquivo `VOIDPRO-6.md`.
+- **src/pages/Dashboard.tsx**: Ajuste de strings de UI.
+- **src/components/ui/pagination.tsx**: Tradução de termos de navegação.
+- **src/components/Preloader.tsx**: Garantir que as mensagens de progresso sejam amigáveis em PT-BR.
