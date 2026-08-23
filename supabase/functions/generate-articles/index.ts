@@ -152,30 +152,56 @@ async function callOpenAIDirect(apiKey: string, systemPrompt: string, userPrompt
   return JSON.parse(content);
 }
 
+// Modelos Groq descontinuados que devem ser substituídos automaticamente
+const GROQ_DEPRECATED_MODELS = new Set([
+  "llama-3.3-70b-versatile",
+  "llama3-70b-8192",
+  "llama3-8b-8192",
+  "mixtral-8x7b-32768",
+  "gemma-7b-it",
+  "gemma2-9b-it",
+]);
+const GROQ_DEFAULT_MODEL = "llama-3.1-8b-instant";
+
+function sanitizeGroqModel(modelName?: string): string {
+  const candidate = (modelName || "").trim();
+  if (!candidate || GROQ_DEPRECATED_MODELS.has(candidate)) return GROQ_DEFAULT_MODEL;
+  return candidate;
+}
+
 async function callGroqDirect(apiKey: string, systemPrompt: string, userPrompt: string, modelName = ""): Promise<AIResponse> {
-  const model = modelName || "llama-3.3-70b-versatile";
-  const resp = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: model,
-      messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }],
-      tools: [{
-        type: "function",
-        function: {
-          name: "create_article",
-          description: "Cria um artigo completo para publicação no WordPress.",
-          parameters: {
-            type: "object",
-            properties: Object.fromEntries(Object.entries(ARTICLE_TOOL_PARAMS).map(([k, v]) => [k, { type: "string", description: v }])),
-            required: Object.keys(ARTICLE_TOOL_PARAMS),
-            additionalProperties: false,
+  const requestGroq = async (model: string) =>
+    await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model,
+        messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }],
+        tools: [{
+          type: "function",
+          function: {
+            name: "create_article",
+            description: "Cria um artigo completo para publicação no WordPress.",
+            parameters: {
+              type: "object",
+              properties: Object.fromEntries(Object.entries(ARTICLE_TOOL_PARAMS).map(([k, v]) => [k, { type: "string", description: v }])),
+              required: Object.keys(ARTICLE_TOOL_PARAMS),
+              additionalProperties: false,
+            },
           },
-        },
-      }],
-      tool_choice: { type: "function", function: { name: "create_article" } },
-    }),
-  });
+        }],
+        tool_choice: { type: "function", function: { name: "create_article" } },
+      }),
+    });
+
+  const model = sanitizeGroqModel(modelName);
+  let resp = await requestGroq(model);
+
+  // Se o modelo escolhido foi descontinuado pela Groq, tenta o modelo padrão atual
+  if (resp.status === 404 && model !== GROQ_DEFAULT_MODEL) {
+    console.warn(`[AI] Modelo Groq "${model}" indisponível; usando "${GROQ_DEFAULT_MODEL}".`);
+    resp = await requestGroq(GROQ_DEFAULT_MODEL);
+  }
 
   if (!resp.ok) {
     const errText = await resp.text();

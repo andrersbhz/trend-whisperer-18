@@ -72,15 +72,18 @@ export default function BrandVisualControlPanel() {
     if (!settings.id || pathname !== "/branding" || !allowed) return;
     let active = true;
     setLoading(true);
-    supabase
-      .from("platform_settings")
-      .select("theme_json")
-      .eq("id", settings.id)
-      .maybeSingle()
-      .then(({ data }) => {
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from("platform_settings")
+          .select("theme_json")
+          .eq("id", settings.id)
+          .maybeSingle();
         if (active) setDraft(normalizeBrandTheme((data as any)?.theme_json));
-      })
-      .finally(() => active && setLoading(false));
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
     return () => { active = false; };
   }, [settings.id, pathname, allowed]);
 
