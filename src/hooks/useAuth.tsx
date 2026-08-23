@@ -91,11 +91,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (!isMounted) return;
       setLoading((current) => {
         if (current) {
-          console.warn('[useAuth] Safety timeout: auth initialization took too long');
+          console.warn('[useAuth] Safety timeout: auth initialization took too long, forcing ready');
         }
         return false;
       });
-    }, 5000);
+    }, 10000); // Increased to 10s but guaranteed to flip loading to false
 
     return () => {
       isMounted = false;
