@@ -1,7 +1,7 @@
 # Plan: System Stability Audit and Finalization
 
 ## Problem Statement
-The user requested a system test and analysis for potential improvements or organization. Recent updates addressed theme stability (light/dark mode), Groq model fallbacks, Google Search Console integration, and RBAC admin controls. A stability check via Playwright timed out, and a specific text edit request ("\u2063" to "\u2063") appeared as a test of the agent's capability to follow instructions without executing them as code.
+The user requested a system test and analysis for potential improvements or organization. Recent updates addressed theme stability (light/dark mode), Groq model fallbacks, Google Search Console integration, and RBAC admin controls. A stability check via Playwright timed out, and a specific text edit request appeared as a test of the agent's capability to follow instructions without executing them as code.
 
 ## Proposed Changes
 
