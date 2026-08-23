@@ -152,8 +152,25 @@ async function callOpenAIDirect(apiKey: string, systemPrompt: string, userPrompt
   return JSON.parse(content);
 }
 
+// Modelos Groq descontinuados que devem ser substituídos automaticamente
+const GROQ_DEPRECATED_MODELS = new Set([
+  "llama-3.3-70b-versatile",
+  "llama3-70b-8192",
+  "llama3-8b-8192",
+  "mixtral-8x7b-32768",
+  "gemma-7b-it",
+  "gemma2-9b-it",
+]);
+const GROQ_DEFAULT_MODEL = "llama-3.1-8b-instant";
+
+function sanitizeGroqModel(modelName?: string): string {
+  const candidate = (modelName || "").trim();
+  if (!candidate || GROQ_DEPRECATED_MODELS.has(candidate)) return GROQ_DEFAULT_MODEL;
+  return candidate;
+}
+
 async function callGroqDirect(apiKey: string, systemPrompt: string, userPrompt: string, modelName = ""): Promise<AIResponse> {
-  const model = modelName || "llama-3.3-70b-versatile";
+  const model = sanitizeGroqModel(modelName);
   const resp = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },

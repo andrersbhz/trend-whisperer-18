@@ -21,6 +21,17 @@ export default function BrandThemeRuntime() {
     return () => { active = false; window.removeEventListener("brand-theme-updated", onThemeUpdate); };
   }, [settings.id]);
 
+  const [isDark, setIsDark] = useState<boolean>(() => document.documentElement.classList.contains("dark"));
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const sync = () => setIsDark(root.classList.contains("dark"));
+    sync();
+    const observer = new MutationObserver(sync);
+    observer.observe(root, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
+
   useEffect(() => {
     const root = document.documentElement;
     const primary = settings.primary_color || "#a3ff12";
@@ -28,45 +39,27 @@ export default function BrandThemeRuntime() {
     const primaryForeground = contrastForeground(primary);
     const accentForeground = contrastForeground(accent);
 
-    const variables: Record<string, string> = {
+    // Tokens de marca — aplicados nos modos claro e escuro
+    const brandVariables: Record<string, string> = {
       "--primary": hexToHsl(primary, "83 100% 54%"),
       "--primary-foreground": primaryForeground,
       "--accent": hexToHsl(accent, "266 100% 74%"),
       "--accent-foreground": accentForeground,
       "--ring": hexToHsl(primary, "83 100% 54%"),
-      "--background": hexToHsl(theme.background_color, "0 0% 0%"),
-      "--foreground": hexToHsl(theme.text_color, "0 0% 100%"),
-      "--card": hexToHsl(theme.card_color, "0 0% 2%"),
-      "--card-foreground": hexToHsl(theme.text_color, "0 0% 100%"),
-      "--popover": hexToHsl(theme.popover_color, "0 0% 3%"),
-      "--popover-foreground": hexToHsl(theme.text_color, "0 0% 100%"),
-      "--secondary": hexToHsl(theme.secondary_color, "0 0% 8%"),
-      "--secondary-foreground": hexToHsl(theme.text_color, "0 0% 100%"),
-      "--muted": hexToHsl(theme.muted_color, "0 0% 10%"),
-      "--muted-foreground": hexToHsl(theme.muted_text_color, "0 0% 72%"),
-      "--input": hexToHsl(theme.input_color, "0 0% 15%"),
-      "--border": hexToHsl(theme.border_color, "0 0% 15%"),
       "--success": hexToHsl(theme.success_color, "142 71% 45%"),
       "--success-foreground": contrastForeground(theme.success_color),
       "--warning": hexToHsl(theme.warning_color, "38 92% 50%"),
       "--warning-foreground": contrastForeground(theme.warning_color),
       "--destructive": hexToHsl(theme.danger_color, "0 84% 60%"),
       "--destructive-foreground": contrastForeground(theme.danger_color),
-      "--sidebar-background": hexToHsl(theme.sidebar_color, "0 0% 0%"),
-      "--sidebar-foreground": hexToHsl(theme.text_color, "0 0% 100%"),
       "--sidebar-primary": hexToHsl(primary, "83 100% 54%"),
       "--sidebar-primary-foreground": primaryForeground,
-      "--sidebar-accent": hexToHsl(theme.secondary_color, "0 0% 8%"),
-      "--sidebar-accent-foreground": hexToHsl(theme.text_color, "0 0% 100%"),
-      "--sidebar-border": hexToHsl(theme.border_color, "0 0% 15%"),
       "--sidebar-ring": hexToHsl(primary, "83 100% 54%"),
       "--brand-button-radius": settings.button_radius || "0.5rem",
       "--brand-card-radius": theme.card_radius,
       "--brand-input-radius": theme.input_radius,
       "--brand-font-family": theme.font_family_base,
       "--brand-heading-font-family": theme.font_family_heading,
-      "--brand-font-color-base": theme.text_color || settings.font_color_base || "#ffffff",
-      "--brand-font-color-muted": theme.muted_text_color || settings.font_color_muted || "#b8b8bf",
       "--brand-primary-hex": primary,
       "--brand-accent-hex": accent,
       "--brand-link": theme.link_color,
@@ -86,15 +79,44 @@ export default function BrandThemeRuntime() {
       "--brand-button-secondary-hover-text": theme.secondary_button_hover_text,
       "--brand-tab-active-bg": primary,
       "--brand-tab-active-text": `hsl(${primaryForeground})`,
+    };
+
+    // Tokens de superfície/tipografia escura — só no modo escuro,
+    // para o modo claro usar a paleta :root definida no index.css
+    const darkOnlyVariables: Record<string, string> = {
+      "--background": hexToHsl(theme.background_color, "0 0% 0%"),
+      "--foreground": hexToHsl(theme.text_color, "0 0% 100%"),
+      "--card": hexToHsl(theme.card_color, "0 0% 2%"),
+      "--card-foreground": hexToHsl(theme.text_color, "0 0% 100%"),
+      "--popover": hexToHsl(theme.popover_color, "0 0% 3%"),
+      "--popover-foreground": hexToHsl(theme.text_color, "0 0% 100%"),
+      "--secondary": hexToHsl(theme.secondary_color, "0 0% 8%"),
+      "--secondary-foreground": hexToHsl(theme.text_color, "0 0% 100%"),
+      "--muted": hexToHsl(theme.muted_color, "0 0% 10%"),
+      "--muted-foreground": hexToHsl(theme.muted_text_color, "0 0% 72%"),
+      "--input": hexToHsl(theme.input_color, "0 0% 15%"),
+      "--border": hexToHsl(theme.border_color, "0 0% 15%"),
+      "--sidebar-background": hexToHsl(theme.sidebar_color, "0 0% 0%"),
+      "--sidebar-foreground": hexToHsl(theme.text_color, "0 0% 100%"),
+      "--sidebar-accent": hexToHsl(theme.secondary_color, "0 0% 8%"),
+      "--sidebar-accent-foreground": hexToHsl(theme.text_color, "0 0% 100%"),
+      "--sidebar-border": hexToHsl(theme.border_color, "0 0% 15%"),
+      "--brand-font-color-base": theme.text_color || settings.font_color_base || "#ffffff",
+      "--brand-font-color-muted": theme.muted_text_color || settings.font_color_muted || "#b8b8bf",
       "--brand-tab-hover-bg": theme.secondary_color,
       "--brand-tab-hover-text": theme.text_color,
     };
 
-    Object.entries(variables).forEach(([name, value]) => root.style.setProperty(name, value));
+    Object.entries(brandVariables).forEach(([name, value]) => root.style.setProperty(name, value));
+    Object.entries(darkOnlyVariables).forEach(([name, value]) => {
+      if (isDark) root.style.setProperty(name, value);
+      else root.style.removeProperty(name);
+    });
+
     const hoverShadow = settings.button_hover_style === "glow" ? `0 0 18px ${primary}66` : settings.button_hover_style === "outline" ? "none" : settings.button_hover_style === "scale" ? "0 10px 24px rgba(0,0,0,.18)" : theme.panel_shadow;
     root.style.setProperty("--brand-button-hover-shadow", hoverShadow);
     document.body.dataset.buttonHoverStyle = settings.button_hover_style || "standard";
-  }, [settings, theme]);
+  }, [settings, theme, isDark]);
 
   return <BrandVisualControlPanel />;
 }
