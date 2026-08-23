@@ -144,14 +144,18 @@ function parseRSSDirectly(rss: string, categories: string[], geo: string): any[]
     const title = pick(item, "title");
     if (!title) continue;
     
-    const traffic = pick(item, "ht:approx_traffic");
+    const trafficRaw = pick(item, "ht:approx_traffic") || "médio";
+    // Limpar o volume de busca para ter apenas números (ex: "20,000+" -> "20000")
+    const searchVolumeClean = trafficRaw.replace(/[^0-9]/g, "");
+    
+    const trafficVal = searchVolumeClean ? parseInt(searchVolumeClean, 10) : 0;
     const newsTitle = pick(item, "ht:news_item_title");
     const newsSource = pick(item, "ht:news_item_source");
     const newsUrl = pick(item, "ht:news_item_url");
     
     topics.push({
       topic: title,
-      search_volume: traffic || "médio",
+      search_volume: trafficVal || trafficRaw,
       category: guessCategory(`${title} ${newsTitle}`),
       context: newsTitle || null,
       source_name: newsSource ? `Google Trends ${regionName} (${newsSource})` : `Google Trends ${regionName}`,
