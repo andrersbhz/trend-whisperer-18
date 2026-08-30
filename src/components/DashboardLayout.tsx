@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/components/theme-provider';
 import {
   LayoutDashboard, FileText, Settings, TrendingUp, Clock, LogOut, Newspaper, Menu, X,
-  Sparkles, Loader2, Bot, Activity, Globe, Download, Search, Facebook, Instagram,
+  Sparkles, Loader2, Bot, Activity, Globe, Download, Search, Facebook, Instagram, AtSign,
   User, Sun, Moon, ImageIcon, Palette, Wallet, Bell, Send,
 } from 'lucide-react';
 import { useLicenseSessionGuard } from '@/hooks/useLicenseSessionGuard';
