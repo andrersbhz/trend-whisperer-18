@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/components/theme-provider';
 import {
   LayoutDashboard, FileText, Settings, TrendingUp, Clock, LogOut, Newspaper, Menu, X,
-  Sparkles, Loader2, Bot, Activity, Globe, Download, Search, Facebook, Instagram,
+  Sparkles, Loader2, Bot, Activity, Globe, Download, Search, Facebook, Instagram, AtSign,
   User, Sun, Moon, ImageIcon, Palette, Wallet, Bell, Send,
 } from 'lucide-react';
 import { useLicenseSessionGuard } from '@/hooks/useLicenseSessionGuard';
@@ -27,6 +27,7 @@ const navItems = [
   { icon: Search, label: 'Google', path: '/google' },
   { icon: Facebook, label: 'Facebook', path: '/meta' },
   { icon: Instagram, label: 'Instagram', path: '/instagram' },
+  { icon: AtSign, label: 'Threads', path: '/threads' },
   { icon: TrendingUp, label: 'Tendências', path: '/trends' },
   { icon: Bot, label: 'Robô Social', path: '/robot' },
   { icon: Activity, label: 'Analytics', path: '/analytics' },

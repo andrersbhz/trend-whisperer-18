@@ -36,6 +36,7 @@ const SocialPublisherPage = lazyRetry(() => import("@/pages/SocialPublisherPage"
 const GooglePage = lazyRetry(() => import("@/pages/GooglePage"));
 const MetaPage = lazyRetry(() => import("@/pages/MetaPage"));
 const InstagramPage = lazyRetry(() => import("@/pages/InstagramPage"));
+const ThreadsPage = lazyRetry(() => import("@/pages/ThreadsPage"));
 const MapPage = lazyRetry(() => import("@/pages/MapPage"));
 const ProfilePage = lazyRetry(() => import("@/pages/ProfilePage"));
 const ImageStudioPage = lazyRetry(() => import("@/pages/ImageStudioPage"));
@@ -144,6 +145,7 @@ const AppContent = () => {
                     <Route path="/google" element={<ProtectedRoute><GooglePage /></ProtectedRoute>} />
                     <Route path="/meta" element={<ProtectedRoute><MetaPage /></ProtectedRoute>} />
                     <Route path="/instagram" element={<ProtectedRoute><InstagramPage /></ProtectedRoute>} />
+                    <Route path="/threads" element={<ProtectedRoute><ThreadsPage /></ProtectedRoute>} />
                     <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
                     <Route path="/map" element={<ProtectedRoute><MapPage /></ProtectedRoute>} />
                     <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
