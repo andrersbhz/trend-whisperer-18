@@ -27,6 +27,7 @@ const navItems = [
   { icon: Search, label: 'Google', path: '/google' },
   { icon: Facebook, label: 'Facebook', path: '/meta' },
   { icon: Instagram, label: 'Instagram', path: '/instagram' },
+  { icon: AtSign, label: 'Threads', path: '/threads' },
   { icon: TrendingUp, label: 'Tendências', path: '/trends' },
   { icon: Bot, label: 'Robô Social', path: '/robot' },
   { icon: Activity, label: 'Analytics', path: '/analytics' },
