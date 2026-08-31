@@ -44,7 +44,7 @@ export default function NexaAgents() {
 
     const userIds = members.map((m) => m.user_id);
     const { data: profiles } = await supabase
-      .from("nexa_profiles")
+      .from("nexa_profiles_public")
       .select("id,full_name")
       .in("id", userIds);
 
