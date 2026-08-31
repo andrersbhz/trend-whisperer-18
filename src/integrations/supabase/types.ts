@@ -1833,6 +1833,24 @@ export type Database = {
       }
     }
     Views: {
+      nexa_profiles_public: {
+        Row: {
+          avatar_url: string | null
+          full_name: string | null
+          id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          full_name?: string | null
+          id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          full_name?: string | null
+          id?: string | null
+        }
+        Relationships: []
+      }
       payment_methods_public: {
         Row: {
           mercadopago_enabled: boolean | null
