@@ -259,36 +259,49 @@ const MetaPage = () => {
                       <h4 className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
                         <BarChart3 className="h-3 w-3" /> Engajamento Agregado
                       </h4>
-                      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                        <div className="p-3 rounded bg-white/5 border border-white/10 text-center">
-                          <ImageIcon className="h-4 w-4 mx-auto mb-1 text-foreground" />
-                          <p className="text-[10px] uppercase font-bold text-muted-foreground">Posts</p>
-                          <p className="text-xl font-black">{fmt(stats.total_posts)}</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="p-4 rounded bg-white/5 border border-white/10 flex items-center justify-between hover:border-primary/40 transition-colors">
+                          <div>
+                            <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Posts</p>
+                            <p className="text-2xl font-black">{fmt(stats.total_posts)}</p>
+                          </div>
+                          <ImageIcon className="h-8 w-8 text-foreground/30" />
                         </div>
-                        <div className="p-3 rounded bg-white/5 border border-white/10 text-center">
-                          <ThumbsUp className="h-4 w-4 mx-auto mb-1 text-accent" />
-                          <p className="text-[10px] uppercase font-bold text-muted-foreground">Curtidas</p>
-                          <p className="text-xl font-black text-accent">{fmt(stats.total_likes)}</p>
+                        <div className="p-4 rounded bg-white/5 border border-white/10 flex items-center justify-between hover:border-primary/40 transition-colors">
+                          <div>
+                            <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Curtidas</p>
+                            <p className="text-2xl font-black text-accent">{fmt(stats.total_likes)}</p>
+                          </div>
+                          <ThumbsUp className="h-8 w-8 text-accent/30" />
                         </div>
-                        <div className="p-3 rounded bg-white/5 border border-white/10 text-center">
-                          <Heart className="h-4 w-4 mx-auto mb-1 text-[#ee2a7b]" />
-                          <p className="text-[10px] uppercase font-bold text-muted-foreground">Reações</p>
-                          <p className="text-xl font-black text-[#ee2a7b]">{fmt(stats.total_reactions)}</p>
+                        <div className="p-4 rounded bg-white/5 border border-white/10 flex items-center justify-between hover:border-primary/40 transition-colors">
+                          <div>
+                            <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Reações</p>
+                            <p className="text-2xl font-black text-[#ee2a7b]">{fmt(stats.total_reactions)}</p>
+                          </div>
+                          <Heart className="h-8 w-8 text-[#ee2a7b]/30" />
                         </div>
-                        <div className="p-3 rounded bg-white/5 border border-white/10 text-center">
-                          <MessageCircle className="h-4 w-4 mx-auto mb-1 text-primary" />
-                          <p className="text-[10px] uppercase font-bold text-muted-foreground">Comentários</p>
-                          <p className="text-xl font-black text-primary">{fmt(stats.total_comments)}</p>
+                        <div className="p-4 rounded bg-white/5 border border-white/10 flex items-center justify-between hover:border-primary/40 transition-colors">
+                          <div>
+                            <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Comentários</p>
+                            <p className="text-2xl font-black text-primary">{fmt(stats.total_comments)}</p>
+                          </div>
+                          <MessageCircle className="h-8 w-8 text-primary/30" />
                         </div>
-                        <div className="p-3 rounded bg-white/5 border border-white/10 text-center">
-                          <Share2 className="h-4 w-4 mx-auto mb-1 text-success" />
-                          <p className="text-[10px] uppercase font-bold text-muted-foreground">Compartilh.</p>
-                          <p className="text-xl font-black text-success">{fmt(stats.total_shares)}</p>
+                        <div className="p-4 rounded bg-white/5 border border-white/10 flex items-center justify-between hover:border-primary/40 transition-colors">
+                          <div>
+                            <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Compartilhamentos</p>
+                            <p className="text-2xl font-black text-success">{fmt(stats.total_shares)}</p>
+                          </div>
+                          <Share2 className="h-8 w-8 text-success/30" />
                         </div>
-                      </div>
-                      <div className="mt-3 p-3 rounded bg-success/5 border border-success/20 text-center">
-                        <p className="text-[10px] uppercase font-bold text-muted-foreground">Engajamento Médio por Post</p>
-                        <p className="text-2xl font-black text-success">{fmt(stats.avg_engagement)}</p>
+                        <div className="p-4 rounded bg-success/5 border border-success/20 flex items-center justify-between hover:border-success/40 transition-colors">
+                          <div>
+                            <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Engajamento Médio</p>
+                            <p className="text-2xl font-black text-success">{fmt(stats.avg_engagement)}</p>
+                          </div>
+                          <Activity className="h-8 w-8 text-success/30" />
+                        </div>
                       </div>
                     </div>
                   )}
