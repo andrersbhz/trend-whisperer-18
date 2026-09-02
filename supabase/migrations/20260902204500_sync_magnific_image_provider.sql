@@ -5,7 +5,7 @@
 create or replace function public.sync_magnific_image_provider()
 returns trigger
 language plpgsql
-security definer
+security invoker
 set search_path = public
 as $$
 begin
@@ -27,4 +27,4 @@ for each row
 execute function public.sync_magnific_image_provider();
 
 comment on function public.sync_magnific_image_provider() is
-  'Prevents duplicate OpenAI + Magnific image generation when Magnific automation is active.';
+  'Prevents duplicate OpenAI + Magnific image generation when Magnific automation is active without elevating caller privileges.';
