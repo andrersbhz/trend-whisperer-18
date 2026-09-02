@@ -177,25 +177,48 @@ const MetaPage = () => {
                     <h4 className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
                       <Users className="h-3 w-3" /> Perfil
                     </h4>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div className="p-3 rounded bg-white/5 border border-white/10">
-                        <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Seguidores</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div className="p-4 rounded bg-white/5 border border-white/10 flex flex-col justify-between hover:border-primary/40 transition-colors">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-[10px] uppercase font-bold text-muted-foreground">Seguidores</p>
+                          <Users className="h-4 w-4 text-primary/60" />
+                        </div>
                         <p className="text-2xl font-black text-accent">{fmt(fb.followers_count || fb.fan_count)}</p>
                       </div>
-                      <div className="p-3 rounded bg-white/5 border border-white/10">
-                        <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Curtidas</p>
+                      <div className="p-4 rounded bg-white/5 border border-white/10 flex flex-col justify-between hover:border-primary/40 transition-colors">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-[10px] uppercase font-bold text-muted-foreground">Curtidas</p>
+                          <ThumbsUp className="h-4 w-4 text-accent/60" />
+                        </div>
                         <p className="text-2xl font-black">{fmt(fb.fan_count)}</p>
                       </div>
-                      <div className="p-3 rounded bg-white/5 border border-white/10">
-                        <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Falando Sobre</p>
+                      <div className="p-4 rounded bg-white/5 border border-white/10 flex flex-col justify-between hover:border-primary/40 transition-colors">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-[10px] uppercase font-bold text-muted-foreground">Falando Sobre</p>
+                          <MessageCircle className="h-4 w-4 text-success/60" />
+                        </div>
                         <p className="text-2xl font-black">{fmt(fb.talking_about_count)}</p>
                       </div>
-                      <div className="p-3 rounded bg-white/5 border border-white/10">
-                        <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1 flex items-center gap-1">
-                          <MapPin className="h-3 w-3" /> Check-ins
-                        </p>
+                      <div className="p-4 rounded bg-white/5 border border-white/10 flex flex-col justify-between hover:border-primary/40 transition-colors">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-1">
+                            <MapPin className="h-3 w-3" /> Check-ins
+                          </p>
+                          <MapPin className="h-4 w-4 text-primary/60" />
+                        </div>
                         <p className="text-2xl font-black">{fmt(fb.were_here_count)}</p>
                       </div>
+                      {fb.link && (
+                        <div className="p-4 rounded bg-white/5 border border-white/10 flex flex-col justify-between hover:border-primary/40 transition-colors sm:col-span-2 lg:col-span-2">
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="text-[10px] uppercase font-bold text-muted-foreground">Página</p>
+                            <Facebook className="h-4 w-4 text-primary/60" />
+                          </div>
+                          <a href={fb.link} target="_blank" rel="noopener noreferrer" className="text-sm text-accent hover:underline truncate">
+                            {fb.link}
+                          </a>
+                        </div>
+                      )}
                     </div>
                     {fb.link && (
                       <a href={fb.link} target="_blank" rel="noopener noreferrer" className="text-[10px] text-accent hover:underline mt-2 inline-block">
