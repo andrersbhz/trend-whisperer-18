@@ -220,11 +220,6 @@ const MetaPage = () => {
                         </div>
                       )}
                     </div>
-                    {fb.link && (
-                      <a href={fb.link} target="_blank" rel="noopener noreferrer" className="text-[10px] text-accent hover:underline mt-2 inline-block">
-                        {fb.link}
-                      </a>
-                    )}
                   </div>
 
                   {/* Insights 28d */}
