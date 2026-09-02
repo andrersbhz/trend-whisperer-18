@@ -20,6 +20,7 @@ const ThreadsPage = () => {
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [interactions, setInteractions] = useState<any[]>([]);
   const [running, setRunning] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
   const fmt = (n: number) => new Intl.NumberFormat('pt-BR').format(n || 0);
 
@@ -43,10 +44,13 @@ const ThreadsPage = () => {
         body: { userId: user.id },
       });
       if (error) throw error;
+      if (data?.success === false) throw new Error(data?.error || 'Falha na API do Threads');
       setAccounts(data?.accounts || []);
+      setLoadError(false);
       setLastUpdated(new Date().toISOString());
     } catch (error) {
       console.error(error);
+      setLoadError(true);
       toast({
         title: 'Erro ao carregar métricas do Threads',
         description: 'Não foi possível consultar a API do Threads agora.',
