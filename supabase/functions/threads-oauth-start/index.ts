@@ -6,11 +6,14 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const DEFAULT_RETURN_URL = "https://trend-whisperer-18.lovable.app/social";
+const DEFAULT_RETURN_URL = "https://postwp.lovable.app/social";
 const ALLOWED_RETURN_HOSTS = new Set([
+  "postwp.lovable.app",
+  "autopost.a3solucoesdigitais.com",
   "trend-whisperer-18.lovable.app",
   "id-preview--9ad27b4d-8990-47e9-8d43-311f0f7d2680.lovable.app",
   "forex.a3solucoesdigitais.com",
+  "localhost",
 ]);
 
 // These permissions match the features already implemented by the system:
@@ -47,7 +50,17 @@ serve(async (req) => {
     if (!auth?.user) throw new Error("Unauthorized");
 
     const appId = Deno.env.get("THREADS_APP_ID");
-    if (!appId) throw new Error("THREADS_APP_ID não configurado");
+    if (!appId) {
+      console.error("[threads-oauth-start] THREADS_APP_ID ausente nas variáveis de ambiente");
+      return new Response(
+        JSON.stringify({
+          error:
+            "Integração do Threads ainda não configurada: as credenciais do app (THREADS_APP_ID/THREADS_APP_SECRET) não foram salvas no backend.",
+          code: "missing_app_credentials",
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
 
     const body = await req.json().catch(() => ({}));
     const returnUrl = safeReturnUrl(body?.returnUrl);
@@ -74,6 +87,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
+    console.error("[threads-oauth-start] erro:", e instanceof Error ? e.stack || e.message : e);
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Erro desconhecido" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
