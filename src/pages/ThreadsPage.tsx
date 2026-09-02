@@ -20,6 +20,7 @@ const ThreadsPage = () => {
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [interactions, setInteractions] = useState<any[]>([]);
   const [running, setRunning] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
   const fmt = (n: number) => new Intl.NumberFormat('pt-BR').format(n || 0);
 
@@ -43,10 +44,13 @@ const ThreadsPage = () => {
         body: { userId: user.id },
       });
       if (error) throw error;
+      if (data?.success === false) throw new Error(data?.error || 'Falha na API do Threads');
       setAccounts(data?.accounts || []);
+      setLoadError(false);
       setLastUpdated(new Date().toISOString());
     } catch (error) {
       console.error(error);
+      setLoadError(true);
       toast({
         title: 'Erro ao carregar métricas do Threads',
         description: 'Não foi possível consultar a API do Threads agora.',
@@ -129,7 +133,20 @@ const ThreadsPage = () => {
         </div>
       </div>
 
-      {!accounts || accounts.length === 0 ? (
+      {loadError ? (
+        <Card className="glass-card border-dashed border-destructive/40 p-12 text-center">
+          <AtSign className="h-10 w-10 text-destructive/60 mx-auto mb-4" />
+          <h3 className="text-lg font-bold mb-2">Não foi possível carregar as estatísticas do Threads</h3>
+          <p className="text-muted-foreground text-sm max-w-md mx-auto mb-6">
+            Sua conta continua conectada. A consulta à API do Threads falhou ou demorou demais. Tente atualizar novamente
+            em alguns instantes.
+          </p>
+          <Button onClick={fetchMetrics} disabled={refreshing} className="uppercase tracking-widest text-[10px] font-bold">
+            {refreshing ? <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5 mr-2" />}
+            Tentar novamente
+          </Button>
+        </Card>
+      ) : !accounts || accounts.length === 0 ? (
         <Card className="glass-card border-dashed border-primary/30 p-12 text-center">
           <AtSign className="h-10 w-10 text-primary/40 mx-auto mb-4" />
           <h3 className="text-lg font-bold mb-2">Nenhuma conta do Threads conectada</h3>

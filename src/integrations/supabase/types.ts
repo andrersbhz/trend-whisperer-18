@@ -964,6 +964,7 @@ export type Database = {
           font_color_base: string | null
           font_color_muted: string | null
           footer_text: string | null
+          google_site_verification: string | null
           hero_button_bg_color: string | null
           hero_button_text_color: string | null
           hero_description_color: string | null
@@ -999,6 +1000,7 @@ export type Database = {
           font_color_base?: string | null
           font_color_muted?: string | null
           footer_text?: string | null
+          google_site_verification?: string | null
           hero_button_bg_color?: string | null
           hero_button_text_color?: string | null
           hero_description_color?: string | null
@@ -1034,6 +1036,7 @@ export type Database = {
           font_color_base?: string | null
           font_color_muted?: string | null
           footer_text?: string | null
+          google_site_verification?: string | null
           hero_button_bg_color?: string | null
           hero_button_text_color?: string | null
           hero_description_color?: string | null

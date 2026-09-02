@@ -21,7 +21,7 @@ serve(async (req) => {
   const oauthError = requestUrl.searchParams.get("error_message") || requestUrl.searchParams.get("error");
 
   const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-  let returnUrl = "https://trend-whisperer-18.lovable.app/social";
+  let returnUrl = "https://postwp.lovable.app/social";
 
   try {
     if (!state) throw new Error("OAuth state ausente");
