@@ -36,6 +36,38 @@ function json(body: unknown, status = 200) {
   });
 }
 
+function normalizeMysticAspectRatio(value?: string | null) {
+  const aliases: Record<string, string> = {
+    landscape_16_9: "widescreen_16_9",
+    portrait_9_16: "social_story_9_16",
+    "16:9": "widescreen_16_9",
+    "9:16": "social_story_9_16",
+    "1:1": "square_1_1",
+  };
+  const candidate = aliases[value || ""] || value || "widescreen_16_9";
+  const valid = new Set([
+    "square_1_1",
+    "classic_4_3",
+    "traditional_3_4",
+    "widescreen_16_9",
+    "social_story_9_16",
+    "smartphone_horizontal_20_9",
+    "smartphone_vertical_9_20",
+    "standard_3_2",
+    "portrait_2_3",
+    "horizontal_2_1",
+    "vertical_1_2",
+    "social_5_4",
+    "social_post_4_5",
+  ]);
+  return valid.has(candidate) ? candidate : "widescreen_16_9";
+}
+
+function normalizeMysticModel(value?: string | null) {
+  const valid = new Set(["realism", "fluid", "zen", "flexible", "super_real", "editorial_portraits"]);
+  return valid.has(value || "") ? value! : "realism";
+}
+
 async function magnificRequest(apiKey: string, path: string, init?: RequestInit) {
   const response = await fetch(`${MAGNIFIC_BASE_URL}${path}`, {
     ...init,
@@ -98,10 +130,8 @@ async function createImageTask(apiKey: string, prompt: string, settings: Magnifi
     body: JSON.stringify({
       prompt,
       resolution: settings.image_resolution || "2k",
-      aspect_ratio: settings.image_aspect_ratio || "landscape_16_9",
-      model: settings.image_model || "realism",
-      adherence: 65,
-      hdr: 55,
+      aspect_ratio: normalizeMysticAspectRatio(settings.image_aspect_ratio),
+      model: normalizeMysticModel(settings.image_model),
       creative_detailing: 35,
       engine: "automatic",
       fixed_generation: false,
@@ -326,7 +356,7 @@ serve(async (req) => {
       enabled: false,
       auto_generate_images: true,
       auto_generate_videos: false,
-      image_aspect_ratio: "landscape_16_9",
+      image_aspect_ratio: "widescreen_16_9",
       image_resolution: "2k",
       image_model: "realism",
       video_aspect_ratio: "9:16",
