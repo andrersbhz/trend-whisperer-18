@@ -30,6 +30,7 @@ const navItems = [
   { icon: AtSign, label: 'Threads', path: '/threads' },
   { icon: TrendingUp, label: 'Tendências', path: '/trends' },
   { icon: Bot, label: 'Robô Social', path: '/robot' },
+  { icon: MessagesSquare, label: 'Central de Respostas', path: '/replies' },
   { icon: Activity, label: 'Analytics', path: '/analytics' },
   { icon: Globe, label: 'Mapa Live', path: '/map' },
   { icon: Clock, label: 'Agendamentos', path: '/schedule' },
