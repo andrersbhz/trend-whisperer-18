@@ -424,7 +424,7 @@
   .btn-success:hover,
   button.bg-primary:hover, 
   button.bg-success:hover, 
-  button.bg-[#a3ff12]:hover,
+  button[class~="bg-[#a3ff12]"]:hover,
   button.gradient-primary:hover {
     color: white !important;
   }
