@@ -7,18 +7,6 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Scopes: only basic scopes are requested by default because advanced scopes
-// (pages_manage_posts, instagram_content_publish, etc.) require the app to
-// have "Facebook Login for Business" + "Pages API" + "Instagram Graph API"
-// products added in the Meta Developer Console, AND the user must be an
-// Admin/Developer/Tester of the App. If those scopes are requested without
-// the products configured, Facebook returns "Invalid Scopes".
-//
-// To enable publishing later:
-// 1) In developers.facebook.com → your App → Add Products: "Facebook Login for Business",
-//    "Pages API" and "Instagram Graph API".
-// 2) In App Roles, add your Facebook user as Admin/Developer/Tester.
-// 3) Add the desired scopes back to ADVANCED_SCOPES below.
 const BASIC_SCOPES = [
   "email",
   "public_profile",
@@ -45,7 +33,6 @@ const ALLOWED_RETURN_HOSTS = new Set([
 
 function getSafeReturnUrl(rawValue: unknown) {
   if (typeof rawValue !== "string" || !rawValue) return DEFAULT_RETURN_URL;
-
   try {
     const url = new URL(rawValue);
     if (!["http:", "https:"].includes(url.protocol)) return DEFAULT_RETURN_URL;
@@ -84,28 +71,34 @@ serve(async (req) => {
     }
     const userId = userData.user.id;
 
-    const appId = Deno.env.get("FACEBOOK_APP_ID");
-    if (!appId) throw new Error("FACEBOOK_APP_ID not configured");
-
-    const requestBody = req.method === "POST" ? await req.json().catch(() => ({})) : {};
-    const returnUrl = getSafeReturnUrl(requestBody?.returnUrl);
-
-    // Random anti-CSRF state + return URL for top-level redirect back to the app
-    const stateNonce = crypto.randomUUID() + crypto.randomUUID().replace(/-/g, "");
-    const state = `${stateNonce}::${encodeURIComponent(returnUrl)}`;
-
-    // Store state -> user mapping using service role
     const adminSupabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
+
+    const { data: credentials, error: credentialsError } = await adminSupabase
+      .from("meta_app_credentials")
+      .select("app_id")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (credentialsError) console.warn("Could not read per-user Meta credentials:", credentialsError.message);
+
+    const appId = credentials?.app_id || Deno.env.get("FACEBOOK_APP_ID");
+    if (!appId) {
+      throw new Error("API da Meta não configurada. Informe App ID e App Secret em Configurações > Facebook & Instagram.");
+    }
+
+    const requestBody = req.method === "POST" ? await req.json().catch(() => ({})) : {};
+    const returnUrl = getSafeReturnUrl(requestBody?.returnUrl);
+
+    const stateNonce = crypto.randomUUID() + crypto.randomUUID().replace(/-/g, "");
+    const state = `${stateNonce}::${encodeURIComponent(returnUrl)}`;
 
     const { error: insertErr } = await adminSupabase
       .from("facebook_oauth_states")
       .insert({ state, user_id: userId });
     if (insertErr) throw insertErr;
 
-    // Cleanup old expired states
     await adminSupabase.from("facebook_oauth_states").delete().lt("expires_at", new Date().toISOString());
 
     const redirectUri = `${Deno.env.get("SUPABASE_URL")}/functions/v1/facebook-oauth-callback`;
@@ -119,9 +112,10 @@ serve(async (req) => {
     return new Response(JSON.stringify({ authUrl: authUrl.toString() }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (error: any) {
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Erro desconhecido";
     console.error("facebook-oauth-start error:", error);
-    return new Response(JSON.stringify({ error: error.message || "Erro desconhecido" }), {
+    return new Response(JSON.stringify({ error: message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
