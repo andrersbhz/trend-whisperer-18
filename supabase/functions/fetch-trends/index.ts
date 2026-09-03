@@ -122,48 +122,53 @@ async function callAI(providers: any[], systemPrompt: string, userPrompt: string
   throw new Error("AI failed");
 }
 
+// ── Shared helpers ─────────────────────────────────────────────────────
+
+function guessCategory(text: string, categories: string[]): string {
+  const t = text.toLowerCase();
+  const keywords: Record<string, string[]> = {
+    esportes: ["futebol", "jogo", "time", "campeonato", "gol", "atleta", "olimp", "copa", "seleção", "técnico", "brasileirão", "vôlei", "basquete", "tênis", "luta", "mma", "boxe", "f1", "fórmula 1", "soccer", "football", "match", "team", "nfl", "nba", "mlb"],
+    politica: ["presidente", "ministro", "senado", "câmara", "lula", "governo", "stf", "congresso", "deputado", "eleição", "voto", "partido", "prefeito", "tarcísio", "bolsonaro", "president", "minister", "senate", "congress", "election", "vote", "party", "biden", "trump"],
+    policia: ["polícia", "preso", "crime", "operação", "assalto", "homicídio", "investigação", "tráfico", "justiça", "roubo", "furt", "acusad", "police", "arrested", "crime", "operation", "robbery", "investigation", "justice"],
+    saude: ["saúde", "vacina", "hospital", "anvisa", "doença", "covid", "médico", "tratamento", "vírus", "dengue", "gripe", "remédio", "health", "vaccine", "disease", "doctor", "treatment", "virus", "flu", "medicine"],
+    celebridades: ["ator", "atriz", "cantor", "novela", "famoso", "bbb", "show", "reality", "influencer", "cinema", "netflix", "globop", "actor", "actress", "singer", "famous", "reality", "influencer", "cinema", "movie"],
+    financas: ["dólar", "bolsa", "ibovespa", "juros", "banco central", "selic", "imposto", "economia", "dinheiro", "bitcoin", "investimento", "ação", "ações", "mercado", "dollar", "stock", "interest", "economy", "money", "investment", "market"],
+    tecnologia: ["celular", "iphone", "google", "apple", "microsoft", "ia", "inteligência artificial", "lançamento", "app", "software", "nuvem", "internet", "cellphone", "ai", "artificial intelligence", "software", "cloud"],
+  };
+  for (const cat of categories) {
+    const kws = keywords[cat] || [cat];
+    if (kws.some((kw) => t.includes(kw))) return cat;
+  }
+  return "variedades";
+}
+
+const decodeXml = (s: string) =>
+  s.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
+    .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"').replace(/&#39;/g, "'").trim();
+
+const pickTag = (block: string, tagName: string): string => {
+  const tag = tagName.replace(":", "\\:");
+  const m = block.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i"));
+  if (m) return decodeXml(m[1]);
+
+  if (tagName.includes(":")) {
+    const simpleTag = tagName.split(":")[1];
+    const m2 = block.match(new RegExp(`<${simpleTag}[^>]*>([\\s\\S]*?)<\\/${simpleTag}>`, "i"));
+    if (m2) return decodeXml(m2[1]);
+  }
+  return "";
+};
+
 // ── RSS Direct Parser (fallback when AI fails) ──────────────────────────
 
 function parseRSSDirectly(rss: string, categories: string[], geo: string): any[] {
   console.log(`[parseRSSDirectly] Starting manual parse of ${rss.length} chars (Geo: ${geo})`);
   const items = rss.match(/<item[\s\S]*?<\/item>/gi) || [];
   const regionName = geo === "US" ? "Global" : "Brasil";
-  
-  const decode = (s: string) =>
-    s.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
-      .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
-      .replace(/&quot;/g, '"').replace(/&#39;/g, "'").trim();
-      
-  const pick = (block: string, tagName: string): string => {
-    const tag = tagName.replace(":", "\\:");
-    const m = block.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i"));
-    if (m) return decode(m[1]);
-    
-    if (tagName.includes(":")) {
-      const simpleTag = tagName.split(":")[1];
-      const m2 = block.match(new RegExp(`<${simpleTag}[^>]*>([\\s\\S]*?)<\\/${simpleTag}>`, "i"));
-      if (m2) return decode(m2[1]);
-    }
-    return "";
-  };
 
-  const guessCategory = (text: string): string => {
-    const t = text.toLowerCase();
-    const keywords: Record<string, string[]> = {
-      esportes: ["futebol", "jogo", "time", "campeonato", "gol", "atleta", "olimp", "copa", "seleção", "técnico", "brasileirão", "vôlei", "basquete", "tênis", "luta", "mma", "boxe", "f1", "fórmula 1", "soccer", "football", "match", "team", "nfl", "nba", "mlb"],
-      politica: ["presidente", "ministro", "senado", "câmara", "lula", "governo", "stf", "congresso", "deputado", "eleição", "voto", "partido", "prefeito", "tarcísio", "bolsonaro", "president", "minister", "senate", "congress", "election", "vote", "party", "biden", "trump"],
-      policia: ["polícia", "preso", "crime", "operação", "assalto", "homicídio", "investigação", "tráfico", "justiça", "roubo", "furt", "acusad", "police", "arrested", "crime", "operation", "robbery", "investigation", "justice"],
-      saude: ["saúde", "vacina", "hospital", "anvisa", "doença", "covid", "médico", "tratamento", "vírus", "dengue", "gripe", "remédio", "health", "vaccine", "disease", "doctor", "treatment", "virus", "flu", "medicine"],
-      celebridades: ["ator", "atriz", "cantor", "novela", "famoso", "bbb", "show", "reality", "influencer", "cinema", "netflix", "globop", "actor", "actress", "singer", "famous", "reality", "influencer", "cinema", "movie"],
-      financas: ["dólar", "bolsa", "ibovespa", "juros", "banco central", "selic", "imposto", "economia", "dinheiro", "bitcoin", "investimento", "ação", "ações", "mercado", "dollar", "stock", "interest", "economy", "money", "investment", "market"],
-      tecnologia: ["celular", "iphone", "google", "apple", "microsoft", "ia", "inteligência artificial", "lançamento", "app", "software", "nuvem", "internet", "cellphone", "ai", "artificial intelligence", "software", "cloud"],
-    };
-    for (const cat of categories) {
-      const kws = keywords[cat] || [cat];
-      if (kws.some((kw) => t.includes(kw))) return cat;
-    }
-    return "variedades";
-  };
+  const topics: any[] = [];
+  for (const item of items.slice(0, 40)) {
 
   const topics: any[] = [];
   for (const item of items.slice(0, 40)) {
