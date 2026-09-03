@@ -982,6 +982,7 @@ export type Database = {
           primary_color: string
           singleton: boolean
           tagline: string
+          theme_json: Json
           updated_at: string | null
           updated_by: string | null
         }
@@ -1018,6 +1019,7 @@ export type Database = {
           primary_color?: string
           singleton?: boolean
           tagline?: string
+          theme_json?: Json
           updated_at?: string | null
           updated_by?: string | null
         }
@@ -1054,6 +1056,7 @@ export type Database = {
           primary_color?: string
           singleton?: boolean
           tagline?: string
+          theme_json?: Json
           updated_at?: string | null
           updated_by?: string | null
         }
