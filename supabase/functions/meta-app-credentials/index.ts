@@ -47,7 +47,7 @@ serve(async (req) => {
         appId: data?.app_id || "",
         hasSecret: Boolean(data?.app_id),
         updatedAt: data?.updated_at || null,
-        usingGlobalFallback: !data?.app_id && Boolean(Deno.env.get("FACEBOOK_APP_ID")),
+        usingGlobalFallback: !data?.app_id && Boolean(Deno.env.get("FACEBOOK_APP_ID") && Deno.env.get("FACEBOOK_APP_SECRET")),
       });
     }
 
@@ -61,11 +61,20 @@ serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const appId = typeof body.appId === "string" ? body.appId.trim() : "";
-    const appSecret = typeof body.appSecret === "string" ? body.appSecret.trim() : "";
+    const submittedSecret = typeof body.appSecret === "string" ? body.appSecret.trim() : "";
 
     if (!/^\d{6,32}$/.test(appId)) {
       return json({ error: "App ID inválido. Use o ID numérico exibido no Meta for Developers." }, 400);
     }
+
+    const { data: existing, error: readError } = await admin
+      .from("meta_app_credentials")
+      .select("app_secret")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (readError) throw readError;
+
+    const appSecret = submittedSecret || existing?.app_secret || "";
     if (appSecret.length < 20) {
       return json({ error: "App Secret inválido ou incompleto." }, 400);
     }
