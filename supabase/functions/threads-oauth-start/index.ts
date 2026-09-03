@@ -76,7 +76,7 @@ serve(async (req) => {
     if (error) throw error;
 
     const redirectUri = `${Deno.env.get("SUPABASE_URL")}/functions/v1/threads-oauth-callback`;
-    const url = new URL("https://threads.net/oauth/authorize");
+    const url = new URL("https://www.threads.com/oauth/authorize");
     url.searchParams.set("client_id", appId);
     url.searchParams.set("redirect_uri", redirectUri);
     url.searchParams.set("scope", THREADS_SCOPES);
