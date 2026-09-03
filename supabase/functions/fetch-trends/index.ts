@@ -370,6 +370,17 @@ serve(async (req) => {
       topics = [...topics, ...usTopics];
     }
 
+    // Process Portal Leo Dias feed
+    const rssPLD = await fetchPortalLeoDiasRSS();
+    if (rssPLD) {
+      console.log(`[fetch-trends] Portal Leo Dias RSS fetched, length: ${rssPLD.length}`);
+      const pldTopics = parseStandardRSS(rssPLD, categories, "Portal Leo Dias", "https://portalleodias.com/");
+      if (pldTopics.length) {
+        topics = [...topics, ...pldTopics];
+        console.log(`[fetch-trends] Portal Leo Dias topics extracted: ${pldTopics.length}`);
+      }
+    }
+
     if (!topics.length) {
       throw new Error("Não foi possível extrair tópicos dos feeds. O formato dos feeds pode ter mudado.");
     }
