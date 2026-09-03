@@ -98,7 +98,7 @@ const AIProvidersPanel = () => {
             connected: !!cred.has_groq_key,
             lastUsed: lastByProvider['Groq'] || null,
             articleCount: countByProvider['Groq'] || 0,
-            activeModel: userSets.groq_model === 'llama-3.3-70b-versatile' ? 'llama-3.1-8b-instant' : userSets.groq_model,
+            activeModel: sanitizeGroqModel(userSets.groq_model),
           },
           {
             name: 'Lovable AI',
