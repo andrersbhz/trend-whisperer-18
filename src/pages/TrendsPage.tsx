@@ -462,7 +462,11 @@ const TrendsPage = () => {
                     )}
                     <div className="flex flex-wrap items-center gap-2 mt-1">
                       <Badge variant="outline" className="text-[10px] h-5 bg-blue-500/10 text-blue-500 border-blue-500/20">
-                        {topic.source_name?.includes('US') || topic.source_name?.includes('Global') || topic.source_name?.includes('Mundo') ? 'Google Trends Mundo 🌎' : 'Google Trends BR 🇧🇷'}
+                        {topic.source_name?.includes('Portal Leo Dias')
+                          ? 'Portal Leo Dias 📰'
+                          : topic.source_name?.includes('US') || topic.source_name?.includes('Global') || topic.source_name?.includes('Mundo')
+                            ? 'Google Trends Mundo 🌎'
+                            : 'Google Trends BR 🇧🇷'}
                       </Badge>
                       <Badge variant="secondary">{topic.category}</Badge>
                       {topic.search_volume && (
