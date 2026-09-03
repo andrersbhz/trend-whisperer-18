@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { Loader2, Sparkles, ImageIcon, Send, Check } from 'lucide-react';
 import { getErrorMessage } from '@/lib/backend';
+import { MagnificMediaSettings } from '@/components/media/MagnificMediaSettings';
 
 type ChatMessage =
   | { id: string; role: 'user'; text: string }
@@ -100,135 +101,130 @@ export default function ImageStudioPage() {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-md border border-[#a3ff12]/40 bg-[#a3ff12]/10 px-4 py-3 text-sm text-[#a3ff12] flex items-start gap-2">
-        <Sparkles className="h-4 w-4 mt-0.5 flex-shrink-0" />
+    <div className="media-studio-page space-y-6">
+      <MagnificMediaSettings />
+
+      <div className="rounded-lg border border-border/60 bg-secondary/20 px-4 py-3 text-sm text-muted-foreground flex items-start gap-2">
+        <Sparkles className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
         <p>
-          <strong>Atenção:</strong> para gerar imagens é necessário configurar sua chave da <strong>OpenAI (DALL·E)</strong> em <em>Configurações → OpenAI</em>. Sem a chave, a geração de imagens não funcionará.
+          <strong className="text-foreground">Estúdio manual legado:</strong> a área abaixo continua usando a integração de imagem já existente (OpenAI/DALL·E). A Magnific acima funciona de forma independente para mídia automática dos artigos.
         </p>
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 h-[calc(100vh-12rem)]">
 
-      {/* Chat panel */}
-      <Card className="glass-card flex flex-col overflow-hidden">
-        <div className="px-5 py-4 border-b border-border/40 flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-primary" />
-          <h3 className="font-bold text-sm uppercase tracking-widest">Estúdio de Imagens IA</h3>
-        </div>
-
-        <div ref={scrollRef} className="flex-1 overflow-y-auto p-5 space-y-4">
-          {messages.length === 0 && (
-            <div className="text-center text-muted-foreground text-sm py-16">
-              <ImageIcon className="h-10 w-10 mx-auto mb-3 opacity-40" />
-              <p>Descreva a imagem que você quer criar.</p>
-              <p className="text-xs mt-1 opacity-70">Ex.: "Um astronauta caminhando em Marte, estilo cinematográfico"</p>
-            </div>
-          )}
-
-          {messages.map((m) =>
-            m.role === 'user' ? (
-              <div key={m.id} className="flex justify-end">
-                <div className="max-w-[80%] bg-primary/15 border border-primary/30 rounded-lg px-4 py-2 text-sm">
-                  {m.text}
-                </div>
-              </div>
-            ) : (
-              <div key={m.id} className="flex justify-start">
-                <div className="max-w-[85%] space-y-2">
-                  <div className="rounded-lg overflow-hidden border border-border/50 bg-black/20">
-                    <img src={m.imageUrl} alt={m.prompt} className="max-w-full h-auto block" loading="lazy" />
-                  </div>
-                  <p className="text-[11px] text-muted-foreground italic">"{m.prompt}"</p>
-                  {m.assignedTo && (
-                    <p className="text-[11px] text-success flex items-center gap-1">
-                      <Check className="h-3 w-3" /> Vinculada a um artigo
-                    </p>
-                  )}
-                </div>
-              </div>
-            )
-          )}
-
-          {generating && (
-            <div className="flex justify-start">
-              <div className="rounded-lg border border-border/50 bg-secondary/40 px-4 py-3 text-xs flex items-center gap-2">
-                <Loader2 className="h-3.5 w-3.5 animate-spin" /> Gerando imagem...
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="border-t border-border/40 p-3 space-y-2">
-          <div className="text-[11px] px-3 py-2 rounded-md bg-primary/10 border border-primary/30 text-primary/90 italic select-none">
-            {FIXED_PREFIX}
+      <div className="media-studio-workspace grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_340px] gap-5 min-h-[620px] xl:h-[calc(100vh-12rem)] xl:min-h-[680px]">
+        <Card className="glass-card flex min-h-[560px] flex-col overflow-hidden">
+          <div className="px-5 py-4 border-b border-border/40 flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <h3 className="font-bold text-sm uppercase tracking-widest">Estúdio manual de imagens IA</h3>
           </div>
-          <div className="flex gap-2">
-            <Textarea
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleGenerate();
-                }
-              }}
-              placeholder="Escreva aqui o texto/descrição da imagem..."
-              rows={2}
-              className="resize-none text-sm"
-              disabled={generating}
-            />
-            <Button
-              onClick={handleGenerate}
-              disabled={generating || !prompt.trim()}
-              className="self-end bg-success text-success-foreground hover:bg-success/90 transition-shadow hover:shadow-[0_0_12px_hsl(var(--success)/0.9),0_0_28px_hsl(var(--success)/0.6)]"
-            >
-              {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+
+          <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
+            {messages.length === 0 && (
+              <div className="text-center text-muted-foreground text-sm py-16">
+                <ImageIcon className="h-10 w-10 mx-auto mb-3 opacity-40" />
+                <p>Descreva a imagem que você quer criar.</p>
+                <p className="text-xs mt-1 opacity-70">Ex.: “Um astronauta caminhando em Marte, estilo cinematográfico”</p>
+              </div>
+            )}
+
+            {messages.map((m) =>
+              m.role === 'user' ? (
+                <div key={m.id} className="flex justify-end">
+                  <div className="max-w-[90%] sm:max-w-[80%] bg-primary/15 border border-primary/30 rounded-lg px-4 py-2 text-sm">
+                    {m.text}
+                  </div>
+                </div>
+              ) : (
+                <div key={m.id} className="flex justify-start">
+                  <div className="max-w-full sm:max-w-[85%] space-y-2">
+                    <div className="rounded-lg overflow-hidden border border-border/50 bg-black/20">
+                      <img src={m.imageUrl} alt={m.prompt} className="max-w-full h-auto block" loading="lazy" />
+                    </div>
+                    <p className="text-[11px] text-muted-foreground italic">“{m.prompt}”</p>
+                    {m.assignedTo && (
+                      <p className="text-[11px] text-success flex items-center gap-1">
+                        <Check className="h-3 w-3" /> Vinculada a um artigo
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )
+            )}
+
+            {generating && (
+              <div className="flex justify-start">
+                <div className="rounded-lg border border-border/50 bg-secondary/40 px-4 py-3 text-xs flex items-center gap-2">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> Gerando imagem...
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="border-t border-border/40 p-3 space-y-2 bg-background/30">
+            <div className="text-[11px] px-3 py-2 rounded-md bg-primary/10 border border-primary/30 text-primary/90 italic select-none">
+              {FIXED_PREFIX}
+            </div>
+            <div className="flex items-end gap-2">
+              <Textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleGenerate();
+                  }
+                }}
+                placeholder="Escreva aqui o texto/descrição da imagem..."
+                rows={2}
+                className="min-w-0 flex-1 resize-none text-sm"
+                disabled={generating}
+              />
+              <Button
+                onClick={handleGenerate}
+                disabled={generating || !prompt.trim()}
+                className="shrink-0 bg-success text-success-foreground hover:bg-success/90 transition-shadow hover:shadow-[0_0_12px_hsl(var(--success)/0.9),0_0_28px_hsl(var(--success)/0.6)]"
+              >
+                {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              </Button>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="glass-card flex min-h-[420px] flex-col overflow-hidden xl:min-h-0">
+          <div className="px-5 py-4 border-b border-border/40 flex items-center justify-between gap-2">
+            <h3 className="font-bold text-xs uppercase tracking-widest">Artigos sem imagem</h3>
+            <Button size="sm" variant="ghost" onClick={loadArticles} disabled={loadingArticles} className="h-7 text-xs">
+              {loadingArticles ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Atualizar'}
             </Button>
           </div>
-        </div>
-      </Card>
 
-      {/* Articles panel */}
-      <Card className="glass-card flex flex-col overflow-hidden">
-        <div className="px-5 py-4 border-b border-border/40 flex items-center justify-between">
-          <h3 className="font-bold text-xs uppercase tracking-widest">Artigos sem imagem</h3>
-          <Button size="sm" variant="ghost" onClick={loadArticles} disabled={loadingArticles} className="h-7 text-xs">
-            {loadingArticles ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Atualizar'}
-          </Button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-3 space-y-2">
-          {articles.length === 0 && !loadingArticles && (
-            <p className="text-xs text-muted-foreground text-center py-8">Nenhum artigo sem imagem.</p>
-          )}
-          {articles.map((a) => {
-            const lastImage = [...messages].reverse().find((m) => m.role === 'assistant') as
-              | Extract<ChatMessage, { role: 'assistant' }>
-              | undefined;
-            return (
-              <div key={a.id} className="border border-border/40 rounded-md p-3 space-y-2 bg-secondary/30">
-                <p className="text-xs font-semibold line-clamp-2">{a.title}</p>
-                {a.category && <p className="text-[10px] text-muted-foreground uppercase">{a.category}</p>}
-                <Button
-                  size="sm"
-                  className="w-full h-7 text-[11px]"
-                  disabled={!lastImage || assigningId === a.id}
-                  onClick={() => lastImage && assignImage(lastImage.id, lastImage.imageUrl, a.id)}
-                  title={!lastImage ? 'Gere uma imagem primeiro' : 'Vincular última imagem gerada'}
-                >
-                  {assigningId === a.id ? (
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                  ) : (
-                    <>Usar esta imagem</>
-                  )}
-                </Button>
-              </div>
-            );
-          })}
-        </div>
-      </Card>
+          <div className="flex-1 overflow-y-auto p-3 space-y-2">
+            {articles.length === 0 && !loadingArticles && (
+              <p className="text-xs text-muted-foreground text-center py-8">Nenhum artigo sem imagem.</p>
+            )}
+            {articles.map((a) => {
+              const lastImage = [...messages].reverse().find((m) => m.role === 'assistant') as
+                | Extract<ChatMessage, { role: 'assistant' }>
+                | undefined;
+              return (
+                <div key={a.id} className="border border-border/40 rounded-lg p-3 space-y-2 bg-secondary/30">
+                  <p className="text-xs font-semibold line-clamp-2">{a.title}</p>
+                  {a.category && <p className="text-[10px] text-muted-foreground uppercase">{a.category}</p>}
+                  <Button
+                    size="sm"
+                    className="w-full h-7 text-[11px]"
+                    disabled={!lastImage || assigningId === a.id}
+                    onClick={() => lastImage && assignImage(lastImage.id, lastImage.imageUrl, a.id)}
+                    title={!lastImage ? 'Gere uma imagem primeiro' : 'Vincular última imagem gerada'}
+                  >
+                    {assigningId === a.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <>Usar esta imagem</>}
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
       </div>
     </div>
   );
 }
-

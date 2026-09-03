@@ -29,6 +29,36 @@ serve(async (req) => {
 
     const results: Array<{ userId: string; step: string; result: string }> = [];
 
+    const processMagnific = async (userId: string, phase: string) => {
+      try {
+        const mediaResp = await fetch(`${supabaseUrl}/functions/v1/magnific-media`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${serviceKey}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "process-pending", userId }),
+        });
+        const raw = await mediaResp.text();
+        let data: any = {};
+        try { data = raw ? JSON.parse(raw) : {}; } catch { data = { error: raw.slice(0, 180) }; }
+
+        if (mediaResp.status === 503 && String(data?.error || "").includes("MAGNIFIC_API_KEY")) {
+          results.push({ userId, step: `magnific-${phase}`, result: "not configured" });
+          return;
+        }
+        if (!mediaResp.ok) throw new Error(data?.error || `HTTP ${mediaResp.status}`);
+
+        const sync = data?.sync || {};
+        const queued = data?.queued || {};
+        results.push({
+          userId,
+          step: `magnific-${phase}`,
+          result: `sync ${sync.completed || 0}/${sync.checked || 0}; queued ${queued.imagesQueued || 0} images, ${queued.videosQueued || 0} videos`,
+        });
+      } catch (error) {
+        console.error(`[Pipeline] Magnific ${phase} error for ${userId}:`, error);
+        results.push({ userId, step: `magnific-${phase}`, result: `error: ${error}` });
+      }
+    };
+
     for (const userSettings of users) {
       const userId = userSettings.user_id;
       const articlesPerDay = Math.max(userSettings.articles_per_day || 10, 1);
@@ -36,6 +66,10 @@ serve(async (req) => {
       console.log(`[Pipeline] Processing user: ${userId}`);
 
       const now = new Date();
+
+      // Step 0: Synchronize previously queued media before publishing.
+      // If Magnific is not configured/enabled this is a safe no-op.
+      await processMagnific(userId, "pre-publish");
 
       // Step 1: Publish ready articles FIRST (before any rescheduling)
       try {
@@ -126,10 +160,9 @@ serve(async (req) => {
         results.push({ userId, step: "reschedule-overdue", result: `error: ${err}` });
       }
 
-      // Small delay between steps
       await new Promise((r) => setTimeout(r, 2000));
 
-      // Step 2: Fetch trends
+      // Step 3: Fetch trends
       try {
         const trendResp = await fetch(`${supabaseUrl}/functions/v1/fetch-trends`, {
           method: "POST",
@@ -146,7 +179,7 @@ serve(async (req) => {
 
       await new Promise((r) => setTimeout(r, 2000));
 
-      // Step 3: Generate articles
+      // Step 4: Generate articles
       try {
         const genResp = await fetch(`${supabaseUrl}/functions/v1/generate-articles`, {
           method: "POST",
@@ -169,6 +202,9 @@ serve(async (req) => {
         console.error(`[Pipeline] Generation error for ${userId}:`, err);
         results.push({ userId, step: "generate-articles", result: `error: ${err}` });
       }
+
+      // Step 5: Queue media for newly generated articles and sync anything that finished meanwhile.
+      await processMagnific(userId, "post-generate");
     }
 
     return new Response(
