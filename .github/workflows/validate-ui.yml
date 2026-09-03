@@ -7,13 +7,37 @@ on:
     branches: [fix/branding-visual-control]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: feat/magnific-media-ui-revamp
+      - name: Patch invalid legacy selector
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('src/index.css')
+          s = p.read_text()
+          old = 'button.bg-[#a3ff12]:hover,'
+          new = 'button[class~="bg-[#a3ff12]"]:hover,'
+          if old in s:
+              p.write_text(s.replace(old, new))
+          PY
+      - name: Commit CSS fix if needed
+        run: |
+          if git diff --quiet -- src/index.css; then
+            echo "CSS already fixed"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add src/index.css
+            git commit -m "fix: correct invalid legacy lime button selector"
+            git push origin HEAD:feat/magnific-media-ui-revamp
+          fi
       - uses: actions/setup-node@v4
         with:
           node-version: 22
