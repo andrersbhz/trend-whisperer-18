@@ -36,11 +36,14 @@ const ADVANCED_SCOPES: string[] = [
 ];
 const SCOPES = [...BASIC_SCOPES, ...ADVANCED_SCOPES].join(",");
 
-const DEFAULT_RETURN_URL = "https://forex.a3solucoesdigitais.com/settings";
+const DEFAULT_RETURN_URL = "https://postwp.lovable.app/social";
 const ALLOWED_RETURN_HOSTS = new Set([
+  "postwp.lovable.app",
+  "autopost.a3solucoesdigitais.com",
   "forex.a3solucoesdigitais.com",
   "trend-whisperer-18.lovable.app",
   "id-preview--9ad27b4d-8990-47e9-8d43-311f0f7d2680.lovable.app",
+  "localhost",
 ]);
 
 function getSafeReturnUrl(rawValue: unknown) {
