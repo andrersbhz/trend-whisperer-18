@@ -155,13 +155,14 @@ async function callOpenAIDirect(apiKey: string, systemPrompt: string, userPrompt
 // Modelos Groq descontinuados que devem ser substituídos automaticamente
 const GROQ_DEPRECATED_MODELS = new Set([
   "llama-3.3-70b-versatile",
+  "llama-3.1-8b-instant",
   "llama3-70b-8192",
   "llama3-8b-8192",
   "mixtral-8x7b-32768",
   "gemma-7b-it",
   "gemma2-9b-it",
 ]);
-const GROQ_DEFAULT_MODEL = "llama-3.1-8b-instant";
+const GROQ_DEFAULT_MODEL = "openai/gpt-oss-20b";
 
 function sanitizeGroqModel(modelName?: string): string {
   const candidate = (modelName || "").trim();

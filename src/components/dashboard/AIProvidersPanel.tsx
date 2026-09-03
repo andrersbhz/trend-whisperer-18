@@ -6,6 +6,23 @@ import { useAuth } from '@/hooks/useAuth';
 import { runBackendQuery } from '@/lib/backend';
 import { Cpu, Zap, Sparkles, BrainCircuit, Loader2 } from 'lucide-react';
 
+const GROQ_DEPRECATED_MODELS = new Set([
+  'llama-3.3-70b-versatile',
+  'llama-3.1-8b-instant',
+  'llama3-70b-8192',
+  'llama3-8b-8192',
+  'mixtral-8x7b-32768',
+  'gemma-7b-it',
+  'gemma2-9b-it',
+]);
+const GROQ_DEFAULT_MODEL = 'openai/gpt-oss-20b';
+
+function sanitizeGroqModel(modelName?: string | null): string {
+  const candidate = (modelName || '').trim();
+  if (!candidate || GROQ_DEPRECATED_MODELS.has(candidate)) return GROQ_DEFAULT_MODEL;
+  return candidate;
+}
+
 interface ProviderInfo {
   name: string;
   icon: React.ReactNode;
@@ -81,7 +98,7 @@ const AIProvidersPanel = () => {
             connected: !!cred.has_groq_key,
             lastUsed: lastByProvider['Groq'] || null,
             articleCount: countByProvider['Groq'] || 0,
-            activeModel: userSets.groq_model === 'llama-3.3-70b-versatile' ? 'llama-3.1-8b-instant' : userSets.groq_model,
+            activeModel: sanitizeGroqModel(userSets.groq_model),
           },
           {
             name: 'Lovable AI',
