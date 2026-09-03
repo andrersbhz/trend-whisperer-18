@@ -111,6 +111,19 @@ const SocialPublisherPage = () => {
     setSelected((current) => current.includes(account.key) ? current.filter((key) => key !== account.key) : [...current, account.key]);
   };
 
+  // Facebook/Threads bloqueiam iframes (X-Frame-Options), então a autorização
+  // precisa acontecer numa aba/janela de topo, nunca dentro do preview.
+  const openAuthUrl = (authUrl: string) => {
+    const opened = window.open(authUrl, '_blank', 'noopener,noreferrer');
+    if (opened) return;
+    try {
+      if (window.top) window.top.location.href = authUrl;
+      else window.location.href = authUrl;
+    } catch {
+      window.location.href = authUrl;
+    }
+  };
+
   const connectMeta = async () => {
     const { data, error } = await supabase.functions.invoke('facebook-oauth-start', {
       body: { returnUrl: `${window.location.origin}/social` },
@@ -119,7 +132,7 @@ const SocialPublisherPage = () => {
       toast({ title: 'Falha ao iniciar Meta', description: error?.message || data?.error || 'OAuth indisponível', variant: 'destructive' });
       return;
     }
-    window.location.href = data.authUrl;
+    openAuthUrl(data.authUrl);
   };
 
   const connectThreads = async () => {
@@ -130,7 +143,7 @@ const SocialPublisherPage = () => {
       toast({ title: 'Falha ao iniciar Threads', description: error?.message || data?.error || 'OAuth indisponível', variant: 'destructive' });
       return;
     }
-    window.location.href = data.authUrl;
+    openAuthUrl(data.authUrl);
   };
 
   const disconnectAccount = async (account: SocialAccount) => {
