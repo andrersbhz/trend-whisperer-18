@@ -169,28 +169,50 @@ function parseRSSDirectly(rss: string, categories: string[], geo: string): any[]
 
   const topics: any[] = [];
   for (const item of items.slice(0, 40)) {
-
-  const topics: any[] = [];
-  for (const item of items.slice(0, 40)) {
-    const title = pick(item, "title");
+    const title = pickTag(item, "title");
     if (!title) continue;
-    
-    const trafficRaw = pick(item, "ht:approx_traffic") || "médio";
-    // Limpar o volume de busca para ter apenas números (ex: "20,000+" -> "20000")
+
+    const trafficRaw = pickTag(item, "ht:approx_traffic") || "médio";
     const searchVolumeClean = trafficRaw.replace(/[^0-9]/g, "");
-    
+
     const trafficVal = searchVolumeClean ? parseInt(searchVolumeClean, 10) : 0;
-    const newsTitle = pick(item, "ht:news_item_title");
-    const newsSource = pick(item, "ht:news_item_source");
-    const newsUrl = pick(item, "ht:news_item_url");
-    
+    const newsTitle = pickTag(item, "ht:news_item_title");
+    const newsSource = pickTag(item, "ht:news_item_source");
+    const newsUrl = pickTag(item, "ht:news_item_url");
+
     topics.push({
       topic: title,
       search_volume: trafficVal || trafficRaw,
-      category: guessCategory(`${title} ${newsTitle}`),
+      category: guessCategory(`${title} ${newsTitle}`, categories),
       context: newsTitle || null,
       source_name: newsSource ? `Google Trends ${regionName} (${newsSource})` : `Google Trends ${regionName}`,
       source_url: newsUrl || null,
+    });
+  }
+  return topics;
+}
+
+function parseStandardRSS(rss: string, categories: string[], sourceName: string, sourceBaseUrl: string): any[] {
+  console.log(`[parseStandardRSS] Starting parse of ${rss.length} chars for ${sourceName}`);
+  const items = rss.match(/<item[\s\S]*?<\/item>/gi) || [];
+
+  const topics: any[] = [];
+  for (const item of items.slice(0, 40)) {
+    const title = pickTag(item, "title");
+    if (!title) continue;
+
+    const link = pickTag(item, "link");
+    const description = pickTag(item, "description").replace(/<[^>]+>/g, "").slice(0, 240);
+    const pubDate = pickTag(item, "pubDate");
+
+    topics.push({
+      topic: title,
+      search_volume: "alto",
+      category: guessCategory(`${title} ${description}`, categories),
+      context: description || null,
+      source_name: sourceName,
+      source_url: link || sourceBaseUrl,
+      published_at: pubDate ? new Date(pubDate).toISOString() : null,
     });
   }
   return topics;
