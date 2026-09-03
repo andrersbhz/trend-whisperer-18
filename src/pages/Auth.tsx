@@ -19,7 +19,9 @@ const Auth = () => {
   const location = useLocation();
   const { toast } = useToast();
 
-  const destination = (location.state as any)?.from || '/admin';
+  const nextParam = new URLSearchParams(location.search).get('next');
+  const safeNext = nextParam && nextParam.startsWith('/') && !nextParam.startsWith('//') ? nextParam : null;
+  const destination = safeNext || (location.state as any)?.from || '/admin';
 
   useEffect(() => {
     if (session?.user) {

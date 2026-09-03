@@ -60,6 +60,7 @@ const NexaAdmin = lazyRetry(() => import("@/nexa/pages/NexaAdmin"));
 const NexaPlaceholder = lazyRetry(() => import("@/nexa/pages/NexaPlaceholder"));
 const ProtectedNexaRoute = lazyRetry(() => import("@/nexa/components/ProtectedNexaRoute"));
 
+const OAuthConsent = lazyRetry(() => import("@/pages/OAuthConsent"));
 const NotFound = lazyRetry(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
@@ -135,6 +136,7 @@ const AppContent = () => {
                     <Route path="/vendas" element={<SalesPage />} />
                     <Route path="/pricing" element={<SalesPage />} />
                     <Route path="/auth" element={<AuthRoute />} />
+                    <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
                     <Route path="/admin" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                     <Route path="/articles" element={<ProtectedRoute><ArticlesPage /></ProtectedRoute>} />
                     <Route path="/trends" element={<ProtectedRoute><TrendsPage /></ProtectedRoute>} />
