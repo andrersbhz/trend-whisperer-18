@@ -37,6 +37,32 @@ async function fetchGoogleTrendsRSS(geo: string): Promise<string | null> {
   }
 }
 
+async function fetchPortalLeoDiasRSS(): Promise<string | null> {
+  const url = "https://portalleodias.com/feed/";
+  try {
+    console.log(`[RSS] Fetching Portal Leo Dias from ${url}`);
+    const resp = await fetch(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        "Accept": "application/rss+xml, application/xml, text/xml, */*"
+      }
+    });
+    if (!resp.ok) {
+      console.error(`[RSS] Portal Leo Dias fetch failed with status ${resp.status}`);
+      return null;
+    }
+    const text = await resp.text();
+    if (!text || text.length < 500) {
+      console.error(`[RSS] Portal Leo Dias response too short: ${text?.length || 0} chars`);
+      return null;
+    }
+    return text;
+  } catch (err) {
+    console.error(`[RSS] Error fetching Portal Leo Dias feed:`, err);
+    return null;
+  }
+}
+
 // ── AI Prompt ─────────────────────────────────────────────────────────────
 
 function buildRSSCategorizationPrompt(rssContent: string, categories: string[], geo: string) {
