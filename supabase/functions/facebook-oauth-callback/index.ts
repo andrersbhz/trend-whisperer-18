@@ -11,10 +11,8 @@ const DEFAULT_RETURN_URL = "https://forex.a3solucoesdigitais.com/settings";
 
 function getReturnUrlFromState(state: string | null) {
   if (!state) return DEFAULT_RETURN_URL;
-
   const parts = state.split("::");
   if (parts.length < 2) return DEFAULT_RETURN_URL;
-
   try {
     return decodeURIComponent(parts.slice(1).join("::"));
   } catch {
@@ -23,7 +21,6 @@ function getReturnUrlFromState(state: string | null) {
 }
 
 function htmlResponse(title: string, message: string, success: boolean, redirectUrl = DEFAULT_RETURN_URL) {
-  // Build the redirect URL back to the app (settings page, facebook tab)
   const html = `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -71,49 +68,51 @@ serve(async (req) => {
     const state = url.searchParams.get("state");
     const error = url.searchParams.get("error");
     const errorDesc = url.searchParams.get("error_description");
-
     const returnUrl = getReturnUrlFromState(state);
 
-    if (error) {
-      return htmlResponse("Conexão cancelada", errorDesc || error, false, returnUrl);
-    }
-    if (!code || !state) {
-      return htmlResponse("Erro", "Parâmetros 'code' ou 'state' ausentes.", false, returnUrl);
-    }
-
-    const appId = Deno.env.get("FACEBOOK_APP_ID");
-    const appSecret = Deno.env.get("FACEBOOK_APP_SECRET");
-    if (!appId || !appSecret) {
-        return htmlResponse("Erro de configuração", "FACEBOOK_APP_ID ou FACEBOOK_APP_SECRET não estão configurados.", false, returnUrl);
-    }
+    if (error) return htmlResponse("Conexão cancelada", errorDesc || error, false, returnUrl);
+    if (!code || !state) return htmlResponse("Erro", "Parâmetros 'code' ou 'state' ausentes.", false, returnUrl);
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Validate state
     const { data: stateRow } = await supabase
       .from("facebook_oauth_states")
       .select("user_id, expires_at")
       .eq("state", state)
       .maybeSingle();
 
-    if (!stateRow) {
-      return htmlResponse("Sessão expirada", "Estado OAuth inválido. Tente conectar novamente.", false, returnUrl);
-    }
+    if (!stateRow) return htmlResponse("Sessão expirada", "Estado OAuth inválido. Tente conectar novamente.", false, returnUrl);
     if (new Date(stateRow.expires_at) < new Date()) {
       await supabase.from("facebook_oauth_states").delete().eq("state", state);
       return htmlResponse("Sessão expirada", "O link expirou. Tente conectar novamente.", false, returnUrl);
     }
 
     const userId = stateRow.user_id;
-    // Consume state immediately
     await supabase.from("facebook_oauth_states").delete().eq("state", state);
+
+    const { data: credentials, error: credentialsError } = await supabase
+      .from("meta_app_credentials")
+      .select("app_id, app_secret")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (credentialsError) console.warn("Could not read per-user Meta credentials:", credentialsError.message);
+
+    const appId = credentials?.app_id || Deno.env.get("FACEBOOK_APP_ID");
+    const appSecret = credentials?.app_secret || Deno.env.get("FACEBOOK_APP_SECRET");
+    if (!appId || !appSecret) {
+      return htmlResponse(
+        "Erro de configuração",
+        "API da Meta não configurada. Informe App ID e App Secret em Configurações > Facebook & Instagram.",
+        false,
+        returnUrl,
+      );
+    }
 
     const redirectUri = `${Deno.env.get("SUPABASE_URL")}/functions/v1/facebook-oauth-callback`;
 
-    // Exchange code for short-lived user token
     const tokenUrl = new URL(`${GRAPH_API}/oauth/access_token`);
     tokenUrl.searchParams.set("client_id", appId);
     tokenUrl.searchParams.set("client_secret", appSecret);
@@ -129,7 +128,6 @@ serve(async (req) => {
     const tokenData = await tokenResp.json();
     const shortToken = tokenData.access_token;
 
-    // Exchange for long-lived (60 days) user token
     const longUrl = new URL(`${GRAPH_API}/oauth/access_token`);
     longUrl.searchParams.set("grant_type", "fb_exchange_token");
     longUrl.searchParams.set("client_id", appId);
@@ -139,7 +137,6 @@ serve(async (req) => {
     const longData = longResp.ok ? await longResp.json() : { access_token: shortToken };
     const userToken = longData.access_token || shortToken;
 
-    // Fetch all pages user manages (page tokens are already long-lived when derived from a long-lived user token)
     const fields = "id,name,access_token,category,picture{url},fan_count,instagram_business_account{id,name,username,profile_picture_url,followers_count}";
     const pagesResp = await fetch(
       `${GRAPH_API}/me/accounts?fields=${fields}&limit=200&access_token=${encodeURIComponent(userToken)}`
@@ -156,7 +153,6 @@ serve(async (req) => {
       return htmlResponse("Nenhuma página", "Sua conta não administra nenhuma página do Facebook. Verifique no Business Manager.", false, returnUrl);
     }
 
-    // Upsert each page into facebook_accounts (encryption trigger handles the access_token)
     let savedCount = 0;
     for (const page of pages) {
       const igId = page.instagram_business_account?.id || null;
@@ -165,7 +161,6 @@ serve(async (req) => {
       const pageToken = page.access_token;
       const pictureUrl = page.picture?.data?.url || null;
 
-      // Check if exists
       const { data: existing } = await supabase
         .from("facebook_accounts")
         .select("id")
@@ -207,8 +202,9 @@ serve(async (req) => {
       true,
       returnUrl
     );
-  } catch (err: any) {
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Tente novamente.";
     console.error("facebook-oauth-callback error:", err);
-    return htmlResponse("Erro inesperado", err.message || "Tente novamente.", false);
+    return htmlResponse("Erro inesperado", message, false);
   }
 });
