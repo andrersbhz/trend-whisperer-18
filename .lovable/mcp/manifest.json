@@ -1,0 +1,156 @@
+{
+  "version": 1,
+  "sdk_version": "1.0.0",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://bvvhgwkjyfnjroudtbav.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "postwp",
+      "version": "0.1.0",
+      "title": "PostWP"
+    },
+    "tools": [
+      {
+        "name": "list_articles",
+        "title": "Listar artigos",
+        "description": "Lista os artigos do usuário autenticado, com filtro opcional por status ou categoria.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "draft",
+                "scheduled",
+                "published",
+                "failed"
+              ],
+              "description": "Filtra pelo status do artigo."
+            },
+            "category": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Filtra pela categoria."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 10,
+              "description": "Máximo de artigos retornados."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_article",
+        "title": "Ver artigo",
+        "description": "Retorna o conteúdo completo e os dados de SEO de um artigo pelo ID.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID do artigo."
+            }
+          },
+          "required": [
+            "id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "create_article_draft",
+        "title": "Criar rascunho de artigo",
+        "description": "Cria um novo artigo em rascunho (status draft) para o usuário autenticado, sem publicar.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string",
+              "minLength": 3,
+              "description": "Título do artigo."
+            },
+            "category": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Categoria do artigo (ex.: esportes, politica)."
+            },
+            "content": {
+              "type": "string",
+              "description": "Conteúdo em HTML ou texto."
+            },
+            "excerpt": {
+              "type": "string",
+              "description": "Resumo curto."
+            },
+            "seo_keyword": {
+              "type": "string",
+              "description": "Palavra-chave principal de SEO."
+            }
+          },
+          "required": [
+            "title",
+            "category"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_blogs",
+        "title": "Listar blogs",
+        "description": "Lista os blogs cadastrados pelo usuário autenticado.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20,
+              "description": "Máximo de blogs retornados."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
