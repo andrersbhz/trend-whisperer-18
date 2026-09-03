@@ -37,6 +37,32 @@ async function fetchGoogleTrendsRSS(geo: string): Promise<string | null> {
   }
 }
 
+async function fetchPortalLeoDiasRSS(): Promise<string | null> {
+  const url = "https://portalleodias.com/feed/";
+  try {
+    console.log(`[RSS] Fetching Portal Leo Dias from ${url}`);
+    const resp = await fetch(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        "Accept": "application/rss+xml, application/xml, text/xml, */*"
+      }
+    });
+    if (!resp.ok) {
+      console.error(`[RSS] Portal Leo Dias fetch failed with status ${resp.status}`);
+      return null;
+    }
+    const text = await resp.text();
+    if (!text || text.length < 500) {
+      console.error(`[RSS] Portal Leo Dias response too short: ${text?.length || 0} chars`);
+      return null;
+    }
+    return text;
+  } catch (err) {
+    console.error(`[RSS] Error fetching Portal Leo Dias feed:`, err);
+    return null;
+  }
+}
+
 // ── AI Prompt ─────────────────────────────────────────────────────────────
 
 function buildRSSCategorizationPrompt(rssContent: string, categories: string[], geo: string) {
@@ -96,70 +122,97 @@ async function callAI(providers: any[], systemPrompt: string, userPrompt: string
   throw new Error("AI failed");
 }
 
+// ── Shared helpers ─────────────────────────────────────────────────────
+
+function guessCategory(text: string, categories: string[]): string {
+  const t = text.toLowerCase();
+  const keywords: Record<string, string[]> = {
+    esportes: ["futebol", "jogo", "time", "campeonato", "gol", "atleta", "olimp", "copa", "seleção", "técnico", "brasileirão", "vôlei", "basquete", "tênis", "luta", "mma", "boxe", "f1", "fórmula 1", "soccer", "football", "match", "team", "nfl", "nba", "mlb"],
+    politica: ["presidente", "ministro", "senado", "câmara", "lula", "governo", "stf", "congresso", "deputado", "eleição", "voto", "partido", "prefeito", "tarcísio", "bolsonaro", "president", "minister", "senate", "congress", "election", "vote", "party", "biden", "trump"],
+    policia: ["polícia", "preso", "crime", "operação", "assalto", "homicídio", "investigação", "tráfico", "justiça", "roubo", "furt", "acusad", "police", "arrested", "crime", "operation", "robbery", "investigation", "justice"],
+    saude: ["saúde", "vacina", "hospital", "anvisa", "doença", "covid", "médico", "tratamento", "vírus", "dengue", "gripe", "remédio", "health", "vaccine", "disease", "doctor", "treatment", "virus", "flu", "medicine"],
+    celebridades: ["ator", "atriz", "cantor", "novela", "famoso", "bbb", "show", "reality", "influencer", "cinema", "netflix", "globop", "actor", "actress", "singer", "famous", "reality", "influencer", "cinema", "movie"],
+    financas: ["dólar", "bolsa", "ibovespa", "juros", "banco central", "selic", "imposto", "economia", "dinheiro", "bitcoin", "investimento", "ação", "ações", "mercado", "dollar", "stock", "interest", "economy", "money", "investment", "market"],
+    tecnologia: ["celular", "iphone", "google", "apple", "microsoft", "ia", "inteligência artificial", "lançamento", "app", "software", "nuvem", "internet", "cellphone", "ai", "artificial intelligence", "software", "cloud"],
+  };
+  for (const cat of categories) {
+    const kws = keywords[cat] || [cat];
+    if (kws.some((kw) => t.includes(kw))) return cat;
+  }
+  return "variedades";
+}
+
+const decodeXml = (s: string) =>
+  s.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
+    .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"').replace(/&#39;/g, "'").trim();
+
+const pickTag = (block: string, tagName: string): string => {
+  const tag = tagName.replace(":", "\\:");
+  const m = block.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i"));
+  if (m) return decodeXml(m[1]);
+
+  if (tagName.includes(":")) {
+    const simpleTag = tagName.split(":")[1];
+    const m2 = block.match(new RegExp(`<${simpleTag}[^>]*>([\\s\\S]*?)<\\/${simpleTag}>`, "i"));
+    if (m2) return decodeXml(m2[1]);
+  }
+  return "";
+};
+
 // ── RSS Direct Parser (fallback when AI fails) ──────────────────────────
 
 function parseRSSDirectly(rss: string, categories: string[], geo: string): any[] {
   console.log(`[parseRSSDirectly] Starting manual parse of ${rss.length} chars (Geo: ${geo})`);
   const items = rss.match(/<item[\s\S]*?<\/item>/gi) || [];
   const regionName = geo === "US" ? "Global" : "Brasil";
-  
-  const decode = (s: string) =>
-    s.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
-      .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
-      .replace(/&quot;/g, '"').replace(/&#39;/g, "'").trim();
-      
-  const pick = (block: string, tagName: string): string => {
-    const tag = tagName.replace(":", "\\:");
-    const m = block.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i"));
-    if (m) return decode(m[1]);
-    
-    if (tagName.includes(":")) {
-      const simpleTag = tagName.split(":")[1];
-      const m2 = block.match(new RegExp(`<${simpleTag}[^>]*>([\\s\\S]*?)<\\/${simpleTag}>`, "i"));
-      if (m2) return decode(m2[1]);
-    }
-    return "";
-  };
-
-  const guessCategory = (text: string): string => {
-    const t = text.toLowerCase();
-    const keywords: Record<string, string[]> = {
-      esportes: ["futebol", "jogo", "time", "campeonato", "gol", "atleta", "olimp", "copa", "seleção", "técnico", "brasileirão", "vôlei", "basquete", "tênis", "luta", "mma", "boxe", "f1", "fórmula 1", "soccer", "football", "match", "team", "nfl", "nba", "mlb"],
-      politica: ["presidente", "ministro", "senado", "câmara", "lula", "governo", "stf", "congresso", "deputado", "eleição", "voto", "partido", "prefeito", "tarcísio", "bolsonaro", "president", "minister", "senate", "congress", "election", "vote", "party", "biden", "trump"],
-      policia: ["polícia", "preso", "crime", "operação", "assalto", "homicídio", "investigação", "tráfico", "justiça", "roubo", "furt", "acusad", "police", "arrested", "crime", "operation", "robbery", "investigation", "justice"],
-      saude: ["saúde", "vacina", "hospital", "anvisa", "doença", "covid", "médico", "tratamento", "vírus", "dengue", "gripe", "remédio", "health", "vaccine", "disease", "doctor", "treatment", "virus", "flu", "medicine"],
-      celebridades: ["ator", "atriz", "cantor", "novela", "famoso", "bbb", "show", "reality", "influencer", "cinema", "netflix", "globop", "actor", "actress", "singer", "famous", "reality", "influencer", "cinema", "movie"],
-      financas: ["dólar", "bolsa", "ibovespa", "juros", "banco central", "selic", "imposto", "economia", "dinheiro", "bitcoin", "investimento", "ação", "ações", "mercado", "dollar", "stock", "interest", "economy", "money", "investment", "market"],
-      tecnologia: ["celular", "iphone", "google", "apple", "microsoft", "ia", "inteligência artificial", "lançamento", "app", "software", "nuvem", "internet", "cellphone", "ai", "artificial intelligence", "software", "cloud"],
-    };
-    for (const cat of categories) {
-      const kws = keywords[cat] || [cat];
-      if (kws.some((kw) => t.includes(kw))) return cat;
-    }
-    return "variedades";
-  };
 
   const topics: any[] = [];
   for (const item of items.slice(0, 40)) {
-    const title = pick(item, "title");
+    const title = pickTag(item, "title");
     if (!title) continue;
-    
-    const trafficRaw = pick(item, "ht:approx_traffic") || "médio";
-    // Limpar o volume de busca para ter apenas números (ex: "20,000+" -> "20000")
+
+    const trafficRaw = pickTag(item, "ht:approx_traffic") || "médio";
     const searchVolumeClean = trafficRaw.replace(/[^0-9]/g, "");
-    
+
     const trafficVal = searchVolumeClean ? parseInt(searchVolumeClean, 10) : 0;
-    const newsTitle = pick(item, "ht:news_item_title");
-    const newsSource = pick(item, "ht:news_item_source");
-    const newsUrl = pick(item, "ht:news_item_url");
-    
+    const newsTitle = pickTag(item, "ht:news_item_title");
+    const newsSource = pickTag(item, "ht:news_item_source");
+    const newsUrl = pickTag(item, "ht:news_item_url");
+
     topics.push({
       topic: title,
       search_volume: trafficVal || trafficRaw,
-      category: guessCategory(`${title} ${newsTitle}`),
+      category: guessCategory(`${title} ${newsTitle}`, categories),
       context: newsTitle || null,
       source_name: newsSource ? `Google Trends ${regionName} (${newsSource})` : `Google Trends ${regionName}`,
       source_url: newsUrl || null,
+    });
+  }
+  return topics;
+}
+
+function parseStandardRSS(rss: string, categories: string[], sourceName: string, sourceBaseUrl: string): any[] {
+  console.log(`[parseStandardRSS] Starting parse of ${rss.length} chars for ${sourceName}`);
+  const items = rss.match(/<item[\s\S]*?<\/item>/gi) || [];
+
+  const topics: any[] = [];
+  for (const item of items.slice(0, 40)) {
+    const title = pickTag(item, "title");
+    if (!title) continue;
+
+    const link = pickTag(item, "link");
+    const description = pickTag(item, "description").replace(/<[^>]+>/g, "").slice(0, 240);
+    const pubDate = pickTag(item, "pubDate");
+
+    topics.push({
+      topic: title,
+      search_volume: "alto",
+      category: guessCategory(`${title} ${description}`, categories),
+      context: description || null,
+      source_name: sourceName,
+      source_url: link || sourceBaseUrl,
+      published_at: pubDate ? new Date(pubDate).toISOString() : null,
     });
   }
   return topics;
@@ -315,6 +368,17 @@ serve(async (req) => {
       }
       if (!usTopics.length) usTopics = parseRSSDirectly(rssUS, categories, "US");
       topics = [...topics, ...usTopics];
+    }
+
+    // Process Portal Leo Dias feed
+    const rssPLD = await fetchPortalLeoDiasRSS();
+    if (rssPLD) {
+      console.log(`[fetch-trends] Portal Leo Dias RSS fetched, length: ${rssPLD.length}`);
+      const pldTopics = parseStandardRSS(rssPLD, categories, "Portal Leo Dias", "https://portalleodias.com/");
+      if (pldTopics.length) {
+        topics = [...topics, ...pldTopics];
+        console.log(`[fetch-trends] Portal Leo Dias topics extracted: ${pldTopics.length}`);
+      }
     }
 
     if (!topics.length) {
