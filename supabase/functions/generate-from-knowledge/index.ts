@@ -147,8 +147,23 @@ serve(async (req) => {
       } catch (e) { errors.push(e instanceof Error ? e.message : String(e)); }
     }
 
+    const GROQ_DEPRECATED_MODELS = new Set([
+      "llama-3.3-70b-versatile",
+      "llama-3.1-8b-instant",
+      "llama3-70b-8192",
+      "llama3-8b-8192",
+      "mixtral-8x7b-32768",
+      "gemma-7b-it",
+      "gemma2-9b-it",
+    ]);
+    const GROQ_DEFAULT_MODEL = "openai/gpt-oss-20b";
+    const sanitizeGroqModel = (m?: string | null) => {
+      const c = (m || "").trim();
+      return !c || GROQ_DEPRECATED_MODELS.has(c) ? GROQ_DEFAULT_MODEL : c;
+    };
+
     if (groqKey && !parsed) {
-      const model = settings?.groq_model || "llama-3.3-70b-versatile";
+      const model = sanitizeGroqModel(settings?.groq_model);
       try {
         if (fileData && !textMaterial) throw new Error("Groq fallback requer conteúdo textual nesta base de conhecimento.");
         const aiRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
