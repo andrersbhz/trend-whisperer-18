@@ -614,7 +614,12 @@ REGRAS OBRIGATÓRIAS DE ESTRUTURA PARA CADA ARTIGO:
 6. IMAGEM E SINCRONIA: 
    - visual_elements: Liste 3 a 5 elementos visuais concretos (pessoas, objetos, cenário, ação) que representem FIELMENTE a notícia.
    - image_alt: Texto alternativo técnico descrevendo exatamente os visual_elements.
-   - image_caption: Legenda jornalística que descreve a cena baseada nos visual_elements.`;
+   - image_caption: Legenda jornalística que descreve a cena baseada nos visual_elements.
+
+7. ESTILO DE PONTUAÇÃO (OBRIGATÓRIO):
+   - PROIBIDO usar emojis ou qualquer ícone/símbolo decorativo em qualquer campo (título, conteúdo, excerpt, meta description, legendas).
+   - PROIBIDO usar travessões (—, –) ou hífen isolado como pontuação. Use vírgula, ponto ou dois-pontos.
+   - Hífen só é permitido dentro de palavras compostas legítimas (ex.: bem-estar, ex-presidente).`;
 
 function buildSystemPrompt(writerPrompt?: string | null): string {
   if (!writerPrompt || writerPrompt.trim().length < 10) {
