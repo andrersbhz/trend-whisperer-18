@@ -13,17 +13,32 @@ function stripHtml(text: string): string {
   return text.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
 }
 
+// Remove emojis e travessões/hífens usados como pontuação (mantém hífen de palavras compostas).
+const EMOJI_RE = /[\u{1F000}-\u{1FAFF}\u{2190}-\u{21FF}\u{2300}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}\u{200D}]/gu;
+function cleanStyle(text: string): string {
+  return (text || "")
+    .replace(EMOJI_RE, "")
+    .replace(/[\u2013\u2014\u2015]/g, ",")
+    .replace(/\s-\s/g, ", ")
+    .replace(/\s{2,}/g, " ")
+    .replace(/\s+([,.;:!?])/g, "$1")
+    .replace(/,\s*,/g, ",")
+    .trim();
+}
+
 function sanitizeSeoFields(parsed: AIResponse): AIResponse {
+  parsed = { ...parsed, content: cleanStyle(parsed.content || "") };
+
   return {
     ...parsed,
-    title: (parsed.title || "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim(),
-    excerpt: (parsed.excerpt || "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim(),
-    seo_keyword: (parsed.seo_keyword || "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim(),
-    seo_title: (parsed.seo_title || "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim(),
-    meta_description: (parsed.meta_description || "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim(),
+    title: cleanStyle((parsed.title || "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim()),
+    excerpt: cleanStyle((parsed.excerpt || "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim()),
+    seo_keyword: cleanStyle((parsed.seo_keyword || "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim()),
+    seo_title: cleanStyle((parsed.seo_title || "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim()),
+    meta_description: cleanStyle((parsed.meta_description || "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim()),
     slug: (parsed.slug || "").toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, ""),
-    image_alt: (parsed.image_alt || "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim(),
-    image_caption: (parsed.image_caption || "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim(),
+    image_alt: cleanStyle((parsed.image_alt || "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim()),
+    image_caption: cleanStyle((parsed.image_caption || "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim()),
   };
 }
 
@@ -299,9 +314,17 @@ interface ProviderConfig {
   call: (systemPrompt: string, userPrompt: string) => Promise<AIResponse>;
 }
 
-async function callWithFallback(providers: ProviderConfig[], systemPrompt: string, userPrompt: string): Promise<{ result: AIResponse; provider: string }> {
+async function callWithFallback(
+  providers: ProviderConfig[],
+  systemPrompt: string,
+  userPrompt: string,
+  disabled?: Set<string>,
+): Promise<{ result: AIResponse; provider: string }> {
   // A ordem já é definida na montagem do array 'providers' no handler principal.
-  const sortedProviders = providers;
+  const sortedProviders = providers.filter((p) => !disabled?.has(p.name));
+  if (sortedProviders.length === 0) {
+    throw new Error("Todos os provedores de IA estão indisponíveis (sem quota ou chave inválida).");
+  }
 
   const errors: string[] = [];
   for (const provider of sortedProviders) {
@@ -312,6 +335,12 @@ async function callWithFallback(providers: ProviderConfig[], systemPrompt: strin
     } catch (err: any) {
       const msg = err instanceof Error ? err.message : String(err);
       console.warn(`[AI] Provider ${provider.name} failed: ${msg.substring(0, 200)}`);
+      // Provedor sem quota/chave inválida é desativado para os próximos artigos do lote,
+      // garantindo que o ChatGPT (OpenAI) assuma imediatamente quando o Gemini falha.
+      if (disabled && (isBillingError(msg) || /401|403|API key|quota/i.test(msg))) {
+        disabled.add(provider.name);
+        console.warn(`[AI] Provider ${provider.name} desativado neste lote.`);
+      }
       errors.push(`${provider.name}: ${msg}`);
     }
   }
@@ -599,7 +628,12 @@ REGRAS OBRIGATÓRIAS DE ESTRUTURA PARA CADA ARTIGO:
 6. IMAGEM E SINCRONIA: 
    - visual_elements: Liste 3 a 5 elementos visuais concretos (pessoas, objetos, cenário, ação) que representem FIELMENTE a notícia.
    - image_alt: Texto alternativo técnico descrevendo exatamente os visual_elements.
-   - image_caption: Legenda jornalística que descreve a cena baseada nos visual_elements.`;
+   - image_caption: Legenda jornalística que descreve a cena baseada nos visual_elements.
+
+7. ESTILO DE PONTUAÇÃO (OBRIGATÓRIO):
+   - PROIBIDO usar emojis ou qualquer ícone/símbolo decorativo em qualquer campo (título, conteúdo, excerpt, meta description, legendas).
+   - PROIBIDO usar travessões (—, –) ou hífen isolado como pontuação. Use vírgula, ponto ou dois-pontos.
+   - Hífen só é permitido dentro de palavras compostas legítimas (ex.: bem-estar, ex-presidente).`;
 
 function buildSystemPrompt(writerPrompt?: string | null): string {
   if (!writerPrompt || writerPrompt.trim().length < 10) {
@@ -863,6 +897,7 @@ serve(async (req) => {
     const generatedArticles: any[] = [];
     const failureReasons: Array<{ status: number; message: string }> = [];
     let allProvidersExhausted = false;
+    const disabledProviders = new Set<string>();
     let rescheduledCount = 0;
 
     const { data: pendingArticles } = await supabase
@@ -941,7 +976,7 @@ serve(async (req) => {
         let usedProvider: string;
 
         try {
-          const result = await callWithFallback(providers, systemPrompt, userPrompt);
+          const result = await callWithFallback(providers, systemPrompt, userPrompt, disabledProviders);
           parsed = sanitizeSeoFields(result.result);
           usedProvider = result.provider;
 
@@ -969,7 +1004,8 @@ serve(async (req) => {
         } catch (err: any) {
           const msg = err instanceof Error ? err.message : String(err);
           console.error(`All providers failed for topic ${topic.topic}:`, msg.substring(0, 300));
-          if (isBillingError(msg)) {
+          // Só interrompe o lote se TODOS os provedores (inclusive ChatGPT) estiverem sem quota.
+          if (isBillingError(msg) && disabledProviders.size >= providers.length) {
             allProvidersExhausted = true;
             failureReasons.push({ status: 402, message: msg });
             break;
