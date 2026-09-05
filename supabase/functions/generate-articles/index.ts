@@ -1004,7 +1004,8 @@ serve(async (req) => {
         } catch (err: any) {
           const msg = err instanceof Error ? err.message : String(err);
           console.error(`All providers failed for topic ${topic.topic}:`, msg.substring(0, 300));
-          if (isBillingError(msg)) {
+          // Só interrompe o lote se TODOS os provedores (inclusive ChatGPT) estiverem sem quota.
+          if (isBillingError(msg) && disabledProviders.size >= providers.length) {
             allProvidersExhausted = true;
             failureReasons.push({ status: 402, message: msg });
             break;
