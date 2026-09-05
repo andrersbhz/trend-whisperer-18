@@ -13,7 +13,22 @@ function stripHtml(text: string): string {
   return text.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
 }
 
+// Remove emojis e travessões/hífens usados como pontuação (mantém hífen de palavras compostas).
+const EMOJI_RE = /[\u{1F000}-\u{1FAFF}\u{2190}-\u{21FF}\u{2300}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}\u{200D}]/gu;
+function cleanStyle(text: string): string {
+  return (text || "")
+    .replace(EMOJI_RE, "")
+    .replace(/[\u2013\u2014\u2015]/g, ",")
+    .replace(/\s-\s/g, ", ")
+    .replace(/\s{2,}/g, " ")
+    .replace(/\s+([,.;:!?])/g, "$1")
+    .replace(/,\s*,/g, ",")
+    .trim();
+}
+
 function sanitizeSeoFields(parsed: AIResponse): AIResponse {
+  parsed = { ...parsed, content: cleanStyle(parsed.content || "") };
+
   return {
     ...parsed,
     title: (parsed.title || "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim(),
