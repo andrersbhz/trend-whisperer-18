@@ -31,14 +31,14 @@ function sanitizeSeoFields(parsed: AIResponse): AIResponse {
 
   return {
     ...parsed,
-    title: (parsed.title || "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim(),
-    excerpt: (parsed.excerpt || "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim(),
-    seo_keyword: (parsed.seo_keyword || "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim(),
-    seo_title: (parsed.seo_title || "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim(),
-    meta_description: (parsed.meta_description || "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim(),
+    title: cleanStyle((parsed.title || "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim()),
+    excerpt: cleanStyle((parsed.excerpt || "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim()),
+    seo_keyword: cleanStyle((parsed.seo_keyword || "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim()),
+    seo_title: cleanStyle((parsed.seo_title || "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim()),
+    meta_description: cleanStyle((parsed.meta_description || "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim()),
     slug: (parsed.slug || "").toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, ""),
-    image_alt: (parsed.image_alt || "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim(),
-    image_caption: (parsed.image_caption || "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim(),
+    image_alt: cleanStyle((parsed.image_alt || "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim()),
+    image_caption: cleanStyle((parsed.image_caption || "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim()),
   };
 }
 
