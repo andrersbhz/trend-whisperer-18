@@ -976,7 +976,7 @@ serve(async (req) => {
         let usedProvider: string;
 
         try {
-          const result = await callWithFallback(providers, systemPrompt, userPrompt);
+          const result = await callWithFallback(providers, systemPrompt, userPrompt, disabledProviders);
           parsed = sanitizeSeoFields(result.result);
           usedProvider = result.provider;
 
