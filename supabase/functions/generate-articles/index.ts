@@ -314,9 +314,17 @@ interface ProviderConfig {
   call: (systemPrompt: string, userPrompt: string) => Promise<AIResponse>;
 }
 
-async function callWithFallback(providers: ProviderConfig[], systemPrompt: string, userPrompt: string): Promise<{ result: AIResponse; provider: string }> {
+async function callWithFallback(
+  providers: ProviderConfig[],
+  systemPrompt: string,
+  userPrompt: string,
+  disabled?: Set<string>,
+): Promise<{ result: AIResponse; provider: string }> {
   // A ordem já é definida na montagem do array 'providers' no handler principal.
-  const sortedProviders = providers;
+  const sortedProviders = providers.filter((p) => !disabled?.has(p.name));
+  if (sortedProviders.length === 0) {
+    throw new Error("Todos os provedores de IA estão indisponíveis (sem quota ou chave inválida).");
+  }
 
   const errors: string[] = [];
   for (const provider of sortedProviders) {
@@ -327,6 +335,12 @@ async function callWithFallback(providers: ProviderConfig[], systemPrompt: strin
     } catch (err: any) {
       const msg = err instanceof Error ? err.message : String(err);
       console.warn(`[AI] Provider ${provider.name} failed: ${msg.substring(0, 200)}`);
+      // Provedor sem quota/chave inválida é desativado para os próximos artigos do lote,
+      // garantindo que o ChatGPT (OpenAI) assuma imediatamente quando o Gemini falha.
+      if (disabled && (isBillingError(msg) || /401|403|API key|quota/i.test(msg))) {
+        disabled.add(provider.name);
+        console.warn(`[AI] Provider ${provider.name} desativado neste lote.`);
+      }
       errors.push(`${provider.name}: ${msg}`);
     }
   }
