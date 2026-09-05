@@ -897,6 +897,7 @@ serve(async (req) => {
     const generatedArticles: any[] = [];
     const failureReasons: Array<{ status: number; message: string }> = [];
     let allProvidersExhausted = false;
+    const disabledProviders = new Set<string>();
     let rescheduledCount = 0;
 
     const { data: pendingArticles } = await supabase
