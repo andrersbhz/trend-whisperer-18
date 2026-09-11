@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import Preloader from '@/components/Preloader';
 import ViralNewsSearch from '@/components/admin/ViralNewsSearch';
 import { useAuth } from '@/hooks/useAuth';
@@ -17,7 +17,8 @@ import {
   ArrowUpDown,
   Calendar,
   Trash2,
-  XCircle
+  XCircle,
+  Save
 } from 'lucide-react';
 import { getErrorMessage, runBackendQuery } from '@/lib/backend';
 import {
@@ -38,8 +39,10 @@ const TrendsPage = () => {
   const [generating, setGenerating] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [refreshInterval, setRefreshInterval] = useState(30); // minutos
+  const [savingSettings, setSavingSettings] = useState(false);
+  const filtersLoadedRef = useRef(false);
   const [sourceFilter, setSourceFilter] = useState<string>("all");
-  const [regionFilter, setRegionFilter] = useState<"all" | "BR" | "World">("BR");
+  const [regionFilter, setRegionFilter] = useState<"all" | "BR" | "World">("all");
   const [sortBy, setSortBy] = useState<"recent" | "oldest" | "audience_desc" | "audience_asc">("audience_desc");
   const [timeFilter, setTimeFilter] = useState<string>("24h");
 
@@ -93,16 +96,26 @@ const TrendsPage = () => {
     if (!user) return;
 
     try {
-      // Buscar configurações para saber o intervalo e última atualização
+      // Buscar configurações para saber o intervalo, última atualização e filtros salvos
       const { data: settings } = await supabase
         .from('user_settings')
-        .select('last_trends_fetch, trends_refresh_interval')
+        .select('last_trends_fetch, trends_refresh_interval, trends_filters')
         .eq('user_id', user.id)
         .single();
 
       if (settings) {
         if (settings.last_trends_fetch) setLastUpdate(new Date(settings.last_trends_fetch));
         if (settings.trends_refresh_interval) setRefreshInterval(settings.trends_refresh_interval);
+
+        // Aplica os filtros salvos apenas uma vez, ao carregar a página
+        const saved = settings.trends_filters as any;
+        if (saved && !filtersLoadedRef.current) {
+          filtersLoadedRef.current = true;
+          if (saved.region) setRegionFilter(saved.region);
+          if (saved.source) setSourceFilter(saved.source);
+          if (saved.sort) setSortBy(saved.sort);
+          if (saved.time) setTimeFilter(saved.time);
+        }
 
         // Lógica de atualização automática se o tempo expirou
         const now = new Date();
@@ -159,6 +172,40 @@ const TrendsPage = () => {
 
     return () => clearInterval(timer);
   }, [user, timeFilter]);
+
+  const handleSaveSettings = async () => {
+    if (!user) return;
+    setSavingSettings(true);
+    try {
+      const filters = {
+        region: regionFilter,
+        source: sourceFilter,
+        sort: sortBy,
+        time: timeFilter,
+      };
+
+      const { data, error } = await supabase
+        .from('user_settings')
+        .update({ trends_filters: filters })
+        .eq('user_id', user.id)
+        .select('id');
+
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        const { error: insertError } = await supabase
+          .from('user_settings')
+          .insert({ user_id: user.id, trends_filters: filters });
+        if (insertError) throw insertError;
+      }
+
+      toast({ title: 'Configurações salvas!', description: 'Região, fonte, ordenação e período serão mantidos.' });
+    } catch (error) {
+      toast({ title: 'Erro ao salvar', description: getErrorMessage(error), variant: 'destructive' });
+    } finally {
+      setSavingSettings(false);
+    }
+  };
 
   const handleFetchTrends = async () => {
     setFetching(true);
