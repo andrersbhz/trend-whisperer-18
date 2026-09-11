@@ -444,6 +444,17 @@ const TrendsPage = () => {
               </SelectContent>
             </Select>
           </div>
+
+          <Button
+            onClick={handleSaveSettings}
+            disabled={savingSettings}
+            variant="outline"
+            size="sm"
+            className="h-9 text-xs bg-[#a3ff12] text-black border-[#a3ff12] hover:bg-[#b57bff]/90 hover:text-black"
+          >
+            {savingSettings ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Save className="h-3.5 w-3.5 mr-1.5" />}
+            Salvar Configurações
+          </Button>
         </div>
 
         <div className="flex items-center gap-2 px-1">
