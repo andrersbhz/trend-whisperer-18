@@ -1842,24 +1842,6 @@ export type Database = {
       }
     }
     Views: {
-      nexa_profiles_public: {
-        Row: {
-          avatar_url: string | null
-          full_name: string | null
-          id: string | null
-        }
-        Insert: {
-          avatar_url?: string | null
-          full_name?: string | null
-          id?: string | null
-        }
-        Update: {
-          avatar_url?: string | null
-          full_name?: string | null
-          id?: string | null
-        }
-        Relationships: []
-      }
       payment_methods_public: {
         Row: {
           mercadopago_enabled: boolean | null
@@ -2132,6 +2114,14 @@ export type Database = {
         Returns: boolean
       }
       nexa_is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      nexa_org_member_profiles: {
+        Args: { _org_id: string }
+        Returns: {
+          avatar_url: string
+          full_name: string
+          id: string
+        }[]
+      }
       nexa_user_org_ids: { Args: { _user_id: string }; Returns: string[] }
       record_visitor_history: {
         Args: {
