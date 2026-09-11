@@ -42,13 +42,13 @@ export default function NexaAgents() {
 
     if (!members) { setRows([]); setLoading(false); return; }
 
-    const userIds = members.map((m) => m.user_id);
-    const { data: profiles } = await supabase
-      .from("nexa_profiles_public")
-      .select("id,full_name")
-      .in("id", userIds);
+    const { data: profiles } = await (supabase as any).rpc("nexa_org_member_profiles", {
+      _org_id: activeOrg.id,
+    });
 
-    const profileMap = new Map((profiles ?? []).map((p) => [p.id, p]));
+    const profileMap = new Map(
+      ((profiles ?? []) as { id: string; full_name: string | null }[]).map((p) => [p.id, p]),
+    );
 
     setRows(members.map((m) => ({
       member_id: m.id,
