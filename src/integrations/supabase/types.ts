@@ -1678,6 +1678,7 @@ export type Database = {
           priority_categories: string[]
           social_posting_mode: string
           social_reply_prompt: string | null
+          trends_filters: Json
           trends_refresh_interval: number | null
           updated_at: string
           user_id: string
@@ -1735,6 +1736,7 @@ export type Database = {
           priority_categories?: string[]
           social_posting_mode?: string
           social_reply_prompt?: string | null
+          trends_filters?: Json
           trends_refresh_interval?: number | null
           updated_at?: string
           user_id: string
@@ -1792,6 +1794,7 @@ export type Database = {
           priority_categories?: string[]
           social_posting_mode?: string
           social_reply_prompt?: string | null
+          trends_filters?: Json
           trends_refresh_interval?: number | null
           updated_at?: string
           user_id?: string
