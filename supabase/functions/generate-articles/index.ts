@@ -1004,10 +1004,16 @@ serve(async (req) => {
         } catch (err: any) {
           const msg = err instanceof Error ? err.message : String(err);
           console.error(`All providers failed for topic ${topic.topic}:`, msg.substring(0, 300));
-          // Só interrompe o lote se TODOS os provedores (inclusive ChatGPT) estiverem sem quota.
-          if (isBillingError(msg) && disabledProviders.size >= providers.length) {
+          // Só interrompe o lote se TODOS os provedores (inclusive ChatGPT) estiverem sem quota
+          // ou com chave inválida. Isso cobre tanto erros de billing (402/RESOURCE_EXHAUSTED)
+          // quanto o caso em que callWithFallback já esgotou o conjunto de provedores
+          // disponíveis ("Todos os provedores de IA estão indisponíveis...").
+          if (disabledProviders.size >= providers.length) {
             allProvidersExhausted = true;
-            failureReasons.push({ status: 402, message: msg });
+            failureReasons.push({
+              status: 402,
+              message: "Nenhum artigo gerado: todos os provedores de IA (Gemini, ChatGPT, Groq, Azure) estão sem quota ou com chave inválida. Adicione créditos no provedor ou verifique as chaves em Configurações → IA.",
+            });
             break;
           }
           failureReasons.push({ status: 500, message: msg });
