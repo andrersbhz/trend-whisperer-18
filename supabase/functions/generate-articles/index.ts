@@ -862,16 +862,18 @@ serve(async (req) => {
     // O multiplicador 10 para 'peak' (volume) mantém a preferência por trends, 
     // mas o multiplicador 4 para 'recent' garante que após 2-3 posts a prioridade mude.
     const priorityCategories: string[] = Array.isArray(settings?.priority_categories) ? settings.priority_categories : [];
+    // Tópicos reais de tendência (vindos das fontes) têm prioridade absoluta sobre
+    // tópicos padrão "evergreen" gerados como fallback.
+    const isRealTrend = (t: any): boolean => !!t && t.id != null && t.search_volume !== "evergreen";
     const categoryPriority = (cat: string): number => {
       const top = topicsByCategory[cat][0];
       const peak = top ? volumeScore(top.search_volume) : 0;
       const recent = countsByCategory[cat] || 0;
       const priorityBoost = priorityCategories.includes(cat) ? 100 : 0;
-      
-      // Prioridade: (Boost manual) + (Peso do Volume x 20) - (Peso da Saturação x 4)
-      // O boost de 100 garante que categorias marcadas como prioritárias venham primeiro,
-      // mas ainda permite rotação para evitar saturação extrema.
-      return priorityBoost - recent * 6 + peak * 20 - recent * 4.0;
+      const trendBoost = isRealTrend(top) ? 500 : 0; // tendências definidas vêm primeiro
+
+      // Prioridade: (Boost de tendência real) + (Boost manual) + (Peso do Volume x 20) - (Saturação)
+      return trendBoost + priorityBoost - recent * 6 + peak * 20 - recent * 4.0;
     };
 
     // Round-robin ponderado: a cada rodada reordena por prioridade atual,
@@ -888,7 +890,14 @@ serve(async (req) => {
       // simula que a categoria "ganhou" um post para o próximo cálculo
       countsByCategory[cat] = (countsByCategory[cat] || 0) + 1;
     }
-    console.log(`[Pipeline] Ordem priorizando ALTA (primeiros 8):`,
+
+    // Garantia final: todas as tendências reais antes de qualquer tópico evergreen.
+    const realTrends = topicsToUse.filter(isRealTrend);
+    const evergreenFallbacks = topicsToUse.filter((t) => !isRealTrend(t));
+    topicsToUse.length = 0;
+    topicsToUse.push(...realTrends, ...evergreenFallbacks);
+
+    console.log(`[Pipeline] Ordem priorizando TENDÊNCIAS (primeiros 8):`,
       topicsToUse.slice(0, 8).map(t => `${t.category}[${t.search_volume || "?"}]`).join(" → "));
 
     const articlesPerDay = Math.max(settings?.articles_per_day || 10, 1);
