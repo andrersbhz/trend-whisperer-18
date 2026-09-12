@@ -332,11 +332,19 @@ serve(async (req) => {
     if (gKey) providers.push({ name: "Gemini", key: gKey });
     if (Deno.env.get("LOVABLE_API_KEY")) providers.push({ name: "Lovable", key: Deno.env.get("LOVABLE_API_KEY") });
 
-    // Fetch trends from BR and US
-    const rssBR = await fetchGoogleTrendsRSS("BR");
-    const rssUS = await fetchGoogleTrendsRSS("US");
+    // Respeita os filtros salvos em Configurações de Tendências (trends_filters).
+    // Região: "BR" = só Brasil, "World" = só Mundo, "all" (padrão) = Brasil e Mundo.
+    const savedFilters = (settings?.trends_filters || {}) as { region?: string; source?: string };
+    const wantBR = savedFilters.region !== "World";
+    const wantWorld = savedFilters.region !== "BR";
+    const wantPortalLeoDias = !savedFilters.source || savedFilters.source === "all" || savedFilters.source === "Portal Leo Dias";
+    const wantGoogle = !savedFilters.source || savedFilters.source === "all" || !savedFilters.source.includes("Portal Leo Dias");
+
+    // Fetch trends from BR and US (conforme filtros definidos pelo usuário)
+    const rssBR = wantBR && wantGoogle ? await fetchGoogleTrendsRSS("BR") : null;
+    const rssUS = wantWorld && wantGoogle ? await fetchGoogleTrendsRSS("US") : null;
     
-    if (!rssBR && !rssUS) throw new Error("RSS do Google Trends não disponível no momento. Tente novamente em alguns minutos.");
+    if (wantGoogle && !rssBR && !rssUS && !wantPortalLeoDias) throw new Error("RSS do Google Trends não disponível no momento. Tente novamente em alguns minutos.");
 
     let topics: any[] = [];
     
@@ -370,8 +378,8 @@ serve(async (req) => {
       topics = [...topics, ...usTopics];
     }
 
-    // Process Portal Leo Dias feed
-    const rssPLD = await fetchPortalLeoDiasRSS();
+    // Process Portal Leo Dias feed (somente se a fonte estiver habilitada nos filtros salvos)
+    const rssPLD = wantPortalLeoDias ? await fetchPortalLeoDiasRSS() : null;
     if (rssPLD) {
       console.log(`[fetch-trends] Portal Leo Dias RSS fetched, length: ${rssPLD.length}`);
       const pldTopics = parseStandardRSS(rssPLD, categories, "Portal Leo Dias", "https://portalleodias.com/");
