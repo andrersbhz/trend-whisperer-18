@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Palette, Save, Settings2, X } from "lucide-react";
+import { Check, Palette, Save, Settings2, Sparkles, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { usePlatformSettings } from "@/hooks/usePlatformSettings";
 import { DEFAULT_BRAND_THEME, normalizeBrandTheme, type BrandThemeSettings } from "@/lib/brand-theme";
@@ -36,6 +36,42 @@ const COLOR_FIELDS: Array<[keyof BrandThemeSettings, string]> = [
   ["secondary_button_hover_text", "Botão secundário: hover texto"],
 ];
 
+type Preset = {
+  id: string;
+  name: string;
+  description: string;
+  colors: [string, string, string, string];
+  values: Partial<BrandThemeSettings>;
+};
+
+const COLOR_PRESETS: Preset[] = [
+  {
+    id: "black-neon", name: "Black Neon", description: "Preto, lima e lilás",
+    colors: ["#000000", "#050505", "#a3ff12", "#b57bff"],
+    values: { background_color: "#000000", card_color: "#050505", popover_color: "#080808", sidebar_color: "#000000", secondary_color: "#141414", muted_color: "#1a1a1a", input_color: "#111111", border_color: "#262626", text_color: "#ffffff", muted_text_color: "#b8b8bf", link_color: "#a3ff12", link_hover_color: "#b57bff", sales_background_color: "#05010f", sales_surface_color: "#0d0718", sales_text_color: "#ffffff", sales_muted_text_color: "#b9b5c4", primary_button_bg: "#a3ff12", primary_button_text: "#050505", primary_button_hover_bg: "#b57bff", primary_button_hover_text: "#ffffff", secondary_button_bg: "#151515", secondary_button_text: "#ffffff", secondary_button_hover_bg: "#2a2a2a", secondary_button_hover_text: "#ffffff", neon_border_color: "#b57bff" },
+  },
+  {
+    id: "graphite-cyan", name: "Grafite Ciano", description: "Tecnologia e clareza",
+    colors: ["#070a0d", "#10161c", "#20d9d2", "#7dd3fc"],
+    values: { background_color: "#070a0d", card_color: "#10161c", popover_color: "#121a21", sidebar_color: "#080c10", secondary_color: "#16212a", muted_color: "#1c2933", input_color: "#0c1319", border_color: "#29404d", text_color: "#f4fbff", muted_text_color: "#a7bac5", link_color: "#20d9d2", link_hover_color: "#7dd3fc", sales_background_color: "#070a0d", sales_surface_color: "#10161c", sales_text_color: "#f4fbff", sales_muted_text_color: "#a7bac5", primary_button_bg: "#20d9d2", primary_button_text: "#071012", primary_button_hover_bg: "#7dd3fc", primary_button_hover_text: "#071012", secondary_button_bg: "#16212a", secondary_button_text: "#f4fbff", secondary_button_hover_bg: "#29404d", secondary_button_hover_text: "#ffffff", neon_border_color: "#20d9d2" },
+  },
+  {
+    id: "midnight-coral", name: "Meia-noite Coral", description: "Editorial e marcante",
+    colors: ["#09090b", "#18181b", "#fb7185", "#fbbf24"],
+    values: { background_color: "#09090b", card_color: "#18181b", popover_color: "#1f1f23", sidebar_color: "#0c0c0f", secondary_color: "#27272a", muted_color: "#303034", input_color: "#141417", border_color: "#3f3f46", text_color: "#fafafa", muted_text_color: "#b8b8c0", link_color: "#fb7185", link_hover_color: "#fbbf24", sales_background_color: "#0d090b", sales_surface_color: "#1b1417", sales_text_color: "#fafafa", sales_muted_text_color: "#c5b7bb", primary_button_bg: "#fb7185", primary_button_text: "#19080d", primary_button_hover_bg: "#fbbf24", primary_button_hover_text: "#1c1200", secondary_button_bg: "#27272a", secondary_button_text: "#fafafa", secondary_button_hover_bg: "#3f3f46", secondary_button_hover_text: "#ffffff", neon_border_color: "#fb7185" },
+  },
+  {
+    id: "forest-gold", name: "Floresta Dourada", description: "Premium e sóbria",
+    colors: ["#07110d", "#0e1d16", "#d6b85a", "#4ade80"],
+    values: { background_color: "#07110d", card_color: "#0e1d16", popover_color: "#11251b", sidebar_color: "#08150f", secondary_color: "#173025", muted_color: "#1d3a2d", input_color: "#0a1811", border_color: "#315441", text_color: "#f6f7ef", muted_text_color: "#b9c4b8", link_color: "#d6b85a", link_hover_color: "#4ade80", sales_background_color: "#07110d", sales_surface_color: "#0e1d16", sales_text_color: "#f6f7ef", sales_muted_text_color: "#b9c4b8", primary_button_bg: "#d6b85a", primary_button_text: "#171203", primary_button_hover_bg: "#4ade80", primary_button_hover_text: "#06120a", secondary_button_bg: "#173025", secondary_button_text: "#f6f7ef", secondary_button_hover_bg: "#315441", secondary_button_hover_text: "#ffffff", neon_border_color: "#d6b85a" },
+  },
+  {
+    id: "electric-berry", name: "Berry Elétrico", description: "Criativa e vibrante",
+    colors: ["#0b0710", "#170f20", "#e879f9", "#60a5fa"],
+    values: { background_color: "#0b0710", card_color: "#170f20", popover_color: "#1d1328", sidebar_color: "#0d0813", secondary_color: "#251832", muted_color: "#30203f", input_color: "#120b19", border_color: "#49305c", text_color: "#fdf7ff", muted_text_color: "#c7b5cf", link_color: "#e879f9", link_hover_color: "#60a5fa", sales_background_color: "#0b0710", sales_surface_color: "#170f20", sales_text_color: "#fdf7ff", sales_muted_text_color: "#c7b5cf", primary_button_bg: "#e879f9", primary_button_text: "#18051c", primary_button_hover_bg: "#60a5fa", primary_button_hover_text: "#071323", secondary_button_bg: "#251832", secondary_button_text: "#fdf7ff", secondary_button_hover_bg: "#49305c", secondary_button_hover_text: "#ffffff", neon_border_color: "#e879f9" },
+  },
+];
+
 export default function BrandVisualControlPanel() {
   const { settings } = usePlatformSettings();
   const [pathname, setPathname] = useState(() => window.location.pathname);
@@ -44,6 +80,7 @@ export default function BrandVisualControlPanel() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState<BrandThemeSettings>(DEFAULT_BRAND_THEME);
+  const [selectedPreset, setSelectedPreset] = useState("custom");
 
   useEffect(() => {
     const id = window.setInterval(() => setPathname(window.location.pathname), 500);
@@ -69,7 +106,13 @@ export default function BrandVisualControlPanel() {
   }, [pathname]);
 
   useEffect(() => {
-    if (!settings.id || pathname !== "/branding" || !allowed) return;
+    const openEditor = () => setOpen(true);
+    window.addEventListener("open-brand-visual-editor", openEditor);
+    return () => window.removeEventListener("open-brand-visual-editor", openEditor);
+  }, []);
+
+  useEffect(() => {
+    if (!settings.id || !["/branding", "/admin/system"].includes(pathname) || !allowed) return;
     let active = true;
     setLoading(true);
     (async () => {
@@ -87,13 +130,19 @@ export default function BrandVisualControlPanel() {
     return () => { active = false; };
   }, [settings.id, pathname, allowed]);
 
-  const visible = pathname === "/branding" && allowed;
+  const visible = ["/branding", "/admin/system"].includes(pathname) && allowed;
   const changed = useMemo(() => JSON.stringify(draft) !== JSON.stringify(DEFAULT_BRAND_THEME), [draft]);
   if (!visible) return null;
 
   const set = <K extends keyof BrandThemeSettings>(key: K, value: BrandThemeSettings[K]) => {
     setDraft((current) => ({ ...current, [key]: value }));
+    setSelectedPreset("custom");
   };
+
+  function applyPreset(preset: Preset) {
+    setDraft((current) => ({ ...current, ...preset.values, neon_border_enabled: true }));
+    setSelectedPreset(preset.id);
+  }
 
   async function save() {
     if (!settings.id) return;
@@ -142,6 +191,38 @@ export default function BrandVisualControlPanel() {
             <div className="flex-1 overflow-y-auto p-5">
               {loading ? <div className="py-16 text-center text-muted-foreground">Carregando configurações…</div> : (
                 <div className="space-y-7">
+                  <section>
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <div><h3 className="text-sm font-bold uppercase tracking-widest text-foreground">Paletas modernas</h3><p className="mt-1 text-xs text-muted-foreground">Escolha uma base ou continue ajustando cada detalhe no modo personalizado.</p></div>
+                      <span className="rounded-full border border-border bg-muted px-3 py-1 text-xs text-muted-foreground">{selectedPreset === "custom" ? "Personalizado" : "Preset selecionado"}</span>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {COLOR_PRESETS.map((preset) => (
+                        <Button key={preset.id} type="button" variant="outline" onClick={() => applyPreset(preset)} className="h-auto justify-start whitespace-normal p-3 text-left">
+                          <span className="flex w-full items-center gap-3">
+                            <span className="flex shrink-0 overflow-hidden rounded-md border border-border">{preset.colors.map((color) => <span key={color} className="h-9 w-3" style={{ backgroundColor: color }} />)}</span>
+                            <span className="min-w-0 flex-1"><strong className="block text-sm text-foreground">{preset.name}</strong><span className="block text-xs text-muted-foreground">{preset.description}</span></span>
+                            {selectedPreset === preset.id && <Check className="h-4 w-4 shrink-0 text-primary" />}
+                          </span>
+                        </Button>
+                      ))}
+                      <Button type="button" variant="outline" onClick={() => setSelectedPreset("custom")} className="h-auto justify-start whitespace-normal p-3 text-left">
+                        <span className="flex w-full items-center gap-3"><span className="grid h-9 w-12 shrink-0 place-items-center rounded-md border border-border bg-muted"><Palette className="h-4 w-4 text-primary" /></span><span className="min-w-0 flex-1"><strong className="block text-sm text-foreground">Personalizado</strong><span className="block text-xs text-muted-foreground">Edite todas as opções abaixo</span></span>{selectedPreset === "custom" && <Check className="h-4 w-4 shrink-0 text-primary" />}</span>
+                      </Button>
+                    </div>
+                  </section>
+
+                  <section className="rounded-lg border border-border bg-card p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex items-center gap-2"><Sparkles className="h-4 w-4 text-primary" /><div><h3 className="text-sm font-bold text-foreground">Bordas com hover neon</h3><p className="text-xs text-muted-foreground">Aplica brilho suave em cards e botões ao passar o mouse.</p></div></div>
+                      <Button type="button" size="sm" variant={draft.neon_border_enabled ? "default" : "outline"} onClick={() => set("neon_border_enabled", !draft.neon_border_enabled)}>{draft.neon_border_enabled ? "Ativado" : "Desativado"}</Button>
+                    </div>
+                    <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                      <ColorField label="Cor do neon" value={draft.neon_border_color} onChange={(value) => set("neon_border_color", value)} />
+                      <label><span className="mb-1.5 block text-xs font-semibold text-muted-foreground">Intensidade: {draft.neon_border_intensity}%</span><input type="range" min="10" max="100" value={draft.neon_border_intensity} onChange={(event) => set("neon_border_intensity", Number(event.target.value))} className="h-10 w-full accent-primary" /></label>
+                    </div>
+                  </section>
+
                   <section>
                     <h3 className="mb-3 text-sm font-bold uppercase tracking-widest text-foreground">Tipografia</h3>
                     <div className="grid gap-4 md:grid-cols-2">

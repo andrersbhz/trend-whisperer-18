@@ -243,6 +243,24 @@
   }
 }
 
+body[data-neon-border="true"] .glass-card,
+body[data-neon-border="true"] [data-ui-button="true"] {
+  transition: border-color 220ms ease, box-shadow 220ms ease, transform 220ms ease;
+}
+
+body[data-neon-border="true"] .glass-card:hover,
+body[data-neon-border="true"] [data-ui-button="true"]:hover {
+  border-color: var(--brand-neon-border);
+  box-shadow: 0 0 calc(8px + 14px * var(--brand-neon-intensity)) color-mix(in srgb, var(--brand-neon-border) calc(35% + 35% * var(--brand-neon-intensity)), transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-neon-border="true"] .glass-card,
+  body[data-neon-border="true"] [data-ui-button="true"] {
+    transition: none;
+  }
+}
+
 
 @keyframes fade-in {
   from { opacity: 0; transform: translateY(12px); }

@@ -31,6 +31,9 @@ export interface BrandThemeSettings {
   card_radius: string;
   input_radius: string;
   panel_shadow: string;
+  neon_border_enabled: boolean;
+  neon_border_color: string;
+  neon_border_intensity: number;
 }
 
 export const DEFAULT_BRAND_THEME: BrandThemeSettings = {
@@ -66,6 +69,9 @@ export const DEFAULT_BRAND_THEME: BrandThemeSettings = {
   card_radius: "0.8rem",
   input_radius: "0.5rem",
   panel_shadow: "0 16px 42px -28px rgba(0,0,0,.65)",
+  neon_border_enabled: true,
+  neon_border_color: "#b57bff",
+  neon_border_intensity: 65,
 };
 
 export function normalizeBrandTheme(value: unknown): BrandThemeSettings {

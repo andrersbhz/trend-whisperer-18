@@ -65,6 +65,8 @@ export default function BrandThemeRuntime() {
       "--brand-link": theme.link_color,
       "--brand-link-hover": theme.link_hover_color,
       "--brand-panel-shadow": theme.panel_shadow,
+      "--brand-neon-border": theme.neon_border_color,
+      "--brand-neon-intensity": `${Math.max(0, Math.min(100, theme.neon_border_intensity)) / 100}`,
       "--brand-sales-background": theme.sales_background_color,
       "--brand-sales-surface": theme.sales_surface_color,
       "--brand-sales-text": theme.sales_text_color,
@@ -116,6 +118,7 @@ export default function BrandThemeRuntime() {
     const hoverShadow = settings.button_hover_style === "glow" ? `0 0 18px ${primary}66` : settings.button_hover_style === "outline" ? "none" : settings.button_hover_style === "scale" ? "0 10px 24px rgba(0,0,0,.18)" : theme.panel_shadow;
     root.style.setProperty("--brand-button-hover-shadow", hoverShadow);
     document.body.dataset.buttonHoverStyle = settings.button_hover_style || "standard";
+    document.body.dataset.neonBorder = theme.neon_border_enabled ? "true" : "false";
   }, [settings, theme, isDark]);
 
   return <BrandVisualControlPanel />;
