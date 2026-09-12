@@ -344,7 +344,7 @@ serve(async (req) => {
     const rssBR = wantBR && wantGoogle ? await fetchGoogleTrendsRSS("BR") : null;
     const rssUS = wantWorld && wantGoogle ? await fetchGoogleTrendsRSS("US") : null;
     
-    if (!rssBR && !rssUS) throw new Error("RSS do Google Trends não disponível no momento. Tente novamente em alguns minutos.");
+    if (wantGoogle && !rssBR && !rssUS && !wantPortalLeoDias) throw new Error("RSS do Google Trends não disponível no momento. Tente novamente em alguns minutos.");
 
     let topics: any[] = [];
     
