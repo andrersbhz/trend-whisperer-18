@@ -1,23 +1,18 @@
-# Plano de Ajustes e Localização PT-BR
+# Plano: Presets e personalização visual no painel administrativo
 
-Atender às solicitações de edição visual e garantir que o sistema esteja totalmente alinhado com as instruções de idioma e funcionalidade.
+## Resultado
+Adicionar ao editor **Marca / Vendas** cinco combinações modernas de cores e uma opção **Personalizado**, mantendo todos os controles manuais existentes e sem alterar funções do sistema.
 
-## Ajustes Solicitados
+## Implementação
+- Criar cinco presets completos para sistema e página de vendas, com amostras visuais e nomes claros.
+- Adicionar o modo **Personalizado**, preservando a edição individual de todas as cores, fontes, formas e sombras já disponível.
+- Ao selecionar um preset, preencher a prévia sem salvar automaticamente; a alteração só será aplicada pelo botão **Salvar visual**.
+- Incluir configuração de borda com hover neon, usando as cores do tema selecionado e movimento suave com respeito à preferência de animação reduzida.
+- Disponibilizar o acesso ao editor visual também nas configurações do painel administrativo, mantendo a mesma proteção de administrador existente.
+- Manter o tema atual como padrão e preservar configurações salvas anteriormente.
 
-### 1. Edição de Texto Visual (Literal)
-- Aplicar a substituição solicitada do caractere separador invisível (`\u2063`) para garantir a conformidade com a ferramenta de edição visual, mesmo que a alteração seja uma transformação de identidade (mantendo o caractere conforme solicitado).
-- Localizar o elemento correspondente (geralmente um marcador de posição ou separador em spans de interface) e aplicar o texto literal.
-
-### 2. Refinamento de Localização (PT-BR)
-- **Dashboard**: Corrigir a mensagem do Preloader para "Carregando dados, aguarde..." (atualmente em minúsculas e sem pontuação).
-- **Componentes de Interface**: Revisar labels em `src/components/ui/pagination.tsx` (mudar "Previous" para "Anterior" e "Next" para "Próximo") e outros componentes base que ainda possam conter termos em inglês.
-
-### 3. Validação de Regras de Negócio
-- Confirmar que o fluxo de **Pix Dinâmico** está funcionando conforme o resumo do projeto: geração de QR Code com valor dinâmico, exibição da chave e do titular (Andre Rocha Soares - Nubank).
-- Assegurar que as respostas do sistema e logs sigam estritamente o idioma **Português (PT-BR)** conforme o arquivo `user-uploads://VOIDPRO-6.md`.
-
-## Detalhes de Implementação
-
-- **src/pages/Dashboard.tsx**: Ajuste de strings de UI.
-- **src/components/ui/pagination.tsx**: Tradução de termos de navegação.
-- **src/components/Preloader.tsx**: Garantir que as mensagens de progresso sejam amigáveis em PT-BR.
+## Detalhes técnicos
+- Estender `BrandThemeSettings` de forma retrocompatível com as opções de preset e borda neon.
+- Aplicar os novos valores por tokens visuais globais em `BrandThemeRuntime`, sem mexer em regras de negócio.
+- Atualizar somente o editor visual e sua apresentação no painel administrativo.
+- Validar compilação e conferir visualmente os presets, o modo personalizado e o hover neon.
