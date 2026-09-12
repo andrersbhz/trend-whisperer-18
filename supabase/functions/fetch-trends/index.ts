@@ -332,9 +332,17 @@ serve(async (req) => {
     if (gKey) providers.push({ name: "Gemini", key: gKey });
     if (Deno.env.get("LOVABLE_API_KEY")) providers.push({ name: "Lovable", key: Deno.env.get("LOVABLE_API_KEY") });
 
-    // Fetch trends from BR and US
-    const rssBR = await fetchGoogleTrendsRSS("BR");
-    const rssUS = await fetchGoogleTrendsRSS("US");
+    // Respeita os filtros salvos em Configurações de Tendências (trends_filters).
+    // Região: "BR" = só Brasil, "World" = só Mundo, "all" (padrão) = Brasil e Mundo.
+    const savedFilters = (settings?.trends_filters || {}) as { region?: string; source?: string };
+    const wantBR = savedFilters.region !== "World";
+    const wantWorld = savedFilters.region !== "BR";
+    const wantPortalLeoDias = !savedFilters.source || savedFilters.source === "all" || savedFilters.source === "Portal Leo Dias";
+    const wantGoogle = !savedFilters.source || savedFilters.source === "all" || !savedFilters.source.includes("Portal Leo Dias");
+
+    // Fetch trends from BR and US (conforme filtros definidos pelo usuário)
+    const rssBR = wantBR && wantGoogle ? await fetchGoogleTrendsRSS("BR") : null;
+    const rssUS = wantWorld && wantGoogle ? await fetchGoogleTrendsRSS("US") : null;
     
     if (!rssBR && !rssUS) throw new Error("RSS do Google Trends não disponível no momento. Tente novamente em alguns minutos.");
 
