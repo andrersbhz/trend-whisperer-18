@@ -3,7 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Users, FileText, ShoppingCart, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { Users, FileText, ShoppingCart, ShieldCheck, Palette } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { Navigate } from 'react-router-dom';
 
@@ -68,9 +69,10 @@ export default function AdminSystemPage() {
           <h1 className="text-3xl font-black uppercase tracking-tighter text-foreground">Gestão Total do Sistema</h1>
           <p className="text-muted-foreground uppercase text-[10px] font-bold tracking-widest mt-1">Controle de Usuários e Assinaturas</p>
         </div>
-        <Badge className="bg-[#a3ff12]/20 text-[#a3ff12] border-[#a3ff12]/30 py-1 px-3">
-          <ShieldCheck className="h-3 w-3 mr-2" /> Super Admin
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => window.dispatchEvent(new Event('open-brand-visual-editor'))}><Palette className="h-4 w-4" /> Marca / Vendas</Button>
+          <Badge className="border-primary/30 bg-primary/20 px-3 py-1 text-primary"><ShieldCheck className="mr-2 h-3 w-3" /> Super Admin</Badge>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
