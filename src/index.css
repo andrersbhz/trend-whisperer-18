@@ -251,7 +251,7 @@ body[data-neon-border="true"] [data-ui-button="true"] {
 body[data-neon-border="true"] .glass-card:hover,
 body[data-neon-border="true"] [data-ui-button="true"]:hover {
   border-color: var(--brand-neon-border);
-  box-shadow: 0 0 calc(8px + 14px * var(--brand-neon-intensity)) color-mix(in srgb, var(--brand-neon-border) calc(35% + 35% * var(--brand-neon-intensity)), transparent);
+  box-shadow: 0 0 var(--brand-neon-blur) color-mix(in srgb, var(--brand-neon-border) var(--brand-neon-strength), transparent);
 }
 
 @media (prefers-reduced-motion: reduce) {
