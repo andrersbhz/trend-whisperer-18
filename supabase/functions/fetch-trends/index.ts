@@ -378,8 +378,8 @@ serve(async (req) => {
       topics = [...topics, ...usTopics];
     }
 
-    // Process Portal Leo Dias feed
-    const rssPLD = await fetchPortalLeoDiasRSS();
+    // Process Portal Leo Dias feed (somente se a fonte estiver habilitada nos filtros salvos)
+    const rssPLD = wantPortalLeoDias ? await fetchPortalLeoDiasRSS() : null;
     if (rssPLD) {
       console.log(`[fetch-trends] Portal Leo Dias RSS fetched, length: ${rssPLD.length}`);
       const pldTopics = parseStandardRSS(rssPLD, categories, "Portal Leo Dias", "https://portalleodias.com/");
