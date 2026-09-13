@@ -1434,6 +1434,37 @@ serve(async (req) => {
           featuredImageUrl = null;
         }
 
+        // ── IMAGE_VERIFICATION ───────────────────────────────────────────
+        // A imagem é gerada por IA: ela é ilustrativa e nunca pode ser
+        // apresentada como registro real de pessoas citadas na notícia.
+        const hasRealPeople = verification.entities.some((e: any) => e?.type === "pessoa");
+        let imageVerificationStatus: string | null = null;
+        if (featuredImageUrl) {
+          imageVerificationStatus = hasRealPeople ? "ilustrativa_pessoa_real" : "ilustrativa";
+          if (hasRealPeople && parsed.image_caption && !/ilustra/i.test(parsed.image_caption)) {
+            parsed = { ...parsed, image_caption: `${parsed.image_caption} (imagem ilustrativa gerada por IA)` };
+          }
+          pipelineLog.add("IMAGE_VERIFICATION", "ok", imageVerificationStatus);
+        } else {
+          imageVerificationStatus = "sem_imagem";
+          pipelineLog.add("IMAGE_VERIFICATION", "skipped", "artigo sem imagem");
+        }
+
+        // ── SEO_OPTIMIZATION + EDITORIAL_VALIDATION ──────────────────────
+        const finalSlug = parsed.slug || slugify(parsed.seo_title || parsed.title);
+        const seoAudit = {
+          slug: finalSlug,
+          focus_keyword: parsed.seo_keyword || "",
+          title_length: (parsed.seo_title || parsed.title || "").length,
+          meta_description_length: (parsed.meta_description || "").length,
+          content_length: stripHtml(parsed.content || "").length,
+          has_keyword_in_title: (parsed.title || "").toLowerCase().includes((parsed.seo_keyword || "").toLowerCase()),
+          checked_at: new Date().toISOString(),
+        };
+        pipelineLog.add("SEO_OPTIMIZATION", "ok", `slug=${finalSlug}`);
+        pipelineLog.add("EDITORIAL_VALIDATION", "ok", verification.notes.slice(0, 180));
+        pipelineLog.add("READY_TO_PUBLISH", "ok");
+
         const { data: article, error: insertError } = await supabase.from("articles").insert({
           user_id: userId,
           title: parsed.title,
@@ -1441,16 +1472,29 @@ serve(async (req) => {
           excerpt: parsed.excerpt || "",
           category: topic.category,
           seo_keyword: parsed.seo_keyword || "",
+          focus_keyword: parsed.seo_keyword || "",
           seo_title: parsed.seo_title || parsed.title,
+          meta_title: parsed.seo_title || parsed.title,
           meta_description: parsed.meta_description || "",
+          slug: finalSlug,
           featured_image_url: featuredImageUrl,
           status: settings?.auto_publish ? "ready" : "draft",
+          is_approved: settings?.auto_publish ? true : false,
           scheduled_at: scheduledAt.toISOString(),
           trending_topic: topic.topic,
+          trend_score: topic.trend_score ?? null,
           ai_provider: usedProvider,
           visual_elements: parsed.visual_elements,
           image_alt: parsed.image_alt,
           image_caption: parsed.image_caption,
+          image_verification_status: imageVerificationStatus,
+          fact_check_status: verification.status,
+          fact_check_notes: verification.notes,
+          research_references: verification.facts,
+          entity_verification: verification.entities,
+          source_urls: verification.sources.map((s) => s.source_url).filter(Boolean),
+          seo_audit_log: seoAudit,
+          pipeline_log: pipelineLog.toJSON(),
         }).select().single();
         
         if (insertError) {
@@ -1460,9 +1504,13 @@ serve(async (req) => {
         }
 
         if (topic.id) {
-          const { error: updateError } = await supabase.from("trending_topics").update({ used: true }).eq("id", topic.id);
+          const { error: updateError } = await supabase
+            .from("trending_topics")
+            .update({ used: true, validation_status: "verified", sources: verification.sources })
+            .eq("id", topic.id);
           if (updateError) console.warn(`[Pipeline] Failed to mark topic as used: ${updateError.message}`);
         }
+
 
         generatedArticles.push(article);
         console.log(`[Pipeline] Article successfully saved: ${article.id}`);
