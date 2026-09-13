@@ -204,18 +204,34 @@ interface RawCandidate {
   pubDate: string | null;
 }
 
+/** O Bing entrega links via redirecionador apiclick.aspx?...&url=<destino real>. */
+function unwrapBingLink(link: string): string {
+  const raw = link.match(/[?&]url=([^&]+)/)?.[1];
+  if (!raw) return link;
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    return link;
+  }
+}
+
 async function candidatesFromBing(topic: string): Promise<RawCandidate[]> {
   const url = `https://www.bing.com/news/search?q=${encodeURIComponent(topic)}&format=RSS&cc=BR&setlang=pt-BR`;
   const xml = await fetchText(url);
   if (!xml) return [];
-  return parseRssItems(xml, 30).map((item) => ({
-    title: item.title,
-    link: item.link,
-    originUrl: item.link,
-    label: item.sourceLabel,
-    description: item.description,
-    pubDate: item.pubDate,
-  }));
+  return parseRssItems(xml, 30)
+    .filter((item) => !/bing\.com\/news\/search/i.test(item.link))
+    .map((item) => {
+      const origin = unwrapBingLink(item.link);
+      return {
+        title: item.title,
+        link: origin,
+        originUrl: origin,
+        label: item.sourceLabel,
+        description: item.description,
+        pubDate: item.pubDate,
+      };
+    });
 }
 
 async function candidatesFromGoogleNews(topic: string): Promise<RawCandidate[]> {
