@@ -99,7 +99,7 @@ export function classifySource(url: string, fallbackName = ""): {
   }
   const hit = TRUSTED_SOURCES.find((s) => s.match.test(host) || s.match.test(fallbackName));
   if (hit) return { name: hit.name, type: hit.type, reliability: hit.reliability };
-  return { name: fallbackName || host || "Fonte não catalogada", type: "aggregator", reliability: 0.5 };
+  return { name: fallbackName || host || "Fonte não catalogada", type: "aggregator", reliability: 0.6 };
 }
 
 export function isTrusted(url: string, fallbackName = ""): boolean {
