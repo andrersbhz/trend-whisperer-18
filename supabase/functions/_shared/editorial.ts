@@ -57,6 +57,8 @@ export const TRUSTED_SOURCES: Array<{
   { match: /folha\.uol\.com\.br/i, name: "Folha de S.Paulo", type: "news", reliability: 0.92, feed: "https://feeds.folha.uol.com.br/emcimadahora/rss091.xml" },
   { match: /estadao\.com\.br/i, name: "Estadão", type: "news", reliability: 0.92 },
   { match: /valor\.globo\.com/i, name: "Valor Econômico", type: "economy", reliability: 0.93 },
+  { match: /istoe\.com\.br/i, name: "IstoÉ", type: "news", reliability: 0.82 },
+  { match: /brasil247\.com/i, name: "Brasil 247", type: "news", reliability: 0.72 },
   { match: /poder360\.com\.br/i, name: "Poder360", type: "news", reliability: 0.85 },
   { match: /veja\.abril\.com\.br|abril\.com\.br/i, name: "Veja", type: "news", reliability: 0.85 },
   { match: /exame\.com/i, name: "Exame", type: "economy", reliability: 0.85 },
@@ -278,7 +280,6 @@ export async function discoverSources(topic: string, maxItems = 12): Promise<Sou
     try {
       const found = await collect(topic);
       candidates = [...candidates, ...found];
-      if (candidates.length >= 6) break;
     } catch (err) {
       console.warn("[discoverSources] agregador falhou:", err instanceof Error ? err.message : err);
     }
