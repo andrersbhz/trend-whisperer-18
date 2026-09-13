@@ -1144,9 +1144,11 @@ serve(async (req) => {
     const manualCategories: string[] = (manualTopics && Array.isArray(manualTopics) && manualTopics.length > 0)
       ? Array.from(new Set(topics.map((t: any) => t.category).filter(Boolean)))
       : [];
-    const userCategories: string[] = forceCategory 
-      ? [forceCategory] 
-      : (manualCategories.length > 0 ? Array.from(new Set([...manualCategories, ...userCategoriesToSearch])) : userCategoriesToSearch);
+    // Com assuntos enviados manualmente, só eles valem: nada de completar a fila
+    // com temas evergreen de outras categorias.
+    const userCategories: string[] = manualCategories.length > 0
+      ? manualCategories
+      : (forceCategory ? [forceCategory] : userCategoriesToSearch);
 
     const countsByCategory: Record<string, number> = {};
     for (const cat of userCategories) countsByCategory[cat] = 0;
