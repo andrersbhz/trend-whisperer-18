@@ -146,6 +146,7 @@ export function parseRssItems(xml: string, limit = 40): RssItem[] {
       description: pickTag(block, "description").replace(/<[^>]+>/g, "").slice(0, 400),
       pubDate: iso,
       sourceLabel: pickTag(block, "source"),
+      sourceUrl: (block.match(/<source[^>]*url="([^"]+)"/i)?.[1] || "").trim(),
     });
   }
   return out;
