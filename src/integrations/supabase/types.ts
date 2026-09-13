@@ -37,6 +37,7 @@ export type Database = {
           category: string
           content: string | null
           created_at: string
+          entity_verification: Json | null
           excerpt: string | null
           fact_check_notes: string | null
           fact_check_status: string | null
@@ -45,9 +46,11 @@ export type Database = {
           id: string
           image_alt: string | null
           image_caption: string | null
+          image_verification_status: string | null
           is_approved: boolean | null
           meta_description: string | null
           meta_title: string | null
+          pipeline_log: Json | null
           published_at: string | null
           research_references: Json | null
           scheduled_at: string | null
@@ -58,6 +61,7 @@ export type Database = {
           source_urls: string[] | null
           status: string
           title: string
+          trend_score: number | null
           trending_topic: string | null
           updated_at: string
           user_id: string
@@ -72,6 +76,7 @@ export type Database = {
           category: string
           content?: string | null
           created_at?: string
+          entity_verification?: Json | null
           excerpt?: string | null
           fact_check_notes?: string | null
           fact_check_status?: string | null
@@ -80,9 +85,11 @@ export type Database = {
           id?: string
           image_alt?: string | null
           image_caption?: string | null
+          image_verification_status?: string | null
           is_approved?: boolean | null
           meta_description?: string | null
           meta_title?: string | null
+          pipeline_log?: Json | null
           published_at?: string | null
           research_references?: Json | null
           scheduled_at?: string | null
@@ -93,6 +100,7 @@ export type Database = {
           source_urls?: string[] | null
           status?: string
           title: string
+          trend_score?: number | null
           trending_topic?: string | null
           updated_at?: string
           user_id: string
@@ -107,6 +115,7 @@ export type Database = {
           category?: string
           content?: string | null
           created_at?: string
+          entity_verification?: Json | null
           excerpt?: string | null
           fact_check_notes?: string | null
           fact_check_status?: string | null
@@ -115,9 +124,11 @@ export type Database = {
           id?: string
           image_alt?: string | null
           image_caption?: string | null
+          image_verification_status?: string | null
           is_approved?: boolean | null
           meta_description?: string | null
           meta_title?: string | null
+          pipeline_log?: Json | null
           published_at?: string | null
           research_references?: Json | null
           scheduled_at?: string | null
@@ -128,6 +139,7 @@ export type Database = {
           source_urls?: string[] | null
           status?: string
           title?: string
+          trend_score?: number | null
           trending_topic?: string | null
           updated_at?: string
           user_id?: string
@@ -1533,46 +1545,76 @@ export type Database = {
           category: string
           context: string | null
           created_at: string
+          discover_potential: number
+          entities: Json
           fetched_at: string
+          growth: string | null
           id: string
+          published_at: string | null
+          region: string | null
           related_queries: string[] | null
           search_volume: string | null
+          seo_potential: number
+          source_count: number
           source_name: string | null
           source_url: string | null
+          sources: Json
           topic: string
+          trend_score: number
           update_count: number | null
           used: boolean | null
           user_id: string
+          validation_status: string
         }
         Insert: {
           category: string
           context?: string | null
           created_at?: string
+          discover_potential?: number
+          entities?: Json
           fetched_at?: string
+          growth?: string | null
           id?: string
+          published_at?: string | null
+          region?: string | null
           related_queries?: string[] | null
           search_volume?: string | null
+          seo_potential?: number
+          source_count?: number
           source_name?: string | null
           source_url?: string | null
+          sources?: Json
           topic: string
+          trend_score?: number
           update_count?: number | null
           used?: boolean | null
           user_id: string
+          validation_status?: string
         }
         Update: {
           category?: string
           context?: string | null
           created_at?: string
+          discover_potential?: number
+          entities?: Json
           fetched_at?: string
+          growth?: string | null
           id?: string
+          published_at?: string | null
+          region?: string | null
           related_queries?: string[] | null
           search_volume?: string | null
+          seo_potential?: number
+          source_count?: number
           source_name?: string | null
           source_url?: string | null
+          sources?: Json
           topic?: string
+          trend_score?: number
           update_count?: number | null
           used?: boolean | null
           user_id?: string
+          validation_status?: string
         }
         Relationships: []
       }

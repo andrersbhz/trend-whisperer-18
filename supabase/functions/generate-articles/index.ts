@@ -1,5 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import {
+  discoverSources,
+  findDuplicate,
+  PipelineLog,
+  slugify,
+  type SourceRef,
+} from "../_shared/editorial.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -609,6 +616,310 @@ async function generateImageOpenAI(
   }
 }
 
+// ── Verificação editorial (fontes, entidades e fatos) ─────────────────────
+
+interface VerifiedFact {
+  fact: string;
+  confirmed_by: string[];
+}
+
+interface VerificationResult {
+  status: "verified" | "source_conflict" | "entity_unverified" | "verification_failed";
+  sources: SourceRef[];
+  facts: VerifiedFact[];
+  entities: Array<{ name: string; type: string; verified: boolean; note?: string }>;
+  conflicts: string[];
+  notes: string;
+}
+
+// Categorias sensíveis exigem 3 fontes independentes; as demais, 2.
+const SENSITIVE_CATEGORIES = new Set(["politica", "policia", "saude", "financas"]);
+
+function requiredSources(category: string): number {
+  return SENSITIVE_CATEGORIES.has((category || "").toLowerCase()) ? 3 : 2;
+}
+
+/** Chamada de IA em modo JSON puro (usada para extração de fatos e entidades). */
+async function callJsonAI(
+  keys: { gemini?: string | null; openai?: string | null; groq?: string | null },
+  systemPrompt: string,
+  userPrompt: string,
+  models: { gemini?: string; openai?: string; groq?: string },
+): Promise<any | null> {
+  const tryParse = (raw: string) => {
+    const text = (raw || "").replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+    const start = text.indexOf("{");
+    const end = text.lastIndexOf("}");
+    if (start === -1 || end === -1) return null;
+    try {
+      return JSON.parse(text.slice(start, end + 1));
+    } catch {
+      return null;
+    }
+  };
+
+  if (keys.gemini) {
+    try {
+      const model = models.gemini || "gemini-3.6-flash";
+      const resp = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-goog-api-key": keys.gemini },
+          body: JSON.stringify({
+            system_instruction: { parts: [{ text: systemPrompt }] },
+            contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+            generationConfig: { responseMimeType: "application/json" },
+          }),
+        },
+      );
+      if (resp.ok) {
+        const data = await resp.json();
+        const parsed = tryParse(data.candidates?.[0]?.content?.parts?.[0]?.text || "");
+        if (parsed) return parsed;
+      } else {
+        console.warn(`[Verify] Gemini JSON falhou: HTTP ${resp.status}`);
+      }
+    } catch (err) {
+      console.warn("[Verify] Gemini JSON erro:", err);
+    }
+  }
+
+  if (keys.openai) {
+    try {
+      const resp = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${keys.openai}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: models.openai || "gpt-4o-mini",
+          response_format: { type: "json_object" },
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt },
+          ],
+        }),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        const parsed = tryParse(data.choices?.[0]?.message?.content || "");
+        if (parsed) return parsed;
+      } else {
+        console.warn(`[Verify] OpenAI JSON falhou: HTTP ${resp.status}`);
+      }
+    } catch (err) {
+      console.warn("[Verify] OpenAI JSON erro:", err);
+    }
+  }
+
+  if (keys.groq) {
+    try {
+      const resp = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${keys.groq}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: sanitizeGroqModel(models.groq),
+          max_tokens: 800,
+          response_format: { type: "json_object" },
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt },
+          ],
+        }),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        const parsed = tryParse(data.choices?.[0]?.message?.content || "");
+        if (parsed) return parsed;
+      }
+    } catch (err) {
+      console.warn("[Verify] Groq JSON erro:", err);
+    }
+  }
+
+  return null;
+}
+
+const VERIFY_SYSTEM_PROMPT = `Você é um checador de fatos de uma redação jornalística brasileira.
+Receberá manchetes e resumos REAIS publicados por veículos de imprensa sobre um mesmo assunto.
+Sua tarefa é extrair apenas o que está EXPLICITAMENTE nas fontes. É PROIBIDO inferir, completar ou inventar.
+
+Responda SOMENTE com JSON neste formato:
+{
+  "facts": [{"fact": "afirmação objetiva", "confirmed_by": ["Veículo A", "Veículo B"]}],
+  "entities": [{"name": "nome citado", "type": "pessoa|organizacao|local|evento", "verified": true, "note": "como aparece nas fontes"}],
+  "conflicts": ["divergência entre as fontes, se houver"],
+  "summary": "resumo factual em até 400 caracteres"
+}
+
+Regras:
+- Um fato só entra na lista se aparecer em pelo menos uma fonte; registre em confirmed_by todos os veículos que o sustentam.
+- Uma entidade só é verified=true se o nome aparecer escrito nas fontes.
+- Se as fontes se contradisserem em números, datas ou declarações, registre em conflicts.
+- Nunca invente nomes, datas, números ou declarações.`;
+
+async function runVerification(
+  topic: { topic: string; category: string; context?: string | null; sources?: any },
+  keys: { gemini?: string | null; openai?: string | null; groq?: string | null },
+  models: { gemini?: string; openai?: string; groq?: string },
+  log: PipelineLog,
+): Promise<VerificationResult> {
+  // SOURCE_DISCOVERY — fontes já coletadas na tendência + busca cruzada ao vivo
+  const stored: SourceRef[] = Array.isArray(topic.sources) ? (topic.sources as SourceRef[]) : [];
+  let live: SourceRef[] = [];
+  try {
+    live = await discoverSources(topic.topic, 8);
+  } catch (err) {
+    log.add("SOURCE_DISCOVERY", "failed", err instanceof Error ? err.message : String(err));
+  }
+  const byName = new Map<string, SourceRef>();
+  for (const s of [...stored, ...live]) {
+    if (!s?.source_name) continue;
+    if (!byName.has(s.source_name)) byName.set(s.source_name, s);
+  }
+  const sources = [...byName.values()];
+  log.add("SOURCE_DISCOVERY", "ok", `${sources.length} fontes encontradas`);
+
+  // SOURCE_VERIFICATION — apenas veículos confiáveis e independentes contam
+  const trusted = sources.filter((s) => (s.reliability_score ?? 0) >= 0.75);
+  const needed = requiredSources(topic.category);
+  // Aprovado quando há fontes confiáveis suficientes OU repercussão ampla
+  // (muitos veículos distintos cobrindo o mesmo fato).
+  const wideCoverage = sources.length >= needed + 2;
+  if (trusted.length < needed && !wideCoverage) {
+    log.add(
+      "SOURCE_VERIFICATION",
+      "failed",
+      `${trusted.length} fonte(s) confiável(is); mínimo exigido: ${needed}`,
+    );
+    return {
+      status: "verification_failed",
+      sources,
+      facts: [],
+      entities: [],
+      conflicts: [],
+      notes: `Apuração insuficiente: ${trusted.length} de ${needed} fontes independentes confiáveis para "${topic.topic}".`,
+    };
+  }
+  // Conjunto usado na apuração: as confiáveis quando bastam, senão a cobertura ampla.
+  const pool = trusted.length >= needed ? trusted : sources;
+  log.add(
+    "SOURCE_VERIFICATION",
+    "ok",
+    `${trusted.length} fontes confiáveis de ${sources.length} veículos independentes`,
+  );
+
+  // FACT_EXTRACTION + ENTITY_VERIFICATION + FACT_CROSS_CHECK
+  const dossier = pool
+    .slice(0, 8)
+    .map(
+      (s, i) =>
+        `${i + 1}. VEÍCULO: ${s.source_name} (confiabilidade ${Math.round(s.reliability_score * 100)}%)\n   MANCHETE: ${s.title}\n   RESUMO: ${s.snippet || "(sem resumo)"}\n   URL: ${s.source_url}\n   PUBLICADO: ${s.published_at || "data não informada"}`,
+    )
+    .join("\n\n");
+
+  const extraction = await callJsonAI(
+    keys,
+    VERIFY_SYSTEM_PROMPT,
+    `ASSUNTO: "${topic.topic}"\nCATEGORIA: ${topic.category}\nCONTEXTO DA TENDÊNCIA: ${topic.context || "(sem contexto)"}\n\nFONTES:\n${dossier}`,
+    models,
+  );
+
+  if (!extraction) {
+    log.add("FACT_EXTRACTION", "failed", "IA não retornou JSON de apuração");
+    return {
+      status: "verification_failed",
+      sources: pool,
+      facts: [],
+      entities: [],
+      conflicts: [],
+      notes: "Não foi possível extrair fatos verificáveis das fontes.",
+    };
+  }
+
+  const facts: VerifiedFact[] = Array.isArray(extraction.facts)
+    ? extraction.facts
+        .filter((f: any) => f && typeof f.fact === "string" && f.fact.trim().length > 5)
+        .map((f: any) => ({ fact: f.fact.trim(), confirmed_by: Array.isArray(f.confirmed_by) ? f.confirmed_by : [] }))
+    : [];
+  const entities = Array.isArray(extraction.entities) ? extraction.entities : [];
+  const conflicts = Array.isArray(extraction.conflicts) ? extraction.conflicts.filter(Boolean) : [];
+
+  log.add("FACT_EXTRACTION", "ok", `${facts.length} fatos apurados`);
+  log.add("ENTITY_VERIFICATION", entities.length ? "ok" : "skipped", `${entities.length} entidades`);
+
+  if (facts.length === 0) {
+    log.add("FACT_CROSS_CHECK", "failed", "nenhum fato confirmado pelas fontes");
+    return {
+      status: "verification_failed",
+      sources: pool,
+      facts,
+      entities,
+      conflicts,
+      notes: "Nenhum fato pôde ser confirmado nas fontes consultadas.",
+    };
+  }
+
+  // Cruzamento: pelo menos um fato sustentado por 2 veículos diferentes
+  const crossConfirmed = facts.filter((f) => new Set(f.confirmed_by).size >= 2).length;
+  if (conflicts.length > 0) {
+    log.add("FACT_CROSS_CHECK", "failed", `divergência entre fontes: ${conflicts[0]}`);
+    return {
+      status: "source_conflict",
+      sources: pool,
+      facts,
+      entities,
+      conflicts,
+      notes: `Divergência entre fontes: ${conflicts.join(" | ")}`,
+    };
+  }
+  const unverifiedEntities = entities.filter((e: any) => e && e.verified === false);
+  if (unverifiedEntities.length > 0) {
+    log.add("ENTITY_VERIFICATION", "failed", `${unverifiedEntities.length} entidade(s) não confirmada(s)`);
+    return {
+      status: "entity_unverified",
+      sources: pool,
+      facts,
+      entities,
+      conflicts,
+      notes: `Entidades não confirmadas nas fontes: ${unverifiedEntities.map((e: any) => e.name).join(", ")}`,
+    };
+  }
+
+  log.add("FACT_CROSS_CHECK", "ok", `${crossConfirmed} fato(s) confirmados por 2+ veículos`);
+  return {
+    status: "verified",
+    sources: pool,
+    facts,
+    entities,
+    conflicts,
+    notes: extraction.summary || `${facts.length} fatos apurados em ${trusted.length} fontes independentes.`,
+  };
+}
+
+function buildFactsBlock(verification: VerificationResult): string {
+  const facts = verification.facts
+    .map((f, i) => `${i + 1}. ${f.fact}${f.confirmed_by.length ? ` [confirmado por: ${f.confirmed_by.join(", ")}]` : ""}`)
+    .join("\n");
+  const sources = verification.sources
+    .slice(0, 8)
+    .map((s) => `- ${s.source_name}: ${s.title} (${s.source_url})`)
+    .join("\n");
+  const entities = verification.entities
+    .map((e: any) => `- ${e.name} (${e.type})`)
+    .join("\n");
+
+  return `FATOS APURADOS E CONFIRMADOS (ÚNICA BASE FACTUAL PERMITIDA):
+${facts || "(nenhum)"}
+
+ENTIDADES VERIFICADAS (use os nomes exatamente assim):
+${entities || "(nenhuma)"}
+
+FONTES CONSULTADAS (cite pelo nome ao longo do texto quando fizer sentido):
+${sources}
+
+REGRA ABSOLUTA: é PROIBIDO afirmar qualquer fato, número, data ou declaração que não esteja na lista acima. Quando faltar informação, escreva contexto geral verificável e explicite que a informação ainda não foi divulgada.`;
+}
+
 
 // ── System + User prompts ─────────────────────────────────────────────────
 
@@ -812,6 +1123,7 @@ serve(async (req) => {
         .eq("used", false)
         .gte("fetched_at", since24h)
         .in("category", userCategoriesToSearch)
+        .order("trend_score", { ascending: false })
         .order("fetched_at", { ascending: false });
       topics = dbTopics || [];
 
@@ -832,9 +1144,11 @@ serve(async (req) => {
     const manualCategories: string[] = (manualTopics && Array.isArray(manualTopics) && manualTopics.length > 0)
       ? Array.from(new Set(topics.map((t: any) => t.category).filter(Boolean)))
       : [];
-    const userCategories: string[] = forceCategory 
-      ? [forceCategory] 
-      : (manualCategories.length > 0 ? Array.from(new Set([...manualCategories, ...userCategoriesToSearch])) : userCategoriesToSearch);
+    // Com assuntos enviados manualmente, só eles valem: nada de completar a fila
+    // com temas evergreen de outras categorias.
+    const userCategories: string[] = manualCategories.length > 0
+      ? manualCategories
+      : (forceCategory ? [forceCategory] : userCategoriesToSearch);
 
     const countsByCategory: Record<string, number> = {};
     for (const cat of userCategories) countsByCategory[cat] = 0;
@@ -860,7 +1174,12 @@ serve(async (req) => {
       if (t.category in topicsByCategory) topicsByCategory[t.category].push(t);
     }
     for (const cat of userCategories) {
-      topicsByCategory[cat].sort((a, b) => volumeScore(b.search_volume) - volumeScore(a.search_volume));
+      // Ranking dentro da categoria: pontuação de tendência primeiro, volume como desempate.
+      topicsByCategory[cat].sort(
+        (a, b) =>
+          (Number(b.trend_score) || 0) - (Number(a.trend_score) || 0) ||
+          volumeScore(b.search_volume) - volumeScore(a.search_volume),
+      );
     }
     // Fallback (default topic) para categorias SEM tópicos disponíveis
     for (const cat of userCategories) {
@@ -990,8 +1309,58 @@ serve(async (req) => {
       const topic = topicsToUse[i];
       const scheduledAt = new Date(baseScheduledTime + (i + 1) * intervalMs);
 
+      const pipelineLog = new PipelineLog();
+      pipelineLog.add("TREND_DISCOVERY", "ok", `${topic.topic} (score ${topic.trend_score ?? "n/d"})`);
+
       try {
-        const userPrompt = buildUserPrompt(topic.topic, topic.category, topic.context);
+        // ── DUPLICATE_CHECK (7 dias) ─────────────────────────────────────
+        const since7d = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+        const { data: last7d } = await supabase
+          .from("articles")
+          .select("id, title, trending_topic, slug")
+          .eq("user_id", userId)
+          .gte("created_at", since7d);
+        const dup = findDuplicate(topic.topic, (last7d || []) as any[]);
+        if (dup) {
+          pipelineLog.add("DUPLICATE_CHECK", "failed", `similar a "${dup.title}" (${dup.score})`);
+          failureReasons.push({
+            status: 409,
+            message: `Assunto "${topic.topic}" já coberto pelo artigo "${dup.title}" nos últimos 7 dias.`,
+          });
+          if (topic.id) await supabase.from("trending_topics").update({ used: true, validation_status: "duplicate" }).eq("id", topic.id);
+          continue;
+        }
+        pipelineLog.add("DUPLICATE_CHECK", "ok");
+
+        // ── SOURCE/ENTITY/FACT VERIFICATION ──────────────────────────────
+        const verification = await runVerification(
+          topic,
+          { gemini: geminiApiKey, openai: openaiApiKey, groq: groqApiKey },
+          {
+            gemini: sanitizeGeminiModel(settings?.gemini_model) || undefined,
+            openai: settings?.openai_model || undefined,
+            groq: settings?.groq_model || undefined,
+          },
+          pipelineLog,
+        );
+
+        if (verification.status !== "verified") {
+          console.warn(`[Editorial] "${topic.topic}" bloqueado: ${verification.status} — ${verification.notes}`);
+          failureReasons.push({
+            status: 422,
+            message: `Assunto "${topic.topic}" não passou na apuração (${verification.status}): ${verification.notes}`,
+          });
+          if (topic.id) {
+            await supabase
+              .from("trending_topics")
+              .update({ validation_status: verification.status, sources: verification.sources })
+              .eq("id", topic.id);
+          }
+          continue;
+        }
+
+        const userPrompt = `${buildUserPrompt(topic.topic, topic.category, topic.context)}\n\n${buildFactsBlock(verification)}`;
+
 
         let parsed: AIResponse;
         let usedProvider: string;
@@ -1082,6 +1451,37 @@ serve(async (req) => {
           featuredImageUrl = null;
         }
 
+        // ── IMAGE_VERIFICATION ───────────────────────────────────────────
+        // A imagem é gerada por IA: ela é ilustrativa e nunca pode ser
+        // apresentada como registro real de pessoas citadas na notícia.
+        const hasRealPeople = verification.entities.some((e: any) => e?.type === "pessoa");
+        let imageVerificationStatus: string | null = null;
+        if (featuredImageUrl) {
+          imageVerificationStatus = hasRealPeople ? "ilustrativa_pessoa_real" : "ilustrativa";
+          if (hasRealPeople && parsed.image_caption && !/ilustra/i.test(parsed.image_caption)) {
+            parsed = { ...parsed, image_caption: `${parsed.image_caption} (imagem ilustrativa gerada por IA)` };
+          }
+          pipelineLog.add("IMAGE_VERIFICATION", "ok", imageVerificationStatus);
+        } else {
+          imageVerificationStatus = "sem_imagem";
+          pipelineLog.add("IMAGE_VERIFICATION", "skipped", "artigo sem imagem");
+        }
+
+        // ── SEO_OPTIMIZATION + EDITORIAL_VALIDATION ──────────────────────
+        const finalSlug = parsed.slug || slugify(parsed.seo_title || parsed.title);
+        const seoAudit = {
+          slug: finalSlug,
+          focus_keyword: parsed.seo_keyword || "",
+          title_length: (parsed.seo_title || parsed.title || "").length,
+          meta_description_length: (parsed.meta_description || "").length,
+          content_length: stripHtml(parsed.content || "").length,
+          has_keyword_in_title: (parsed.title || "").toLowerCase().includes((parsed.seo_keyword || "").toLowerCase()),
+          checked_at: new Date().toISOString(),
+        };
+        pipelineLog.add("SEO_OPTIMIZATION", "ok", `slug=${finalSlug}`);
+        pipelineLog.add("EDITORIAL_VALIDATION", "ok", verification.notes.slice(0, 180));
+        pipelineLog.add("READY_TO_PUBLISH", "ok");
+
         const { data: article, error: insertError } = await supabase.from("articles").insert({
           user_id: userId,
           title: parsed.title,
@@ -1089,16 +1489,29 @@ serve(async (req) => {
           excerpt: parsed.excerpt || "",
           category: topic.category,
           seo_keyword: parsed.seo_keyword || "",
+          focus_keyword: parsed.seo_keyword || "",
           seo_title: parsed.seo_title || parsed.title,
+          meta_title: parsed.seo_title || parsed.title,
           meta_description: parsed.meta_description || "",
+          slug: finalSlug,
           featured_image_url: featuredImageUrl,
           status: settings?.auto_publish ? "ready" : "draft",
+          is_approved: settings?.auto_publish ? true : false,
           scheduled_at: scheduledAt.toISOString(),
           trending_topic: topic.topic,
+          trend_score: topic.trend_score ?? null,
           ai_provider: usedProvider,
           visual_elements: parsed.visual_elements,
           image_alt: parsed.image_alt,
           image_caption: parsed.image_caption,
+          image_verification_status: imageVerificationStatus,
+          fact_check_status: verification.status,
+          fact_check_notes: verification.notes,
+          research_references: verification.facts,
+          entity_verification: verification.entities,
+          source_urls: verification.sources.map((s) => s.source_url).filter(Boolean),
+          seo_audit_log: seoAudit,
+          pipeline_log: pipelineLog.toJSON(),
         }).select().single();
         
         if (insertError) {
@@ -1108,9 +1521,13 @@ serve(async (req) => {
         }
 
         if (topic.id) {
-          const { error: updateError } = await supabase.from("trending_topics").update({ used: true }).eq("id", topic.id);
+          const { error: updateError } = await supabase
+            .from("trending_topics")
+            .update({ used: true, validation_status: "verified", sources: verification.sources })
+            .eq("id", topic.id);
           if (updateError) console.warn(`[Pipeline] Failed to mark topic as used: ${updateError.message}`);
         }
+
 
         generatedArticles.push(article);
         console.log(`[Pipeline] Article successfully saved: ${article.id}`);

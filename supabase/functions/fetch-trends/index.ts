@@ -1,5 +1,13 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import {
+  classifySource,
+  computeTrendScore,
+  discoverSources,
+  fetchText,
+  parseRssItems,
+  type SourceRef,
+} from "../_shared/editorial.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -218,6 +226,116 @@ function parseStandardRSS(rss: string, categories: string[], sourceName: string,
   return topics;
 }
 
+// ── SOURCE_DISCOVERY: feeds de veículos confiáveis ───────────────────────
+// Além do Google Trends, a coleta lê diretamente os principais veículos.
+// Isso garante assunto real, com link e data de publicação verificáveis.
+
+const TRUSTED_FEEDS: Array<{ name: string; url: string; region: string }> = [
+  { name: "G1", url: "https://g1.globo.com/rss/g1/", region: "BR" },
+  { name: "CNN Brasil", url: "https://www.cnnbrasil.com.br/feed/", region: "BR" },
+  { name: "Agência Brasil", url: "https://agenciabrasil.ebc.com.br/rss/ultimasnoticias/feed.xml", region: "BR" },
+  { name: "Folha de S.Paulo", url: "https://feeds.folha.uol.com.br/emcimadahora/rss091.xml", region: "BR" },
+  { name: "UOL", url: "https://rss.uol.com.br/feed/noticias.xml", region: "BR" },
+  { name: "InfoMoney", url: "https://www.infomoney.com.br/feed/", region: "BR" },
+  { name: "BBC Brasil", url: "https://feeds.bbci.co.uk/portuguese/rss.xml", region: "World" },
+  { name: "The Guardian", url: "https://www.theguardian.com/world/rss", region: "World" },
+];
+
+async function collectTrustedFeedTopics(categories: string[]): Promise<any[]> {
+  const results = await Promise.all(
+    TRUSTED_FEEDS.map(async (feed) => {
+      const xml = await fetchText(feed.url);
+      if (!xml) return [];
+      const items = parseRssItems(xml, 15);
+      return items.map((item) => ({
+        topic: item.title,
+        search_volume: "alto",
+        category: guessCategory(`${item.title} ${item.description}`, categories),
+        context: item.description || null,
+        source_name: feed.name,
+        source_url: item.link || feed.url,
+        published_at: item.pubDate,
+        region: feed.region,
+      }));
+    }),
+  );
+  const flat = results.flat();
+  console.log(`[fetch-trends] Veículos confiáveis: ${flat.length} matérias coletadas`);
+  return flat;
+}
+
+// ── TREND_SCORING: cruzamento de fontes + pontuação ──────────────────────
+
+const PRIORITY_SCORING_LIMIT = 30; // quantos assuntos passam pelo cruzamento de fontes
+
+async function scoreTopics(topics: any[], priorityCategories: string[]): Promise<any[]> {
+  const now = Date.now();
+  const ageHoursOf = (t: any) =>
+    t.published_at ? Math.max(0, (now - new Date(t.published_at).getTime()) / 3600000) : 6;
+
+  // Os assuntos com maior volume declarado entram primeiro no cruzamento de fontes.
+  const ordered = [...topics].sort((a, b) => {
+    const va = parseInt(String(a.search_volume).replace(/[^0-9]/g, ""), 10) || 0;
+    const vb = parseInt(String(b.search_volume).replace(/[^0-9]/g, ""), 10) || 0;
+    return vb - va;
+  });
+  const toCrossCheck = new Set(ordered.slice(0, PRIORITY_SCORING_LIMIT).map((t) => t.topic));
+
+  const scored: any[] = [];
+  for (let i = 0; i < topics.length; i += 5) {
+    const batch = topics.slice(i, i + 5);
+    const done = await Promise.all(
+      batch.map(async (t) => {
+        const own = classifySource(t.source_url || "", t.source_name || "");
+        let sources: SourceRef[] = [];
+        if (toCrossCheck.has(t.topic)) {
+          try {
+            sources = await discoverSources(t.topic, 8);
+          } catch (err) {
+            console.warn(`[scoreTopics] cruzamento falhou para "${t.topic}":`, err);
+          }
+        }
+        if (t.source_url && !sources.some((s) => s.source_url === t.source_url)) {
+          sources.unshift({
+            source_url: t.source_url,
+            source_name: t.source_name || own.name,
+            source_type: own.type,
+            published_at: t.published_at || null,
+            accessed_at: new Date().toISOString(),
+            reliability_score: own.reliability,
+            title: t.topic,
+            snippet: t.context || "",
+          });
+        }
+        const trusted = sources.filter((s) => s.reliability_score >= 0.75);
+        const avgReliability = sources.length
+          ? sources.reduce((sum, s) => sum + s.reliability_score, 0) / sources.length
+          : 0.5;
+        const score = computeTrendScore({
+          searchVolume: t.search_volume,
+          sourceCount: sources.length,
+          avgReliability,
+          ageHours: ageHoursOf(t),
+          isPriorityCategory: priorityCategories.includes(t.category),
+        });
+        // Validação: precisa de pelo menos 2 fontes independentes confiáveis.
+        const validation_status = trusted.length >= 2 ? "verified" : sources.length >= 1 ? "pending" : "unverified";
+        return {
+          ...t,
+          sources,
+          source_count: sources.length,
+          validation_status,
+          ...score,
+        };
+      }),
+    );
+    scored.push(...done);
+  }
+  return scored;
+}
+
+
+
 // ── JSON Extraction / Repair ─────────────────────────────────────────────
 
 function extractTopicsFromAIResponse(raw: string): any[] {
@@ -388,9 +506,39 @@ serve(async (req) => {
       }
     }
 
+    // Veículos confiáveis (G1, CNN, Agência Brasil, Folha, UOL, InfoMoney, BBC, Guardian)
+    try {
+      const feedTopics = await collectTrustedFeedTopics(categories);
+      topics = [...topics, ...feedTopics];
+    } catch (err) {
+      console.warn("[fetch-trends] Falha ao coletar veículos confiáveis:", err);
+    }
+
     if (!topics.length) {
       throw new Error("Não foi possível extrair tópicos dos feeds. O formato dos feeds pode ter mudado.");
     }
+
+    // Remove duplicatas exatas de assunto antes do ranking
+    const dedup = new Map<string, any>();
+    for (const t of topics) {
+      const key = (t.topic || "").toLowerCase().trim();
+      if (!key) continue;
+      const prev = dedup.get(key);
+      if (!prev) dedup.set(key, t);
+      else if (!prev.published_at && t.published_at) dedup.set(key, { ...prev, ...t });
+    }
+    topics = [...dedup.values()];
+
+    // TREND_SCORING + cruzamento de fontes
+    const priorityCategories: string[] = settings?.priority_categories || [];
+    topics = await scoreTopics(topics, priorityCategories);
+    topics.sort((a, b) => (b.trend_score || 0) - (a.trend_score || 0));
+    console.log(
+      `[fetch-trends] Ranking: ${topics.length} assuntos. Top: ${topics
+        .slice(0, 5)
+        .map((t) => `${t.topic} (${t.trend_score})`)
+        .join(" | ")}`,
+    );
 
     // 1. Buscar tópicos existentes do usuário que não foram usados
     const { data: existingTopics } = await supabase
@@ -406,12 +554,24 @@ serve(async (req) => {
     const toInsert = [];
 
     for (const t of topics) {
+      const scoreFields = {
+        trend_score: t.trend_score ?? 0,
+        seo_potential: t.seo_potential ?? 0,
+        discover_potential: t.discover_potential ?? 0,
+        growth: t.growth ?? null,
+        sources: t.sources ?? [],
+        source_count: t.source_count ?? 1,
+        validation_status: t.validation_status ?? "pending",
+        region: t.region ?? null,
+        published_at: t.published_at ?? null,
+      };
       if (existingMap.has(t.topic)) {
         const existing = existingMap.get(t.topic);
         toUpdate.push({
           id: existing.id,
           update_count: (existing.update_count || 1) + 1,
-          fetched_at: new Date().toISOString()
+          fetched_at: new Date().toISOString(),
+          ...scoreFields,
         });
       } else {
         toInsert.push({
@@ -422,23 +582,23 @@ serve(async (req) => {
           context: t.context,
           source_name: t.source_name,
           source_url: t.source_url,
-          update_count: 1
+          update_count: 1,
+          ...scoreFields,
         });
       }
     }
 
     // 3. Executar atualizações
     for (const item of toUpdate) {
-      await supabase.from("trending_topics").update({ 
-        update_count: item.update_count,
-        fetched_at: item.fetched_at
-      }).eq("id", item.id);
+      const { id, ...fields } = item;
+      await supabase.from("trending_topics").update(fields).eq("id", id);
     }
 
     // 4. Inserir novos
     if (toInsert.length > 0) {
       await supabase.from("trending_topics").insert(toInsert);
     }
+
 
     // 5. Limpar tópicos antigos (mais de 24h)
     await supabase.rpc('clean_old_trending_topics');
