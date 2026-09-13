@@ -616,6 +616,301 @@ async function generateImageOpenAI(
   }
 }
 
+// ── Verificação editorial (fontes, entidades e fatos) ─────────────────────
+
+interface VerifiedFact {
+  fact: string;
+  confirmed_by: string[];
+}
+
+interface VerificationResult {
+  status: "verified" | "source_conflict" | "entity_unverified" | "verification_failed";
+  sources: SourceRef[];
+  facts: VerifiedFact[];
+  entities: Array<{ name: string; type: string; verified: boolean; note?: string }>;
+  conflicts: string[];
+  notes: string;
+}
+
+// Categorias sensíveis exigem 3 fontes independentes; as demais, 2.
+const SENSITIVE_CATEGORIES = new Set(["politica", "policia", "saude", "financas"]);
+
+function requiredSources(category: string): number {
+  return SENSITIVE_CATEGORIES.has((category || "").toLowerCase()) ? 3 : 2;
+}
+
+/** Chamada de IA em modo JSON puro (usada para extração de fatos e entidades). */
+async function callJsonAI(
+  keys: { gemini?: string | null; openai?: string | null; groq?: string | null },
+  systemPrompt: string,
+  userPrompt: string,
+  models: { gemini?: string; openai?: string; groq?: string },
+): Promise<any | null> {
+  const tryParse = (raw: string) => {
+    const text = (raw || "").replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+    const start = text.indexOf("{");
+    const end = text.lastIndexOf("}");
+    if (start === -1 || end === -1) return null;
+    try {
+      return JSON.parse(text.slice(start, end + 1));
+    } catch {
+      return null;
+    }
+  };
+
+  if (keys.gemini) {
+    try {
+      const model = models.gemini || "gemini-3.6-flash";
+      const resp = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-goog-api-key": keys.gemini },
+          body: JSON.stringify({
+            system_instruction: { parts: [{ text: systemPrompt }] },
+            contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+            generationConfig: { responseMimeType: "application/json" },
+          }),
+        },
+      );
+      if (resp.ok) {
+        const data = await resp.json();
+        const parsed = tryParse(data.candidates?.[0]?.content?.parts?.[0]?.text || "");
+        if (parsed) return parsed;
+      } else {
+        console.warn(`[Verify] Gemini JSON falhou: HTTP ${resp.status}`);
+      }
+    } catch (err) {
+      console.warn("[Verify] Gemini JSON erro:", err);
+    }
+  }
+
+  if (keys.openai) {
+    try {
+      const resp = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${keys.openai}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: models.openai || "gpt-4o-mini",
+          response_format: { type: "json_object" },
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt },
+          ],
+        }),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        const parsed = tryParse(data.choices?.[0]?.message?.content || "");
+        if (parsed) return parsed;
+      } else {
+        console.warn(`[Verify] OpenAI JSON falhou: HTTP ${resp.status}`);
+      }
+    } catch (err) {
+      console.warn("[Verify] OpenAI JSON erro:", err);
+    }
+  }
+
+  if (keys.groq) {
+    try {
+      const resp = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${keys.groq}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: sanitizeGroqModel(models.groq),
+          max_tokens: 800,
+          response_format: { type: "json_object" },
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt },
+          ],
+        }),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        const parsed = tryParse(data.choices?.[0]?.message?.content || "");
+        if (parsed) return parsed;
+      }
+    } catch (err) {
+      console.warn("[Verify] Groq JSON erro:", err);
+    }
+  }
+
+  return null;
+}
+
+const VERIFY_SYSTEM_PROMPT = `Você é um checador de fatos de uma redação jornalística brasileira.
+Receberá manchetes e resumos REAIS publicados por veículos de imprensa sobre um mesmo assunto.
+Sua tarefa é extrair apenas o que está EXPLICITAMENTE nas fontes. É PROIBIDO inferir, completar ou inventar.
+
+Responda SOMENTE com JSON neste formato:
+{
+  "facts": [{"fact": "afirmação objetiva", "confirmed_by": ["Veículo A", "Veículo B"]}],
+  "entities": [{"name": "nome citado", "type": "pessoa|organizacao|local|evento", "verified": true, "note": "como aparece nas fontes"}],
+  "conflicts": ["divergência entre as fontes, se houver"],
+  "summary": "resumo factual em até 400 caracteres"
+}
+
+Regras:
+- Um fato só entra na lista se aparecer em pelo menos uma fonte; registre em confirmed_by todos os veículos que o sustentam.
+- Uma entidade só é verified=true se o nome aparecer escrito nas fontes.
+- Se as fontes se contradisserem em números, datas ou declarações, registre em conflicts.
+- Nunca invente nomes, datas, números ou declarações.`;
+
+async function runVerification(
+  topic: { topic: string; category: string; context?: string | null; sources?: any },
+  keys: { gemini?: string | null; openai?: string | null; groq?: string | null },
+  models: { gemini?: string; openai?: string; groq?: string },
+  log: PipelineLog,
+): Promise<VerificationResult> {
+  // SOURCE_DISCOVERY — fontes já coletadas na tendência + busca cruzada ao vivo
+  const stored: SourceRef[] = Array.isArray(topic.sources) ? (topic.sources as SourceRef[]) : [];
+  let live: SourceRef[] = [];
+  try {
+    live = await discoverSources(topic.topic, 8);
+  } catch (err) {
+    log.add("SOURCE_DISCOVERY", "failed", err instanceof Error ? err.message : String(err));
+  }
+  const byName = new Map<string, SourceRef>();
+  for (const s of [...stored, ...live]) {
+    if (!s?.source_name) continue;
+    if (!byName.has(s.source_name)) byName.set(s.source_name, s);
+  }
+  const sources = [...byName.values()];
+  log.add("SOURCE_DISCOVERY", "ok", `${sources.length} fontes encontradas`);
+
+  // SOURCE_VERIFICATION — apenas veículos confiáveis e independentes contam
+  const trusted = sources.filter((s) => (s.reliability_score ?? 0) >= 0.75);
+  const needed = requiredSources(topic.category);
+  if (trusted.length < needed) {
+    log.add(
+      "SOURCE_VERIFICATION",
+      "failed",
+      `${trusted.length} fonte(s) confiável(is); mínimo exigido: ${needed}`,
+    );
+    return {
+      status: "verification_failed",
+      sources,
+      facts: [],
+      entities: [],
+      conflicts: [],
+      notes: `Apuração insuficiente: ${trusted.length} de ${needed} fontes independentes confiáveis para "${topic.topic}".`,
+    };
+  }
+  log.add("SOURCE_VERIFICATION", "ok", `${trusted.length} fontes confiáveis independentes`);
+
+  // FACT_EXTRACTION + ENTITY_VERIFICATION + FACT_CROSS_CHECK
+  const dossier = trusted
+    .slice(0, 8)
+    .map(
+      (s, i) =>
+        `${i + 1}. VEÍCULO: ${s.source_name} (confiabilidade ${Math.round(s.reliability_score * 100)}%)\n   MANCHETE: ${s.title}\n   RESUMO: ${s.snippet || "(sem resumo)"}\n   URL: ${s.source_url}\n   PUBLICADO: ${s.published_at || "data não informada"}`,
+    )
+    .join("\n\n");
+
+  const extraction = await callJsonAI(
+    keys,
+    VERIFY_SYSTEM_PROMPT,
+    `ASSUNTO: "${topic.topic}"\nCATEGORIA: ${topic.category}\nCONTEXTO DA TENDÊNCIA: ${topic.context || "(sem contexto)"}\n\nFONTES:\n${dossier}`,
+    models,
+  );
+
+  if (!extraction) {
+    log.add("FACT_EXTRACTION", "failed", "IA não retornou JSON de apuração");
+    return {
+      status: "verification_failed",
+      sources: trusted,
+      facts: [],
+      entities: [],
+      conflicts: [],
+      notes: "Não foi possível extrair fatos verificáveis das fontes.",
+    };
+  }
+
+  const facts: VerifiedFact[] = Array.isArray(extraction.facts)
+    ? extraction.facts
+        .filter((f: any) => f && typeof f.fact === "string" && f.fact.trim().length > 5)
+        .map((f: any) => ({ fact: f.fact.trim(), confirmed_by: Array.isArray(f.confirmed_by) ? f.confirmed_by : [] }))
+    : [];
+  const entities = Array.isArray(extraction.entities) ? extraction.entities : [];
+  const conflicts = Array.isArray(extraction.conflicts) ? extraction.conflicts.filter(Boolean) : [];
+
+  log.add("FACT_EXTRACTION", "ok", `${facts.length} fatos apurados`);
+  log.add("ENTITY_VERIFICATION", entities.length ? "ok" : "skipped", `${entities.length} entidades`);
+
+  if (facts.length === 0) {
+    log.add("FACT_CROSS_CHECK", "failed", "nenhum fato confirmado pelas fontes");
+    return {
+      status: "verification_failed",
+      sources: trusted,
+      facts,
+      entities,
+      conflicts,
+      notes: "Nenhum fato pôde ser confirmado nas fontes consultadas.",
+    };
+  }
+
+  // Cruzamento: pelo menos um fato sustentado por 2 veículos diferentes
+  const crossConfirmed = facts.filter((f) => new Set(f.confirmed_by).size >= 2).length;
+  if (conflicts.length > 0) {
+    log.add("FACT_CROSS_CHECK", "failed", `divergência entre fontes: ${conflicts[0]}`);
+    return {
+      status: "source_conflict",
+      sources: trusted,
+      facts,
+      entities,
+      conflicts,
+      notes: `Divergência entre fontes: ${conflicts.join(" | ")}`,
+    };
+  }
+  const unverifiedEntities = entities.filter((e: any) => e && e.verified === false);
+  if (unverifiedEntities.length > 0) {
+    log.add("ENTITY_VERIFICATION", "failed", `${unverifiedEntities.length} entidade(s) não confirmada(s)`);
+    return {
+      status: "entity_unverified",
+      sources: trusted,
+      facts,
+      entities,
+      conflicts,
+      notes: `Entidades não confirmadas nas fontes: ${unverifiedEntities.map((e: any) => e.name).join(", ")}`,
+    };
+  }
+
+  log.add("FACT_CROSS_CHECK", "ok", `${crossConfirmed} fato(s) confirmados por 2+ veículos`);
+  return {
+    status: "verified",
+    sources: trusted,
+    facts,
+    entities,
+    conflicts,
+    notes: extraction.summary || `${facts.length} fatos apurados em ${trusted.length} fontes independentes.`,
+  };
+}
+
+function buildFactsBlock(verification: VerificationResult): string {
+  const facts = verification.facts
+    .map((f, i) => `${i + 1}. ${f.fact}${f.confirmed_by.length ? ` [confirmado por: ${f.confirmed_by.join(", ")}]` : ""}`)
+    .join("\n");
+  const sources = verification.sources
+    .slice(0, 8)
+    .map((s) => `- ${s.source_name}: ${s.title} (${s.source_url})`)
+    .join("\n");
+  const entities = verification.entities
+    .map((e: any) => `- ${e.name} (${e.type})`)
+    .join("\n");
+
+  return `FATOS APURADOS E CONFIRMADOS (ÚNICA BASE FACTUAL PERMITIDA):
+${facts || "(nenhum)"}
+
+ENTIDADES VERIFICADAS (use os nomes exatamente assim):
+${entities || "(nenhuma)"}
+
+FONTES CONSULTADAS (cite pelo nome ao longo do texto quando fizer sentido):
+${sources}
+
+REGRA ABSOLUTA: é PROIBIDO afirmar qualquer fato, número, data ou declaração que não esteja na lista acima. Quando faltar informação, escreva contexto geral verificável e explicite que a informação ainda não foi divulgada.`;
+}
+
 
 // ── System + User prompts ─────────────────────────────────────────────────
 
