@@ -185,13 +185,16 @@ function sanitizeGroqModel(modelName?: string): string {
   return candidate;
 }
 
+const GROQ_MAX_TOKENS = 900; // abaixo do limite de saída por minuto (OTPM 1000) das contas Groq gratuitas
+
 async function callGroqDirect(apiKey: string, systemPrompt: string, userPrompt: string, modelName = ""): Promise<AIResponse> {
-  const requestGroq = async (model: string) =>
+  const requestGroq = async (model: string, maxTokens = GROQ_MAX_TOKENS) =>
     await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         model,
+        max_tokens: maxTokens,
         messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }],
         tools: [{
           type: "function",
@@ -218,6 +221,15 @@ async function callGroqDirect(apiKey: string, systemPrompt: string, userPrompt: 
     console.warn(`[AI] Modelo Groq "${model}" indisponível; usando "${GROQ_DEFAULT_MODEL}".`);
     resp = await requestGroq(GROQ_DEFAULT_MODEL);
   }
+
+  // 429 por limite de tokens/minuto: aguarda e repete com saída menor no modelo padrão
+  if (resp.status === 429) {
+    const detail = await resp.clone().text();
+    console.warn(`[AI] Groq 429 (limite de taxa). Repetindo com saída reduzida. Detalhe: ${detail.slice(0, 200)}`);
+    await new Promise((r) => setTimeout(r, 6000));
+    resp = await requestGroq(GROQ_DEFAULT_MODEL, 700);
+  }
+
 
   if (!resp.ok) {
     const errText = await resp.text();
