@@ -506,9 +506,39 @@ serve(async (req) => {
       }
     }
 
+    // Veículos confiáveis (G1, CNN, Agência Brasil, Folha, UOL, InfoMoney, BBC, Guardian)
+    try {
+      const feedTopics = await collectTrustedFeedTopics(categories);
+      topics = [...topics, ...feedTopics];
+    } catch (err) {
+      console.warn("[fetch-trends] Falha ao coletar veículos confiáveis:", err);
+    }
+
     if (!topics.length) {
       throw new Error("Não foi possível extrair tópicos dos feeds. O formato dos feeds pode ter mudado.");
     }
+
+    // Remove duplicatas exatas de assunto antes do ranking
+    const dedup = new Map<string, any>();
+    for (const t of topics) {
+      const key = (t.topic || "").toLowerCase().trim();
+      if (!key) continue;
+      const prev = dedup.get(key);
+      if (!prev) dedup.set(key, t);
+      else if (!prev.published_at && t.published_at) dedup.set(key, { ...prev, ...t });
+    }
+    topics = [...dedup.values()];
+
+    // TREND_SCORING + cruzamento de fontes
+    const priorityCategories: string[] = settings?.priority_categories || [];
+    topics = await scoreTopics(topics, priorityCategories);
+    topics.sort((a, b) => (b.trend_score || 0) - (a.trend_score || 0));
+    console.log(
+      `[fetch-trends] Ranking: ${topics.length} assuntos. Top: ${topics
+        .slice(0, 5)
+        .map((t) => `${t.topic} (${t.trend_score})`)
+        .join(" | ")}`,
+    );
 
     // 1. Buscar tópicos existentes do usuário que não foram usados
     const { data: existingTopics } = await supabase
@@ -524,12 +554,24 @@ serve(async (req) => {
     const toInsert = [];
 
     for (const t of topics) {
+      const scoreFields = {
+        trend_score: t.trend_score ?? 0,
+        seo_potential: t.seo_potential ?? 0,
+        discover_potential: t.discover_potential ?? 0,
+        growth: t.growth ?? null,
+        sources: t.sources ?? [],
+        source_count: t.source_count ?? 1,
+        validation_status: t.validation_status ?? "pending",
+        region: t.region ?? null,
+        published_at: t.published_at ?? null,
+      };
       if (existingMap.has(t.topic)) {
         const existing = existingMap.get(t.topic);
         toUpdate.push({
           id: existing.id,
           update_count: (existing.update_count || 1) + 1,
-          fetched_at: new Date().toISOString()
+          fetched_at: new Date().toISOString(),
+          ...scoreFields,
         });
       } else {
         toInsert.push({
@@ -540,23 +582,23 @@ serve(async (req) => {
           context: t.context,
           source_name: t.source_name,
           source_url: t.source_url,
-          update_count: 1
+          update_count: 1,
+          ...scoreFields,
         });
       }
     }
 
     // 3. Executar atualizações
     for (const item of toUpdate) {
-      await supabase.from("trending_topics").update({ 
-        update_count: item.update_count,
-        fetched_at: item.fetched_at
-      }).eq("id", item.id);
+      const { id, ...fields } = item;
+      await supabase.from("trending_topics").update(fields).eq("id", id);
     }
 
     // 4. Inserir novos
     if (toInsert.length > 0) {
       await supabase.from("trending_topics").insert(toInsert);
     }
+
 
     // 5. Limpar tópicos antigos (mais de 24h)
     await supabase.rpc('clean_old_trending_topics');
