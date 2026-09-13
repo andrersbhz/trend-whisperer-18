@@ -194,16 +194,22 @@ export async function discoverSources(topic: string, maxItems = 12): Promise<Sou
   const refs: SourceRef[] = [];
 
   for (const item of items) {
-    // O título do Google News vem como "Manchete - Veículo"
+    // O título do Google News vem como "Manchete - Veículo" e a tag <source url="...">
+    // aponta para o site do veículo original (o <link> é um redirecionador do Google).
     const parts = item.title.split(" - ");
     const label = item.sourceLabel || (parts.length > 1 ? parts[parts.length - 1] : "");
     const headline = parts.length > 1 ? parts.slice(0, -1).join(" - ") : item.title;
-    const meta = classifySource(item.link, label);
-    const hostKey = meta.name.toLowerCase();
-    if (seenHosts.has(hostKey)) continue; // fontes independentes: 1 por veículo
+    const originUrl = item.sourceUrl || item.link;
+    const meta = classifySource(originUrl, label);
+    // Fontes independentes: uma por domínio de veículo.
+    let hostKey = meta.name.toLowerCase();
+    try {
+      hostKey = new URL(originUrl).hostname.replace(/^www\./, "").toLowerCase();
+    } catch { /* mantém o nome como chave */ }
+    if (!hostKey || seenHosts.has(hostKey)) continue;
     seenHosts.add(hostKey);
     refs.push({
-      source_url: item.link,
+      source_url: item.link || originUrl,
       source_name: meta.name === "Fonte não catalogada" && label ? label : meta.name,
       source_type: meta.type,
       published_at: item.pubDate,
@@ -214,6 +220,7 @@ export async function discoverSources(topic: string, maxItems = 12): Promise<Sou
     });
     if (refs.length >= maxItems) break;
   }
+
 
   refs.sort((a, b) => b.reliability_score - a.reliability_score);
   return refs;
