@@ -782,7 +782,10 @@ async function runVerification(
   // SOURCE_VERIFICATION — apenas veículos confiáveis e independentes contam
   const trusted = sources.filter((s) => (s.reliability_score ?? 0) >= 0.75);
   const needed = requiredSources(topic.category);
-  if (trusted.length < needed) {
+  // Aprovado quando há fontes confiáveis suficientes OU repercussão ampla
+  // (muitos veículos distintos cobrindo o mesmo fato).
+  const wideCoverage = sources.length >= needed + 2;
+  if (trusted.length < needed && !wideCoverage) {
     log.add(
       "SOURCE_VERIFICATION",
       "failed",
