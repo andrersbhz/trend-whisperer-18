@@ -191,52 +191,114 @@ export async function fetchText(url: string, timeoutMs = 12000): Promise<string 
 }
 
 // ── SOURCE_DISCOVERY ────────────────────────────────────────────────────────
-// Cruza o assunto com o Google News (que agrega os grandes veículos) e devolve
-// a lista de fontes reais que estão cobrindo o mesmo acontecimento.
+// Cruza o assunto com agregadores de notícias (Bing News e Google News) e
+// devolve a lista de veículos reais que estão cobrindo o mesmo acontecimento.
+// Cada agregador é tentado em sequência porque alguns bloqueiam servidores.
 
-export async function discoverSources(topic: string, maxItems = 12): Promise<SourceRef[]> {
-  const q = encodeURIComponent(`${topic} when:2d`);
-  const url = `https://news.google.com/rss/search?q=${q}&hl=pt-BR&gl=BR&ceid=BR:pt`;
+interface RawCandidate {
+  title: string;
+  link: string;
+  originUrl: string;
+  label: string;
+  description: string;
+  pubDate: string | null;
+}
+
+async function candidatesFromBing(topic: string): Promise<RawCandidate[]> {
+  const url = `https://www.bing.com/news/search?q=${encodeURIComponent(topic)}&format=RSS&cc=BR&setlang=pt-BR`;
   const xml = await fetchText(url);
   if (!xml) return [];
+  return parseRssItems(xml, 30).map((item) => ({
+    title: item.title,
+    link: item.link,
+    originUrl: item.link,
+    label: item.sourceLabel,
+    description: item.description,
+    pubDate: item.pubDate,
+  }));
+}
+
+async function candidatesFromGoogleNews(topic: string): Promise<RawCandidate[]> {
+  const rss = `https://news.google.com/rss/search?q=${encodeURIComponent(`${topic} when:2d`)}&hl=pt-BR&gl=BR&ceid=BR:pt`;
+  const xml = await fetchText(rss);
+  if (xml) {
+    return parseRssItems(xml, 30).map((item) => {
+      const parts = item.title.split(" - ");
+      return {
+        title: parts.length > 1 ? parts.slice(0, -1).join(" - ") : item.title,
+        link: item.link,
+        originUrl: item.sourceUrl || item.link,
+        label: item.sourceLabel || (parts.length > 1 ? parts[parts.length - 1] : ""),
+        description: item.description,
+        pubDate: item.pubDate,
+      };
+    });
+  }
+  // Alguns servidores recebem 503 do Google News; o conversor público resolve isso.
+  const proxy = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rss)}&count=30`;
+  const json = await fetchText(proxy);
+  if (!json) return [];
+  try {
+    const data = JSON.parse(json);
+    return (data.items || []).map((it: any) => {
+      const parts = (it.title || "").split(" - ");
+      return {
+        title: parts.length > 1 ? parts.slice(0, -1).join(" - ") : it.title,
+        link: it.link,
+        originUrl: it.link,
+        label: parts.length > 1 ? parts[parts.length - 1] : it.author || "",
+        description: (it.description || "").replace(/<[^>]+>/g, "").slice(0, 400),
+        pubDate: it.pubDate ? new Date(it.pubDate).toISOString() : null,
+      };
+    });
+  } catch {
+    return [];
+  }
+}
+
+export async function discoverSources(topic: string, maxItems = 12): Promise<SourceRef[]> {
+  let candidates: RawCandidate[] = [];
+  for (const collect of [candidatesFromBing, candidatesFromGoogleNews]) {
+    try {
+      const found = await collect(topic);
+      candidates = [...candidates, ...found];
+      if (candidates.length >= 6) break;
+    } catch (err) {
+      console.warn("[discoverSources] agregador falhou:", err instanceof Error ? err.message : err);
+    }
+  }
+  if (candidates.length === 0) return [];
 
   const accessedAt = new Date().toISOString();
-  const items = parseRssItems(xml, maxItems * 2);
   const seenHosts = new Set<string>();
   const refs: SourceRef[] = [];
 
-  for (const item of items) {
-    // O título do Google News vem como "Manchete - Veículo" e a tag <source url="...">
-    // aponta para o site do veículo original (o <link> é um redirecionador do Google).
-    const parts = item.title.split(" - ");
-    const label = item.sourceLabel || (parts.length > 1 ? parts[parts.length - 1] : "");
-    const headline = parts.length > 1 ? parts.slice(0, -1).join(" - ") : item.title;
-    const originUrl = item.sourceUrl || item.link;
-    const meta = classifySource(originUrl, label);
+  for (const item of candidates) {
+    const meta = classifySource(item.originUrl, item.label);
     // Fontes independentes: uma por domínio de veículo.
     let hostKey = meta.name.toLowerCase();
     try {
-      hostKey = new URL(originUrl).hostname.replace(/^www\./, "").toLowerCase();
+      hostKey = new URL(item.originUrl).hostname.replace(/^www\./, "").toLowerCase();
     } catch { /* mantém o nome como chave */ }
-    if (!hostKey || seenHosts.has(hostKey)) continue;
+    if (!hostKey || hostKey === "news.google.com" || seenHosts.has(hostKey)) continue;
     seenHosts.add(hostKey);
     refs.push({
-      source_url: item.link || originUrl,
-      source_name: meta.name === "Fonte não catalogada" && label ? label : meta.name,
+      source_url: item.link || item.originUrl,
+      source_name: meta.name === "Fonte não catalogada" && item.label ? item.label : meta.name,
       source_type: meta.type,
       published_at: item.pubDate,
       accessed_at: accessedAt,
       reliability_score: meta.reliability,
-      title: headline,
+      title: item.title,
       snippet: item.description,
     });
     if (refs.length >= maxItems) break;
   }
 
-
   refs.sort((a, b) => b.reliability_score - a.reliability_score);
   return refs;
 }
+
 
 // ── TREND_SCORING ───────────────────────────────────────────────────────────
 
