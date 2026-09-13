@@ -1114,6 +1114,7 @@ serve(async (req) => {
         .eq("used", false)
         .gte("fetched_at", since24h)
         .in("category", userCategoriesToSearch)
+        .order("trend_score", { ascending: false })
         .order("fetched_at", { ascending: false });
       topics = dbTopics || [];
 
@@ -1162,7 +1163,12 @@ serve(async (req) => {
       if (t.category in topicsByCategory) topicsByCategory[t.category].push(t);
     }
     for (const cat of userCategories) {
-      topicsByCategory[cat].sort((a, b) => volumeScore(b.search_volume) - volumeScore(a.search_volume));
+      // Ranking dentro da categoria: pontuação de tendência primeiro, volume como desempate.
+      topicsByCategory[cat].sort(
+        (a, b) =>
+          (Number(b.trend_score) || 0) - (Number(a.trend_score) || 0) ||
+          volumeScore(b.search_volume) - volumeScore(a.search_volume),
+      );
     }
     // Fallback (default topic) para categorias SEM tópicos disponíveis
     for (const cat of userCategories) {
