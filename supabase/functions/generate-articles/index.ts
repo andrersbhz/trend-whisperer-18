@@ -828,7 +828,7 @@ async function runVerification(
     log.add("FACT_EXTRACTION", "failed", "IA não retornou JSON de apuração");
     return {
       status: "verification_failed",
-      sources: trusted,
+      sources: pool,
       facts: [],
       entities: [],
       conflicts: [],
@@ -851,7 +851,7 @@ async function runVerification(
     log.add("FACT_CROSS_CHECK", "failed", "nenhum fato confirmado pelas fontes");
     return {
       status: "verification_failed",
-      sources: trusted,
+      sources: pool,
       facts,
       entities,
       conflicts,
@@ -865,7 +865,7 @@ async function runVerification(
     log.add("FACT_CROSS_CHECK", "failed", `divergência entre fontes: ${conflicts[0]}`);
     return {
       status: "source_conflict",
-      sources: trusted,
+      sources: pool,
       facts,
       entities,
       conflicts,
@@ -877,7 +877,7 @@ async function runVerification(
     log.add("ENTITY_VERIFICATION", "failed", `${unverifiedEntities.length} entidade(s) não confirmada(s)`);
     return {
       status: "entity_unverified",
-      sources: trusted,
+      sources: pool,
       facts,
       entities,
       conflicts,
@@ -888,7 +888,7 @@ async function runVerification(
   log.add("FACT_CROSS_CHECK", "ok", `${crossConfirmed} fato(s) confirmados por 2+ veículos`);
   return {
     status: "verified",
-    sources: trusted,
+    sources: pool,
     facts,
     entities,
     conflicts,
