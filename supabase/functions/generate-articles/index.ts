@@ -800,10 +800,16 @@ async function runVerification(
       notes: `Apuração insuficiente: ${trusted.length} de ${needed} fontes independentes confiáveis para "${topic.topic}".`,
     };
   }
-  log.add("SOURCE_VERIFICATION", "ok", `${trusted.length} fontes confiáveis independentes`);
+  // Conjunto usado na apuração: as confiáveis quando bastam, senão a cobertura ampla.
+  const pool = trusted.length >= needed ? trusted : sources;
+  log.add(
+    "SOURCE_VERIFICATION",
+    "ok",
+    `${trusted.length} fontes confiáveis de ${sources.length} veículos independentes`,
+  );
 
   // FACT_EXTRACTION + ENTITY_VERIFICATION + FACT_CROSS_CHECK
-  const dossier = trusted
+  const dossier = pool
     .slice(0, 8)
     .map(
       (s, i) =>
