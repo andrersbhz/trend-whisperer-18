@@ -124,6 +124,8 @@ export interface RssItem {
   description: string;
   pubDate: string | null;
   sourceLabel: string;
+  /** URL do veículo original (atributo url da tag <source>, usado pelo Google News). */
+  sourceUrl: string;
 }
 
 export function parseRssItems(xml: string, limit = 40): RssItem[] {
