@@ -1292,8 +1292,58 @@ serve(async (req) => {
       const topic = topicsToUse[i];
       const scheduledAt = new Date(baseScheduledTime + (i + 1) * intervalMs);
 
+      const pipelineLog = new PipelineLog();
+      pipelineLog.add("TREND_DISCOVERY", "ok", `${topic.topic} (score ${topic.trend_score ?? "n/d"})`);
+
       try {
-        const userPrompt = buildUserPrompt(topic.topic, topic.category, topic.context);
+        // ── DUPLICATE_CHECK (7 dias) ─────────────────────────────────────
+        const since7d = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+        const { data: last7d } = await supabase
+          .from("articles")
+          .select("id, title, trending_topic, slug")
+          .eq("user_id", userId)
+          .gte("created_at", since7d);
+        const dup = findDuplicate(topic.topic, (last7d || []) as any[]);
+        if (dup) {
+          pipelineLog.add("DUPLICATE_CHECK", "failed", `similar a "${dup.title}" (${dup.score})`);
+          failureReasons.push({
+            status: 409,
+            message: `Assunto "${topic.topic}" já coberto pelo artigo "${dup.title}" nos últimos 7 dias.`,
+          });
+          if (topic.id) await supabase.from("trending_topics").update({ used: true, validation_status: "duplicate" }).eq("id", topic.id);
+          continue;
+        }
+        pipelineLog.add("DUPLICATE_CHECK", "ok");
+
+        // ── SOURCE/ENTITY/FACT VERIFICATION ──────────────────────────────
+        const verification = await runVerification(
+          topic,
+          { gemini: geminiApiKey, openai: openaiApiKey, groq: groqApiKey },
+          {
+            gemini: sanitizeGeminiModel(settings?.gemini_model) || undefined,
+            openai: settings?.openai_model || undefined,
+            groq: settings?.groq_model || undefined,
+          },
+          pipelineLog,
+        );
+
+        if (verification.status !== "verified") {
+          console.warn(`[Editorial] "${topic.topic}" bloqueado: ${verification.status} — ${verification.notes}`);
+          failureReasons.push({
+            status: 422,
+            message: `Assunto "${topic.topic}" não passou na apuração (${verification.status}): ${verification.notes}`,
+          });
+          if (topic.id) {
+            await supabase
+              .from("trending_topics")
+              .update({ validation_status: verification.status, sources: verification.sources })
+              .eq("id", topic.id);
+          }
+          continue;
+        }
+
+        const userPrompt = `${buildUserPrompt(topic.topic, topic.category, topic.context)}\n\n${buildFactsBlock(verification)}`;
+
 
         let parsed: AIResponse;
         let usedProvider: string;
