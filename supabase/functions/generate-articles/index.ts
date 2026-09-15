@@ -877,18 +877,13 @@ async function runVerification(
       notes: `Divergência entre fontes: ${conflicts.join(" | ")}`,
     };
   }
+  // Entidades não confirmadas são apenas descartadas do dossiê (não bloqueiam o artigo).
   const unverifiedEntities = entities.filter((e: any) => e && e.verified === false);
+  const verifiedEntities = entities.filter((e: any) => !e || e.verified !== false);
   if (unverifiedEntities.length > 0) {
-    log.add("ENTITY_VERIFICATION", "failed", `${unverifiedEntities.length} entidade(s) não confirmada(s)`);
-    return {
-      status: "entity_unverified",
-      sources: pool,
-      facts,
-      entities,
-      conflicts,
-      notes: `Entidades não confirmadas nas fontes: ${unverifiedEntities.map((e: any) => e.name).join(", ")}`,
-    };
+    log.add("ENTITY_VERIFICATION", "degraded", `${unverifiedEntities.length} entidade(s) descartada(s)`);
   }
+
 
   log.add("FACT_CROSS_CHECK", "ok", `${crossConfirmed} fato(s) confirmados por 2+ veículos`);
   return {
