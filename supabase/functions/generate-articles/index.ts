@@ -890,7 +890,8 @@ async function runVerification(
     status: "verified",
     sources: pool,
     facts,
-    entities,
+    entities: verifiedEntities,
+
     conflicts,
     notes: extraction.summary || `${facts.length} fatos apurados em ${trusted.length} fontes independentes.`,
   };
