@@ -1333,6 +1333,15 @@ serve(async (req) => {
         }
         pipelineLog.add("DUPLICATE_CHECK", "ok");
 
+        // Assuntos que são boatos/desmentidos de fake news não viram artigo: segue para o próximo.
+        if (/#\s*fake|\bé fake\b|\bfake news\b|desinforma|\bboato\b|checamos|montagem com ia|fabricad[ao] com ia/i.test(topic.topic || "")) {
+          console.warn(`[Editorial] "${topic.topic}" ignorado: conteúdo de fake news/boato.`);
+          if (topic.id) await supabase.from("trending_topics").update({ used: true, validation_status: "fake_news" }).eq("id", topic.id);
+          continue;
+        }
+
+
+
         // ── SOURCE/ENTITY/FACT VERIFICATION ──────────────────────────────
         const verification = await runVerification(
           topic,
