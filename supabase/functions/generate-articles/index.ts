@@ -1089,7 +1089,8 @@ serve(async (req) => {
 
     const { data: settings } = await supabase.from("user_settings").select("*, gemini_model, openai_model, groq_model, azure_openai_model").eq("user_id", userId).single();
     const writerPrompt = settings?.writer_prompt || null;
-    const systemPrompt = buildSystemPrompt(writerPrompt);
+    const strictPrompt = settings?.writer_prompt_strict !== false;
+    const systemPrompt = buildSystemPrompt(writerPrompt, strictPrompt);
     const imageMode = settings?.image_mode || "ai";
 
     let geminiApiKey: string | null = null;
@@ -1483,7 +1484,7 @@ serve(async (req) => {
           continue;
         }
 
-        const userPrompt = `${buildUserPrompt(topic.topic, topic.category, topic.context)}\n\n${buildFactsBlock(verification)}`;
+        const userPrompt = `${buildUserPrompt(topic.topic, topic.category, topic.context, strictPrompt, writerPrompt)}\n\n${buildFactsBlock(verification)}`;
 
 
         let parsed: AIResponse;
