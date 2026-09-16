@@ -754,7 +754,7 @@ Responda SOMENTE com JSON neste formato:
 Regras:
 - Um fato só entra na lista se aparecer em pelo menos uma fonte; registre em confirmed_by todos os veículos que o sustentam.
 - Uma entidade só é verified=true se o nome aparecer escrito nas fontes.
-- Se as fontes se contradisserem em números, datas ou declarações, registre em conflicts.
+- Registre em conflicts SOMENTE contradições materiais: números, datas, declarações ou fatos que se contradizem. NÃO registre diferenças de grafia de nomes, sobrenomes, apelidos ou variações de escrita — isso é normal entre veículos e não é conflito.
 - Nunca invente nomes, datas, números ou declarações.`;
 
 async function runVerification(
@@ -866,16 +866,28 @@ async function runVerification(
 
   // Cruzamento: pelo menos um fato sustentado por 2 veículos diferentes
   const crossConfirmed = facts.filter((f) => new Set(f.confirmed_by).size >= 2).length;
-  if (conflicts.length > 0) {
-    log.add("FACT_CROSS_CHECK", "failed", `divergência entre fontes: ${conflicts[0]}`);
+  // Separa divergências cosméticas (grafia de nomes, sobrenomes, apelidos, variações de
+  // escrita) das contradições materiais. Só contradição material bloqueia o artigo;
+  // divergência cosmética vira nota de redação e a geração continua.
+  const isCosmeticConflict = (c: any): boolean => {
+    const s = typeof c === "string" ? c : JSON.stringify(c || "");
+    return /grafia|grafado|escrita|soletra|sobrenome|nome pr[óo]prio|apelido|varia[cç][ãa]o (de|na) (escrita|grafia)|escreve|escrevem/i.test(s);
+  };
+  const materialConflicts = conflicts.filter((c) => !isCosmeticConflict(c));
+  const cosmeticConflicts = conflicts.filter(isCosmeticConflict);
+  if (materialConflicts.length > 0) {
+    log.add("FACT_CROSS_CHECK", "failed", `divergência entre fontes: ${materialConflicts[0]}`);
     return {
       status: "source_conflict",
       sources: pool,
       facts,
       entities,
-      conflicts,
-      notes: `Divergência entre fontes: ${conflicts.join(" | ")}`,
+      conflicts: materialConflicts,
+      notes: `Divergência entre fontes: ${materialConflicts.join(" | ")}`,
     };
+  }
+  if (cosmeticConflicts.length > 0) {
+    log.add("FACT_CROSS_CHECK", "ok", `divergência cosmética ignorada: ${cosmeticConflicts[0]}`);
   }
   // Entidades não confirmadas são apenas descartadas do dossiê (não bloqueiam o artigo).
   const unverifiedEntities = entities.filter((e: any) => e && e.verified === false);
@@ -1333,8 +1345,10 @@ serve(async (req) => {
         }
         pipelineLog.add("DUPLICATE_CHECK", "ok");
 
-        // Assuntos que são boatos/desmentidos de fake news não viram artigo: segue para o próximo.
-        if (/#\s*fake|\bé fake\b|\bfake news\b|desinforma|\bboato\b|checamos|montagem com ia|fabricad[ao] com ia/i.test(topic.topic || "")) {
+        // Assuntos que são desmentidos ("é fake", "é boato", checagens de montagem com IA)
+        // não viram artigo. Notícias SOBRE fake news/desinformação (ex.: "STF julga lei das
+        // fake news") são legítimas e seguem o fluxo normal.
+        if (/#\s*fake|[ée] fake\b|\bera fake\b|\btudo fake\b|[ée] boato\b|\bera boato\b|checamos|montagem com ia|fabricad[ao] com ia/i.test(topic.topic || "")) {
           console.warn(`[Editorial] "${topic.topic}" ignorado: conteúdo de fake news/boato.`);
           if (topic.id) await supabase.from("trending_topics").update({ used: true, validation_status: "fake_news" }).eq("id", topic.id);
           continue;
