@@ -1270,6 +1270,22 @@ serve(async (req) => {
     topicsToUse.length = 0;
     topicsToUse.push(...realTrends, ...evergreenFallbacks);
 
+    // Remove tópicos que tratam do MESMO assunto entre si (ex.: duas manchetes
+    // sobre o mesmo julgamento). Mantém apenas o mais bem ranqueado de cada tema.
+    {
+      const kept: any[] = [];
+      for (const t of topicsToUse) {
+        if (kept.some((k) => sharesSubject(k.topic, t.topic))) continue;
+        kept.push(t);
+      }
+      if (kept.length !== topicsToUse.length) {
+        console.log(`[Pipeline] Assuntos repetidos na fila: ${topicsToUse.length} → ${kept.length}`);
+      }
+      topicsToUse.length = 0;
+      topicsToUse.push(...kept);
+    }
+
+
     console.log(`[Pipeline] Ordem priorizando TENDÊNCIAS (primeiros 8):`,
       topicsToUse.slice(0, 8).map(t => `${t.category}[${t.search_volume || "?"}]`).join(" → "));
 
