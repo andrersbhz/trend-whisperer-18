@@ -1362,7 +1362,7 @@ serve(async (req) => {
         // Assuntos que são desmentidos ("é fake", "é boato", checagens de montagem com IA)
         // não viram artigo. Notícias SOBRE fake news/desinformação (ex.: "STF julga lei das
         // fake news") são legítimas e seguem o fluxo normal.
-        if (/#\s*fake|[ée] fake\b|\bera fake\b|\btudo fake\b|[ée] boato\b|\bera boato\b|checamos|montagem com ia|fabricad[ao] com ia/i.test(topic.topic || "")) {
+        if (/#\s*fake|(?:^|[^\p{L}])[ée]\s+fake(?![\p{L}])|(?:^|[^\p{L}])era\s+fake(?![\p{L}])|(?:^|[^\p{L}])tudo\s+fake(?![\p{L}])|(?:^|[^\p{L}])[ée]\s+boato(?![\p{L}])|(?:^|[^\p{L}])era\s+boato(?![\p{L}])|checamos|montagem com ia|fabricad[ao] com ia/iu.test(topic.topic || "")) {
           console.warn(`[Editorial] "${topic.topic}" ignorado: conteúdo de fake news/boato.`);
           if (topic.id) await supabase.from("trending_topics").update({ used: true, validation_status: "fake_news" }).eq("id", topic.id);
           continue;
