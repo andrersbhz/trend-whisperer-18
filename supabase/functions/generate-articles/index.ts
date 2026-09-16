@@ -1375,10 +1375,10 @@ serve(async (req) => {
         const since7d = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
         const { data: last7d } = await supabase
           .from("articles")
-          .select("id, title, trending_topic, slug")
+          .select("id, title, trending_topic, slug, created_at")
           .eq("user_id", userId)
           .gte("created_at", since7d);
-        const dup = findDuplicate(topic.topic, (last7d || []) as any[]);
+        const dup = findDuplicate(topic.topic, (last7d || []) as any[], 0.45);
         if (dup) {
           pipelineLog.add("DUPLICATE_CHECK", "failed", `similar a "${dup.title}" (${dup.score})`);
           failureReasons.push({
@@ -1388,7 +1388,25 @@ serve(async (req) => {
           if (topic.id) await supabase.from("trending_topics").update({ used: true, validation_status: "duplicate" }).eq("id", topic.id);
           continue;
         }
+
+        // Intervalo mínimo por assunto: 48h. Mesmo tema (mesmos nomes/entidades)
+        // só volta à pauta depois desse período, evitando notícias repetidas.
+        const cooldownStart = Date.now() - 48 * 60 * 60 * 1000;
+        const recentSameSubject = (last7d || []).find((a: any) => {
+          if (!a.created_at || new Date(a.created_at).getTime() < cooldownStart) return false;
+          return sharesSubject(topic.topic, a.title || "") || sharesSubject(topic.topic, a.trending_topic || "");
+        });
+        if (recentSameSubject) {
+          pipelineLog.add("DUPLICATE_CHECK", "failed", `mesmo assunto de "${(recentSameSubject as any).title}" nas últimas 48h`);
+          failureReasons.push({
+            status: 409,
+            message: `Assunto "${topic.topic}" já foi publicado nas últimas 48h ("${(recentSameSubject as any).title}").`,
+          });
+          if (topic.id) await supabase.from("trending_topics").update({ used: true, validation_status: "duplicate" }).eq("id", topic.id);
+          continue;
+        }
         pipelineLog.add("DUPLICATE_CHECK", "ok");
+
 
         // Assuntos que são desmentidos ("é fake", "é boato", checagens de montagem com IA)
         // não viram artigo. Notícias SOBRE fake news/desinformação (ex.: "STF julga lei das
