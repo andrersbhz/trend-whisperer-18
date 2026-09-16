@@ -345,6 +345,8 @@ const ThreadsPage = () => {
           )}
         </CardContent>
       </Card>
+
+      <ThreadsAppSettings open={connectOpen} onOpenChange={setConnectOpen} onConnected={() => window.location.reload()} />
     </div>
   );
 };
