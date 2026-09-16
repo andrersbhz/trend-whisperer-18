@@ -288,6 +288,8 @@ const SocialPublisherPage = () => {
           </CardContent>
         </Card>
       )}
+
+      <ThreadsAppSettings open={threadsDialog} onOpenChange={setThreadsDialog} onConnected={loadAccounts} />
     </div>
   );
 };
