@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { getThreadsAppCredentials } from "../_shared/threadsCreds.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -52,11 +53,11 @@ serve(async (req) => {
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     const { appId } = await getThreadsAppCredentials(admin, auth.user.id);
     if (!appId) {
-      console.error("[threads-oauth-start] THREADS_APP_ID ausente nas variáveis de ambiente");
+      console.error("[threads-oauth-start] credenciais do app do Threads ausentes");
       return new Response(
         JSON.stringify({
           error:
-            "Integração do Threads ainda não configurada: as credenciais do app (THREADS_APP_ID/THREADS_APP_SECRET) não foram salvas no backend.",
+            "Informe o ID do app do Threads e a chave secreta antes de conectar a conta.",
           code: "missing_app_credentials",
         }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
@@ -67,7 +68,6 @@ serve(async (req) => {
     const returnUrl = safeReturnUrl(body?.returnUrl);
     const state = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
 
-    const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     await admin.from("threads_oauth_states").delete().lt("expires_at", new Date().toISOString());
     const { error } = await admin.from("threads_oauth_states").insert({
       state,
