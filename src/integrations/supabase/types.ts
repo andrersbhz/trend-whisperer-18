@@ -1516,6 +1516,33 @@ export type Database = {
         }
         Relationships: []
       }
+      threads_app_credentials: {
+        Row: {
+          app_id: string
+          app_secret: string
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          app_id: string
+          app_secret: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          app_id?: string
+          app_secret?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       threads_oauth_states: {
         Row: {
           created_at: string
