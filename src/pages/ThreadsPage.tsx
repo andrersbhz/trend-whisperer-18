@@ -154,7 +154,7 @@ const ThreadsPage = () => {
             Conecte sua conta do Threads no Publicador Social para acompanhar as estatísticas e permitir que o robô responda
             os comentários de forma amigável.
           </p>
-          <Button onClick={() => (window.location.href = '/social')} className="uppercase tracking-widest text-[10px] font-bold">
+          <Button onClick={() => setConnectOpen(true)} className="uppercase tracking-widest text-[10px] font-bold">
             Conectar Threads
           </Button>
         </Card>
