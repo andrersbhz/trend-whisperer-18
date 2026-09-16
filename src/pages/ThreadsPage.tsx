@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import Preloader from '@/components/Preloader';
+import ThreadsAppSettings from '@/components/settings/ThreadsAppSettings';
 import {
   AtSign, RefreshCw, CheckCircle2, Eye, Heart, MessageCircle, Repeat2,
   Quote, Users, Activity, BarChart3, TrendingUp, Bot, Loader2, Send,
@@ -21,6 +22,7 @@ const ThreadsPage = () => {
   const [interactions, setInteractions] = useState<any[]>([]);
   const [running, setRunning] = useState(false);
   const [loadError, setLoadError] = useState(false);
+  const [connectOpen, setConnectOpen] = useState(false);
 
   const fmt = (n: number) => new Intl.NumberFormat('pt-BR').format(n || 0);
 
@@ -154,7 +156,7 @@ const ThreadsPage = () => {
             Conecte sua conta do Threads no Publicador Social para acompanhar as estatísticas e permitir que o robô responda
             os comentários de forma amigável.
           </p>
-          <Button onClick={() => (window.location.href = '/social')} className="uppercase tracking-widest text-[10px] font-bold">
+          <Button onClick={() => setConnectOpen(true)} className="uppercase tracking-widest text-[10px] font-bold">
             Conectar Threads
           </Button>
         </Card>
@@ -343,6 +345,8 @@ const ThreadsPage = () => {
           )}
         </CardContent>
       </Card>
+
+      <ThreadsAppSettings open={connectOpen} onOpenChange={setConnectOpen} onConnected={() => window.location.reload()} />
     </div>
   );
 };
