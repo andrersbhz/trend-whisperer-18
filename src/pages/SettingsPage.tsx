@@ -49,6 +49,8 @@ export interface UserSettings {
   articles_per_day: number;
   auto_publish: boolean;
   writer_prompt: string;
+  writer_profile: string;
+  writer_prompt_strict: boolean;
   image_mode: 'ai' | 'manual' | 'none';
   image_prompt: string;
   image_format: string;
@@ -94,6 +96,8 @@ const defaultSettings: UserSettings = {
   articles_per_day: 3,
   auto_publish: false,
   writer_prompt: '',
+  writer_profile: 'custom',
+  writer_prompt_strict: true,
   image_mode: 'ai',
   image_prompt: '',
   image_format: 'instagram_portrait',
@@ -150,7 +154,7 @@ const SettingsPage = () => {
       try {
         const { data: userData, error: userError } = await supabase
           .from('user_settings')
-          .select('id, user_id, wordpress_url, wordpress_username, facebook_page_id, instagram_account_id, google_analytics_property_id, google_indexing_key, azure_openai_endpoint, azure_openai_deployment_name, categories, priority_categories, articles_per_day, auto_publish, writer_prompt, image_mode, image_prompt, image_format, image_knowledge_urls, interaction_mode, dashboard_widgets, dashboard_order, gemini_model, openai_model, groq_model, azure_openai_model')
+          .select('id, user_id, wordpress_url, wordpress_username, facebook_page_id, instagram_account_id, google_analytics_property_id, google_indexing_key, azure_openai_endpoint, azure_openai_deployment_name, categories, priority_categories, articles_per_day, auto_publish, writer_prompt, writer_profile, writer_prompt_strict, image_mode, image_prompt, image_format, image_knowledge_urls, interaction_mode, dashboard_widgets, dashboard_order, gemini_model, openai_model, groq_model, azure_openai_model')
           .eq('user_id', user.id)
           .maybeSingle();
 
@@ -187,6 +191,8 @@ const SettingsPage = () => {
             articles_per_day: userData.articles_per_day || 3,
             auto_publish: userData.auto_publish || false,
             writer_prompt: userData.writer_prompt || '',
+            writer_profile: (userData as any).writer_profile || 'custom',
+            writer_prompt_strict: (userData as any).writer_prompt_strict ?? true,
             image_mode: (userData.image_mode as 'ai' | 'manual' | 'none') || 'ai',
             image_prompt: userData.image_prompt || '',
             image_format: (userData as any).image_format || 'instagram_portrait',
