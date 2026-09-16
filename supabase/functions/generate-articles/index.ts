@@ -871,10 +871,24 @@ async function runVerification(
   // divergência cosmética vira nota de redação e a geração continua.
   const isCosmeticConflict = (c: any): boolean => {
     const s = typeof c === "string" ? c : JSON.stringify(c || "");
-    return /grafia|grafado|escrita|soletra|sobrenome|nome pr[óo]prio|apelido|varia[cç][ãa]o (de|na) (escrita|grafia)|escreve|escrevem/i.test(s);
+    if (/grafia|grafado|escrita|soletra|sobrenome|nome pr[óo]prio|apelido|varia[cç][ãa]o (de|na) (escrita|grafia)|escreve|escrevem/i.test(s)) {
+      return true;
+    }
+    // Divergência numérica irrelevante (ex.: "112 kg" vs "113 kg"): se todos os números
+    // citados ficam dentro de 5% de diferença, trata-se de arredondamento, não contradição.
+    const nums = (s.match(/\d+(?:[.,]\d+)?/g) || [])
+      .map((n) => parseFloat(n.replace(/\./g, "").replace(",", ".")))
+      .filter((n) => Number.isFinite(n) && n !== 0);
+    if (nums.length >= 2) {
+      const min = Math.min(...nums);
+      const max = Math.max(...nums);
+      if ((max - min) / max <= 0.05) return true;
+    }
+    return false;
   };
   const materialConflicts = conflicts.filter((c) => !isCosmeticConflict(c));
   const cosmeticConflicts = conflicts.filter(isCosmeticConflict);
+
   if (materialConflicts.length > 0) {
     log.add("FACT_CROSS_CHECK", "failed", `divergência entre fontes: ${materialConflicts[0]}`);
     return {
