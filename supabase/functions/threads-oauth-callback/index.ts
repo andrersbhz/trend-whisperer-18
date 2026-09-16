@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { getThreadsAppCredentials } from "../_shared/threadsCreds.ts";
 
 const THREADS_GRAPH = "https://graph.threads.net";
 const THREADS_SCOPES = [
@@ -38,9 +39,8 @@ serve(async (req) => {
     if (oauthError) throw new Error(oauthError);
     if (!code) throw new Error("Código OAuth ausente");
 
-    const appId = Deno.env.get("THREADS_APP_ID");
-    const appSecret = Deno.env.get("THREADS_APP_SECRET");
-    if (!appId || !appSecret) throw new Error("THREADS_APP_ID/THREADS_APP_SECRET não configurados");
+    const { appId, appSecret } = await getThreadsAppCredentials(admin, stateRow.user_id);
+    if (!appId || !appSecret) throw new Error("Credenciais do app do Threads não configuradas");
 
     const redirectUri = `${Deno.env.get("SUPABASE_URL")}/functions/v1/threads-oauth-callback`;
     const tokenBody = new URLSearchParams({

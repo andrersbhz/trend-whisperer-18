@@ -49,7 +49,8 @@ serve(async (req) => {
     const { data: auth } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
     if (!auth?.user) throw new Error("Unauthorized");
 
-    const appId = Deno.env.get("THREADS_APP_ID");
+    const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const { appId } = await getThreadsAppCredentials(admin, auth.user.id);
     if (!appId) {
       console.error("[threads-oauth-start] THREADS_APP_ID ausente nas variáveis de ambiente");
       return new Response(
