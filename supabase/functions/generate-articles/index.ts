@@ -3,10 +3,25 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import {
   discoverSources,
   findDuplicate,
+  keywordSet,
+  similarity,
   PipelineLog,
   slugify,
   type SourceRef,
 } from "../_shared/editorial.ts";
+
+// Dois assuntos são considerados o mesmo tema quando compartilham 2+ palavras
+// significativas (nomes, times, instituições) ou têm alta similaridade textual.
+function sharesSubject(a: string, b: string): boolean {
+  const A = keywordSet(a || "");
+  const B = keywordSet(b || "");
+  if (A.size === 0 || B.size === 0) return false;
+  let inter = 0;
+  for (const w of A) if (B.has(w)) inter++;
+  if (inter >= 2) return true;
+  return similarity(a || "", b || "") >= 0.45;
+}
+
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -1255,6 +1270,22 @@ serve(async (req) => {
     topicsToUse.length = 0;
     topicsToUse.push(...realTrends, ...evergreenFallbacks);
 
+    // Remove tópicos que tratam do MESMO assunto entre si (ex.: duas manchetes
+    // sobre o mesmo julgamento). Mantém apenas o mais bem ranqueado de cada tema.
+    {
+      const kept: any[] = [];
+      for (const t of topicsToUse) {
+        if (kept.some((k) => sharesSubject(k.topic, t.topic))) continue;
+        kept.push(t);
+      }
+      if (kept.length !== topicsToUse.length) {
+        console.log(`[Pipeline] Assuntos repetidos na fila: ${topicsToUse.length} → ${kept.length}`);
+      }
+      topicsToUse.length = 0;
+      topicsToUse.push(...kept);
+    }
+
+
     console.log(`[Pipeline] Ordem priorizando TENDÊNCIAS (primeiros 8):`,
       topicsToUse.slice(0, 8).map(t => `${t.category}[${t.search_volume || "?"}]`).join(" → "));
 
@@ -1344,10 +1375,10 @@ serve(async (req) => {
         const since7d = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
         const { data: last7d } = await supabase
           .from("articles")
-          .select("id, title, trending_topic, slug")
+          .select("id, title, trending_topic, slug, created_at")
           .eq("user_id", userId)
           .gte("created_at", since7d);
-        const dup = findDuplicate(topic.topic, (last7d || []) as any[]);
+        const dup = findDuplicate(topic.topic, (last7d || []) as any[], 0.45);
         if (dup) {
           pipelineLog.add("DUPLICATE_CHECK", "failed", `similar a "${dup.title}" (${dup.score})`);
           failureReasons.push({
@@ -1357,7 +1388,25 @@ serve(async (req) => {
           if (topic.id) await supabase.from("trending_topics").update({ used: true, validation_status: "duplicate" }).eq("id", topic.id);
           continue;
         }
+
+        // Intervalo mínimo por assunto: 48h. Mesmo tema (mesmos nomes/entidades)
+        // só volta à pauta depois desse período, evitando notícias repetidas.
+        const cooldownStart = Date.now() - 48 * 60 * 60 * 1000;
+        const recentSameSubject = (last7d || []).find((a: any) => {
+          if (!a.created_at || new Date(a.created_at).getTime() < cooldownStart) return false;
+          return sharesSubject(topic.topic, a.title || "") || sharesSubject(topic.topic, a.trending_topic || "");
+        });
+        if (recentSameSubject) {
+          pipelineLog.add("DUPLICATE_CHECK", "failed", `mesmo assunto de "${(recentSameSubject as any).title}" nas últimas 48h`);
+          failureReasons.push({
+            status: 409,
+            message: `Assunto "${topic.topic}" já foi publicado nas últimas 48h ("${(recentSameSubject as any).title}").`,
+          });
+          if (topic.id) await supabase.from("trending_topics").update({ used: true, validation_status: "duplicate" }).eq("id", topic.id);
+          continue;
+        }
         pipelineLog.add("DUPLICATE_CHECK", "ok");
+
 
         // Assuntos que são desmentidos ("é fake", "é boato", checagens de montagem com IA)
         // não viram artigo. Notícias SOBRE fake news/desinformação (ex.: "STF julga lei das
