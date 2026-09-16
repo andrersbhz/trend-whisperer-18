@@ -25,6 +25,39 @@ const defaultCategories = [
   { id: 'financas', label: '💰 Finanças' },
 ];
 
+const WRITER_PRESETS: { id: string; label: string; prompt: string }[] = [
+  {
+    id: 'jornalistico',
+    label: 'Jornalístico (notícia factual)',
+    prompt:
+      'Escreva como um jornalista brasileiro sênior. Tom sério, direto e impessoal. Comece pelo lead respondendo o que, quem, quando, onde e por que nas primeiras 100 palavras. Parágrafos de no máximo 3 linhas, subtítulos a cada 3 parágrafos, citações das fontes pelo nome. Nunca especule: se algo não estiver confirmado, diga que a informação ainda não foi divulgada. Finalize com um parágrafo de contexto e próximos desdobramentos.',
+  },
+  {
+    id: 'blog_seo',
+    label: 'Blog SEO (tráfego orgânico)',
+    prompt:
+      'Escreva como um redator de blog focado em SEO. Tom informativo e acessível, segunda pessoa quando fizer sentido. Use a palavra-chave principal no título, no primeiro parágrafo e em pelo menos um subtítulo. Estruture com subtítulos em forma de pergunta, listas, tabelas quando útil e uma seção de perguntas frequentes no final. Densidade de palavra-chave entre 1% e 2%, com variações semânticas ao longo do texto.',
+  },
+  {
+    id: 'analitico',
+    label: 'Analítico (contexto e dados)',
+    prompt:
+      'Escreva como um analista especializado. Tom sóbrio e analítico, foco em causas, consequências e números. Explique o contexto histórico do tema, compare dados e apresente cenários possíveis deixando claro o que é projeção. Use subtítulos temáticos e conclua com um resumo objetivo dos pontos principais.',
+  },
+  {
+    id: 'conversacional',
+    label: 'Conversacional (leitura leve)',
+    prompt:
+      'Escreva em tom conversacional e próximo, como quem explica o assunto para um amigo, sem perder a precisão. Frases curtas, linguagem simples, zero jargão. Use exemplos do cotidiano, subtítulos objetivos e listas para facilitar a leitura. Mantenha os fatos exatamente como foram apurados.',
+  },
+  {
+    id: 'celebridades',
+    label: 'Celebridades e entretenimento',
+    prompt:
+      'Escreva como um repórter de entretenimento brasileiro. Tom leve e envolvente, sem sensacionalismo nem julgamentos. Cite sempre a origem da informação (publicação, entrevista ou perfil oficial). Destaque falas literais entre aspas, contextualize a carreira da pessoa citada e evite qualquer afirmação sobre vida privada que não esteja confirmada nas fontes.',
+  },
+];
+
 interface Props {
   settings: UserSettings;
   onChange: (partial: Partial<UserSettings>) => void;
