@@ -221,10 +221,10 @@ const SettingsPage = () => {
     if (!user) return;
 
     // Validação rigorosa dos Prompts de IA conforme solicitado
-    if (!settings.writer_prompt || settings.writer_prompt.trim().length < 100) {
+    if (!settings.writer_prompt || settings.writer_prompt.trim().length < 30) {
       toast({ 
-        title: 'Perfil do Escritor Obrigatório', 
-        description: 'O "Perfil do Escritor" deve ser detalhado (mínimo 100 caracteres) para garantir a qualidade e evitar fake news.', 
+        title: 'Prompt do Escritor Obrigatório', 
+        description: 'Escreva ou selecione um prompt com pelo menos 30 caracteres para orientar a IA.', 
         variant: 'destructive' 
       });
       return;
@@ -239,16 +239,6 @@ const SettingsPage = () => {
       return;
     }
 
-    const mandatoryKeywords = ['SEO', 'jornalista', 'verdade', 'fato'];
-    const missingKeywords = mandatoryKeywords.filter(k => !settings.writer_prompt.toLowerCase().includes(k.toLowerCase()));
-    if (missingKeywords.length > 0) {
-      toast({ 
-        title: 'Prompt sem diretrizes de veracidade', 
-        description: `Para evitar fake news, seu prompt deve conter termos como: ${missingKeywords.join(', ')}.`, 
-        variant: 'destructive' 
-      });
-      return;
-    }
 
     setSaving(true);
     try {
