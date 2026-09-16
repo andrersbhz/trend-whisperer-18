@@ -184,20 +184,64 @@ const AutomationSettings = forwardRef<HTMLDivElement, Props>(({ settings, onChan
             Defina como a IA deve escrever seus artigos. Este prompt é o motor dinâmico do sistema.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <Label htmlFor="writer-prompt-settings">
-            Prompt do escritor (texto)
-          </Label>
-          <Textarea
-            id="writer-prompt-settings"
-            value={settings.writer_prompt}
-            onChange={(e) => onChange({ writer_prompt: e.target.value })}
-            placeholder={`Ex: Sou um jornalista especializado em tecnologia. Escreva artigos com tom informal mas informativo, use listas e subtítulos, otimize para SEO...`}
-            className="min-h-[200px] text-sm"
-          />
-          <p className="text-xs text-muted-foreground">
-            Dica: Inclua estilo de escrita, nicho, tom, público-alvo e técnicas de SEO.
-          </p>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="writer-profile">Perfil de escrita</Label>
+            <Select
+              value={settings.writer_profile || 'custom'}
+              onValueChange={(val) => {
+                const preset = WRITER_PRESETS.find((p) => p.id === val);
+                onChange(
+                  preset
+                    ? { writer_profile: val, writer_prompt: preset.prompt }
+                    : { writer_profile: 'custom' },
+                );
+              }}
+            >
+              <SelectTrigger id="writer-profile">
+                <SelectValue placeholder="Selecione um perfil" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="custom">Personalizado (meu prompt)</SelectItem>
+                {WRITER_PRESETS.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Escolha "Personalizado" para escrever seu próprio prompt do zero. Os perfis apenas preenchem o campo abaixo, que você pode editar livremente.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="writer-prompt-settings">
+              Prompt personalizado dos artigos
+            </Label>
+            <Textarea
+              id="writer-prompt-settings"
+              value={settings.writer_prompt}
+              onChange={(e) => onChange({ writer_prompt: e.target.value, writer_profile: 'custom' })}
+              placeholder={`Ex: Escreva como um jornalista de tecnologia, tom informal e direto, parágrafos curtos, subtítulos a cada 3 parágrafos, sempre com uma seção de perguntas frequentes no final...`}
+              className="min-h-[220px] text-sm font-mono"
+            />
+            <p className="text-xs text-muted-foreground">
+              {settings.writer_prompt?.trim().length || 0} caracteres. Descreva estilo, tom, estrutura, tamanho, público-alvo e o que a IA nunca deve fazer.
+            </p>
+          </div>
+
+          <div className="flex items-start justify-between gap-4 rounded-md border border-primary/20 bg-primary/5 p-3">
+            <div className="space-y-1">
+              <Label htmlFor="writer-strict" className="text-sm">Seguir meu prompt à risca</Label>
+              <p className="text-[11px] text-muted-foreground leading-tight">
+                Ligado: a IA obedece exatamente ao seu prompt (só permanecem as regras de veracidade e o formato de saída). Desligado: seu prompt é combinado com o modelo editorial padrão do sistema.
+              </p>
+            </div>
+            <Switch
+              id="writer-strict"
+              checked={settings.writer_prompt_strict ?? true}
+              onCheckedChange={(checked) => onChange({ writer_prompt_strict: checked })}
+            />
+          </div>
         </CardContent>
       </Card>
 
