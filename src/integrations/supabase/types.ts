@@ -1728,7 +1728,9 @@ export type Database = {
           wordpress_application_password: string | null
           wordpress_url: string | null
           wordpress_username: string | null
+          writer_profile: string
           writer_prompt: string | null
+          writer_prompt_strict: boolean
           youtube_api_key: string | null
         }
         Insert: {
@@ -1786,7 +1788,9 @@ export type Database = {
           wordpress_application_password?: string | null
           wordpress_url?: string | null
           wordpress_username?: string | null
+          writer_profile?: string
           writer_prompt?: string | null
+          writer_prompt_strict?: boolean
           youtube_api_key?: string | null
         }
         Update: {
@@ -1844,7 +1848,9 @@ export type Database = {
           wordpress_application_password?: string | null
           wordpress_url?: string | null
           wordpress_username?: string | null
+          writer_profile?: string
           writer_prompt?: string | null
+          writer_prompt_strict?: boolean
           youtube_api_key?: string | null
         }
         Relationships: []

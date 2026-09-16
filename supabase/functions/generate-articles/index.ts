@@ -1000,29 +1000,66 @@ REGRAS OBRIGATÓRIAS DE ESTRUTURA PARA CADA ARTIGO:
    - PROIBIDO usar travessões (—, –) ou hífen isolado como pontuação. Use vírgula, ponto ou dois-pontos.
    - Hífen só é permitido dentro de palavras compostas legítimas (ex.: bem-estar, ex-presidente).`;
 
-function buildSystemPrompt(writerPrompt?: string | null): string {
+// Regras mínimas inegociáveis usadas no modo estrito (veracidade + saída técnica).
+const CORE_NON_NEGOTIABLE = `REGRAS MÍNIMAS INEGOCIÁVEIS (não substituem o estilo definido acima, apenas garantem veracidade e formato):
+1. NUNCA invente fatos, números, datas, declarações ou nomes. Use apenas os fatos apurados e o contexto fornecidos. Se faltar informação, diga explicitamente que ainda não foi divulgada.
+2. Conteúdo em HTML válido, sem <h1> (o título vai no campo próprio). Use <p>, <h2>, <h3>, <ul>, <li>, <strong>.
+3. Preencha todos os campos solicitados: title, content, excerpt, seo_keyword, seo_title, meta_description, slug, image_alt, image_caption, visual_elements.
+4. Não use emojis nem travessões (—, –) ou hífen isolado como pontuação. Hífen só em palavras compostas legítimas.
+5. Escreva em português do Brasil.`;
+
+function buildSystemPrompt(writerPrompt?: string | null, strict = false): string {
   if (!writerPrompt || writerPrompt.trim().length < 10) {
-    throw new Error("O 'Prompt do Artigo (Writer Prompt)' não está configurado em Configurações > Geral. Este prompt é obrigatório para garantir a qualidade e veracidade dos artigos.");
+    throw new Error("O 'Prompt personalizado dos artigos' não está configurado em Configurações > Automação. Este prompt é obrigatório para a geração.");
   }
 
-  // O perfil do escritor é a base dinâmica obrigatória.
+  const prompt = writerPrompt.trim();
+
+  if (strict) {
+    // Modo estrito: o prompt do usuário é a única diretriz editorial.
+    return `### PROMPT DO USUÁRIO (AUTORIDADE MÁXIMA E ABSOLUTA) ###
+${prompt}
+### FIM DO PROMPT DO USUÁRIO ###
+
+Você DEVE seguir o prompt acima à risca: persona, tom, estrutura, tamanho, formatação e tudo o mais que ele determinar. Nenhuma outra convenção editorial se aplica. Em caso de qualquer conflito entre o prompt acima e as regras abaixo, vence o prompt acima, exceto quanto à veracidade dos fatos.
+
+${CORE_NON_NEGOTIABLE}
+
+Lembrete final: reler e cumprir integralmente o PROMPT DO USUÁRIO antes de responder.`;
+  }
+
+  // Modo combinado: prompt do usuário + modelo editorial padrão do sistema.
   return `### DIRETRIZES DINÂMICAS DO USUÁRIO (PRIORIDADE MÁXIMA) ###
-${writerPrompt.trim()}
+${prompt}
 
 ### FIM DAS DIRETRIZES DINÂMICAS ###
 
-Aplique as diretrizes acima como sua persona, tom de voz, estilo de escrita e abordagem editorial em TODO o artigo. Estas instruções são dinâmicas e definem como você deve escrever.
+Aplique as diretrizes acima como sua persona, tom de voz, estilo de escrita e abordagem editorial em TODO o artigo. Em caso de conflito com as regras abaixo, as diretrizes do usuário prevalecem, exceto nas regras de veracidade.
 
-As regras técnicas a seguir são OBRIGATÓRIAS e complementam o estilo acima, focando em veracidade e SEO:
+As regras técnicas a seguir complementam o estilo acima, focando em veracidade e SEO:
 
 ${BASE_SYSTEM_PROMPT}`;
 }
 
-function buildUserPrompt(topic: string, category: string, context?: string): string {
-  return `TÓPICO PRINCIPAL: "${topic}"
+function buildUserPrompt(topic: string, category: string, context?: string, strict = false, writerPrompt?: string | null): string {
+  const head = `TÓPICO PRINCIPAL: "${topic}"
 CONTEXTO REAL (NOTÍCIA DO DIA): "${context || "Fatos reais associados ao termo de pesquisa em alta"}"
 CATEGORIA: ${category}
-DATA: ${new Date().toLocaleDateString("pt-BR")}
+DATA: ${new Date().toLocaleDateString("pt-BR")}`;
+
+  if (strict) {
+    return `${head}
+
+INSTRUÇÃO: Escreva o artigo seguindo EXATAMENTE o prompt definido pelo usuário, repetido abaixo para referência. Use somente os fatos apurados e o contexto real fornecidos.
+
+### PROMPT DO USUÁRIO (SEGUIR À RISCA) ###
+${(writerPrompt || "").trim()}
+### FIM ###
+
+Gere também todos os metadados SEO e de imagem solicitados no formato de saída.`;
+  }
+
+  return `${head}
 
 INSTRUÇÃO: Escreva um artigo jornalístico de ALTA VERACIDADE. Use o contexto real fornecido para evitar alucinações. Se o contexto for sobre um evento específico, descreva-o com precisão.
 
@@ -1052,7 +1089,8 @@ serve(async (req) => {
 
     const { data: settings } = await supabase.from("user_settings").select("*, gemini_model, openai_model, groq_model, azure_openai_model").eq("user_id", userId).single();
     const writerPrompt = settings?.writer_prompt || null;
-    const systemPrompt = buildSystemPrompt(writerPrompt);
+    const strictPrompt = settings?.writer_prompt_strict !== false;
+    const systemPrompt = buildSystemPrompt(writerPrompt, strictPrompt);
     const imageMode = settings?.image_mode || "ai";
 
     let geminiApiKey: string | null = null;
@@ -1446,7 +1484,7 @@ serve(async (req) => {
           continue;
         }
 
-        const userPrompt = `${buildUserPrompt(topic.topic, topic.category, topic.context)}\n\n${buildFactsBlock(verification)}`;
+        const userPrompt = `${buildUserPrompt(topic.topic, topic.category, topic.context, strictPrompt, writerPrompt)}\n\n${buildFactsBlock(verification)}`;
 
 
         let parsed: AIResponse;
