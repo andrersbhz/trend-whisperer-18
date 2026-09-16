@@ -137,16 +137,6 @@ const SocialPublisherPage = () => {
     openAuthUrl(data.authUrl);
   };
 
-  const connectThreads = async () => {
-    const { data, error } = await supabase.functions.invoke('threads-oauth-start', {
-      body: { returnUrl: `${window.location.origin}/social` },
-    });
-    if (error || !data?.authUrl) {
-      toast({ title: 'Falha ao iniciar Threads', description: error?.message || data?.error || 'OAuth indisponível', variant: 'destructive' });
-      return;
-    }
-    openAuthUrl(data.authUrl);
-  };
 
   const disconnectAccount = async (account: SocialAccount) => {
     if (!account.active) return;
