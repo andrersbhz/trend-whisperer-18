@@ -3,10 +3,25 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import {
   discoverSources,
   findDuplicate,
+  keywordSet,
+  similarity,
   PipelineLog,
   slugify,
   type SourceRef,
 } from "../_shared/editorial.ts";
+
+// Dois assuntos são considerados o mesmo tema quando compartilham 2+ palavras
+// significativas (nomes, times, instituições) ou têm alta similaridade textual.
+function sharesSubject(a: string, b: string): boolean {
+  const A = keywordSet(a || "");
+  const B = keywordSet(b || "");
+  if (A.size === 0 || B.size === 0) return false;
+  let inter = 0;
+  for (const w of A) if (B.has(w)) inter++;
+  if (inter >= 2) return true;
+  return similarity(a || "", b || "") >= 0.45;
+}
+
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
