@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.encrypt_threads_app_secret() FROM PUBLIC, anon, authenticated;

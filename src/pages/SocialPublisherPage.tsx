@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import ThreadsAppSettings from '@/components/settings/ThreadsAppSettings';
 
 type SocialAccount = {
   key: string;
@@ -30,6 +31,7 @@ const SocialPublisherPage = () => {
   const [imageUrl, setImageUrl] = useState('');
   const [linkUrl, setLinkUrl] = useState('');
   const [results, setResults] = useState<any[]>([]);
+  const [threadsDialog, setThreadsDialog] = useState(false);
 
   const loadAccounts = async () => {
     if (!user) return;
@@ -135,16 +137,6 @@ const SocialPublisherPage = () => {
     openAuthUrl(data.authUrl);
   };
 
-  const connectThreads = async () => {
-    const { data, error } = await supabase.functions.invoke('threads-oauth-start', {
-      body: { returnUrl: `${window.location.origin}/social` },
-    });
-    if (error || !data?.authUrl) {
-      toast({ title: 'Falha ao iniciar Threads', description: error?.message || data?.error || 'OAuth indisponível', variant: 'destructive' });
-      return;
-    }
-    openAuthUrl(data.authUrl);
-  };
 
   const disconnectAccount = async (account: SocialAccount) => {
     if (!account.active) return;
@@ -218,7 +210,7 @@ const SocialPublisherPage = () => {
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={loadAccounts} disabled={loading}><RefreshCw className={loading ? 'animate-spin' : ''} />Atualizar</Button>
           <Button variant="outline" onClick={connectMeta}><Plus />Adicionar Meta</Button>
-          <Button onClick={connectThreads}><Plus />Adicionar Threads</Button>
+          <Button onClick={() => setThreadsDialog(true)}><Plus />Adicionar Threads</Button>
         </div>
       </div>
 
