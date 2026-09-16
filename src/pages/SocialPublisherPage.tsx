@@ -31,6 +31,7 @@ const SocialPublisherPage = () => {
   const [imageUrl, setImageUrl] = useState('');
   const [linkUrl, setLinkUrl] = useState('');
   const [results, setResults] = useState<any[]>([]);
+  const [threadsDialog, setThreadsDialog] = useState(false);
 
   const loadAccounts = async () => {
     if (!user) return;
@@ -219,7 +220,7 @@ const SocialPublisherPage = () => {
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={loadAccounts} disabled={loading}><RefreshCw className={loading ? 'animate-spin' : ''} />Atualizar</Button>
           <Button variant="outline" onClick={connectMeta}><Plus />Adicionar Meta</Button>
-          <Button onClick={connectThreads}><Plus />Adicionar Threads</Button>
+          <Button onClick={() => setThreadsDialog(true)}><Plus />Adicionar Threads</Button>
         </div>
       </div>
 
