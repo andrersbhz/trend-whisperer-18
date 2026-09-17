@@ -1620,8 +1620,9 @@ serve(async (req) => {
           meta_description: parsed.meta_description || "",
           slug: finalSlug,
           featured_image_url: featuredImageUrl,
-          status: settings?.auto_publish ? "ready" : "draft",
-          is_approved: settings?.auto_publish ? true : false,
+          // Regra: artigo sem imagem nunca fica ativo para postagem.
+          status: !featuredImageUrl ? "no_image" : (settings?.auto_publish ? "ready" : "draft"),
+          is_approved: !!featuredImageUrl && !!settings?.auto_publish,
           scheduled_at: scheduledAt.toISOString(),
           trending_topic: topic.topic,
           trend_score: topic.trend_score ?? null,
