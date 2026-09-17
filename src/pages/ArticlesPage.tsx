@@ -692,7 +692,7 @@ const ArticlesPage = () => {
                   {retrying === article.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
                 </Button>
               )}
-              {(article.status === 'ready' || article.status === 'draft') && (
+              {(article.status === 'ready' || article.status === 'draft') && !!article.featured_image_url && (
                 <Button
                   size="sm"
                   variant="ghost"
@@ -1028,7 +1028,7 @@ const ArticlesPage = () => {
             <DialogHeader className="p-0">
               <DialogTitle className="text-lg font-bold">Revisão do Artigo</DialogTitle>
             </DialogHeader>
-            {(preview?.status === 'ready' || preview?.status === 'draft') && (
+            {(preview?.status === 'ready' || preview?.status === 'draft') && !!preview?.featured_image_url && (
               <div className="flex flex-col items-end gap-1">
                 <Button 
                   onClick={() => {
