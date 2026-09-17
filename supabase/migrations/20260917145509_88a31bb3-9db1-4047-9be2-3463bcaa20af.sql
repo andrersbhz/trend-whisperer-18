@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.enforce_article_image_gate() FROM PUBLIC, anon, authenticated;

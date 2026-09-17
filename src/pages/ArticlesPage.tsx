@@ -530,6 +530,7 @@ const ArticlesPage = () => {
   const statusColors: Record<string, string> = {
     draft: 'bg-muted text-muted-foreground',
     generating: 'bg-warning/20 text-warning',
+    no_image: 'bg-destructive/20 text-destructive',
     ready: 'bg-primary/20 text-primary',
     publishing: 'bg-accent/20 text-accent',
     published: 'bg-primary/20 text-primary',
@@ -539,6 +540,7 @@ const ArticlesPage = () => {
   const statusLabels: Record<string, string> = {
     draft: 'Rascunho',
     generating: 'Gerando...',
+    no_image: 'Sem imagem (não postar)',
     ready: 'Pronto',
     publishing: 'Publicando...',
     published: 'Publicado',
@@ -690,7 +692,7 @@ const ArticlesPage = () => {
                   {retrying === article.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
                 </Button>
               )}
-              {(article.status === 'ready' || article.status === 'draft') && (
+              {(article.status === 'ready' || article.status === 'draft') && !!article.featured_image_url && (
                 <Button
                   size="sm"
                   variant="ghost"
@@ -1026,7 +1028,7 @@ const ArticlesPage = () => {
             <DialogHeader className="p-0">
               <DialogTitle className="text-lg font-bold">Revisão do Artigo</DialogTitle>
             </DialogHeader>
-            {(preview?.status === 'ready' || preview?.status === 'draft') && (
+            {(preview?.status === 'ready' || preview?.status === 'draft') && !!preview?.featured_image_url && (
               <div className="flex flex-col items-end gap-1">
                 <Button 
                   onClick={() => {

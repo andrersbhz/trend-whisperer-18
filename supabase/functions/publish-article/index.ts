@@ -139,6 +139,21 @@ serve(async (req) => {
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+    // Regra: artigo sem imagem nunca pode ser postado
+    if (!article.featured_image_url) {
+      if (article.status !== "no_image") {
+        await supabase.from("articles").update({ status: "no_image", is_approved: false }).eq("id", articleId);
+      }
+      return new Response(
+        JSON.stringify({
+          success: false,
+          skipped: true,
+          message: "Artigo sem imagem: adicione uma imagem para liberar a publicação.",
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     if (isStalePublishing) {
       console.warn(`[publish-article] Artigo ${articleId} preso em "publishing" há mais de 10 min. Retomando.`);
     }
