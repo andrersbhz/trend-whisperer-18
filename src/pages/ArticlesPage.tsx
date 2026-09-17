@@ -530,6 +530,7 @@ const ArticlesPage = () => {
   const statusColors: Record<string, string> = {
     draft: 'bg-muted text-muted-foreground',
     generating: 'bg-warning/20 text-warning',
+    no_image: 'bg-destructive/20 text-destructive',
     ready: 'bg-primary/20 text-primary',
     publishing: 'bg-accent/20 text-accent',
     published: 'bg-primary/20 text-primary',
@@ -539,6 +540,7 @@ const ArticlesPage = () => {
   const statusLabels: Record<string, string> = {
     draft: 'Rascunho',
     generating: 'Gerando...',
+    no_image: 'Sem imagem (não postar)',
     ready: 'Pronto',
     publishing: 'Publicando...',
     published: 'Publicado',
