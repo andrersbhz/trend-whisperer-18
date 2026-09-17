@@ -889,15 +889,21 @@ async function runVerification(
     if (/grafia|grafado|escrita|soletra|sobrenome|nome pr[óo]prio|apelido|varia[cç][ãa]o (de|na) (escrita|grafia)|escreve|escrevem/i.test(s)) {
       return true;
     }
-    // Divergência numérica irrelevante (ex.: "112 kg" vs "113 kg"): se todos os números
-    // citados ficam dentro de 5% de diferença, trata-se de arredondamento, não contradição.
+    // Divergência numérica irrelevante (ex.: "112 kg" vs "113 kg"): apenas arredondamento
+    // de medidas pequenas. Datas/anos, valores monetários, votos, placares e contagens
+    // NUNCA são cosméticos — qualquer diferença nesses casos é contradição material.
+    if (/\b(ano|anos|data|datas|dia|dias|m[êe]s|meses|hora|horas|voto|votos|placar|idade|R\$|US\$|milh[õo]|bilh[õa]|reais|d[óo]lar|pre[çc]o|valor|custo|mortos?|feridos?|v[íi]timas?)\b/i.test(s)) {
+      return false;
+    }
     const nums = (s.match(/\d+(?:[.,]\d+)?/g) || [])
       .map((n) => parseFloat(n.replace(/\./g, "").replace(",", ".")))
       .filter((n) => Number.isFinite(n) && n !== 0);
+    // Anos (1900-2100) ou números grandes não entram na tolerância percentual.
+    if (nums.some((n) => (n >= 1900 && n <= 2100) || n >= 1000)) return false;
     if (nums.length >= 2) {
       const min = Math.min(...nums);
       const max = Math.max(...nums);
-      if ((max - min) / max <= 0.05) return true;
+      if (max - min <= 1 && (max - min) / max <= 0.05) return true;
     }
     return false;
   };
