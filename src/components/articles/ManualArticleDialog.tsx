@@ -173,8 +173,8 @@ export const ManualArticleDialog = ({ open, onOpenChange, categories, onSuccess 
       } else {
         toast({
           title: "Sucesso",
-          description: scheduledDate 
-            ? "Artigo agendado com sucesso!" 
+          description: finalScheduledAt
+            ? `Artigo agendado para ${new Date(finalScheduledAt).toLocaleString('pt-BR')}.`
             : "Artigo criado manualmente com sucesso!",
         });
       }
@@ -350,7 +350,7 @@ export const ManualArticleDialog = ({ open, onOpenChange, categories, onSuccess 
                     className="w-full"
                   />
                   <p className="text-[11px] text-muted-foreground">
-                    Deixe em branco para publicar imediatamente ao salvar.
+                    Deixe em branco para agendar automaticamente no próximo horário livre da fila.
                   </p>
                 </div>
               </div>
