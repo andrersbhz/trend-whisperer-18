@@ -98,6 +98,41 @@ export const ManualArticleDialog = ({ open, onOpenChange, categories, onSuccess 
 
     setLoading(true);
     try {
+      // Se nenhuma data foi escolhida, agenda automaticamente no próximo horário
+      // disponível da fila (mesma regra dos artigos gerados: intervalo de 24h / artigos por dia).
+      let finalScheduledAt: string | null = scheduledDate ? new Date(scheduledDate).toISOString() : null;
+      let autoPublishEnabled = false;
+      if (!finalScheduledAt) {
+        const [{ data: settings }, { data: queue }] = await Promise.all([
+          supabase
+            .from('user_settings')
+            .select('articles_per_day, auto_publish')
+            .eq('user_id', user.id)
+            .maybeSingle(),
+          supabase
+            .from('articles')
+            .select('scheduled_at')
+            .eq('user_id', user.id)
+            .neq('status', 'published')
+            .not('scheduled_at', 'is', null)
+            .order('scheduled_at', { ascending: false })
+            .limit(1),
+        ]);
+        autoPublishEnabled = !!settings?.auto_publish;
+        const perDay = Math.max(settings?.articles_per_day || 10, 1);
+        const intervalMs = (24 / perDay) * 60 * 60 * 1000;
+        const lastSlot = queue?.[0]?.scheduled_at ? new Date(queue[0].scheduled_at).getTime() : 0;
+        const nextSlot = new Date(Math.max(lastSlot, Date.now()) + intervalMs);
+        finalScheduledAt = nextSlot.toISOString();
+      } else {
+        const { data: settings } = await supabase
+          .from('user_settings')
+          .select('auto_publish')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        autoPublishEnabled = !!settings?.auto_publish;
+      }
+
       const articleData = {
         user_id: user.id,
         title: formData.title,
