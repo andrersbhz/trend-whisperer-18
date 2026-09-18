@@ -144,7 +144,8 @@ export const ManualArticleDialog = ({ open, onOpenChange, categories, onSuccess 
         status: 'ready' as const,
         slug: formData.slug || formData.title.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, ''),
         seo_title: formData.seo_title || formData.title,
-        scheduled_at: scheduledDate ? new Date(scheduledDate).toISOString() : null,
+        scheduled_at: finalScheduledAt,
+        is_approved: autoPublishEnabled && !!formData.featured_image_url,
         author_id: authorId,
       };
 
