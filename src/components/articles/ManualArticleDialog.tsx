@@ -428,7 +428,7 @@ export const ManualArticleDialog = ({ open, onOpenChange, categories, onSuccess 
               className="flex-1 sm:flex-none gap-2 bg-[#a3ff12] text-black hover:bg-[#a3ff12]/90"
             >
               {loading && !isPublishingNow ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-              {scheduledDate ? 'Agendar Artigo' : 'Salvar como Pronto'}
+              Agendar Artigo
             </Button>
             <Button 
               onClick={() => handleSave(true)} 
