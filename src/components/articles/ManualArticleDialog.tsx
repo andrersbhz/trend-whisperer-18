@@ -98,6 +98,41 @@ export const ManualArticleDialog = ({ open, onOpenChange, categories, onSuccess 
 
     setLoading(true);
     try {
+      // Se nenhuma data foi escolhida, agenda automaticamente no próximo horário
+      // disponível da fila (mesma regra dos artigos gerados: intervalo de 24h / artigos por dia).
+      let finalScheduledAt: string | null = scheduledDate ? new Date(scheduledDate).toISOString() : null;
+      let autoPublishEnabled = false;
+      if (!finalScheduledAt) {
+        const [{ data: settings }, { data: queue }] = await Promise.all([
+          supabase
+            .from('user_settings')
+            .select('articles_per_day, auto_publish')
+            .eq('user_id', user.id)
+            .maybeSingle(),
+          supabase
+            .from('articles')
+            .select('scheduled_at')
+            .eq('user_id', user.id)
+            .neq('status', 'published')
+            .not('scheduled_at', 'is', null)
+            .order('scheduled_at', { ascending: false })
+            .limit(1),
+        ]);
+        autoPublishEnabled = !!settings?.auto_publish;
+        const perDay = Math.max(settings?.articles_per_day || 10, 1);
+        const intervalMs = (24 / perDay) * 60 * 60 * 1000;
+        const lastSlot = queue?.[0]?.scheduled_at ? new Date(queue[0].scheduled_at).getTime() : 0;
+        const nextSlot = new Date(Math.max(lastSlot, Date.now()) + intervalMs);
+        finalScheduledAt = nextSlot.toISOString();
+      } else {
+        const { data: settings } = await supabase
+          .from('user_settings')
+          .select('auto_publish')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        autoPublishEnabled = !!settings?.auto_publish;
+      }
+
       const articleData = {
         user_id: user.id,
         title: formData.title,
@@ -109,7 +144,8 @@ export const ManualArticleDialog = ({ open, onOpenChange, categories, onSuccess 
         status: 'ready' as const,
         slug: formData.slug || formData.title.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, ''),
         seo_title: formData.seo_title || formData.title,
-        scheduled_at: scheduledDate ? new Date(scheduledDate).toISOString() : null,
+        scheduled_at: finalScheduledAt,
+        is_approved: autoPublishEnabled && !!formData.featured_image_url,
         author_id: authorId,
       };
 
@@ -137,8 +173,8 @@ export const ManualArticleDialog = ({ open, onOpenChange, categories, onSuccess 
       } else {
         toast({
           title: "Sucesso",
-          description: scheduledDate 
-            ? "Artigo agendado com sucesso!" 
+          description: finalScheduledAt
+            ? `Artigo agendado para ${new Date(finalScheduledAt).toLocaleString('pt-BR')}.`
             : "Artigo criado manualmente com sucesso!",
         });
       }
@@ -314,7 +350,7 @@ export const ManualArticleDialog = ({ open, onOpenChange, categories, onSuccess 
                     className="w-full"
                   />
                   <p className="text-[11px] text-muted-foreground">
-                    Deixe em branco para publicar imediatamente ao salvar.
+                    Deixe em branco para agendar automaticamente no próximo horário livre da fila.
                   </p>
                 </div>
               </div>
@@ -392,7 +428,7 @@ export const ManualArticleDialog = ({ open, onOpenChange, categories, onSuccess 
               className="flex-1 sm:flex-none gap-2 bg-[#a3ff12] text-black hover:bg-[#a3ff12]/90"
             >
               {loading && !isPublishingNow ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-              {scheduledDate ? 'Agendar Artigo' : 'Salvar como Pronto'}
+              Agendar Artigo
             </Button>
             <Button 
               onClick={() => handleSave(true)} 
