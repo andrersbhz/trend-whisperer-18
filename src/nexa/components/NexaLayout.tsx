@@ -52,7 +52,7 @@ export default function NexaLayout({ children }: { children: ReactNode }) {
   const visibleNav = NAV.filter((item) => !item.roles || hasRole(item.roles));
 
   return (
-    <div className="min-h-screen flex bg-slate-950 text-slate-100">
+    <div className="app-shell min-h-screen flex bg-slate-950 text-slate-100 overflow-x-hidden">
       {/* Sidebar */}
       <aside
         className={`${collapsed ? "w-16" : "w-64"} shrink-0 border-r border-slate-800 bg-slate-900/70 backdrop-blur flex flex-col transition-all duration-200`}
@@ -166,7 +166,7 @@ export default function NexaLayout({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+        <main className="flex-1 w-full overflow-y-auto p-4 sm:p-6 lg:p-8"><div className="page-container">{children}</div></main>
       </div>
     </div>
   );
