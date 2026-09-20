@@ -5,7 +5,7 @@ import { useTheme } from '@/components/theme-provider';
 import {
   LayoutDashboard, FileText, Settings, TrendingUp, Clock, LogOut, Newspaper, Menu, X,
   Sparkles, Loader2, Bot, Activity, Globe, Download, Search, Facebook, Instagram, AtSign,
-  User, Sun, Moon, ImageIcon, Palette, Wallet, Bell, Send, MessagesSquare,
+  User, Sun, Moon, ImageIcon, Palette, Wallet, Bell, Send, MessagesSquare, CalendarClock, Megaphone,
 } from 'lucide-react';
 import { useLicenseSessionGuard } from '@/hooks/useLicenseSessionGuard';
 import { getPerformanceLogs, exportLogsToCSV } from '@/lib/performance';
@@ -24,6 +24,8 @@ const navItems = [
   { icon: FileText, label: 'Artigos', path: '/articles' },
   { icon: ImageIcon, label: 'Estúdio de Imagens', path: '/image-studio' },
   { icon: Send, label: 'Publicador Social', path: '/social' },
+  { icon: Megaphone, label: 'Central de Distribuição', path: '/social/distribution' },
+  { icon: CalendarClock, label: 'Social Planner', path: '/social/planner' },
   { icon: Search, label: 'Google', path: '/google' },
   { icon: Facebook, label: 'Facebook', path: '/meta' },
   { icon: Instagram, label: 'Instagram', path: '/instagram' },
@@ -103,7 +105,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const userInitial = (user?.email?.[0] || 'U').toUpperCase();
 
   return (
-    <div className="min-h-screen flex relative">
+    <div className="app-shell min-h-screen flex relative">
       <SpaceBackground />
       {sidebarOpen && (
         <div className="fixed inset-0 bg-background/75 backdrop-blur-sm z-40 lg:hidden" onClick={() => setSidebarOpen(false)} aria-hidden="true" />
@@ -210,7 +212,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
             </div>
           </div>
         </header>
-        <div className="p-4 sm:p-6 lg:p-8 animate-fade-in flex-1">
+        <div className="w-full p-4 sm:p-6 lg:p-8 animate-fade-in flex-1">
           <div className="page-container">{children}</div>
         </div>
       </main>
