@@ -24,7 +24,7 @@ export default function NexaAdmin() {
   }, [hasRole]);
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="w-full max-w-none">
       <div className="mb-6 flex items-center gap-3">
         <Crown className="h-6 w-6 text-lime-400" />
         <div>
