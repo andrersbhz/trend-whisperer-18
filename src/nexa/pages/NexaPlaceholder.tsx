@@ -4,7 +4,7 @@ interface Props { title: string; stage: string; description: string; }
 
 export default function NexaPlaceholder({ title, stage, description }: Props) {
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="w-full max-w-none">
       <div className="mb-6">
         <p className="text-xs uppercase tracking-wider text-lime-400 mb-1">Módulo</p>
         <h1 className="text-2xl font-bold text-slate-50">{title}</h1>
