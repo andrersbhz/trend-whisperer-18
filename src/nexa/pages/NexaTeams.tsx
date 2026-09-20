@@ -66,7 +66,7 @@ export default function NexaTeams() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="w-full max-w-none">
       <div className="flex items-center justify-between mb-6">
         <div>
           <p className="text-xs uppercase tracking-wider text-lime-400 mb-1">Estrutura</p>
