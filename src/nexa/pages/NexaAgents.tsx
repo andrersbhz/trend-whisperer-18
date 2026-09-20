@@ -75,7 +75,7 @@ export default function NexaAgents() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="w-full max-w-none">
       <div className="mb-6">
         <p className="text-xs uppercase tracking-wider text-lime-400 mb-1">Estrutura</p>
         <h1 className="text-2xl font-bold text-slate-50">Membros & atendentes</h1>
