@@ -97,7 +97,7 @@ serve(async (req) => {
   let claimCtx: { supabase: any; articleId: string } | null = null;
 
   try {
-    const { articleId, userId } = await req.json();
+    const { articleId, userId, skipSocialPublish = false } = await req.json();
     if (!articleId || !userId) throw new Error("articleId and userId are required");
 
 
@@ -514,8 +514,9 @@ serve(async (req) => {
         console.error("Retention cleanup failed:", cleanupErr);
       }
 
-      // Trigger social publishing (Instagram feed + Stories + Facebook page Stories)
-      try {
+      // Legacy social publishing remains available outside the Distribution Hub.
+      // The Hub owns its first wave and explicitly suppresses this legacy fan-out.
+      if (!skipSocialPublish) try {
         const socialResp = await fetch(`${supabaseUrl}/functions/v1/publish-social`, {
           method: "POST",
           headers: {
