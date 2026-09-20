@@ -126,6 +126,7 @@ serve(async (req) => {
 
 
     const articleId: string | null = body.articleId || null;
+    const queueId: string | null = body.queueId || null;
     const targetKeys: string[] = Array.isArray(body.targetKeys) ? body.targetKeys : [];
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
@@ -159,13 +160,41 @@ serve(async (req) => {
     const { data: metaAccounts } = await admin.from("facebook_accounts").select("*").eq("user_id", userId).eq("is_active", true);
     const { data: threadsAccounts } = await admin.from("threads_accounts").select("*").eq("user_id", userId).eq("is_active", true);
 
-    const results: Array<{ accountKey: string; target: string; channel: string; ok: boolean; id?: string; permalink?: string | null; error?: string }> = [];
+    const results: Array<{ accountKey: string; target: string; channel: string; ok: boolean; skipped?: boolean; id?: string; permalink?: string | null; error?: string }> = [];
     const wants = (key: string) => targetKeys.length === 0 || targetKeys.includes(key);
 
+    const reserveDelivery = async (platform: string, key: string, name: string) => {
+      if (!queueId) return true;
+      const { data: existing } = await admin.from("social_publications")
+        .select("id,status")
+        .eq("social_queue_id", queueId)
+        .eq("account_key", key)
+        .maybeSingle();
+      if (existing?.status === "success" || existing?.status === "processing") return false;
+      if (existing) {
+        const { data: claimed } = await admin.from("social_publications")
+          .update({ status: "processing", error_message: null })
+          .eq("id", existing.id)
+          .eq("status", "failed")
+          .select("id")
+          .maybeSingle();
+        return Boolean(claimed);
+      }
+      const { error } = await admin.from("social_publications").insert({
+        user_id: userId, article_id: articleId, social_queue_id: queueId,
+        platform, account_key: key, account_name: name, status: "processing",
+        caption, image_url: imageUrl, link_url: linkUrl,
+      });
+      if (!error) return true;
+      if (error.code === "23505") return false;
+      throw error;
+    };
+
     const saveLog = async (platform: string, key: string, name: string, ok: boolean, remoteId?: string, permalink?: string | null, error?: string) => {
-      await admin.from("social_publications").insert({
+      const values = {
         user_id: userId,
         article_id: articleId,
+        social_queue_id: queueId,
         platform,
         account_key: key,
         account_name: name,
@@ -177,7 +206,13 @@ serve(async (req) => {
         link_url: linkUrl,
         error_message: error || null,
         published_at: ok ? new Date().toISOString() : null,
-      }).then(() => undefined, () => undefined);
+      };
+      if (queueId) {
+        await admin.from("social_publications").update(values)
+          .eq("social_queue_id", queueId).eq("account_key", key);
+      } else {
+        await admin.from("social_publications").insert(values);
+      }
     };
 
     for (const account of metaAccounts || []) {
@@ -186,7 +221,10 @@ serve(async (req) => {
 
       const fbKey = `facebook:${account.page_id}`;
       if (account.facebook_enabled !== false && wants(fbKey)) {
-        try {
+        const shouldPublishFacebook = await reserveDelivery("facebook", fbKey, account.page_name || account.page_id);
+        if (!shouldPublishFacebook) {
+          results.push({ accountKey: fbKey, target: account.page_name || account.page_id, channel: "facebook", ok: true, skipped: true });
+        } else try {
           const published = await publishFacebook(account.page_id, token, caption, linkUrl);
           results.push({ accountKey: fbKey, target: account.page_name || account.page_id, channel: "facebook", ok: true, ...published });
           await saveLog("facebook", fbKey, account.page_name || account.page_id, true, published.id, published.permalink);
@@ -200,6 +238,10 @@ serve(async (req) => {
       if (account.instagram_account_id && account.instagram_enabled !== false) {
         const igKey = `instagram:${account.instagram_account_id}`;
         if (wants(igKey)) {
+          if (!(await reserveDelivery("instagram", igKey, account.page_name))) {
+            results.push({ accountKey: igKey, target: account.page_name, channel: "instagram", ok: true, skipped: true });
+            continue;
+          }
           if (!imageUrl) {
             const error = "Instagram exige uma imagem pública";
             results.push({ accountKey: igKey, target: account.page_name, channel: "instagram", ok: false, error });
@@ -223,6 +265,10 @@ serve(async (req) => {
     for (const account of threadsAccounts || []) {
       const key = `threads:${account.id}`;
       if (!wants(key)) continue;
+      if (!(await reserveDelivery("threads", key, account.username || account.threads_user_id))) {
+        results.push({ accountKey: key, target: account.username ? `@${account.username}` : account.threads_user_id, channel: "threads", ok: true, skipped: true });
+        continue;
+      }
       const token = await decryptField(admin, account.access_token);
       try {
         const published = await publishThreads(account.threads_user_id, token || "", caption, imageUrl, linkUrl);
