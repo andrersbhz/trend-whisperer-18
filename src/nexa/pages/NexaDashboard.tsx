@@ -34,7 +34,7 @@ export default function NexaDashboard() {
   ];
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="w-full max-w-none">
       <div className="mb-8">
         <p className="text-xs uppercase tracking-wider text-lime-400 mb-1">Dashboard</p>
         <h1 className="text-2xl font-bold text-slate-50">Bem-vindo, {activeOrg.name}</h1>
