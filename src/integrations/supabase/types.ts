@@ -2069,6 +2069,14 @@ export type Database = {
         Args: { p_period_days?: number; p_sale_id: string }
         Returns: Json
       }
+      admin_update_user_plan: {
+        Args: {
+          p_blog_limit: number
+          p_plan: Database["public"]["Enums"]["subscription_plan"]
+          p_user_id: string
+        }
+        Returns: undefined
+      }
       attach_pix_proof: {
         Args: { p_proof_url: string; p_sale_id: string }
         Returns: Json
