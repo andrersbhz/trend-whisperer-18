@@ -36,6 +36,39 @@ export const ManualArticleDialog = ({ open, onOpenChange, categories, onSuccess 
   const [scheduledDate, setScheduledDate] = useState<string>('');
   const [manualSlug, setManualSlug] = useState(false);
   const [authorId, setAuthorId] = useState<string | null>(null);
+  const [nextAutoSlot, setNextAutoSlot] = useState<Date | null>(null);
+  const [slotInfo, setSlotInfo] = useState<{ perDay: number; queued: number } | null>(null);
+
+  // Calcula dinamicamente o próximo horário livre da fila (mesma regra dos automáticos)
+  const computeNextSlot = async () => {
+    if (!user) return null;
+    const [{ data: settings }, { data: queue }] = await Promise.all([
+      supabase.from('user_settings').select('articles_per_day').eq('user_id', user.id).maybeSingle(),
+      supabase
+        .from('articles')
+        .select('scheduled_at')
+        .eq('user_id', user.id)
+        .neq('status', 'published')
+        .not('scheduled_at', 'is', null)
+        .gte('scheduled_at', new Date().toISOString())
+        .order('scheduled_at', { ascending: false }),
+    ]);
+    const perDay = Math.max(settings?.articles_per_day || 10, 1);
+    const intervalMs = (24 / perDay) * 60 * 60 * 1000;
+    const lastSlot = queue?.[0]?.scheduled_at ? new Date(queue[0].scheduled_at).getTime() : 0;
+    const next = new Date(Math.max(lastSlot, Date.now()) + intervalMs);
+    setNextAutoSlot(next);
+    setSlotInfo({ perDay, queued: queue?.length || 0 });
+    return next;
+  };
+
+  useEffect(() => {
+    if (!open || !user) return;
+    computeNextSlot();
+    const t = setInterval(computeNextSlot, 60000);
+    return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, user]);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -102,37 +135,16 @@ export const ManualArticleDialog = ({ open, onOpenChange, categories, onSuccess 
       // Se nenhuma data foi escolhida, agenda automaticamente no próximo horário
       // disponível da fila (mesma regra dos artigos gerados: intervalo de 24h / artigos por dia).
       let finalScheduledAt: string | null = scheduledDate ? new Date(scheduledDate).toISOString() : null;
-      let autoPublishEnabled = false;
       if (!finalScheduledAt) {
-        const [{ data: settings }, { data: queue }] = await Promise.all([
-          supabase
-            .from('user_settings')
-            .select('articles_per_day, auto_publish')
-            .eq('user_id', user.id)
-            .maybeSingle(),
-          supabase
-            .from('articles')
-            .select('scheduled_at')
-            .eq('user_id', user.id)
-            .neq('status', 'published')
-            .not('scheduled_at', 'is', null)
-            .order('scheduled_at', { ascending: false })
-            .limit(1),
-        ]);
-        autoPublishEnabled = !!settings?.auto_publish;
-        const perDay = Math.max(settings?.articles_per_day || 10, 1);
-        const intervalMs = (24 / perDay) * 60 * 60 * 1000;
-        const lastSlot = queue?.[0]?.scheduled_at ? new Date(queue[0].scheduled_at).getTime() : 0;
-        const nextSlot = new Date(Math.max(lastSlot, Date.now()) + intervalMs);
-        finalScheduledAt = nextSlot.toISOString();
-      } else {
-        const { data: settings } = await supabase
-          .from('user_settings')
-          .select('auto_publish')
-          .eq('user_id', user.id)
-          .maybeSingle();
-        autoPublishEnabled = !!settings?.auto_publish;
+        const next = await computeNextSlot();
+        finalScheduledAt = next ? next.toISOString() : null;
       }
+      const { data: settings } = await supabase
+        .from('user_settings')
+        .select('auto_publish')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      const autoPublishEnabled = !!settings?.auto_publish;
 
       const articleData = {
         user_id: user.id,
@@ -353,6 +365,25 @@ export const ManualArticleDialog = ({ open, onOpenChange, categories, onSuccess 
                   <p className="text-[11px] text-muted-foreground">
                     Deixe em branco para agendar automaticamente no próximo horário livre da fila.
                   </p>
+                  {!scheduledDate && nextAutoSlot && (
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-xs rounded-md border border-primary/40 bg-primary/5 p-2">
+                      <span>
+                        Próximo horário automático: <strong>{nextAutoSlot.toLocaleString('pt-BR')}</strong>
+                        {slotInfo && <> · {slotInfo.queued} na fila · {slotInfo.perDay}/dia</>}
+                      </span>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          const d = new Date(nextAutoSlot.getTime() - nextAutoSlot.getTimezoneOffset() * 60000);
+                          setScheduledDate(d.toISOString().slice(0, 16));
+                        }}
+                      >
+                        Usar e ajustar
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
             </TabsContent>
