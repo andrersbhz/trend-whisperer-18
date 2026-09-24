@@ -462,7 +462,6 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
       toast({ title: 'Erro no upload do vídeo', description: e.message, variant: 'destructive' });
     } finally {
       setUploading(false);
-      if (event.target) event.target.value = '';
     }
   };
 
@@ -561,9 +560,12 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
       </div>
 
       <div
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
         className={cn(
-          'relative w-full max-w-full mx-auto rounded-none border-2 border-dashed border-border overflow-hidden bg-muted/30 flex items-center justify-center',
-          previewUrl ? '' : ''
+          'relative w-full max-w-full mx-auto rounded-none border-2 border-dashed overflow-hidden bg-muted/30 flex items-center justify-center transition-colors',
+          dragActive ? 'border-primary bg-primary/10' : 'border-border'
         )}
         style={
           previewUrl
