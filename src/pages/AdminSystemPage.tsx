@@ -47,10 +47,8 @@ export default function AdminSystemPage() {
 
   const updateUserPlan = async (userId: string, plan: 'basico' | 'avancado' | 'enterprise') => {
     const limit = plan === 'basico' ? 1 : plan === 'avancado' ? 10 : 50;
-    const { error } = await supabase.rpc('admin_update_user_plan' as any, {
-      p_user_id: userId,
-      p_plan: plan,
-      p_blog_limit: limit,
+    const { error } = await supabase.functions.invoke('admin-update-user-plan', {
+      body: { userId, plan },
     });
 
     if (error) {
