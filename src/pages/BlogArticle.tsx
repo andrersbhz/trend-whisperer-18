@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import DOMPurify from 'dompurify';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useI18n } from '@/hooks/useI18n';
@@ -108,7 +109,7 @@ const BlogArticle = () => {
         <div
           className="reading-content animate-float-up"
           style={{ fontSize: 'calc(clamp(1.02rem, 0.95rem + 0.45vw, 1.18rem) * var(--reading-scale, 1))' }}
-          dangerouslySetInnerHTML={{ __html: article.content }}
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.content || '', { USE_PROFILES: { html: true } }) }}
         />
 
         {/* Mid-article Ad (in-feed) */}

@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
+import { requireUserOrService } from '../_shared/security.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -23,6 +24,9 @@ Deno.serve(async (req) => {
     } catch {
       // no body — cron call
     }
+
+    const caller = await requireUserOrService(req, userId);
+    if (!caller.isService) userId = caller.userId;
 
     const cutoff = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
 

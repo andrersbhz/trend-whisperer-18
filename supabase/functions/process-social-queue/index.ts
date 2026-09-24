@@ -22,7 +22,7 @@ serve(async (req) => {
     if (!bearer) throw new Error("Unauthorized");
 
     let callerUserId: string | null = null;
-    const isScheduler = bearer === serviceKey || bearer === anonKey;
+    const isScheduler = bearer === serviceKey;
     if (!isScheduler) {
       const authed = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
         global: { headers: { Authorization: authHeader } },
