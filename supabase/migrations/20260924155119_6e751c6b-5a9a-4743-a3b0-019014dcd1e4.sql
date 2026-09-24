@@ -1,0 +1,1 @@
+alter table public.social_publications drop constraint if exists social_publications_status_check; alter table public.social_publications add constraint social_publications_status_check check (status in ('pending','publishing','processing','success','failed'));
