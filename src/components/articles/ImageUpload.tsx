@@ -66,6 +66,7 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
   const { user } = useAuth();
   const { toast } = useToast();
   const [uploading, setUploading] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentImageUrl || null);
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(currentThumbnailUrl || null);
 
@@ -102,9 +103,7 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
     setCroppedAreaPixels(croppedAreaPixels);
   }, []);
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (!event.target.files || event.target.files.length === 0) return;
-    const file = event.target.files[0];
+  const processFile = (file: File) => {
     const reader = new FileReader();
     reader.addEventListener('load', async () => {
       const dataUrl = reader.result as string;
