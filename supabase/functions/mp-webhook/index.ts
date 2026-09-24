@@ -17,8 +17,9 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return new Response("ok", { status: 200 });
   try {
     const body = await req.json().catch(() => ({}));
-    const paymentId = body?.data?.id || new URL(req.url).searchParams.get("id");
+    const paymentId = body?.data?.id;
     if (!paymentId) return new Response(JSON.stringify({ received: true }), { status: 200 });
+    if (body?.type && body.type !== "payment") return new Response(JSON.stringify({ received: true }), { status: 200 });
 
     const { data: cfg } = await sb.from("payment_methods_config").select("mercadopago_access_token").limit(1).maybeSingle();
     const token = String(cfg?.mercadopago_access_token || "").replace(/^ENCRYPTED:/, "");
@@ -35,9 +36,17 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ received: true }), { status: 200 });
     }
 
+    const paidCents = Math.round(Number(payment.transaction_amount || 0) * 100);
+    const paymentIdText = String(payment.id);
+    const { data: existing } = await sb.from("sale_notifications").select("id").eq("mp_payment_id", paymentIdText).maybeSingle();
+    if (existing) return new Response(JSON.stringify({ received: true, duplicate: true }), { status: 200 });
+
     const meta = payment.metadata || {};
     const plan = meta.plan || (payment.external_reference || "").split(":")[0];
     if (!AMOUNT_CENTS[plan]) return new Response("bad plan", { status: 200 });
+    if (paidCents !== AMOUNT_CENTS[plan] || String(payment.currency_id || "").toUpperCase() !== "BRL") {
+      return new Response("payment mismatch", { status: 200 });
+    }
 
     const { data, error } = await sb.rpc("create_license_after_payment", {
       p_buyer_email: meta.buyer_email || payment.payer?.email || "",
@@ -50,7 +59,7 @@ Deno.serve(async (req) => {
       p_period_days: 30,
       p_stripe_subscription_id: null,
       p_stripe_session_id: null,
-      p_mp_payment_id: String(payment.id),
+      p_mp_payment_id: paymentIdText,
     });
     if (error) console.error(error);
     const res2 = data as any;

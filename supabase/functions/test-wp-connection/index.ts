@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { requireSafeHttpsUrl } from "../_shared/security.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -80,6 +81,7 @@ serve(async (req) => {
 
     let finalUrl = wpUrl;
     if (!/^https?:\/\//i.test(finalUrl)) finalUrl = `https://${finalUrl}`;
+    finalUrl = (await requireSafeHttpsUrl(finalUrl)).origin;
     const isPlugin = wpUsername.toLowerCase() === "autoblog-ai";
 
     console.log(`Testing WP: ${finalUrl}, user: ${wpUsername || '(plugin)'}, mode: ${isPlugin ? 'plugin' : 'standard'}`);
