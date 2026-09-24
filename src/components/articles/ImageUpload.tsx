@@ -118,6 +118,41 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
     reader.readAsDataURL(file);
   };
 
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!event.target.files || event.target.files.length === 0) return;
+    processFile(event.target.files[0]);
+  };
+
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setDragActive(false);
+    if (uploading) return;
+    const file = event.dataTransfer?.files?.[0];
+    if (!file) return;
+    if (file.type.startsWith('video/')) {
+      handleVideoFile(file);
+      return;
+    }
+    if (!file.type.startsWith('image/')) {
+      toast({ title: 'Arquivo inválido', description: 'Arraste uma imagem ou vídeo.', variant: 'destructive' });
+      return;
+    }
+    processFile(file);
+  };
+
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!uploading) setDragActive(true);
+  };
+
+  const handleDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setDragActive(false);
+  };
+
   const handleOriginalUpload = async (sourceUrl: string) => {
     if (!user) {
       toast({ title: 'Erro', description: 'Você precisa estar logado.', variant: 'destructive' });
