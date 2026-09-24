@@ -1,10 +1,12 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { sendMail } from "../_shared/smtp.ts";
+import { requireServiceOrAdmin } from "../_shared/security.ts";
 
 const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
 async function sendEmailViaLovable(to: string, subject: string, html: string): Promise<boolean> {
   try {
+    await requireServiceOrAdmin(req);
     await sendMail({ to, subject, html });
     return true;
   } catch (e) {

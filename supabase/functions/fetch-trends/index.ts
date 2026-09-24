@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { requireUserOrService } from "../_shared/security.ts";
 import {
   classifySource,
   computeTrendScore,
@@ -434,6 +435,8 @@ serve(async (req) => {
       console.error("[fetch-trends] Failed to parse request body:", body);
       throw new Error("Invalid request body");
     }
+    if (!userId) throw new Error("userId is required");
+    await requireUserOrService(req, userId);
     const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     
     const { data: settings } = await supabase.from("user_settings").select("*").eq("user_id", userId).single();

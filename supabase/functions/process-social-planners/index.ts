@@ -47,7 +47,7 @@ serve(async (req) => {
     const admin = createClient(supabaseUrl, serviceKey);
     let userId: string | null = null;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    if (bearer !== serviceKey && bearer !== anonKey) {
+    if (bearer !== serviceKey) {
       const authed = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, { global: { headers: { Authorization: authHeader } } });
       const { data } = await authed.auth.getUser(bearer);
       if (!data.user) throw new Error("Unauthorized");

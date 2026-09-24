@@ -46,11 +46,9 @@ export default function AdminSystemPage() {
   };
 
   const updateUserPlan = async (userId: string, plan: 'basico' | 'avancado' | 'enterprise') => {
-    const limit = plan === 'basico' ? 1 : plan === 'avancado' ? 10 : 50;
-    const { error } = await supabase
-      .from('profiles')
-      .update({ subscription_plan: plan, blog_limit: limit })
-      .eq('id', userId);
+    const { error } = await supabase.functions.invoke('admin-update-user-plan', {
+      body: { userId, plan },
+    });
 
     if (error) {
       console.error('Error updating plan:', error);

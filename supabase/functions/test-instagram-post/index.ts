@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { requireUserOrService } from "../_shared/security.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -88,6 +89,7 @@ serve(async (req) => {
   try {
     const { userId, pageId, articleId } = await req.json();
     if (!userId || !pageId) throw new Error("userId and pageId required");
+    await requireUserOrService(req, userId);
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,

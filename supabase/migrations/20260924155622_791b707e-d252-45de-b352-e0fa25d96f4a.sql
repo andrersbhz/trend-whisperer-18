@@ -1,0 +1,1 @@
+DROP FUNCTION IF EXISTS public.admin_update_user_plan(uuid, public.subscription_plan, integer);

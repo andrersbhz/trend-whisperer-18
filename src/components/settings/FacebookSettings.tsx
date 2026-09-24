@@ -88,6 +88,8 @@ const FacebookSettings = ({ settings, onChange }: Props) => {
 
   useEffect(() => {
     const onMessage = async (e: MessageEvent) => {
+      const trustedOrigins = new Set([window.location.origin, new URL(import.meta.env.VITE_SUPABASE_URL).origin]);
+      if (!trustedOrigins.has(e.origin)) return;
       if (e.data?.type === 'fb-oauth-done') {
         clearPopupWatcher();
         if (e.data.success) {
