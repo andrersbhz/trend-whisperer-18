@@ -14,6 +14,14 @@ export async function requireUserOrService(req: Request, requestedUserId?: strin
   const bearer = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "").trim();
   if (!bearer) throw new HttpError(401, "Não autenticado");
   if (bearer === service) return { userId: requestedUserId || null, isService: true };
+  // Agendador interno (cron): valida segredo privado guardado no banco.
+  const cronSecret = req.headers.get("x-cron-secret");
+  if (cronSecret && cronSecret.length >= 32) {
+    const admin = createClient(url, service);
+    const { data } = await admin.from("_internal_config").select("value").eq("key", "cron_secret").maybeSingle();
+    if (data?.value && data.value === cronSecret) return { userId: requestedUserId || null, isService: true };
+    throw new HttpError(401, "Segredo do agendador inválido");
+  }
   if (bearer === anon) throw new HttpError(401, "Credencial pública não autorizada");
   const client = createClient(url, anon, { global: { headers: { Authorization: `Bearer ${bearer}` } } });
   const { data, error } = await client.auth.getUser(bearer);
