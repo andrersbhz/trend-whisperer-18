@@ -323,6 +323,10 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
 
   const handleGenerateAI = async () => {
     if (!user || !articleId) return;
+    if (!UUID_RE.test(articleId)) {
+      toast({ title: "Salve o artigo primeiro", description: "A geração por IA fica disponível após o artigo ser criado. Envie uma imagem ou gere depois." });
+      return;
+    }
     try {
       setUploading(true);
       const { data, error } = await supabase.functions.invoke('regenerate-image', {
