@@ -66,6 +66,7 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
   const { user } = useAuth();
   const { toast } = useToast();
   const [uploading, setUploading] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentImageUrl || null);
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(currentThumbnailUrl || null);
 
@@ -102,9 +103,7 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
     setCroppedAreaPixels(croppedAreaPixels);
   }, []);
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (!event.target.files || event.target.files.length === 0) return;
-    const file = event.target.files[0];
+  const processFile = (file: File) => {
     const reader = new FileReader();
     reader.addEventListener('load', async () => {
       const dataUrl = reader.result as string;
@@ -117,6 +116,41 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
       }
     });
     reader.readAsDataURL(file);
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!event.target.files || event.target.files.length === 0) return;
+    processFile(event.target.files[0]);
+  };
+
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setDragActive(false);
+    if (uploading) return;
+    const file = event.dataTransfer?.files?.[0];
+    if (!file) return;
+    if (file.type.startsWith('video/')) {
+      handleVideoFile(file);
+      return;
+    }
+    if (!file.type.startsWith('image/')) {
+      toast({ title: 'Arquivo inválido', description: 'Arraste uma imagem ou vídeo.', variant: 'destructive' });
+      return;
+    }
+    processFile(file);
+  };
+
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!uploading) setDragActive(true);
+  };
+
+  const handleDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setDragActive(false);
   };
 
   const handleOriginalUpload = async (sourceUrl: string) => {
@@ -365,7 +399,12 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
 
   const handleVideoSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !user) return;
+    if (file) await handleVideoFile(file);
+    (event.target as HTMLInputElement).value = '';
+  };
+
+  const handleVideoFile = async (file: File) => {
+    if (!user) return;
 
     try {
       setUploading(true);
@@ -423,13 +462,12 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
       toast({ title: 'Erro no upload do vídeo', description: e.message, variant: 'destructive' });
     } finally {
       setUploading(false);
-      if (event.target) event.target.value = '';
     }
   };
 
   const persistMedia = async (mediaUrl: string, thumb?: string | null) => {
     if (articleId && UUID_RE.test(articleId)) {
-      const patch: Record<string, any> = { featured_image_url: mediaUrl };
+      const patch: { featured_image_url: string; video_thumbnail_url?: string | null } = { featured_image_url: mediaUrl };
       if (thumb !== undefined) patch.video_thumbnail_url = thumb || null;
       const { error } = await supabase.from('articles').update(patch).eq('id', articleId);
       if (error) throw error;
@@ -522,9 +560,12 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
       </div>
 
       <div
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
         className={cn(
-          'relative w-full max-w-full mx-auto rounded-none border-2 border-dashed border-border overflow-hidden bg-muted/30 flex items-center justify-center',
-          previewUrl ? '' : ''
+          'relative w-full max-w-full mx-auto rounded-none border-2 border-dashed overflow-hidden bg-muted/30 flex items-center justify-center transition-colors',
+          dragActive ? 'border-primary bg-primary/10' : 'border-border'
         )}
         style={
           previewUrl
@@ -560,9 +601,12 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
             </button>
           </>
         ) : (
-          <div className="flex flex-col items-center gap-2 text-muted-foreground">
-            <ImageIcon className="h-10 w-10 opacity-20" />
-            <p className="text-xs">Nenhuma mídia selecionada</p>
+          <div className="flex flex-col items-center gap-2 text-muted-foreground py-6 px-4 text-center">
+            <ImageIcon className={cn('h-10 w-10', dragActive ? 'text-primary opacity-60' : 'opacity-20')} />
+            <p className="text-xs font-medium">
+              {dragActive ? 'Solte a imagem aqui' : 'Arraste e solte uma imagem ou vídeo aqui'}
+            </p>
+            <p className="text-[10px] opacity-60">ou use os botões abaixo</p>
           </div>
         )}
         
