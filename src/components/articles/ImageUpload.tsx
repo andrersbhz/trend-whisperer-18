@@ -236,10 +236,9 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
         .from('article-images')
         .getPublicUrl(filePath);
 
-      const { error: updateError } = await supabase
-        .from('articles')
-        .update({ featured_image_url: publicUrl })
-        .eq('id', articleId);
+      const { error: updateError } = UUID_RE.test(articleId)
+        ? await supabase.from('articles').update({ featured_image_url: publicUrl }).eq('id', articleId)
+        : { error: null };
 
       if (updateError) throw updateError;
 
@@ -324,6 +323,10 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
 
   const handleGenerateAI = async () => {
     if (!user || !articleId) return;
+    if (!UUID_RE.test(articleId)) {
+      toast({ title: "Salve o artigo primeiro", description: "A geração por IA fica disponível após o artigo ser criado. Envie uma imagem ou gere depois." });
+      return;
+    }
     try {
       setUploading(true);
       const { data, error } = await supabase.functions.invoke('regenerate-image', {
@@ -373,10 +376,9 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
   const handleRemoveImage = async () => {
     try {
       setUploading(true);
-      const { error } = await supabase
-        .from('articles')
-        .update({ featured_image_url: null })
-        .eq('id', articleId);
+      const { error } = UUID_RE.test(articleId)
+        ? await supabase.from('articles').update({ featured_image_url: null }).eq('id', articleId)
+        : { error: null };
 
       if (error) throw error;
 
@@ -445,10 +447,9 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
         .from('article-images')
         .getPublicUrl(filePath);
 
-      const { error: updateError } = await supabase
-        .from('articles')
-        .update({ featured_image_url: publicUrl })
-        .eq('id', articleId);
+      const { error: updateError } = UUID_RE.test(articleId)
+        ? await supabase.from('articles').update({ featured_image_url: publicUrl }).eq('id', articleId)
+        : { error: null };
       if (updateError) throw updateError;
 
       setPreviewUrl(publicUrl);
