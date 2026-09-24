@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { requireUserOrService } from "../_shared/security.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -28,6 +29,7 @@ serve(async (req) => {
   try {
     const { userId } = await req.json();
     if (!userId) throw new Error("userId is required");
+    await requireUserOrService(req, userId);
 
     const [instagram, threads] = await Promise.allSettled([
       invokeFunction("handle-instagram-interactions", userId),

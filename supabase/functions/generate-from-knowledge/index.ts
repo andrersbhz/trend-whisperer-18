@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { requireUserOrService } from "../_shared/security.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -48,6 +49,7 @@ serve(async (req) => {
 
   try {
     const { userId, knowledgeId, category, title } = await req.json();
+    await requireUserOrService(req, userId);
     if (!userId || !knowledgeId) {
       return new Response(
         JSON.stringify({ error: "userId e knowledgeId são obrigatórios" }),

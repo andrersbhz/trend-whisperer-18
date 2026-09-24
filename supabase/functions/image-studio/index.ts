@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { requireUserOrService } from "../_shared/security.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -115,6 +116,8 @@ serve(async (req) => {
 
   try {
     const { prompt, userId } = await req.json();
+    const caller = await requireUserOrService(req, userId);
+    const effectiveUserId = userId || caller.userId;
     if (!prompt || typeof prompt !== "string" || prompt.trim().length < 3) {
       return new Response(JSON.stringify({ error: "Prompt inválido. Descreva a imagem desejada." }), {
         status: 400,
@@ -125,14 +128,14 @@ serve(async (req) => {
     const errors: string[] = [];
     let hasUserProvider = false;
 
-    if (userId) {
+    if (effectiveUserId) {
       const supaUrl = Deno.env.get("SUPABASE_URL")!;
       const supaKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
       const supabase = createClient(supaUrl, supaKey);
       const { data: settings } = await supabase
         .from("user_settings")
         .select("openai_api_key, gemini_api_key, openai_model, gemini_model")
-        .eq("user_id", userId)
+        .eq("user_id", effectiveUserId)
         .single();
 
       const decrypt = async (val: string | null | undefined): Promise<string | null> => {
