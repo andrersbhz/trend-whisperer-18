@@ -601,9 +601,12 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
             </button>
           </>
         ) : (
-          <div className="flex flex-col items-center gap-2 text-muted-foreground">
-            <ImageIcon className="h-10 w-10 opacity-20" />
-            <p className="text-xs">Nenhuma mídia selecionada</p>
+          <div className="flex flex-col items-center gap-2 text-muted-foreground py-6 px-4 text-center">
+            <ImageIcon className={cn('h-10 w-10', dragActive ? 'text-primary opacity-60' : 'opacity-20')} />
+            <p className="text-xs font-medium">
+              {dragActive ? 'Solte a imagem aqui' : 'Arraste e solte uma imagem ou vídeo aqui'}
+            </p>
+            <p className="text-[10px] opacity-60">ou use os botões abaixo</p>
           </div>
         )}
         
