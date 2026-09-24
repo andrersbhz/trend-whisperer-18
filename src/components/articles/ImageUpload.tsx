@@ -399,7 +399,12 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
 
   const handleVideoSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !user) return;
+    if (file) await handleVideoFile(file);
+    if (event.target) event.target.value = '';
+  };
+
+  const handleVideoFile = async (file: File) => {
+    if (!user) return;
 
     try {
       setUploading(true);
