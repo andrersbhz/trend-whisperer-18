@@ -400,7 +400,7 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
   const handleVideoSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) await handleVideoFile(file);
-    if (event.target) event.target.value = '';
+    (event.target as HTMLInputElement).value = '';
   };
 
   const handleVideoFile = async (file: File) => {
@@ -467,7 +467,7 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
 
   const persistMedia = async (mediaUrl: string, thumb?: string | null) => {
     if (articleId && UUID_RE.test(articleId)) {
-      const patch: Record<string, any> = { featured_image_url: mediaUrl };
+      const patch: { featured_image_url: string; video_thumbnail_url?: string | null } = { featured_image_url: mediaUrl };
       if (thumb !== undefined) patch.video_thumbnail_url = thumb || null;
       const { error } = await supabase.from('articles').update(patch).eq('id', articleId);
       if (error) throw error;
