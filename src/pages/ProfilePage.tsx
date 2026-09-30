@@ -78,17 +78,22 @@ const ProfilePage = () => {
     }
     setSaving(true);
     try {
-      const payload = {
-        user_id: user.id,
+      const fields = {
         full_name: fullName.trim(),
         email: email.trim(),
         whatsapp: whatsapp.trim() ? onlyDigits(whatsapp) : null,
         avatar_url: avatarUrl,
       };
-      const { error } = await supabase
+      const { data: updated, error: updErr } = await supabase
         .from('profiles')
-        .upsert(payload, { onConflict: 'user_id' });
-      if (error) throw error;
+        .update(fields)
+        .eq('user_id', user.id)
+        .select('user_id');
+      if (updErr) throw updErr;
+      if (!updated || updated.length === 0) {
+        const { error: insErr } = await supabase.from('profiles').insert({ user_id: user.id, ...fields });
+        if (insErr) throw insErr;
+      }
 
       if (email && email !== user.email) {
         const { error: authErr } = await supabase.auth.updateUser({ email });

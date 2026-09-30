@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { requireUserOrService } from "../_shared/security.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -21,16 +22,9 @@ serve(async (req) => {
     const bearer = authHeader.replace(/^Bearer\s+/i, "").trim();
     if (!bearer) throw new Error("Unauthorized");
 
-    let callerUserId: string | null = null;
-    const isScheduler = bearer === serviceKey;
-    if (!isScheduler) {
-      const authed = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
-        global: { headers: { Authorization: authHeader } },
-      });
-      const { data } = await authed.auth.getUser(bearer);
-      if (!data.user) throw new Error("Unauthorized");
-      callerUserId = data.user.id;
-    }
+    const auth = await requireUserOrService(req);
+    const isScheduler = auth.isService;
+    const callerUserId: string | null = isScheduler ? null : auth.userId;
 
     const body = await req.json().catch(() => ({}));
     const requestedLimit = Math.max(1, Math.min(Number(body.limit || 5), 20));

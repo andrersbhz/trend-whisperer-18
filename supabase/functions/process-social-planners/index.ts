@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { requireUserOrService } from "../_shared/security.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -46,13 +47,8 @@ serve(async (req) => {
 
     const admin = createClient(supabaseUrl, serviceKey);
     let userId: string | null = null;
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    if (bearer !== serviceKey) {
-      const authed = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, { global: { headers: { Authorization: authHeader } } });
-      const { data } = await authed.auth.getUser(bearer);
-      if (!data.user) throw new Error("Unauthorized");
-      userId = data.user.id;
-    }
+    const auth = await requireUserOrService(req);
+    if (!auth.isService) userId = auth.userId;
 
     let query = admin.from("social_planners").select("*").eq("enabled", true);
     if (userId) query = query.eq("user_id", userId);
