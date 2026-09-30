@@ -46,13 +46,8 @@ serve(async (req) => {
 
     const admin = createClient(supabaseUrl, serviceKey);
     let userId: string | null = null;
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    if (bearer !== serviceKey) {
-      const authed = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, { global: { headers: { Authorization: authHeader } } });
-      const { data } = await authed.auth.getUser(bearer);
-      if (!data.user) throw new Error("Unauthorized");
-      userId = data.user.id;
-    }
+    const auth = await requireUserOrService(req);
+    if (!auth.isService) userId = auth.userId;
 
     let query = admin.from("social_planners").select("*").eq("enabled", true);
     if (userId) query = query.eq("user_id", userId);
