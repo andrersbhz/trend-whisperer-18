@@ -194,13 +194,15 @@ serve(async (req) => {
       });
     }
 
-    const response = await fetch("https://indexing.googleapis.com/v1/urlNotifications:publish", {
+    const response = await fetch("https://indexing.googleapis.com/v3/urlNotifications:publish", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
       body: JSON.stringify({ url, type: "URL_UPDATED" }),
     });
 
-    const result = await response.json();
+    const rawText = await response.text();
+    let result: any;
+    try { result = JSON.parse(rawText); } catch { result = { error: { message: `Resposta não-JSON do Google (HTTP ${response.status}): ${rawText.substring(0, 200)}` } }; }
 
     if (response.ok) {
       await supabase.from("google_indexing_history").insert({
