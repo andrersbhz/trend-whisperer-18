@@ -151,7 +151,7 @@ serve(async (req) => {
         accessToken = await getAccessTokenFromServiceAccount(jsonKey);
         if (accessToken) source = "user_sa";
       } catch (e) {
-        console.error("User SA token error:", e);
+        console.error("User SA token error:", e); lastSaError = (e as Error).message;
       }
     }
 
@@ -162,13 +162,13 @@ serve(async (req) => {
           accessToken = await getAccessTokenFromServiceAccount(projectSaJson);
           if (accessToken) source = "project_sa";
         } catch (e) {
-          console.error("Project SA token error:", e);
+          console.error("Project SA token error:", e); lastSaError = (e as Error).message;
         }
       }
     }
 
     if (!accessToken) {
-      const msg = "Google Indexing não configurado. Configure em Configurações → Google Indexing (OAuth ou JSON de Service Account).";
+      const msg = lastSaError ? `Falha na credencial Google: ${lastSaError}` : "Google Indexing não configurado. Configure em Configurações → Google Indexing (OAuth ou JSON de Service Account).";
       await supabase.from("automation_logs").insert({
         user_id: userId, level: "warning", module: "robot",
         message: `⚠️ Indexação não enviada: ${msg}`,
