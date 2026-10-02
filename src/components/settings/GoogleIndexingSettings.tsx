@@ -32,7 +32,80 @@ const GoogleIndexingSettings = forwardRef<HTMLDivElement, Props>(({ settings, on
   const [googleClientSecret, setGoogleClientSecret] = useState('');
   const [hasGoogleClientSecret, setHasGoogleClientSecret] = useState(false);
   const [savingGoogleOAuth, setSavingGoogleOAuth] = useState(false);
-  const connected = !!settings.google_indexing_key || hasGoogleToken;
+  const [hasJsonKey, setHasJsonKey] = useState(false);
+  const [jsonBusy, setJsonBusy] = useState(false);
+  const [jsonResult, setJsonResult] = useState<{ ok: boolean; msg: string } | null>(null);
+  const connected = hasJsonKey || hasGoogleToken;
+
+  const loadJsonStatus = async () => {
+    const { data } = await supabase.rpc('get_credentials_status' as any);
+    setHasJsonKey(!!(data as any)?.has_google_indexing_key);
+  };
+
+  const testJsonKey = async () => {
+    const { data: auth } = await supabase.auth.getUser();
+    const uid = auth.user?.id;
+    if (!uid) return;
+    const { data, error } = await supabase.functions.invoke('google-indexing', { body: { test: true, userId: uid } });
+    if (error || !data?.success) {
+      const msg = data?.error || error?.message || 'Falha ao validar a credencial.';
+      setJsonResult({ ok: false, msg });
+      toast({ title: 'Credencial Google recusada', description: msg, variant: 'destructive' });
+      return false;
+    }
+    const msg = data.client_email
+      ? `Conta de serviço válida: ${data.client_email}. Adicione esse e-mail como Proprietário no Search Console do site.`
+      : 'Credencial Google válida.';
+    setJsonResult({ ok: true, msg });
+    toast({ title: 'Conexão Google OK', description: msg });
+    return true;
+  };
+
+  const saveAndTestJson = async () => {
+    const raw = (settings.google_indexing_key || '').trim();
+    setJsonResult(null);
+    if (raw) {
+      let parsed: any;
+      try { parsed = JSON.parse(raw); } catch {
+        setJsonResult({ ok: false, msg: 'O texto colado não é um JSON válido. Copie o arquivo .json inteiro, do primeiro { ao último }.' });
+        return;
+      }
+      if (parsed.web || parsed.installed) {
+        setJsonResult({ ok: false, msg: 'Esse JSON é do "ID do cliente OAuth", não de uma Conta de Serviço. Gere em IAM e administração → Contas de serviço → Chaves → Adicionar chave → JSON.' });
+        return;
+      }
+      if (parsed.type !== 'service_account' || !parsed.client_email || !parsed.private_key) {
+        setJsonResult({ ok: false, msg: 'JSON incompleto: precisa ter "type": "service_account", "client_email" e "private_key".' });
+        return;
+      }
+    } else if (!hasJsonKey) {
+      setJsonResult({ ok: false, msg: 'Cole a chave JSON da conta de serviço antes de salvar.' });
+      return;
+    }
+    setJsonBusy(true);
+    try {
+      if (raw) {
+        const { data: auth } = await supabase.auth.getUser();
+        const { error } = await supabase.from('user_settings').update({ google_indexing_key: raw } as any).eq('user_id', auth.user?.id);
+        if (error) throw error;
+        onChange({ google_indexing_key: '' });
+        setHasJsonKey(true);
+      }
+      await testJsonKey();
+    } catch (e: any) {
+      setJsonResult({ ok: false, msg: e?.message || 'Não foi possível salvar a chave.' });
+    } finally {
+      setJsonBusy(false);
+    }
+  };
+
+  const removeJsonKey = async () => {
+    const { data: auth } = await supabase.auth.getUser();
+    await supabase.from('user_settings').update({ google_indexing_key: null } as any).eq('user_id', auth.user?.id);
+    setHasJsonKey(false);
+    setJsonResult(null);
+    onChange({ google_indexing_key: '' });
+  };
 
   useEffect(() => {
     const checkConnector = async () => {
@@ -53,6 +126,7 @@ const GoogleIndexingSettings = forwardRef<HTMLDivElement, Props>(({ settings, on
     };
 
     checkConnector();
+    loadJsonStatus();
     loadOAuthCredentialsStatus();
     fetchHistory();
   }, []);
@@ -158,14 +232,14 @@ const GoogleIndexingSettings = forwardRef<HTMLDivElement, Props>(({ settings, on
       description="Indexação imediata, OAuth Google e monitoramento de novos posts"
       connected={connected}
       connectedInfo={connected ? (hasGoogleToken ? "Conectado via Google OAuth" : "Configurado (Chave JSON)") : undefined}
-      onTest={handleGoogleConnect}
-      testing={oauthLoading}
+      onTest={hasJsonKey && !hasGoogleToken ? async () => { setJsonBusy(true); try { await testJsonKey(); } finally { setJsonBusy(false); } } : handleGoogleConnect}
+      testing={oauthLoading || jsonBusy}
       onDisconnect={async () => {
         if (hasGoogleToken) {
            await supabase.from('user_settings').update({ google_search_console_token: null } as any).eq('user_id', (await supabase.auth.getUser()).data.user?.id);
            setHasGoogleToken(false);
         }
-        onChange({ google_indexing_key: '' });
+        if (hasJsonKey) await removeJsonKey();
       }}
     >
       <div className="space-y-4">
@@ -271,13 +345,35 @@ const GoogleIndexingSettings = forwardRef<HTMLDivElement, Props>(({ settings, on
         </div>
 
         <div className="space-y-1.5">
-          <Label className="text-xs">Chave JSON da Conta de Serviço (Avançado)</Label>
+          <div className="flex items-center justify-between gap-2">
+            <Label className="text-xs">Chave JSON da Conta de Serviço (Avançado)</Label>
+            {hasJsonKey && (
+              <Badge variant="outline" className="border-success/40 text-success text-[10px]">JSON SALVO</Badge>
+            )}
+          </div>
           <Textarea
-            placeholder='{"type": "service_account", "project_id": "...", ...}'
+            placeholder={hasJsonKey ? 'Chave já salva e protegida — cole outra apenas para substituir' : '{"type": "service_account", "project_id": "...", "private_key": "...", "client_email": "..."}'}
             value={settings.google_indexing_key || ''}
-            onChange={(e) => onChange({ google_indexing_key: e.target.value })}
+            onChange={(e) => { setJsonResult(null); onChange({ google_indexing_key: e.target.value }); }}
             className="h-20 text-xs font-mono"
           />
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" size="sm" onClick={saveAndTestJson} disabled={jsonBusy}>
+              {jsonBusy ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <ShieldCheck className="h-4 w-4 mr-2" />}
+              {settings.google_indexing_key?.trim() ? 'Salvar e testar JSON' : 'Testar JSON salvo'}
+            </Button>
+            {hasJsonKey && (
+              <Button type="button" size="sm" variant="outline" onClick={removeJsonKey} disabled={jsonBusy}>
+                <Unplug className="h-4 w-4 mr-2" /> Remover JSON
+              </Button>
+            )}
+          </div>
+          {jsonResult && (
+            <div className={`p-2 rounded-md border text-xs flex items-start gap-1.5 ${jsonResult.ok ? 'border-success/30 bg-success/10 text-success' : 'border-destructive/30 bg-destructive/10 text-destructive'}`}>
+              {jsonResult.ok ? <CheckCircle2 className="h-3.5 w-3.5 shrink-0 mt-0.5" /> : <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />}
+              <span>{jsonResult.msg}</span>
+            </div>
+          )}
         </div>
 
         <Collapsible open={showHistory} onOpenChange={setShowHistory} className="space-y-2 border-t border-border pt-4 mt-4">

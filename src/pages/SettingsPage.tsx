@@ -154,7 +154,7 @@ const SettingsPage = () => {
       try {
         const { data: userData, error: userError } = await supabase
           .from('user_settings')
-          .select('id, user_id, wordpress_url, wordpress_username, facebook_page_id, instagram_account_id, google_analytics_property_id, google_indexing_key, azure_openai_endpoint, azure_openai_deployment_name, categories, priority_categories, articles_per_day, auto_publish, writer_prompt, writer_profile, writer_prompt_strict, image_mode, image_prompt, image_format, image_knowledge_urls, interaction_mode, dashboard_widgets, dashboard_order, gemini_model, openai_model, groq_model, azure_openai_model')
+          .select('id, user_id, wordpress_url, wordpress_username, facebook_page_id, instagram_account_id, google_analytics_property_id, azure_openai_endpoint, azure_openai_deployment_name, categories, priority_categories, articles_per_day, auto_publish, writer_prompt, writer_profile, writer_prompt_strict, image_mode, image_prompt, image_format, image_knowledge_urls, interaction_mode, dashboard_widgets, dashboard_order, gemini_model, openai_model, groq_model, azure_openai_model')
           .eq('user_id', user.id)
           .maybeSingle();
 
@@ -174,7 +174,7 @@ const SettingsPage = () => {
             facebook_access_token: '',
             instagram_account_id: userData.instagram_account_id || '',
             google_analytics_property_id: userData.google_analytics_property_id || '',
-            google_indexing_key: userData.google_indexing_key || '',
+            google_indexing_key: '',
             gemini_api_key: '',
             openai_api_key: '',
             azure_openai_api_key: '',
@@ -248,7 +248,6 @@ const SettingsPage = () => {
         facebook_page_id: settings.facebook_page_id,
         instagram_account_id: settings.instagram_account_id,
         google_analytics_property_id: settings.google_analytics_property_id,
-        google_indexing_key: settings.google_indexing_key,
         azure_openai_endpoint: settings.azure_openai_endpoint,
         azure_openai_deployment_name: settings.azure_openai_deployment_name,
         gemini_model: settings.gemini_model || 'gemini-3.6-flash',
@@ -292,6 +291,9 @@ const SettingsPage = () => {
       if (settings.youtube_api_key) {
         payload.youtube_api_key = settings.youtube_api_key;
       }
+      if (settings.google_indexing_key && !settings.google_indexing_key.startsWith('ENCRYPTED:')) {
+        payload.google_indexing_key = settings.google_indexing_key.trim();
+      }
 
       const { data: existing } = await supabase
         .from('user_settings')
@@ -327,8 +329,7 @@ const SettingsPage = () => {
           facebook_page_id: settings.facebook_page_id,
           instagram_account_id: settings.instagram_account_id,
           google_analytics_property_id: settings.google_analytics_property_id,
-          google_indexing_key: settings.google_indexing_key,
-          azure_openai_endpoint: settings.azure_openai_endpoint,
+            azure_openai_endpoint: settings.azure_openai_endpoint,
           azure_openai_deployment_name: settings.azure_openai_deployment_name,
           gemini_model: settings.gemini_model || 'gemini-3.6-flash',
           openai_model: settings.openai_model || null,
