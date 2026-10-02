@@ -108,6 +108,7 @@ serve(async (req) => {
   let articleId: string | null = null;
   let url = "";
   let supabase: any = null;
+  lastSaError = "";
 
   try {
     const body = await req.json();
