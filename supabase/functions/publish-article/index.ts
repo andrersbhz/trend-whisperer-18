@@ -554,7 +554,7 @@ serve(async (req) => {
             },
             body: JSON.stringify({ url: wpLink, userId, articleId }),
           });
-          const indexingData = await indexingResp.json();
+          const indexingData = await indexingResp.json().catch(() => ({ success: false }));
           console.log(`google-indexing response:`, indexingData);
         } catch (indexingErr) {
           console.error("google-indexing call failed:", indexingErr);
