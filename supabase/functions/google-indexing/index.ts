@@ -18,8 +18,10 @@ let lastSaError = "";
 
 // Assina o JWT nativamente (WebCrypto) — sem dependências externas que falham no runtime
 async function getAccessTokenFromServiceAccount(jsonKey: string): Promise<string> {
-  const sa = JSON.parse(jsonKey.trim());
-  if (!sa.client_email || !sa.private_key) throw new Error("JSON da Service Account inválido (client_email/private_key ausentes)");
+  let sa: any;
+  try { sa = JSON.parse(jsonKey.trim()); } catch { throw new Error("O conteúdo colado não é um JSON válido. Cole o arquivo .json inteiro da conta de serviço."); }
+  if (sa.web || sa.installed) throw new Error("Esse JSON é do 'ID do cliente OAuth', não de uma Conta de Serviço. Gere a chave em IAM e administração → Contas de serviço → Chaves → Adicionar chave → JSON.");
+  if (!sa.client_email || !sa.private_key) throw new Error("JSON da Service Account inválido (client_email/private_key ausentes). Use o arquivo baixado em Contas de serviço → Chaves → JSON.");
   const pem = String(sa.private_key).replace(/\\n/g, "\n")
     .replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\s/g, "");
   const der = Uint8Array.from(atob(pem), (c) => c.charCodeAt(0));
@@ -115,7 +117,8 @@ serve(async (req) => {
     url = body.url;
     userId = body.userId;
     articleId = body.articleId ?? null;
-    if (!url || !userId) throw new Error("URL and userId are required");
+    const testOnly = body.test === true;
+    if ((!url && !testOnly) || !userId) throw new Error("URL and userId are required");
     await requireUserOrService(req, userId);
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -131,6 +134,7 @@ serve(async (req) => {
 
     let accessToken = "";
     let source = "";
+    let saEmail = "";
 
     if (settings?.google_search_console_token) {
       try {
@@ -149,11 +153,21 @@ serve(async (req) => {
           const { data: decrypted } = await supabase.rpc("decrypt_credential", { val: jsonKey, enc_key: encKey });
           jsonKey = decrypted || jsonKey;
         }
+        if (jsonKey.startsWith("ENCRYPTED:")) throw new Error("Não foi possível descriptografar a chave JSON salva. Cole o JSON novamente e salve.");
+        try { saEmail = JSON.parse(jsonKey).client_email || ""; } catch (_) {}
         accessToken = await getAccessTokenFromServiceAccount(jsonKey);
         if (accessToken) source = "user_sa";
       } catch (e) {
         console.error("User SA token error:", e); lastSaError = (e as Error).message;
       }
+    }
+
+    if (testOnly) {
+      return new Response(JSON.stringify(accessToken
+        ? { success: true, source, client_email: saEmail }
+        : { success: false, error: lastSaError || "Nenhuma credencial Google configurada." }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     if (!accessToken) {
