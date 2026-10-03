@@ -1,15 +1,17 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { requireServiceOrAdmin, safeError } from "../_shared/security.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-cron-secret",
 };
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    await requireServiceOrAdmin(req);
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
@@ -91,32 +93,6 @@ serve(async (req) => {
           });
         }
 
-        // Processar crescimento social (Follow/Unfollow)
-        const growthResp = await supabase.functions.invoke("handle-social-growth", {
-          body: { userId: user.user_id }
-        });
-
-        if (growthResp.error) {
-          await supabase.from("automation_logs").insert({
-            user_id: user.user_id,
-            level: 'warn',
-            module: 'growth',
-            message: `Aviso no ciclo de crescimento: ${growthResp.error.message || 'Erro desconhecido'}`,
-            details: growthResp.error
-          });
-        } else {
-          const { followed, unfollowed } = growthResp.data || {};
-          if (followed > 0 || unfollowed > 0) {
-            await supabase.from("automation_logs").insert({
-              user_id: user.user_id,
-              level: 'info',
-              module: 'growth',
-              message: `Ciclo de crescimento concluído: ${followed} seguidos, ${unfollowed} deixados de seguir.`,
-              details: growthResp.data
-            });
-          }
-        }
-
       } catch (userErr: any) {
         console.error(`[automation-engine] Erro no usuário ${user.user_id}:`, userErr);
         await supabase.from("automation_logs").insert({
@@ -135,9 +111,6 @@ serve(async (req) => {
 
   } catch (error: any) {
     console.error("[automation-engine] Erro fatal:", error);
-    return new Response(JSON.stringify({ error: error.message }), { 
-      status: 500, 
-      headers: { ...corsHeaders, "Content-Type": "application/json" } 
-    });
+    return safeError(error, corsHeaders);
   }
 });

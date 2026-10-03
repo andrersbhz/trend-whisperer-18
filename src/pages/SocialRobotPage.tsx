@@ -460,8 +460,8 @@ const SocialRobotPage = () => {
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-[#a3ff12]/10 border border-[#a3ff12]/20"><Info className="h-5 w-5 text-[#a3ff12]" /></div>
                   <div>
-                    <CardTitle className="text-lg font-black uppercase">Como Trazer Novos Seguidores</CardTitle>
-                    <CardDescription className="text-xs uppercase font-bold text-muted-foreground">Estratégia em 4 passos — totalmente automatizada</CardDescription>
+                    <CardTitle className="text-lg font-black uppercase">Como o Robô Engaja Seu Público</CardTitle>
+                    <CardDescription className="text-xs uppercase font-bold text-muted-foreground">O que roda sozinho a cada 30 minutos</CardDescription>
                   </div>
                 </div>
               </CardHeader>
@@ -469,8 +469,8 @@ const SocialRobotPage = () => {
                 {[
                   { n: '01', t: 'Mapear Audiência', d: 'O robô varre comentários e reações das suas páginas para identificar pessoas que já demonstraram interesse no seu nicho.' },
                   { n: '02', t: 'Engajamento Humanizado', d: 'A IA responde comentários e reage a interações pendentes, criando reciprocidade — o gatilho psicológico mais poderoso do social media.' },
-                  { n: '03', t: 'Follow Estratégico', d: `Segue automaticamente entre ${growthSettings.followsMin} e ${growthSettings.followsMax} contas/dia entre os perfis mapeados, respeitando limites para evitar bloqueios.` },
-                  { n: '04', t: 'Unfollow Inteligente', d: `Após ${growthSettings.durationMin}-${growthSettings.durationMax} dias, deixa de seguir quem não retribuiu, mantendo sua proporção saudável e seu alcance alto.` },
+                  { n: '03', t: 'Curtir Comentários', d: 'No Facebook, o robô também curte o comentário respondido, mostrando atenção a quem interagiu.' },
+                  { n: '04', t: 'Sem Follow Automático', d: 'A Meta não permite seguir, deixar de seguir ou responder curtidas por aplicativos. Isso protege suas páginas contra bloqueios.' },
                 ].map(step => (
                   <div key={step.n} className="bg-black/30 border border-primary/10 p-4 hover:border-primary/30 transition-all">
                     <div className="flex items-start gap-3">
@@ -487,7 +487,7 @@ const SocialRobotPage = () => {
                     <ShieldCheck className="h-5 w-5 text-primary shrink-0" />
                     <div>
                       <p className="text-xs font-black uppercase tracking-widest">Modo Automático 24/7</p>
-                      <p className="text-[10px] text-muted-foreground font-bold">Ative para o motor de crescimento rodar em segundo plano, sem precisar clicar em nada.</p>
+                      <p className="text-[10px] text-muted-foreground font-bold">Com a automação ligada, comentários novos são lidos e respondidos a cada 30 minutos.</p>
                     </div>
                   </div>
                   <Switch checked={followerGrowthMode} onCheckedChange={toggleFollowerGrowth} />
