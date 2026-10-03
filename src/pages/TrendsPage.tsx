@@ -63,7 +63,7 @@ const TrendsPage = () => {
 
     if (regionFilter !== "all") {
       result = result.filter(t => {
-        const isWorld = t.source_name?.includes('US') || t.source_name?.includes('Global') || t.source_name?.includes('Mundo');
+        const isWorld = t.region === 'World' || t.region === 'US' || t.source_name?.includes('Global') || t.source_name?.includes('Mundo');
         return regionFilter === "World" ? isWorld : !isWorld;
       });
     }
@@ -147,13 +147,28 @@ const TrendsPage = () => {
         query = query.gte('fetched_at', past.toISOString());
       }
 
-      const data = await runBackendQuery(() =>
-        query
-          .order('fetched_at', { ascending: false })
-          .limit(100)
-      );
+      // Busca BR e Mundo separadamente para que as notícias internacionais
+      // não fiquem de fora quando há muitas notícias nacionais recentes.
+      const [brData, worldData] = await Promise.all([
+        runBackendQuery(() =>
+          query.or('region.is.null,region.neq.World')
+            .order('fetched_at', { ascending: false })
+            .limit(100)
+        ),
+        runBackendQuery(() => {
+          let q = supabase.from('trending_topics').select('*').eq('user_id', user.id).eq('used', false).eq('region', 'World');
+          if (timeFilter !== "all") {
+            const past = new Date();
+            if (timeFilter === "24h") past.setHours(past.getHours() - 24);
+            else if (timeFilter === "48h") past.setHours(past.getHours() - 48);
+            else if (timeFilter === "7d") past.setDate(past.getDate() - 7);
+            q = q.gte('fetched_at', past.toISOString());
+          }
+          return q.order('fetched_at', { ascending: false }).limit(100);
+        }),
+      ]);
 
-      setTopics(data || []);
+      setTopics([...(brData || []), ...(worldData || [])]);
     } catch (error) {
       setTopics([]);
       toast({ title: 'Erro ao carregar tendências', description: getErrorMessage(error), variant: 'destructive' });

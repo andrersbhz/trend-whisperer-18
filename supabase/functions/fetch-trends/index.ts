@@ -480,7 +480,7 @@ serve(async (req) => {
         console.warn("[fetch-trends] BR AI parsing failed:", aiErr.message);
       }
       if (!brTopics.length) brTopics = parseRSSDirectly(rssBR, categories, "BR");
-      topics = [...topics, ...brTopics];
+      topics = [...topics, ...brTopics.map((t: any) => ({ ...t, region: "BR" }))];
     }
     
     // Process US trends
@@ -495,7 +495,7 @@ serve(async (req) => {
         console.warn("[fetch-trends] US AI parsing failed:", aiErr.message);
       }
       if (!usTopics.length) usTopics = parseRSSDirectly(rssUS, categories, "US");
-      topics = [...topics, ...usTopics];
+      topics = [...topics, ...usTopics.map((t: any) => ({ ...t, region: "World" }))];
     }
 
     // Process Portal Leo Dias feed (somente se a fonte estiver habilitada nos filtros salvos)
