@@ -546,11 +546,16 @@ serve(async (req) => {
     // 1. Buscar tópicos existentes do usuário que não foram usados
     const { data: existingTopics } = await supabase
       .from("trending_topics")
-      .select("topic, update_count, id")
+      .select("topic, update_count, id, used")
       .eq("user_id", userId)
-      .eq("used", false);
+      .gte("fetched_at", new Date(Date.now() - 7 * 86400000).toISOString())
+      .order("fetched_at", { ascending: false })
+      .range(0, 9999);
+    // Temas já usados não voltam para a lista.
+    const usedSet = new Set((existingTopics || []).filter((t: any) => t.used).map((t: any) => String(t.topic).toLowerCase()));
+    topics = topics.filter((t: any) => !usedSet.has(String(t.topic).toLowerCase()));
 
-    const existingMap = new Map(existingTopics?.map(t => [t.topic, t]) || []);
+    const existingMap = new Map((existingTopics || []).filter((t: any) => !t.used).map((t: any) => [t.topic, t]));
 
     // 2. Preparar operações (update ou insert)
     const toUpdate = [];

@@ -261,7 +261,10 @@ const TrendsPage = () => {
         : filteredAndSortedTopics.filter(t => !t.used).slice(0, 50);
 
       if (finalTopics.length > 0) {
-        body.topics = finalTopics.map(t => ({
+        body.topics = finalTopics.map((t: any) => ({
+          id: t.id,
+          region: t.region,
+          sources: t.sources,
           topic: t.topic,
           category: t.category,
           search_volume: t.search_volume,
