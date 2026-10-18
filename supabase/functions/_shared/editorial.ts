@@ -217,8 +217,9 @@ function unwrapBingLink(link: string): string {
   }
 }
 
-async function candidatesFromBing(topic: string): Promise<RawCandidate[]> {
-  const url = `https://www.bing.com/news/search?q=${encodeURIComponent(topic)}&format=RSS&cc=BR&setlang=pt-BR`;
+async function candidatesFromBing(topic: string, intl = false): Promise<RawCandidate[]> {
+  const loc = intl ? "cc=US&setlang=en-US" : "cc=BR&setlang=pt-BR";
+  const url = `https://www.bing.com/news/search?q=${encodeURIComponent(topic)}&format=RSS&${loc}`;
   const xml = await fetchText(url);
   if (!xml) return [];
   return parseRssItems(xml, 30)
@@ -236,8 +237,9 @@ async function candidatesFromBing(topic: string): Promise<RawCandidate[]> {
     });
 }
 
-async function candidatesFromGoogleNews(topic: string): Promise<RawCandidate[]> {
-  const rss = `https://news.google.com/rss/search?q=${encodeURIComponent(`${topic} when:2d`)}&hl=pt-BR&gl=BR&ceid=BR:pt`;
+async function candidatesFromGoogleNews(topic: string, intl = false): Promise<RawCandidate[]> {
+  const loc = intl ? "hl=en-US&gl=US&ceid=US:en" : "hl=pt-BR&gl=BR&ceid=BR:pt";
+  const rss = `https://news.google.com/rss/search?q=${encodeURIComponent(`${topic} when:2d`)}&${loc}`;
   const xml = await fetchText(rss);
   if (xml) {
     return parseRssItems(xml, 30).map((item) => {
@@ -282,6 +284,16 @@ export async function discoverSources(topic: string, maxItems = 12): Promise<Sou
       candidates = [...candidates, ...found];
     } catch (err) {
       console.warn("[discoverSources] agregador falhou:", err instanceof Error ? err.message : err);
+    }
+  }
+  // Assuntos internacionais raramente têm cobertura BR imediata: amplia para edições globais.
+  if (candidates.length < 6) {
+    for (const collect of [candidatesFromBing, candidatesFromGoogleNews]) {
+      try {
+        candidates = [...candidates, ...(await collect(topic, true))];
+      } catch (err) {
+        console.warn("[discoverSources] agregador intl falhou:", err instanceof Error ? err.message : err);
+      }
     }
   }
   if (candidates.length === 0) return [];

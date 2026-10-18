@@ -1661,6 +1661,12 @@ serve(async (req) => {
             .eq("id", topic.id);
           if (updateError) console.warn(`[Pipeline] Failed to mark topic as used: ${updateError.message}`);
         }
+        // Retira da pauta todas as cópias do mesmo tema para não repetir artigos.
+        await supabase
+          .from("trending_topics")
+          .update({ used: true })
+          .eq("user_id", userId)
+          .ilike("topic", String(topic.topic).replace(/[%_]/g, ""));
 
 
         generatedArticles.push(article);
