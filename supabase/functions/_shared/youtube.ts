@@ -47,7 +47,23 @@ export function hasBrokenYouTubeEmbeds(html: string | null | undefined): boolean
   return SEARCH_EMBED_RE.test(html);
 }
 
+function embedBlock(id: string): string {
+  return `<div class="video-container" style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;max-width:100%;margin:20px 0;"><iframe style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;" src="https://www.youtube.com/embed/${id}" title="Vídeo" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>`;
+}
+
+const YT_URL = String.raw`https?:\/\/(?:www\.|m\.)?(?:youtube\.com\/(?:watch\?(?:[^"'\s<]*&(?:amp;)?)?v=|shorts\/|live\/)|youtu\.be\/)([\w-]{11})[^"'\s<]*`;
+
+/** Converte links soltos do YouTube (parágrafo só com o link, ou link <a>) em player embed. */
+export function linksToEmbeds(html: string): string {
+  if (!html) return html;
+  let out = html.replace(new RegExp(String.raw`<p>\s*(?:<a[^>]*href=["']${YT_URL}["'][^>]*>[\s\S]*?<\/a>|${YT_URL})\s*<\/p>`, "gi"),
+    (_m, a, b) => embedBlock(a || b));
+  out = out.replace(new RegExp(String.raw`(^|\n)\s*${YT_URL}\s*(?=\n|$)`, "gi"), (_m, pre, id) => `${pre}${embedBlock(id)}`);
+  return out;
+}
+
 export async function fixYouTubeEmbeds(html: string, apiKey: string | null): Promise<string> {
+  html = linksToEmbeds(html);
   if (!hasBrokenYouTubeEmbeds(html)) return html;
   const iframes = html.match(SEARCH_EMBED_RE) || [];
   let out = html;

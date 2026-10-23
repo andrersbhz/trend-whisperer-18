@@ -31,6 +31,7 @@ export const ManualArticleDialog = ({ open, onOpenChange, categories, onSuccess 
   const { user } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [videoInput, setVideoInput] = useState('');
   const [tab, setTab] = useState<'edit' | 'preview'>('edit');
   const [isPublishingNow, setIsPublishingNow] = useState(false);
   const [scheduledDate, setScheduledDate] = useState<string>('');
