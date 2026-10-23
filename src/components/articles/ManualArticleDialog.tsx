@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import DOMPurify from 'dompurify';
+import { sanitizeArticleHtml, toEmbedHtml } from '@/lib/video-embed';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -31,6 +31,7 @@ export const ManualArticleDialog = ({ open, onOpenChange, categories, onSuccess 
   const { user } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [videoInput, setVideoInput] = useState('');
   const [tab, setTab] = useState<'edit' | 'preview'>('edit');
   const [isPublishingNow, setIsPublishingNow] = useState(false);
   const [scheduledDate, setScheduledDate] = useState<string>('');
@@ -291,6 +292,33 @@ export const ManualArticleDialog = ({ open, onOpenChange, categories, onSuccess 
                   />
                 </div>
 
+                <div className="grid gap-2">
+                  <Label htmlFor="video_embed">Vídeo (link do YouTube ou código embed)</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="video_embed"
+                      value={videoInput}
+                      onChange={(e) => setVideoInput(e.target.value)}
+                      placeholder='https://youtu.be/... ou <iframe src="..."></iframe>'
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        const html = toEmbedHtml(videoInput);
+                        if (!html) {
+                          toast({ title: 'Vídeo inválido', description: 'Cole um link do YouTube ou um código embed.', variant: 'destructive' });
+                          return;
+                        }
+                        setFormData({ ...formData, content: `${formData.content}\n${html}\n` });
+                        setVideoInput('');
+                      }}
+                    >
+                      Inserir vídeo
+                    </Button>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="grid gap-2">
                     <Label htmlFor="category">Categoria</Label>
@@ -412,7 +440,7 @@ export const ManualArticleDialog = ({ open, onOpenChange, categories, onSuccess 
                     
                     <div 
                       className="text-muted-foreground leading-relaxed whitespace-pre-wrap"
-                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(formData.content || 'Nenhum conteúdo adicionado ainda.', { USE_PROFILES: { html: true } }) }}
+                      dangerouslySetInnerHTML={{ __html: sanitizeArticleHtml(formData.content || 'Nenhum conteúdo adicionado ainda.') }}
                     />
                   </div>
                 </div>

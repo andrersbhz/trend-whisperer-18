@@ -176,7 +176,7 @@ serve(async (req) => {
     }
 
     // Corrige vídeos quebrados (embed de busca do YouTube) antes de publicar.
-    if (hasBrokenYouTubeEmbeds(article.content)) {
+    if (article.content && (hasBrokenYouTubeEmbeds(article.content) || /youtu\.?be/i.test(article.content))) {
       try {
         const ytKey = await loadYouTubeKey(supabase, settings.youtube_api_key);
         const fixedContent = await fixYouTubeEmbeds(article.content, ytKey);

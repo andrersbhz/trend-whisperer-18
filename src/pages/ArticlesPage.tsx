@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import DOMPurify from 'dompurify';
+import { sanitizeArticleHtml } from '@/lib/video-embed';
 import Preloader from '@/components/Preloader';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -1116,7 +1116,7 @@ const ArticlesPage = () => {
                   <div className="prose prose-sm prose-invert max-w-none text-foreground bg-secondary/10 p-6 rounded-xl border border-border/50 shadow-inner min-h-[300px]">
                     <div
                       className="article-content"
-                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(preview?.content || '', { USE_PROFILES: { html: true } }) }}
+                      dangerouslySetInnerHTML={{ __html: sanitizeArticleHtml(preview?.content || '') }}
                     />
                   </div>
                 </TabsContent>
