@@ -10,6 +10,7 @@ import {
   slugify,
   type SourceRef,
 } from "../_shared/editorial.ts";
+import { fixYouTubeEmbeds, loadYouTubeKey } from "../_shared/youtube.ts";
 
 // Dois assuntos são considerados o mesmo tema quando compartilham 2+ palavras
 // significativas (nomes, times, instituições) ou têm alta similaridade textual.
@@ -1546,6 +1547,14 @@ serve(async (req) => {
         if (!parsed.title || !parsed.content) {
           failureReasons.push({ status: 500, message: `Campos obrigatórios ausentes para: ${topic.topic}` });
           continue;
+        }
+
+        // Vídeos: troca embeds de busca (quebrados no YouTube) por vídeo real ou remove.
+        try {
+          const ytKey = await loadYouTubeKey(supabase, (settings as any)?.youtube_api_key);
+          parsed = { ...parsed, content: await fixYouTubeEmbeds(parsed.content, ytKey) };
+        } catch (ytErr) {
+          console.warn("[YouTube] correção de vídeo ignorada:", ytErr);
         }
 
         // GERAÇÃO DE IMAGEM: depende do imageMode configurado
