@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import DOMPurify from 'dompurify';
+import { sanitizeArticleHtml, toEmbedHtml } from '@/lib/video-embed';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -412,7 +412,7 @@ export const ManualArticleDialog = ({ open, onOpenChange, categories, onSuccess 
                     
                     <div 
                       className="text-muted-foreground leading-relaxed whitespace-pre-wrap"
-                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(formData.content || 'Nenhum conteúdo adicionado ainda.', { USE_PROFILES: { html: true } }) }}
+                      dangerouslySetInnerHTML={{ __html: sanitizeArticleHtml(formData.content || 'Nenhum conteúdo adicionado ainda.') }}
                     />
                   </div>
                 </div>
