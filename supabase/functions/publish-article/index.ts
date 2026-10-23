@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { fixYouTubeEmbeds, hasBrokenYouTubeEmbeds, loadYouTubeKey } from "../_shared/youtube.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -172,6 +173,20 @@ serve(async (req) => {
     if (!settings.wordpress_app_password) throw new Error("Senha de Aplicativo do WordPress não configurada. Vá para Configurações.");
     if (!settings.wordpress_username?.trim()) {
       throw new Error("Usuário do WordPress não configurado. Use seu usuário real do WordPress junto com uma Senha de Aplicativo.");
+    }
+
+    // Corrige vídeos quebrados (embed de busca do YouTube) antes de publicar.
+    if (hasBrokenYouTubeEmbeds(article.content)) {
+      try {
+        const ytKey = await loadYouTubeKey(supabase, settings.youtube_api_key);
+        const fixedContent = await fixYouTubeEmbeds(article.content, ytKey);
+        if (fixedContent !== article.content) {
+          article.content = fixedContent;
+          await supabase.from("articles").update({ content: fixedContent }).eq("id", article.id);
+        }
+      } catch (ytErr) {
+        console.warn("[YouTube] correção de vídeo ignorada:", ytErr);
+      }
     }
 
     // Claim atômico: só um processo consegue mover o artigo para "publishing"
