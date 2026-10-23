@@ -291,6 +291,33 @@ export const ManualArticleDialog = ({ open, onOpenChange, categories, onSuccess 
                   />
                 </div>
 
+                <div className="grid gap-2">
+                  <Label htmlFor="video_embed">Vídeo (link do YouTube ou código embed)</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="video_embed"
+                      value={videoInput}
+                      onChange={(e) => setVideoInput(e.target.value)}
+                      placeholder='https://youtu.be/... ou <iframe src="..."></iframe>'
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        const html = toEmbedHtml(videoInput);
+                        if (!html) {
+                          toast({ title: 'Vídeo inválido', description: 'Cole um link do YouTube ou um código embed.', variant: 'destructive' });
+                          return;
+                        }
+                        setFormData({ ...formData, content: `${formData.content}\n${html}\n` });
+                        setVideoInput('');
+                      }}
+                    >
+                      Inserir vídeo
+                    </Button>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="grid gap-2">
                     <Label htmlFor="category">Categoria</Label>
