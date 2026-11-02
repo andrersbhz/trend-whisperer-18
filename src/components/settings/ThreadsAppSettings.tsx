@@ -108,6 +108,31 @@ const ThreadsAppSettings = ({ open, onOpenChange, onConnected }: ThreadsAppSetti
     }
   };
 
+  const [directToken, setDirectToken] = useState('');
+  const [tokenSaving, setTokenSaving] = useState(false);
+  const connectWithToken = async () => {
+    setTokenSaving(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('threads-token-connect', {
+        body: { accessToken: directToken.trim() },
+      });
+      if (error) {
+        let msg = error.message;
+        try { msg = (await (error as any).context?.json())?.error || msg; } catch { /* ignore */ }
+        throw new Error(msg);
+      }
+      if (data?.error) throw new Error(data.error);
+      setDirectToken('');
+      toast({ title: 'Threads conectado!', description: `@${data?.username || 'perfil'} pronto para postar.` });
+      load();
+      onConnected?.();
+    } catch (e: any) {
+      toast({ title: 'Erro ao conectar', description: e.message, variant: 'destructive' });
+    } finally {
+      setTokenSaving(false);
+    }
+  };
+
   const connect = async () => {
     const { data, error } = await supabase.functions.invoke('threads-oauth-start', {
       body: { returnUrl: `${window.location.origin}/social` },
@@ -183,6 +208,24 @@ const ThreadsAppSettings = ({ open, onOpenChange, onConnected }: ThreadsAppSetti
               <Button variant="outline" onClick={connect} disabled={!hasSecret}>
                 <ExternalLink className="h-4 w-4 mr-2" />
                 Conectar conta
+              </Button>
+            </div>
+
+            <div className="space-y-1.5 rounded-lg border border-primary/30 bg-primary/5 p-3">
+              <Label htmlFor="threads-direct-token">Conexão direta (sem redirecionamento)</Label>
+              <PasswordInput
+                id="threads-direct-token"
+                value={directToken}
+                onChange={(e) => setDirectToken(e.target.value)}
+                placeholder="Cole o token de acesso do perfil (começa com TH...)"
+                autoComplete="off"
+              />
+              <p className="text-[11px] text-muted-foreground">
+                Na Meta: Casos de uso &gt; Threads &gt; Configurações &gt; "Gerador de token do usuário" &gt; Gerar token. Cole aqui. Repita para cada perfil.
+              </p>
+              <Button size="sm" onClick={connectWithToken} disabled={tokenSaving || !directToken.trim()}>
+                {tokenSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
+                Conectar com token
               </Button>
             </div>
 
