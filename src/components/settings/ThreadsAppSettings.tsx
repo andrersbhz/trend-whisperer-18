@@ -123,7 +123,7 @@ const ThreadsAppSettings = ({ open, onOpenChange, onConnected }: ThreadsAppSetti
       }
       if (data?.error) throw new Error(data.error);
       setDirectToken('');
-      toast({ title: 'Threads conectado!', description: `@${data?.username || 'perfil'} pronto para postar.` });
+      toast({ title: 'Threads conectado!', description: `@${data?.username || 'perfil'} pronto para postar. Cole outro token para adicionar mais contas.` });
       load();
       onConnected?.();
     } catch (e: any) {

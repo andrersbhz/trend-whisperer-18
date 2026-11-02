@@ -9,7 +9,7 @@ import Preloader from '@/components/Preloader';
 import ThreadsAppSettings from '@/components/settings/ThreadsAppSettings';
 import {
   AtSign, RefreshCw, CheckCircle2, Eye, Heart, MessageCircle, Repeat2,
-  Quote, Users, Activity, BarChart3, TrendingUp, Bot, Loader2, Send,
+  Quote, Users, Activity, BarChart3, TrendingUp, Bot, Loader2, Send, Plus,
 } from 'lucide-react';
 
 const ThreadsPage = () => {
@@ -127,6 +127,10 @@ const ThreadsPage = () => {
                 · {new Date(lastUpdated).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
               </span>
             )}
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => setConnectOpen(true)} className="text-[10px] font-bold uppercase tracking-widest">
+            <Plus className="h-3.5 w-3.5 mr-2" />
+            Adicionar nova conta
           </Button>
           <Button size="sm" disabled={running} onClick={runRobot} className="text-[10px] font-bold uppercase tracking-widest">
             {running ? <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" /> : <Bot className="h-3.5 w-3.5 mr-2" />}
