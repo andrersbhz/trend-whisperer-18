@@ -257,6 +257,7 @@ async function collectTrustedFeedTopics(categories: string[]): Promise<any[]> {
         source_url: item.link || feed.url,
         published_at: item.pubDate,
         region: feed.region,
+        ...(feed.region === "World" && feed.name !== "BBC Brasil" ? { category: "world" } : {}),
       }));
     }),
   );
@@ -495,7 +496,7 @@ serve(async (req) => {
         console.warn("[fetch-trends] US AI parsing failed:", aiErr.message);
       }
       if (!usTopics.length) usTopics = parseRSSDirectly(rssUS, categories, "US");
-      topics = [...topics, ...usTopics.map((t: any) => ({ ...t, region: "World" }))];
+      topics = [...topics, ...usTopics.map((t: any) => ({ ...t, category: "world", region: "World" }))];
     }
 
     // Process Portal Leo Dias feed (somente se a fonte estiver habilitada nos filtros salvos)

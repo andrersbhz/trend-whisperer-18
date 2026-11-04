@@ -1173,7 +1173,9 @@ serve(async (req) => {
     console.log(`[Pipeline] Available AI providers: ${providers.map(p => p.name).join(" → ")}`);
 
     let topics = [];
-    const userCategoriesToSearch: string[] = settings?.categories || ["esportes", "politica", "policia", "saude", "celebridades", "financas"];
+    const baseCategories: string[] = settings?.categories || ["esportes", "politica", "policia", "saude", "celebridades", "financas"];
+    // Notícias internacionais (fora do Brasil) sempre entram na pauta como "world", escritas em inglês.
+    const userCategoriesToSearch: string[] = baseCategories.includes("world") ? baseCategories : [...baseCategories, "world"];
 
     // Janela das últimas 24h — usada para priorizar trends recentes e evitar repetição de assunto
     const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
@@ -1493,14 +1495,17 @@ serve(async (req) => {
           continue;
         }
 
-        const userPrompt = `${buildUserPrompt(topic.topic, topic.category, topic.context, strictPrompt, writerPrompt)}\n\n${buildFactsBlock(verification)}`;
+        const isWorld = topic.region === "World" || topic.category === "world";
+        if (isWorld) topic.category = "world";
+        const englishDirective = isWorld ? `\n\nLANGUAGE OVERRIDE (MANDATORY): This is an international story for a United States / English-speaking audience. Write EVERYTHING (title, content, excerpt, seo_keyword, seo_title, meta_description, slug, image_alt, image_caption, visual_elements) in native American English (en-US). Ignore any instruction above that says to write in Portuguese. Keep all factual and formatting rules.` : "";
+        const userPrompt = `${buildUserPrompt(topic.topic, topic.category, topic.context, strictPrompt, writerPrompt)}\n\n${buildFactsBlock(verification)}${englishDirective}`;
 
 
         let parsed: AIResponse;
         let usedProvider: string;
 
         try {
-          const result = await callWithFallback(providers, systemPrompt, userPrompt, disabledProviders);
+          const result = await callWithFallback(providers, isWorld ? `${systemPrompt}${englishDirective}` : systemPrompt, userPrompt, disabledProviders);
           parsed = sanitizeSeoFields(result.result);
           usedProvider = result.provider;
 
