@@ -206,6 +206,7 @@ export type Database = {
           role: string | null
           updated_at: string
           user_id: string
+          wp_user_id: number | null
         }
         Insert: {
           avatar_url?: string | null
@@ -217,6 +218,7 @@ export type Database = {
           role?: string | null
           updated_at?: string
           user_id: string
+          wp_user_id?: number | null
         }
         Update: {
           avatar_url?: string | null
@@ -228,6 +230,7 @@ export type Database = {
           role?: string | null
           updated_at?: string
           user_id?: string
+          wp_user_id?: number | null
         }
         Relationships: []
       }

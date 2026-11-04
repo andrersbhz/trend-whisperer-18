@@ -8,6 +8,13 @@
       "when": 1793802214429,
       "tag": "0000_apply_social_queue_distribution",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793815545727,
+      "tag": "0001_authors_wp_user",
+      "breakpoints": true
     }
   ]
 }

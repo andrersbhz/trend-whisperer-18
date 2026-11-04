@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import DashboardLayout from "@/components/DashboardLayout";
 import WorldMap from "@/components/WorldMap";
 import { Globe, Users, TrendingUp, ArrowUpRight, Trophy } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -48,7 +47,7 @@ const MapPage = () => {
   }, []);
 
   return (
-    <DashboardLayout>
+    <>
 
       <div className="space-y-6 lg:space-y-8 pb-10">
         <div className="flex flex-col gap-1">
@@ -132,7 +131,7 @@ const MapPage = () => {
           </div>
         </div>
       </div>
-    </DashboardLayout>
+    </>
   );
 };
 
