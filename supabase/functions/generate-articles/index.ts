@@ -1268,13 +1268,14 @@ serve(async (req) => {
       // Ranking dentro da categoria: pontuação de tendência primeiro, volume como desempate.
       topicsByCategory[cat].sort(
         (a, b) =>
-          (Number(b.trend_score) || 0) - (Number(a.trend_score) || 0) ||
+          ((Number(b.trend_score) || 0) + (Number(b.discover_potential) || 0) * 0.5) -
+            ((Number(a.trend_score) || 0) + (Number(a.discover_potential) || 0) * 0.5) ||
           volumeScore(b.search_volume) - volumeScore(a.search_volume),
       );
     }
     // Fallback (default topic) para categorias SEM tópicos disponíveis
     for (const cat of userCategories) {
-      if (topicsByCategory[cat].length === 0) {
+      if (topicsByCategory[cat].length === 0 && cat !== "world") {
         topicsByCategory[cat].push({ topic: getDefaultTopic(cat), category: cat, id: null, search_volume: "evergreen" });
       }
     }
