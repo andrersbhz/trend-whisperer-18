@@ -308,6 +308,22 @@ serve(async (req) => {
         body.categories = [wpCategoryId];
       }
 
+      // Autor do WordPress definido por categoria
+      try {
+        let wpAuthorId: number | null = null;
+        if (article.author_id) {
+          const { data: a } = await supabase.from("authors").select("wp_user_id").eq("id", article.author_id).maybeSingle();
+          wpAuthorId = a?.wp_user_id ?? null;
+        }
+        if (!wpAuthorId && article.category) {
+          const { data: a } = await supabase.from("authors").select("wp_user_id")
+            .eq("user_id", article.user_id).eq("category", article.category)
+            .not("wp_user_id", "is", null).order("updated_at", { ascending: false }).limit(1).maybeSingle();
+          wpAuthorId = a?.wp_user_id ?? null;
+        }
+        if (wpAuthorId) body.author = wpAuthorId;
+      } catch (e) { console.error("Falha ao resolver autor WP:", e); }
+
       // Slug SEO: prioriza slug salvo, depois focus keyword, depois título
       const slug = buildSlug(article.slug || article.focus_keyword || article.seo_keyword || article.title || "");
       if (slug) body.slug = slug;
