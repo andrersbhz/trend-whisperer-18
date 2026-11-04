@@ -1244,6 +1244,141 @@ export type Database = {
           },
         ]
       }
+      social_campaign_items: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          destination_url: string | null
+          id: string
+          platform: string
+          queue_id: string | null
+          scheduled_at: string
+          target_key: string
+          user_id: string
+          utm_campaign: string
+          utm_content: string | null
+          utm_medium: string
+          utm_source: string
+          variant: number
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          destination_url?: string | null
+          id?: string
+          platform: string
+          queue_id?: string | null
+          scheduled_at: string
+          target_key: string
+          user_id: string
+          utm_campaign?: string
+          utm_content?: string | null
+          utm_medium?: string
+          utm_source: string
+          variant?: number
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          destination_url?: string | null
+          id?: string
+          platform?: string
+          queue_id?: string | null
+          scheduled_at?: string
+          target_key?: string
+          user_id?: string
+          utm_campaign?: string
+          utm_content?: string | null
+          utm_medium?: string
+          utm_source?: string
+          variant?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_campaign_items_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "social_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_campaign_items_queue_id_fkey"
+            columns: ["queue_id"]
+            isOneToOne: false
+            referencedRelation: "social_queue"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_campaigns: {
+        Row: {
+          article_id: string | null
+          base_url: string | null
+          created_at: string
+          id: string
+          idempotency_key: string | null
+          name: string
+          preset: string
+          publish_wordpress: boolean
+          source_type: string
+          status: string
+          target_keys: string[]
+          total_items: number
+          updated_at: string
+          user_id: string
+          utm_campaign: string
+        }
+        Insert: {
+          article_id?: string | null
+          base_url?: string | null
+          created_at?: string
+          id?: string
+          idempotency_key?: string | null
+          name: string
+          preset?: string
+          publish_wordpress?: boolean
+          source_type?: string
+          status?: string
+          target_keys?: string[]
+          total_items?: number
+          updated_at?: string
+          user_id: string
+          utm_campaign?: string
+        }
+        Update: {
+          article_id?: string | null
+          base_url?: string | null
+          created_at?: string
+          id?: string
+          idempotency_key?: string | null
+          name?: string
+          preset?: string
+          publish_wordpress?: boolean
+          source_type?: string
+          status?: string
+          target_keys?: string[]
+          total_items?: number
+          updated_at?: string
+          user_id?: string
+          utm_campaign?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_campaigns_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "articles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_campaigns_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "public_articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       social_follows: {
         Row: {
           created_at: string
@@ -1346,6 +1481,74 @@ export type Database = {
         }
         Relationships: []
       }
+      social_planners: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          end_time: string
+          filters: Json
+          id: string
+          interval_minutes: number
+          last_error: string | null
+          last_run_at: string | null
+          name: string
+          next_run_at: string | null
+          start_time: string
+          target_keys: string[]
+          template_id: string | null
+          timezone: string
+          updated_at: string
+          user_id: string
+          weekdays: number[]
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          end_time?: string
+          filters?: Json
+          id?: string
+          interval_minutes?: number
+          last_error?: string | null
+          last_run_at?: string | null
+          name: string
+          next_run_at?: string | null
+          start_time?: string
+          target_keys?: string[]
+          template_id?: string | null
+          timezone?: string
+          updated_at?: string
+          user_id: string
+          weekdays?: number[]
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          end_time?: string
+          filters?: Json
+          id?: string
+          interval_minutes?: number
+          last_error?: string | null
+          last_run_at?: string | null
+          name?: string
+          next_run_at?: string | null
+          start_time?: string
+          target_keys?: string[]
+          template_id?: string | null
+          timezone?: string
+          updated_at?: string
+          user_id?: string
+          weekdays?: number[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_planners_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "social_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       social_publications: {
         Row: {
           account_key: string
@@ -1361,6 +1564,7 @@ export type Database = {
           platform: string
           published_at: string | null
           remote_id: string | null
+          social_queue_id: string | null
           status: string
           user_id: string
         }
@@ -1378,6 +1582,7 @@ export type Database = {
           platform: string
           published_at?: string | null
           remote_id?: string | null
+          social_queue_id?: string | null
           status?: string
           user_id: string
         }
@@ -1395,6 +1600,7 @@ export type Database = {
           platform?: string
           published_at?: string | null
           remote_id?: string | null
+          social_queue_id?: string | null
           status?: string
           user_id?: string
         }
@@ -1411,6 +1617,184 @@ export type Database = {
             columns: ["article_id"]
             isOneToOne: false
             referencedRelation: "public_articles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_publications_social_queue_id_fkey"
+            columns: ["social_queue_id"]
+            isOneToOne: false
+            referencedRelation: "social_queue"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_queue: {
+        Row: {
+          article_id: string | null
+          attempts: number
+          caption: string
+          created_at: string
+          id: string
+          idempotency_key: string | null
+          image_url: string | null
+          last_error: string | null
+          link_url: string | null
+          locked_at: string | null
+          max_attempts: number
+          next_attempt_at: string | null
+          planner_id: string | null
+          published_at: string | null
+          result: Json | null
+          scheduled_at: string
+          status: string
+          target_keys: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          article_id?: string | null
+          attempts?: number
+          caption: string
+          created_at?: string
+          id?: string
+          idempotency_key?: string | null
+          image_url?: string | null
+          last_error?: string | null
+          link_url?: string | null
+          locked_at?: string | null
+          max_attempts?: number
+          next_attempt_at?: string | null
+          planner_id?: string | null
+          published_at?: string | null
+          result?: Json | null
+          scheduled_at?: string
+          status?: string
+          target_keys?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          article_id?: string | null
+          attempts?: number
+          caption?: string
+          created_at?: string
+          id?: string
+          idempotency_key?: string | null
+          image_url?: string | null
+          last_error?: string | null
+          link_url?: string | null
+          locked_at?: string | null
+          max_attempts?: number
+          next_attempt_at?: string | null
+          planner_id?: string | null
+          published_at?: string | null
+          result?: Json | null
+          scheduled_at?: string
+          status?: string
+          target_keys?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_queue_planner_id_fkey"
+            columns: ["planner_id"]
+            isOneToOne: false
+            referencedRelation: "social_planners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_templates: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          is_default: boolean
+          name: string
+          platform: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          name: string
+          platform?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          name?: string
+          platform?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      social_traffic_events: {
+        Row: {
+          article_id: string | null
+          campaign_id: string | null
+          event_type: string
+          event_value: number | null
+          id: number
+          metadata: Json
+          occurred_at: string
+          platform: string | null
+          target_key: string | null
+          user_id: string
+        }
+        Insert: {
+          article_id?: string | null
+          campaign_id?: string | null
+          event_type: string
+          event_value?: number | null
+          id?: never
+          metadata?: Json
+          occurred_at?: string
+          platform?: string | null
+          target_key?: string | null
+          user_id: string
+        }
+        Update: {
+          article_id?: string | null
+          campaign_id?: string | null
+          event_type?: string
+          event_value?: number | null
+          id?: never
+          metadata?: Json
+          occurred_at?: string
+          platform?: string | null
+          target_key?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_traffic_events_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "articles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_traffic_events_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "public_articles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_traffic_events_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "social_campaigns"
             referencedColumns: ["id"]
           },
         ]
@@ -2077,6 +2461,37 @@ export type Database = {
         Args: { p_mp_payment_id?: string; p_stripe_session_id?: string }
         Returns: Json
       }
+      claim_next_social_job: {
+        Args: { p_user_id?: string }
+        Returns: {
+          article_id: string | null
+          attempts: number
+          caption: string
+          created_at: string
+          id: string
+          idempotency_key: string | null
+          image_url: string | null
+          last_error: string | null
+          link_url: string | null
+          locked_at: string | null
+          max_attempts: number
+          next_attempt_at: string | null
+          planner_id: string | null
+          published_at: string | null
+          result: Json | null
+          scheduled_at: string
+          status: string
+          target_keys: string[]
+          updated_at: string
+          user_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "social_queue"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       clean_old_trending_topics: { Args: never; Returns: undefined }
       cleanup_expired_data: { Args: never; Returns: undefined }
       create_license_after_payment: {
@@ -2107,6 +2522,10 @@ export type Database = {
           p_reference?: string
         }
         Returns: string
+      }
+      create_social_campaign_atomic: {
+        Args: { p_campaign: Json; p_items: Json; p_user_id: string }
+        Returns: Json
       }
       decrypt_credential: {
         Args: { enc_key: string; val: string }
