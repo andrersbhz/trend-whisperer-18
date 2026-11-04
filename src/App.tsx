@@ -41,6 +41,7 @@ const InstagramPage = lazyRetry(() => import("@/pages/InstagramPage"));
 const ThreadsPage = lazyRetry(() => import("@/pages/ThreadsPage"));
 const RepliesPage = lazyRetry(() => import("@/pages/RepliesPage"));
 const MapPage = lazyRetry(() => import("@/pages/MapPage"));
+const AuthorsPage = lazyRetry(() => import("@/pages/AuthorsPage"));
 const ProfilePage = lazyRetry(() => import("@/pages/ProfilePage"));
 const ImageStudioPage = lazyRetry(() => import("@/pages/ImageStudioPage"));
 const SalesPage = lazyRetry(() => import("@/pages/SalesPage"));
@@ -156,6 +157,7 @@ const AppContent = () => {
                     <Route path="/replies" element={<ProtectedRoute><RepliesPage /></ProtectedRoute>} />
                     <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
                     <Route path="/map" element={<ProtectedRoute><MapPage /></ProtectedRoute>} />
+                    <Route path="/authors" element={<ProtectedRoute><AuthorsPage /></ProtectedRoute>} />
                     <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
                     <Route path="/image-studio" element={<ProtectedRoute><ImageStudioPage /></ProtectedRoute>} />
                     <Route path="/branding" element={<ProtectedRoute><BrandingPage /></ProtectedRoute>} />

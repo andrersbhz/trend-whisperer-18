@@ -54,6 +54,41 @@ const AuthorsPage = () => {
     }
   };
 
+  const [wpUsers, setWpUsers] = useState<Array<{ id: number; name: string; avatar: string | null }>>([]);
+  const [loadingWp, setLoadingWp] = useState(false);
+
+  const loadWpUsers = async () => {
+    setLoadingWp(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('wp-list-authors');
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Falha ao buscar autores');
+      setWpUsers(data.users || []);
+      toast({ title: `${(data.users || []).length} autores encontrados no WordPress` });
+    } catch (e: any) {
+      toast({ title: 'Erro ao puxar autores', description: e.message, variant: 'destructive' });
+    } finally {
+      setLoadingWp(false);
+    }
+  };
+
+  const assignWpAuthor = async (category: string, wpId: string) => {
+    if (!user) return;
+    const wp = wpUsers.find((u) => String(u.id) === wpId);
+    if (!wp) return;
+    const existing = authors.find((a) => a.category === category);
+    const payload = { name: wp.name, wp_user_id: wp.id, avatar_url: existing?.avatar_url || wp.avatar || '' };
+    const { error } = existing
+      ? await supabase.from('authors').update(payload).eq('id', existing.id)
+      : await supabase.from('authors').insert({ ...payload, category, user_id: user.id, role: 'Redator' });
+    if (error) {
+      toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' });
+      return;
+    }
+    toast({ title: `${wp.name} agora escreve em ${category}` });
+    fetchAuthors();
+  };
+
   useEffect(() => {
     fetchAuthors();
     fetchCategories();
@@ -99,6 +134,43 @@ const AuthorsPage = () => {
         <h1 className="text-3xl font-black uppercase tracking-tighter text-foreground">Gestão de Autores</h1>
         <p className="text-xs uppercase font-bold tracking-[0.2em] text-muted-foreground">Personalize a identidade dos seus escritores por categoria</p>
       </div>
+
+      <Card className="glass-card border-primary/20">
+        <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
+          <CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
+            <Globe className="h-4 w-4 text-primary" /> Escritor do WordPress por categoria
+          </CardTitle>
+          <Button onClick={loadWpUsers} disabled={loadingWp} variant="outline" className="text-[10px] font-black uppercase">
+            {loadingWp ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Puxar autores do WordPress'}
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {wpUsers.length === 0 ? (
+            <p className="text-[11px] text-muted-foreground">Clique em "Puxar autores do WordPress" para listar os escritores cadastrados no seu site.</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {categories.map((cat) => {
+                const current = authors.find((a) => a.category === cat);
+                return (
+                  <div key={cat} className="space-y-1">
+                    <Label className="text-[10px] uppercase font-black">{cat}</Label>
+                    <Select value={current?.wp_user_id ? String(current.wp_user_id) : undefined} onValueChange={(v) => assignWpAuthor(cat, v)}>
+                      <SelectTrigger className="bg-secondary/20 border-white/10">
+                        <SelectValue placeholder="Escolha o escritor" />
+                      </SelectTrigger>
+                      <SelectContent className="glass-card border-white/10">
+                        {wpUsers.map((u) => (
+                          <SelectItem key={u.id} value={String(u.id)}>{u.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Form */}
