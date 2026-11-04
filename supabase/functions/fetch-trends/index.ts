@@ -238,7 +238,7 @@ const TRUSTED_FEEDS: Array<{ name: string; url: string; region: string }> = [
   { name: "Folha de S.Paulo", url: "https://feeds.folha.uol.com.br/emcimadahora/rss091.xml", region: "BR" },
   { name: "UOL", url: "https://rss.uol.com.br/feed/noticias.xml", region: "BR" },
   { name: "InfoMoney", url: "https://www.infomoney.com.br/feed/", region: "BR" },
-  { name: "BBC Brasil", url: "https://feeds.bbci.co.uk/portuguese/rss.xml", region: "World" },
+  { name: "BBC Brasil", url: "https://feeds.bbci.co.uk/portuguese/rss.xml", region: "BR" },
   { name: "The Guardian", url: "https://www.theguardian.com/world/rss", region: "World" },
 ];
 

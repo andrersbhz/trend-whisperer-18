@@ -1496,7 +1496,11 @@ serve(async (req) => {
           continue;
         }
 
-        const isWorld = topic.region === "World" || topic.category === "world";
+        // BBC Brasil é um feed em português: nunca tratar como notícia internacional em inglês,
+        // mesmo para tópicos antigos já salvos com region "World".
+        const topicSources: any[] = Array.isArray(topic.sources) ? topic.sources : [];
+        const isBBCBrasil = topicSources.length > 0 && topicSources.every((s: any) => s?.source_name === "BBC Brasil");
+        const isWorld = !isBBCBrasil && (topic.region === "World" || topic.category === "world");
         if (isWorld) topic.category = "world";
         const englishDirective = isWorld ? `\n\nLANGUAGE OVERRIDE (MANDATORY): This is an international story for a United States / English-speaking audience. Write EVERYTHING (title, content, excerpt, seo_keyword, seo_title, meta_description, slug, image_alt, image_caption, visual_elements) in native American English (en-US). Ignore any instruction above that says to write in Portuguese. Keep all factual and formatting rules.` : "";
         const userPrompt = `${buildUserPrompt(topic.topic, topic.category, topic.context, strictPrompt, writerPrompt)}\n\n${buildFactsBlock(verification)}${englishDirective}`;
