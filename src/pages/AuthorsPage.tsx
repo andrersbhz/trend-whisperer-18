@@ -18,7 +18,7 @@ const AuthorsPage = () => {
   const [authors, setAuthors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [categories, setCategories] = useState<string[]>(['policia', 'celebridades', 'politica', 'esportes', 'saude', 'financas']);
+  const [categories, setCategories] = useState<string[]>(['policia', 'celebridades', 'politica', 'esportes', 'saude', 'financas', 'world']);
 
   const [newAuthor, setNewAuthor] = useState({
     name: '',
@@ -48,7 +48,7 @@ const AuthorsPage = () => {
     if (!user) return;
     try {
       const { data } = await supabase.from('user_settings').select('categories').eq('user_id', user.id).maybeSingle();
-      if (data?.categories) setCategories(data.categories);
+      if (data?.categories) setCategories(Array.from(new Set([...data.categories, 'world'])));
     } catch (error) {
       console.error('Error fetching categories:', error);
     }
