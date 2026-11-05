@@ -1088,7 +1088,11 @@ serve(async (req) => {
   try {
     const reqBody = await req.text();
     if (!reqBody) throw new Error("Request body is empty");
-    const { userId, topics: manualTopics, forceCategory } = JSON.parse(reqBody);
+    const parsedBody = JSON.parse(reqBody);
+    const { userId, topics: manualTopics } = parsedBody;
+    const forceCategory: string | undefined = typeof parsedBody.forceCategory === "string" && parsedBody.forceCategory.trim()
+      ? parsedBody.forceCategory.trim().toLowerCase()
+      : undefined;
     if (!userId) throw new Error("userId is required");
     await requireUserOrService(req, userId);
 
@@ -1524,6 +1528,7 @@ serve(async (req) => {
         // mesmo para tópicos antigos já salvos com region "World".
         const topicSources: any[] = Array.isArray(topic.sources) ? topic.sources : [];
         const isBBCBrasil = topicSources.length > 0 && topicSources.every((s: any) => s?.source_name === "BBC Brasil");
+        if (typeof topic.category === "string") topic.category = topic.category.trim().toLowerCase();
         const isWorld = !isBBCBrasil && (topic.region === "World" || topic.category === "world");
         if (isWorld) topic.category = "world";
         const englishDirective = isWorld ? `\n\nLANGUAGE OVERRIDE (MANDATORY): This is an international story for a United States / English-speaking audience. Write EVERYTHING (title, content, excerpt, seo_keyword, seo_title, meta_description, slug, image_alt, image_caption, visual_elements) in native American English (en-US). Ignore any instruction above that says to write in Portuguese. Keep all factual and formatting rules.` : "";
@@ -1771,6 +1776,7 @@ function getDefaultTopic(category: string): string {
     saude: "Dicas de saúde e bem-estar",
     celebridades: "Novidades do mundo das celebridades brasileiras",
     financas: "Economia e mercado financeiro no Brasil",
+    world: "Top world news today",
   };
   return defaults[category] || "Notícias do Brasil";
 }
