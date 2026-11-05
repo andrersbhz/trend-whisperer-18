@@ -1207,16 +1207,36 @@ serve(async (req) => {
       console.log(`[Pipeline] Using ${topics.length} manual topics`);
     } else {
       // Apenas tópicos das últimas 24h, ainda não usados, em categorias marcadas
-      const { data: dbTopics } = await supabase
-        .from("trending_topics")
-        .select("*")
-        .eq("user_id", userId)
-        .eq("used", false)
-        .gte("fetched_at", since24h)
-        .in("category", userCategoriesToSearch)
-        .order("trend_score", { ascending: false })
-        .order("fetched_at", { ascending: false });
-      topics = dbTopics || [];
+      // Brasil e Global buscados separadamente para que os tópicos internacionais
+      // nunca sejam cortados pelo limite de linhas quando há muitas notícias nacionais.
+      const [{ data: brTopics }, { data: worldTopics }] = await Promise.all([
+        supabase
+          .from("trending_topics")
+          .select("*")
+          .eq("user_id", userId)
+          .eq("used", false)
+          .gte("fetched_at", since24h)
+          .or("region.is.null,region.neq.World")
+          .in("category", userCategoriesToSearch)
+          .order("trend_score", { ascending: false })
+          .limit(500),
+        supabase
+          .from("trending_topics")
+          .select("*")
+          .eq("user_id", userId)
+          .eq("used", false)
+          .gte("fetched_at", since24h)
+          .eq("region", "World")
+          .order("trend_score", { ascending: false })
+          .limit(500),
+      ]);
+      // Todo tópico Global vai para a categoria "world" por padrão (exceto BBC Brasil, em PT-BR).
+      const worldNormalized = (worldTopics || []).map((t: any) => {
+        const srcs: any[] = Array.isArray(t.sources) ? t.sources : [];
+        const bbc = srcs.length > 0 && srcs.every((s: any) => s?.source_name === "BBC Brasil");
+        return bbc ? t : { ...t, category: "world" };
+      });
+      topics = [...(brTopics || []), ...worldNormalized];
 
       // Remove tópicos cujo assunto já foi coberto por artigos das últimas 24h
       const before = topics.length;

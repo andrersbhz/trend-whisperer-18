@@ -63,7 +63,7 @@ const TrendsPage = () => {
 
     if (regionFilter !== "all") {
       result = result.filter(t => {
-        const isWorld = t.region === 'World' || t.region === 'US' || t.source_name?.includes('Global') || t.source_name?.includes('Mundo');
+        const isWorld = t.region === 'World' || t.region === 'US';
         return regionFilter === "World" ? isWorld : !isWorld;
       });
     }
@@ -400,9 +400,9 @@ const TrendsPage = () => {
                 <SelectValue placeholder="Região" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">BR & Mundo</SelectItem>
-                <SelectItem value="BR">Apenas Brasil 🇧🇷</SelectItem>
-                <SelectItem value="World">Apenas Mundo 🌎</SelectItem>
+                <SelectItem value="all">Brasil & Global</SelectItem>
+                <SelectItem value="BR">Brasil (nacionais) 🇧🇷</SelectItem>
+                <SelectItem value="World">Global (World, inglês) 🌎</SelectItem>
               </SelectContent>
             </Select>
             
@@ -540,11 +540,11 @@ const TrendsPage = () => {
                       <Badge variant="outline" className="text-[10px] h-5 bg-blue-500/10 text-blue-500 border-blue-500/20">
                         {topic.source_name?.includes('Portal Leo Dias')
                           ? 'Portal Leo Dias 📰'
-                          : topic.source_name?.includes('US') || topic.source_name?.includes('Global') || topic.source_name?.includes('Mundo')
-                            ? 'Google Trends Mundo 🌎'
-                            : 'Google Trends BR 🇧🇷'}
+                          : topic.region === 'World'
+                            ? 'Global 🌎'
+                            : 'Brasil 🇧🇷'}
                       </Badge>
-                      <Badge variant="secondary">{topic.category}</Badge>
+                      <Badge variant="secondary">{topic.region === 'World' && !topic.source_name?.includes('BBC Brasil') ? 'world' : topic.category}</Badge>
                       {topic.search_volume && (
                         <span className="text-xs text-muted-foreground">{topic.search_volume} buscas</span>
                       )}
