@@ -1181,8 +1181,23 @@ serve(async (req) => {
     // Notícias internacionais (fora do Brasil) sempre entram na pauta como "world", escritas em inglês.
     const userCategoriesToSearch: string[] = baseCategories.includes("world") ? baseCategories : [...baseCategories, "world"];
 
-    // Janela das últimas 24h — usada para priorizar trends recentes e evitar repetição de assunto
+    // Janela das últimas 24h — usada para evitar repetição de assunto
     const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+    // Filtros salvos na página Tendências: definem a prioridade da geração automática.
+    const savedTrendFilters: any = (settings as any)?.trends_filters || {};
+    const prefRegion: "all" | "BR" | "World" =
+      savedTrendFilters.region === "World" || savedTrendFilters.region === "BR" ? savedTrendFilters.region : "all";
+    const prefSource: string = typeof savedTrendFilters.source === "string" ? savedTrendFilters.source : "all";
+    const prefSort: string = typeof savedTrendFilters.sort === "string" ? savedTrendFilters.sort : "audience_desc";
+    const prefTimeHours: number =
+      savedTrendFilters.time === "48h" ? 48 : savedTrendFilters.time === "7d" || savedTrendFilters.time === "all" ? 168 : 24;
+    const sinceTopics = new Date(Date.now() - prefTimeHours * 60 * 60 * 1000).toISOString();
+    const isWorldTopic = (t: any) => t?.region === "World" || t?.region === "US" || t?.category === "world";
+    const matchesPrefRegion = (t: any) =>
+      prefRegion === "all" ? true : prefRegion === "World" ? isWorldTopic(t) : !isWorldTopic(t);
+    const applyTrendPrefs = !forceCategory && !(manualTopics && Array.isArray(manualTopics) && manualTopics.length > 0);
+    console.log(`[Pipeline] Filtros de Tendências aplicados: região=${prefRegion} fonte=${prefSource} ordem=${prefSort} janela=${prefTimeHours}h (ativo=${applyTrendPrefs})`);
 
     // Carrega artigos das últimas 24h (para contagem por categoria + deduplicação de assunto)
     const { data: recentArticlesFull } = await supabase
