@@ -63,7 +63,7 @@ const Auth = () => {
           <div className="gradient-primary p-2.5 rounded-xl shadow-neon-lilac animate-glow">
             <Newspaper className="h-6 w-6" style={{ color: '#a3ff12' }} />
           </div>
-          <h1 className="text-2xl font-bold neon-text-lilac">NEURAL VORTEX</h1>
+          <h1 className="text-2xl font-bold neon-text-lilac">A3 AUTOPOST</h1>
         </div>
 
         <Card className="glass-card shadow-elevated neon-hover-cycle">
