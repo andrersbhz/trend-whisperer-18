@@ -63,7 +63,7 @@ const TrendsPage = () => {
 
     if (regionFilter !== "all") {
       result = result.filter(t => {
-        const isWorld = t.region === 'World' || t.region === 'US' || t.source_name?.includes('Global') || t.source_name?.includes('Mundo');
+        const isWorld = t.region === 'World' || t.region === 'US';
         return regionFilter === "World" ? isWorld : !isWorld;
       });
     }
