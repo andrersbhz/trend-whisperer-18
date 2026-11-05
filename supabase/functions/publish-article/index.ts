@@ -317,7 +317,7 @@ serve(async (req) => {
         }
         if (!wpAuthorId && article.category) {
           const { data: a } = await supabase.from("authors").select("wp_user_id")
-            .eq("user_id", article.user_id).eq("category", article.category)
+            .eq("user_id", article.user_id).ilike("category", String(article.category).trim())
             .not("wp_user_id", "is", null).order("updated_at", { ascending: false }).limit(1).maybeSingle();
           wpAuthorId = a?.wp_user_id ?? null;
         }
