@@ -1315,7 +1315,11 @@ serve(async (req) => {
     }
 
     // Garantia final: todas as tendências reais antes de qualquer tópico evergreen.
-    const realTrends = topicsToUse.filter(isRealTrend);
+    // Ordena tendências reais pelo maior alcance (pontuação + potencial + volume),
+    // independente da categoria, para gerar primeiro o que tem mais visualização.
+    const reach = (t: any) =>
+      (Number(t.trend_score) || 0) + (Number(t.discover_potential) || 0) * 0.5 + volumeScore(t.search_volume) * 5;
+    const realTrends = topicsToUse.filter(isRealTrend).sort((a, b) => reach(b) - reach(a));
     const evergreenFallbacks = topicsToUse.filter((t) => !isRealTrend(t));
     topicsToUse.length = 0;
     topicsToUse.push(...realTrends, ...evergreenFallbacks);

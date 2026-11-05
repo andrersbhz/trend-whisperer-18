@@ -22,6 +22,7 @@ import a3Logo from '@/assets/a3-logo.jpg';
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/admin' },
   { icon: FileText, label: 'Artigos', path: '/articles' },
+  { icon: Clock, label: 'Agendamentos', path: '/schedule' },
   { icon: User, label: 'Autores', path: '/authors' },
   { icon: ImageIcon, label: 'Estúdio de Imagens', path: '/image-studio' },
   { icon: Send, label: 'Publicador Social', path: '/social' },
@@ -36,7 +37,6 @@ const navItems = [
   { icon: MessagesSquare, label: 'Central de Respostas', path: '/replies' },
   { icon: Activity, label: 'Analytics', path: '/analytics' },
   { icon: Globe, label: 'Mapa Live', path: '/map' },
-  { icon: Clock, label: 'Agendamentos', path: '/schedule' },
   { icon: Newspaper, label: 'Ver Página de Vendas', path: '/vendas' },
   { icon: User, label: 'Meu Perfil', path: '/profile' },
   { icon: Palette, label: 'Marca / Vendas', path: '/branding' },
