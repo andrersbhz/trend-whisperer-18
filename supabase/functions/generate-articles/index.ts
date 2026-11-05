@@ -1341,7 +1341,7 @@ serve(async (req) => {
     // Round-robin ponderado: a cada rodada reordena por prioridade atual,
     // pegando 1 tópico da categoria mais "quente vs saturada" do momento.
     const topicsToUse: any[] = [];
-    while (topicsToUse.length < 50) {
+    while (topicsToUse.length < (applyTrendPrefs && prefRegion !== "all" ? 300 : 50)) {
       const available = userCategories.filter((c) => topicsByCategory[c].length > 0);
       if (available.length === 0) break;
       available.sort((a, b) => categoryPriority(b) - categoryPriority(a));
