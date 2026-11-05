@@ -1234,7 +1234,7 @@ serve(async (req) => {
           .select("*")
           .eq("user_id", userId)
           .eq("used", false)
-          .gte("fetched_at", since24h)
+          .gte("fetched_at", sinceTopics)
           .or("region.is.null,region.neq.World")
           .in("category", userCategoriesToSearch)
           .order("trend_score", { ascending: false })
@@ -1244,7 +1244,7 @@ serve(async (req) => {
           .select("*")
           .eq("user_id", userId)
           .eq("used", false)
-          .gte("fetched_at", since24h)
+          .gte("fetched_at", sinceTopics)
           .eq("region", "World")
           .order("trend_score", { ascending: false })
           .limit(500),
@@ -1378,6 +1378,34 @@ serve(async (req) => {
       topicsToUse.push(...kept);
     }
 
+
+    // Aplica as preferências salvas na página Tendências (região, fonte, ordenação).
+    if (applyTrendPrefs) {
+      const real = topicsToUse.filter(isRealTrend);
+      const fallback = topicsToUse.filter((t) => !isRealTrend(t));
+      const sortKey = (t: any) =>
+        prefSort === "recent" ? new Date(t.fetched_at || 0).getTime()
+        : prefSort === "oldest" ? -new Date(t.fetched_at || 0).getTime()
+        : reach(t);
+      const sourceMatch = (t: any) => {
+        if (prefSource === "all") return true;
+        if (t.source_name === prefSource) return true;
+        const srcs: any[] = Array.isArray(t.sources) ? t.sources : [];
+        return srcs.some((s: any) => s?.source_name === prefSource);
+      };
+      const rank = (t: any) => (matchesPrefRegion(t) ? 2 : 0) + (sourceMatch(t) ? 1 : 0);
+      real.sort((a, b) => rank(b) - rank(a) || sortKey(b) - sortKey(a));
+      const preferred = real.filter((t) => rank(t) === 3 || (prefSource === "all" && matchesPrefRegion(t)));
+      topicsToUse.length = 0;
+      // Com tópicos da região escolhida disponíveis, só eles entram na rodada;
+      // os demais e os temas padrão servem apenas de reserva quando acabarem.
+      if (prefRegion !== "all" && real.some(matchesPrefRegion)) {
+        topicsToUse.push(...real.filter(matchesPrefRegion));
+      } else {
+        topicsToUse.push(...real, ...fallback);
+      }
+      console.log(`[Pipeline] Preferência de Tendências: ${preferred.length} tópicos preferidos; fila final ${topicsToUse.length}`);
+    }
 
     console.log(`[Pipeline] Ordem priorizando TENDÊNCIAS (primeiros 8):`,
       topicsToUse.slice(0, 8).map(t => `${t.category}[${t.search_volume || "?"}]`).join(" → "));
