@@ -6,6 +6,7 @@ import {
   LayoutDashboard, FileText, Settings, TrendingUp, Clock, LogOut, Newspaper, Menu, X,
   Sparkles, Loader2, Bot, Activity, Globe, Download, Search, Facebook, Instagram, AtSign,
   User, Sun, Moon, ImageIcon, Palette, Wallet, Bell, Send, MessagesSquare, CalendarClock, Megaphone,
+  PanelLeftClose, PanelLeftOpen,
 } from 'lucide-react';
 import { useLicenseSessionGuard } from '@/hooks/useLicenseSessionGuard';
 import { getPerformanceLogs, exportLogsToCSV } from '@/lib/performance';
@@ -56,6 +57,13 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [logCount, setLogCount] = useState(0);
+  const [collapsed, setCollapsed] = useState(() => {
+    try { return localStorage.getItem('sidebar-collapsed') === '1'; } catch { return false; }
+  });
+
+  useEffect(() => {
+    try { localStorage.setItem('sidebar-collapsed', collapsed ? '1' : '0'); } catch { /* ignore */ }
+  }, [collapsed]);
 
   useEffect(() => {
     if (brand?.favicon_url) {
@@ -114,23 +122,33 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
       <aside
         className={cn(
-          'fixed lg:sticky top-0 inset-y-0 left-0 z-50 w-72 lg:w-64 h-screen bg-background/92 backdrop-blur-xl flex flex-col transition-transform duration-200 ease-out border-r border-border/60 shadow-xl',
+          'fixed lg:sticky top-0 inset-y-0 left-0 z-50 w-72 h-screen bg-background/92 backdrop-blur-xl flex flex-col duration-200 ease-out border-r border-border/60 shadow-xl transition-[width,transform]',
+          collapsed ? 'lg:w-[76px]' : 'lg:w-64',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         )}
         aria-label="Navegação principal"
       >
-        <div className="px-4 py-4 flex items-center justify-between border-b border-border/60">
-          <Link to="/admin" className="flex items-center gap-3 group min-w-0">
+        <div className={cn('px-4 py-4 flex items-center border-b border-border/60', collapsed ? 'lg:flex-col lg:gap-2 lg:px-2' : 'justify-between')}>
+          <Link to="/admin" className={cn('flex items-center gap-3 group min-w-0', collapsed && 'lg:justify-center')}>
             <div className="h-11 w-11 shrink-0 rounded-lg overflow-hidden border border-border/60 bg-card p-1.5">
               <img src={brand?.logo_url || a3Logo} alt={brand?.brand_name || 'Logo'} className="h-full w-full object-contain" />
             </div>
-            <div className="min-w-0">
+            <div className={cn('min-w-0', collapsed && 'lg:hidden')}>
               <span className="block font-semibold text-sm tracking-tight text-foreground truncate">{brand?.brand_name || 'A3 PostWP'}</span>
               <span className="block text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Publishing Suite</span>
             </div>
           </Link>
           <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-muted-foreground hover:text-foreground p-2 rounded-lg hover:bg-muted transition-colors" aria-label="Fechar menu">
             <X className="h-5 w-5" />
+          </button>
+          <button
+            onClick={() => setCollapsed((v) => !v)}
+            title={collapsed ? 'Expandir menu' : 'Recolher menu'}
+            aria-label={collapsed ? 'Expandir menu' : 'Recolher menu'}
+            aria-pressed={collapsed}
+            className="hidden lg:inline-flex text-muted-foreground hover:text-foreground p-2 rounded-lg hover:bg-muted transition-colors"
+          >
+            {collapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
           </button>
         </div>
 
@@ -141,16 +159,19 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
               <Link
                 key={item.path}
                 to={item.path}
+                title={item.label}
+                aria-label={item.label}
                 className={cn(
                   'group flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold transition-all duration-200 ease-out hover:scale-[1.02] active:scale-[0.98] nav-link',
+                  collapsed && 'lg:justify-center lg:px-2',
                   active
                     ? 'bg-foreground text-background'
                     : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                 )}
               >
                 <item.icon className="h-[17px] w-[17px] shrink-0" />
-                <span className="flex-1 truncate">{item.label}</span>
-                {active && <span className="h-1.5 w-1.5 rounded-full bg-background" />}
+                <span className={cn('flex-1 truncate', collapsed && 'lg:hidden')}>{item.label}</span>
+                {active && <span className={cn('h-1.5 w-1.5 rounded-full bg-background', collapsed && 'lg:hidden')} />}
               </Link>
             );
           })}
@@ -158,15 +179,18 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
         <div className="p-3 border-t border-border/60 space-y-2">
           {user && (
-            <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-muted/50 border border-border/50">
+            <div className={cn('flex items-center gap-3 px-3 py-2.5 rounded-lg bg-muted/50 border border-border/50', collapsed && 'lg:justify-center lg:px-2')}>
               <div className="h-9 w-9 rounded-lg bg-foreground flex items-center justify-center text-background font-semibold text-sm shrink-0">{userInitial}</div>
-              <div className="min-w-0 flex-1">
+              <div className={cn('min-w-0 flex-1', collapsed && 'lg:hidden')}>
                 <p className="text-xs font-medium text-foreground truncate">{user.email}</p>
                 <p className="text-[10px] text-muted-foreground">Conta ativa</p>
               </div>
             </div>
           )}
-          <Button variant="ghost" className="w-full justify-start" onClick={signOut}><LogOut className="h-4 w-4" />Sair</Button>
+          <Button variant="ghost" className={cn('w-full justify-start', collapsed && 'lg:justify-center lg:px-2')} onClick={signOut} title="Sair" aria-label="Sair">
+            <LogOut className="h-4 w-4" />
+            <span className={cn(collapsed && 'lg:hidden')}>Sair</span>
+          </Button>
         </div>
       </aside>
 
