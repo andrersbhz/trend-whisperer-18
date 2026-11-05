@@ -1181,8 +1181,23 @@ serve(async (req) => {
     // Notícias internacionais (fora do Brasil) sempre entram na pauta como "world", escritas em inglês.
     const userCategoriesToSearch: string[] = baseCategories.includes("world") ? baseCategories : [...baseCategories, "world"];
 
-    // Janela das últimas 24h — usada para priorizar trends recentes e evitar repetição de assunto
+    // Janela das últimas 24h — usada para evitar repetição de assunto
     const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+    // Filtros salvos na página Tendências: definem a prioridade da geração automática.
+    const savedTrendFilters: any = (settings as any)?.trends_filters || {};
+    const prefRegion: "all" | "BR" | "World" =
+      savedTrendFilters.region === "World" || savedTrendFilters.region === "BR" ? savedTrendFilters.region : "all";
+    const prefSource: string = typeof savedTrendFilters.source === "string" ? savedTrendFilters.source : "all";
+    const prefSort: string = typeof savedTrendFilters.sort === "string" ? savedTrendFilters.sort : "audience_desc";
+    const prefTimeHours: number =
+      savedTrendFilters.time === "48h" ? 48 : savedTrendFilters.time === "7d" || savedTrendFilters.time === "all" ? 168 : 24;
+    const sinceTopics = new Date(Date.now() - prefTimeHours * 60 * 60 * 1000).toISOString();
+    const isWorldTopic = (t: any) => t?.region === "World" || t?.region === "US" || t?.category === "world";
+    const matchesPrefRegion = (t: any) =>
+      prefRegion === "all" ? true : prefRegion === "World" ? isWorldTopic(t) : !isWorldTopic(t);
+    const applyTrendPrefs = !forceCategory && !(manualTopics && Array.isArray(manualTopics) && manualTopics.length > 0);
+    console.log(`[Pipeline] Filtros de Tendências aplicados: região=${prefRegion} fonte=${prefSource} ordem=${prefSort} janela=${prefTimeHours}h (ativo=${applyTrendPrefs})`);
 
     // Carrega artigos das últimas 24h (para contagem por categoria + deduplicação de assunto)
     const { data: recentArticlesFull } = await supabase
@@ -1219,7 +1234,7 @@ serve(async (req) => {
           .select("*")
           .eq("user_id", userId)
           .eq("used", false)
-          .gte("fetched_at", since24h)
+          .gte("fetched_at", sinceTopics)
           .or("region.is.null,region.neq.World")
           .in("category", userCategoriesToSearch)
           .order("trend_score", { ascending: false })
@@ -1229,7 +1244,7 @@ serve(async (req) => {
           .select("*")
           .eq("user_id", userId)
           .eq("used", false)
-          .gte("fetched_at", since24h)
+          .gte("fetched_at", sinceTopics)
           .eq("region", "World")
           .order("trend_score", { ascending: false })
           .limit(500),
@@ -1326,7 +1341,7 @@ serve(async (req) => {
     // Round-robin ponderado: a cada rodada reordena por prioridade atual,
     // pegando 1 tópico da categoria mais "quente vs saturada" do momento.
     const topicsToUse: any[] = [];
-    while (topicsToUse.length < 50) {
+    while (topicsToUse.length < (applyTrendPrefs && prefRegion !== "all" ? 300 : 50)) {
       const available = userCategories.filter((c) => topicsByCategory[c].length > 0);
       if (available.length === 0) break;
       available.sort((a, b) => categoryPriority(b) - categoryPriority(a));
@@ -1363,6 +1378,34 @@ serve(async (req) => {
       topicsToUse.push(...kept);
     }
 
+
+    // Aplica as preferências salvas na página Tendências (região, fonte, ordenação).
+    if (applyTrendPrefs) {
+      const real = topicsToUse.filter(isRealTrend);
+      const fallback = topicsToUse.filter((t) => !isRealTrend(t));
+      const sortKey = (t: any) =>
+        prefSort === "recent" ? new Date(t.fetched_at || 0).getTime()
+        : prefSort === "oldest" ? -new Date(t.fetched_at || 0).getTime()
+        : reach(t);
+      const sourceMatch = (t: any) => {
+        if (prefSource === "all") return true;
+        if (t.source_name === prefSource) return true;
+        const srcs: any[] = Array.isArray(t.sources) ? t.sources : [];
+        return srcs.some((s: any) => s?.source_name === prefSource);
+      };
+      const rank = (t: any) => (matchesPrefRegion(t) ? 2 : 0) + (sourceMatch(t) ? 1 : 0);
+      real.sort((a, b) => rank(b) - rank(a) || sortKey(b) - sortKey(a));
+      const preferred = real.filter((t) => rank(t) === 3 || (prefSource === "all" && matchesPrefRegion(t)));
+      topicsToUse.length = 0;
+      // Com tópicos da região escolhida disponíveis, só eles entram na rodada;
+      // os demais e os temas padrão servem apenas de reserva quando acabarem.
+      if (prefRegion !== "all" && real.some(matchesPrefRegion)) {
+        topicsToUse.push(...real.filter(matchesPrefRegion));
+      } else {
+        topicsToUse.push(...real, ...fallback);
+      }
+      console.log(`[Pipeline] Preferência de Tendências: ${preferred.length} tópicos preferidos; fila final ${topicsToUse.length}`);
+    }
 
     console.log(`[Pipeline] Ordem priorizando TENDÊNCIAS (primeiros 8):`,
       topicsToUse.slice(0, 8).map(t => `${t.category}[${t.search_volume || "?"}]`).join(" → "));
