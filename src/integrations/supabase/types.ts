@@ -2129,6 +2129,10 @@ export type Database = {
           linkedin_access_token: string | null
           linkedin_org_id: string | null
           metrics_refresh_interval: number | null
+          ninerouter_api_key: string | null
+          ninerouter_enabled: boolean
+          ninerouter_endpoint: string | null
+          ninerouter_model: string | null
           openai_api_key: string | null
           openai_model: string | null
           priority_categories: string[]
@@ -2189,6 +2193,10 @@ export type Database = {
           linkedin_access_token?: string | null
           linkedin_org_id?: string | null
           metrics_refresh_interval?: number | null
+          ninerouter_api_key?: string | null
+          ninerouter_enabled?: boolean
+          ninerouter_endpoint?: string | null
+          ninerouter_model?: string | null
           openai_api_key?: string | null
           openai_model?: string | null
           priority_categories?: string[]
@@ -2249,6 +2257,10 @@ export type Database = {
           linkedin_access_token?: string | null
           linkedin_org_id?: string | null
           metrics_refresh_interval?: number | null
+          ninerouter_api_key?: string | null
+          ninerouter_enabled?: boolean
+          ninerouter_endpoint?: string | null
+          ninerouter_model?: string | null
           openai_api_key?: string | null
           openai_model?: string | null
           priority_categories?: string[]
@@ -2557,6 +2569,7 @@ export type Database = {
         Returns: Json
       }
       get_google_oauth_credentials_status: { Args: never; Returns: Json }
+      get_ninerouter_status: { Args: never; Returns: boolean }
       get_online_locations: {
         Args: { p_minutes: number }
         Returns: {

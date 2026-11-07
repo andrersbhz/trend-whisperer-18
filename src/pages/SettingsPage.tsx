@@ -13,6 +13,7 @@ import AutomationSettings from '@/components/settings/AutomationSettings';
 import GeminiSettings from '@/components/settings/GeminiSettings';
 import OpenAISettings from '@/components/settings/OpenAISettings';
 import GroqSettings from '@/components/settings/GroqSettings';
+import NineRouterSettings from '@/components/settings/NineRouterSettings';
 import AzureCopilotSettings from '@/components/settings/AzureCopilotSettings';
 import JetpackSettings from '@/components/settings/JetpackSettings';
 import FacebookSettings from '@/components/settings/FacebookSettings';
@@ -449,6 +450,7 @@ const SettingsPage = () => {
         </TabsContent>
 
         <TabsContent value="ai" className="space-y-6 mt-0 animate-in fade-in-50 duration-300">
+          <NineRouterSettings />
           <GeminiSettings settings={settings} onChange={updateSettings} hasGeminiKey={credStatus.has_gemini_key} onDisconnect={() => disconnectCredential({ gemini_api_key: '' }, 'Gemini')} />
           <OpenAISettings settings={settings} onChange={updateSettings} hasOpenaiKey={credStatus.has_openai_key} onDisconnect={() => disconnectCredential({ openai_api_key: '' }, 'OpenAI')} />
           <GroqSettings settings={settings} onChange={updateSettings} hasGroqKey={credStatus.has_groq_key} onDisconnect={() => disconnectCredential({ groq_api_key: '' }, 'Groq')} />

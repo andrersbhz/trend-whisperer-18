@@ -306,6 +306,27 @@ async function callAzureOpenAIDirect(apiKey: string, endpoint: string, deploymen
   return JSON.parse(content);
 }
 
+async function callNineRouterDirect(endpoint: string, apiKey: string | null, systemPrompt: string, userPrompt: string, model: string): Promise<AIResponse> {
+  const base = endpoint.trim().replace(/\/+$/, "").replace(/\/v1$/, "") + "/v1";
+  const resp = await fetch(`${base}/chat/completions`, {
+    method: "POST",
+    headers: { ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}), "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: model || "auto",
+      messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt + "\n\nResponda SOMENTE com um objeto JSON contendo as chaves: " + Object.keys(ARTICLE_TOOL_PARAMS).join(", ") + "." }],
+      response_format: { type: "json_object" },
+    }),
+  });
+  if (!resp.ok) throw new Error(`9Router error ${resp.status}: ${(await resp.text()).slice(0, 300)}`);
+  const aiData = await resp.json();
+  const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+  if (toolCall?.function?.arguments) return JSON.parse(toolCall.function.arguments);
+  let content = aiData.choices?.[0]?.message?.content || "";
+  content = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+  const a = content.indexOf("{"), b = content.lastIndexOf("}");
+  return JSON.parse(a >= 0 && b > a ? content.slice(a, b + 1) : content);
+}
+
 async function callLovableGateway(apiKey: string, systemPrompt: string, userPrompt: string): Promise<AIResponse> {
   const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
@@ -1143,6 +1164,15 @@ serve(async (req) => {
     }
 
     const providers: ProviderConfig[] = [];
+    // 0. 9Router (gateway próprio do usuário) — prioridade máxima, com fallback para os demais
+    if (settings?.ninerouter_enabled !== false && settings?.ninerouter_endpoint) {
+      let nineKey: string | null = null;
+      if (settings?.ninerouter_api_key) {
+        const { data: dec } = await supabase.rpc("decrypt_credential", { enc_key: "", val: settings.ninerouter_api_key });
+        if (dec && typeof dec === "string" && dec.length > 5) nineKey = dec;
+      }
+      providers.push({ name: "9Router", call: (s, u) => callNineRouterDirect(settings.ninerouter_endpoint, nineKey, s, u, settings?.ninerouter_model || "auto") });
+    }
     // Ordem de redundância ajustada:
     // Ordem de execução: 1. Gemini, 2. OpenAI, 3. Groq
     
