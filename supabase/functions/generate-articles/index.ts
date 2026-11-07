@@ -451,11 +451,11 @@ async function generateImageLovable(title: string, content: string | null, visua
   const basePrompt = appendFormatHint(buildImagePrompt(title, content, visualElements, customImagePrompt), fmt);
   const refs = (knowledgeUrls || []).slice(0, 10).filter((u) => typeof u === "string" && u.startsWith("http"));
   const promptText = refs.length
-    ? `${basePrompt}\n\nCONHECIMENTO VISUAL DE REFERÊNCIA: Você recebeu ${refs.length} imagem(ns) de referência anexadas nesta mensagem. Analise cuidadosamente o estilo visual, paleta de cores, composição, iluminação, tipografia e elementos gráficos delas e SE INSPIRE nesses modelos ao gerar a nova arte. A nova imagem deve seguir o prompt acima em conjunto com o estilo/identidade visual demonstrado nas referências.`
+    ? `${basePrompt}\n\nCONHECIMENTO VISUAL DE REFERÊNCIA: Você recebeu ${refs.length} imagem(ns) de referência anexadas nesta mensagem. Elas são o MODELO VISUAL OBRIGATÓRIO. Reproduza fielmente o mesmo layout, estilo de arte, paleta de cores, tipografia (fontes, pesos, posicionamento do título), molduras, faixas, logotipos/elementos de marca, iluminação e acabamento. A nova arte deve parecer da MESMA série dessas referências, mudando apenas o assunto/foto e o texto para o título do artigo. Siga o prompt acima à risca. Textos devem ser legíveis, sem erros de ortografia e no idioma do título.`
     : basePrompt;
   const userContent: any[] = [{ type: "text", text: promptText }];
   for (const url of refs) userContent.push({ type: "image_url", image_url: { url } });
-  const models = ["google/gemini-2.5-flash-image", "google/gemini-3-pro-image"];
+  const models = ["google/gemini-3-pro-image", "google/gemini-3.1-flash-image", "google/gemini-2.5-flash-image"];
 
   for (const model of models) {
     try {
@@ -1708,8 +1708,21 @@ serve(async (req) => {
         const imageKnowledgeUrls: string[] = Array.isArray((settings as any)?.image_knowledge_urls) ? (settings as any).image_knowledge_urls : [];
 
         if (imageMode === "ai") {
-          // 1º: 9Router (modelo escolhido) → 2º: OpenAI gpt-image-1
-          if (nineKeyGlobal && settings?.ninerouter_endpoint && settings?.ninerouter_enabled !== false) {
+          // Com modelo visual anexado: usar IA multimodal que LÊ as referências (Lovable AI → OpenAI edits).
+          // 9Router (Flux/SDXL) não aceita imagens de referência, então fica como último recurso.
+          const hasRefs = imageKnowledgeUrls.some((u) => typeof u === "string" && u.startsWith("http"));
+          if (hasRefs) {
+            try {
+              const fmtR = getImageFormat(imageFormatKey);
+              const lov = await generateImageLovable(parsed.title, parsed.content, parsed.visual_elements, customImagePrompt, imageFormatKey, imageKnowledgeUrls);
+              if (lov) featuredImageUrl = lov.startsWith("data:") ? await resizeDataUrlToExact(lov, fmtR.width, fmtR.height) : lov;
+            } catch (e) { console.warn("[Image] Lovable com referências falhou:", e); }
+            if (!featuredImageUrl && openaiApiKey) {
+              try { featuredImageUrl = await generateImageOpenAI(openaiApiKey, parsed.title, parsed.content, parsed.visual_elements, customImagePrompt, imageFormatKey, imageKnowledgeUrls); }
+              catch (e) { console.warn("[Image] OpenAI com referências falhou:", e); }
+            }
+          }
+          if (!featuredImageUrl && nineKeyGlobal && settings?.ninerouter_endpoint && settings?.ninerouter_enabled !== false) {
             featuredImageUrl = await generateImageNineRouter(settings.ninerouter_endpoint, nineKeyGlobal, parsed.title, parsed.content, parsed.visual_elements, customImagePrompt, imageFormatKey, (settings as any)?.ninerouter_image_model);
           }
           if (featuredImageUrl) {
