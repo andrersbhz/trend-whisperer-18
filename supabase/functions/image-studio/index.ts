@@ -13,7 +13,7 @@ async function tryLovable(prompt: string): Promise<ProviderResult> {
   const key = Deno.env.get("LOVABLE_API_KEY");
   if (!key) return { error: "LOVABLE_API_KEY ausente", paused: true };
 
-  const models = ["openai/gpt-image-2", "openai/gpt-image-1-mini", "google/gemini-3.1-flash-image", "google/gemini-3-pro-image"];
+  const models = ["openai/gpt-image-2.5-sunburst", "openai/gpt-image-2", "google/gemini-3.1-flash-image", "google/gemini-3-pro-image"];
   const errs: string[] = [];
   let paused = false;
 
@@ -176,17 +176,6 @@ serve(async (req) => {
         } catch { return null; }
       };
 
-      const nrKey = settings?.ninerouter_enabled !== false ? await decrypt(settings?.ninerouter_api_key) : null;
-      if (nrKey && settings?.ninerouter_endpoint) {
-        const r = await tryNineRouter(settings.ninerouter_endpoint, nrKey, prompt, settings.ninerouter_image_model);
-        if (r.imageUrl) {
-          return new Response(JSON.stringify({ imageUrl: r.imageUrl, provider: "9router" }), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
-        if (r.error) errors.push(r.error);
-      }
-
       const openaiKey = await decrypt(settings?.openai_api_key);
       if (openaiKey) {
         hasUserProvider = true;
@@ -210,6 +199,17 @@ serve(async (req) => {
         }
         if (r.error) errors.push(r.error);
       }
+      const nrKey = settings?.ninerouter_enabled !== false ? await decrypt(settings?.ninerouter_api_key) : null;
+      if (nrKey && settings?.ninerouter_endpoint) {
+        const r = await tryNineRouter(settings.ninerouter_endpoint, nrKey, prompt, settings.ninerouter_image_model);
+        if (r.imageUrl) {
+          return new Response(JSON.stringify({ imageUrl: r.imageUrl, provider: "9router" }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        if (r.error) errors.push(r.error);
+      }
+
     }
 
     const envOpenAI = Deno.env.get("OPENAI_API_KEY");

@@ -595,6 +595,31 @@ async function generateImageNineRouter(endpoint: string, apiKey: string, title: 
   return null;
 }
 
+// ChatGPT (gpt-image) via Lovable AI Gateway — fallback quando não há chave OpenAI própria.
+async function generateImageGatewayGPT(title: string, content: string | null, visualElements: string, customImagePrompt?: string | null, formatKey?: string | null): Promise<string | null> {
+  const key = Deno.env.get("LOVABLE_API_KEY");
+  if (!key) return null;
+  const fmt = getImageFormat(formatKey);
+  const r = fmt.width / fmt.height;
+  const size = r > 1.15 ? "1536x1024" : r < 0.85 ? "1024x1536" : "1024x1024";
+  const prompt = appendFormatHint(buildImagePrompt(title, content, visualElements, customImagePrompt), fmt);
+  for (const model of ["openai/gpt-image-2.5-sunburst", "openai/gpt-image-2"]) {
+    try {
+      const resp = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ model, prompt, size, n: 1 }),
+      });
+      if (!resp.ok) { console.warn(`[Image] Gateway ${model}: ${resp.status} ${(await resp.text()).slice(0, 200)}`); continue; }
+      const data = await resp.json();
+      const b64 = data.data?.[0]?.b64_json;
+      if (b64) { console.log(`[Image] Gateway ${model} OK`); return `data:image/png;base64,${b64}`; }
+      if (data.data?.[0]?.url) return data.data[0].url;
+    } catch (e) { console.warn(`[Image] Gateway ${model} erro:`, e); }
+  }
+  return null;
+}
+
 async function generateImageOpenAI(
   apiKey: string,
   title: string,
@@ -1708,41 +1733,27 @@ serve(async (req) => {
         const imageKnowledgeUrls: string[] = Array.isArray((settings as any)?.image_knowledge_urls) ? (settings as any).image_knowledge_urls : [];
 
         if (imageMode === "ai") {
-          // Com modelo visual anexado: usar IA multimodal que LÊ as referências (Lovable AI → OpenAI edits).
-          // 9Router (Flux/SDXL) não aceita imagens de referência, então fica como último recurso.
-          const hasRefs = imageKnowledgeUrls.some((u) => typeof u === "string" && u.startsWith("http"));
-          if (hasRefs) {
+          // Ordem: 1) ChatGPT (gpt-image-1, chave do usuário, com modelo visual)
+          //        2) ChatGPT via gateway (gpt-image) 3) Gemini (com referências) 4) 9Router
+          const fmtR = getImageFormat(imageFormatKey);
+          if (openaiApiKey) {
+            try { featuredImageUrl = await generateImageOpenAI(openaiApiKey, parsed.title, parsed.content, parsed.visual_elements, customImagePrompt, imageFormatKey, imageKnowledgeUrls); }
+            catch (e) { console.warn("[Image] ChatGPT (chave própria) falhou:", e); }
+          }
+          if (!featuredImageUrl) {
             try {
-              const fmtR = getImageFormat(imageFormatKey);
+              const gw = await generateImageGatewayGPT(parsed.title, parsed.content, parsed.visual_elements, customImagePrompt, imageFormatKey);
+              if (gw) featuredImageUrl = gw.startsWith("data:") ? await resizeDataUrlToExact(gw, fmtR.width, fmtR.height) : gw;
+            } catch (e) { console.warn("[Image] ChatGPT via gateway falhou:", e); }
+          }
+          if (!featuredImageUrl) {
+            try {
               const lov = await generateImageLovable(parsed.title, parsed.content, parsed.visual_elements, customImagePrompt, imageFormatKey, imageKnowledgeUrls);
               if (lov) featuredImageUrl = lov.startsWith("data:") ? await resizeDataUrlToExact(lov, fmtR.width, fmtR.height) : lov;
-            } catch (e) { console.warn("[Image] Lovable com referências falhou:", e); }
-            if (!featuredImageUrl && openaiApiKey) {
-              try { featuredImageUrl = await generateImageOpenAI(openaiApiKey, parsed.title, parsed.content, parsed.visual_elements, customImagePrompt, imageFormatKey, imageKnowledgeUrls); }
-              catch (e) { console.warn("[Image] OpenAI com referências falhou:", e); }
-            }
+            } catch (e) { console.warn("[Image] Gemini falhou:", e); }
           }
           if (!featuredImageUrl && nineKeyGlobal && settings?.ninerouter_endpoint && settings?.ninerouter_enabled !== false) {
             featuredImageUrl = await generateImageNineRouter(settings.ninerouter_endpoint, nineKeyGlobal, parsed.title, parsed.content, parsed.visual_elements, customImagePrompt, imageFormatKey, (settings as any)?.ninerouter_image_model);
-          }
-          if (featuredImageUrl) {
-            // ok via 9Router
-          } else if (!openaiApiKey) {
-            console.warn(`[Image] OPENAI_API_KEY do usuário não configurada — imagem não será gerada para "${parsed.title}". Configure em Configurações > OpenAI.`);
-          } else {
-            try {
-              featuredImageUrl = await generateImageOpenAI(
-                openaiApiKey,
-                parsed.title,
-                parsed.content,
-                parsed.visual_elements,
-                customImagePrompt,
-                imageFormatKey,
-                imageKnowledgeUrls,
-              );
-            } catch (imgErr) {
-              console.warn(`[Image] OpenAI falhou para "${parsed.title}":`, imgErr);
-            }
           }
           if (!featuredImageUrl) {
             console.warn(`[Image] Não foi possível gerar imagem para "${parsed.title}" — artigo criado sem imagem.`);
