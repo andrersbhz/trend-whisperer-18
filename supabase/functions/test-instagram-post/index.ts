@@ -38,7 +38,7 @@ function buildCaption(article: any, wpLink: string | null): string {
 }
 
 async function generateHashtags(article: any): Promise<string> {
-  const apiKey = Deno.env.get("LOVABLE_API_KEY");
+  const apiKey: string | undefined = undefined; // créditos Lovable proibidos
   const fallback = `#noticias #atualidades #${(article.category || "geral").toString().toLowerCase().replace(/\s+/g, "")} #brasil #trending`;
   if (!apiKey) return fallback;
   try {

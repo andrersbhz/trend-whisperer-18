@@ -328,6 +328,7 @@ async function callNineRouterDirect(endpoint: string, apiKey: string | null, sys
 }
 
 async function callLovableGateway(apiKey: string, systemPrompt: string, userPrompt: string): Promise<AIResponse> {
+  throw new Error("Lovable AI desativado: usar apenas 9Router/chaves próprias.");
   const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
@@ -442,7 +443,7 @@ function appendFormatHint(prompt: string, fmt: { width: number; height: number; 
 // Geração de imagem via Lovable AI Gateway (estilo chat, sem necessidade de API específica de imagens).
 // Usa LOVABLE_API_KEY (server-side) e o prompt configurado pelo usuário em Configurações > Prompt de Imagem IA.
 async function generateImageLovable(title: string, content: string | null, visualElements: string, customImagePrompt?: string | null, formatKey?: string | null, knowledgeUrls: string[] = []): Promise<string | null> {
-  const lovableKey = Deno.env.get("LOVABLE_API_KEY");
+  const lovableKey: string | undefined = undefined; // créditos Lovable proibidos
   if (!lovableKey) {
     console.warn("[Image] LOVABLE_API_KEY não disponível no ambiente.");
     return null;
@@ -597,7 +598,7 @@ async function generateImageNineRouter(endpoint: string, apiKey: string, title: 
 
 // ChatGPT (gpt-image) via Lovable AI Gateway — fallback quando não há chave OpenAI própria.
 async function generateImageGatewayGPT(title: string, content: string | null, visualElements: string, customImagePrompt?: string | null, formatKey?: string | null): Promise<string | null> {
-  const key = Deno.env.get("LOVABLE_API_KEY");
+  const key: string | undefined = undefined; // créditos Lovable proibidos
   if (!key) return null;
   const fmt = getImageFormat(formatKey);
   const r = fmt.width / fmt.height;
