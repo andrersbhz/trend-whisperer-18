@@ -10,8 +10,8 @@ const corsHeaders = {
 type ProviderResult = { imageUrl?: string; error?: string; paused?: boolean };
 
 async function tryLovable(prompt: string): Promise<ProviderResult> {
-  const key = Deno.env.get("LOVABLE_API_KEY");
-  if (!key) return { error: "LOVABLE_API_KEY ausente", paused: true };
+  const key: string | undefined = undefined;
+  if (!key) return { error: "Lovable AI desativado", paused: true };
 
   const models = ["openai/gpt-image-2.5-sunburst", "openai/gpt-image-2", "google/gemini-3.1-flash-image", "google/gemini-3-pro-image"];
   const errs: string[] = [];

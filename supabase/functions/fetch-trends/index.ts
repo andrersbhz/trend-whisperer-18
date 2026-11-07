@@ -452,7 +452,6 @@ serve(async (req) => {
     const gKey = await decrypt(settings?.gemini_api_key);
     const providers = [];
     if (gKey) providers.push({ name: "Gemini", key: gKey });
-    if (Deno.env.get("LOVABLE_API_KEY")) providers.push({ name: "Lovable", key: Deno.env.get("LOVABLE_API_KEY") });
 
     // Os filtros salvos em Tendências são apenas de exibição: a coleta sempre
     // busca todas as fontes para não reduzir o pool de assuntos dos artigos.

@@ -174,8 +174,8 @@ async function generateImageGemini(apiKey: string, title: string, content: strin
 }
 
 async function generateImageLovable(title: string, articleContent: string | null, visualElements: string | null, imagePrompt: string | null, fmt: { width: number; height: number; label: string } | undefined, knowledgeUrls: string[] = [], knowledgeText: string = ""): Promise<string> {
-  const lovableKey = Deno.env.get("LOVABLE_API_KEY");
-  if (!lovableKey) throw new ProviderError("LOVABLE_API_KEY não disponível no ambiente.", 500, false, false);
+  const lovableKey: string | undefined = undefined;
+  if (!lovableKey) throw new ProviderError("Lovable AI desativado (usar chaves próprias/9Router).", 500, false, false);
   const basePrompt = buildImagePrompt(title, articleContent, visualElements, imagePrompt, fmt);
   const refs = (knowledgeUrls || []).slice(0, 10).filter((u) => typeof u === "string" && u.startsWith("http"));
 
