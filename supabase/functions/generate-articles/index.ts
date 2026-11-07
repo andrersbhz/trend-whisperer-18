@@ -603,7 +603,7 @@ async function generateImageGatewayGPT(title: string, content: string | null, vi
   const r = fmt.width / fmt.height;
   const size = r > 1.15 ? "1536x1024" : r < 0.85 ? "1024x1536" : "1024x1024";
   const prompt = appendFormatHint(buildImagePrompt(title, content, visualElements, customImagePrompt), fmt);
-  for (const model of ["openai/gpt-image-2", "openai/gpt-image-1-mini"]) {
+  for (const model of ["openai/gpt-image-2.5-sunburst", "openai/gpt-image-2"]) {
     try {
       const resp = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
         method: "POST",
