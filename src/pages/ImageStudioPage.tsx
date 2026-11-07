@@ -70,7 +70,8 @@ export default function ImageStudioPage() {
       const { data, error } = await supabase.functions.invoke('image-studio', { body: { prompt: fullPrompt, userId: user?.id } });
       if (error) throw error;
       if (!data?.imageUrl) throw new Error(data?.error || 'Sem imagem no retorno');
-      setMessages((m) => [...m, { id: uid(), role: 'assistant', imageUrl: data.imageUrl, prompt: p }]);
+      const webpUrl = await toWebp(data.imageUrl);
+      setMessages((m) => [...m, { id: uid(), role: 'assistant', imageUrl: webpUrl, prompt: p }]);
     } catch (e) {
       toast({ title: 'Erro ao gerar imagem', description: getErrorMessage(e), variant: 'destructive' });
     } finally {
@@ -232,3 +233,18 @@ export default function ImageStudioPage() {
   );
 }
 
+
+async function toWebp(src: string): Promise<string> {
+  try {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    await new Promise<void>((res, rej) => { img.onload = () => res(); img.onerror = () => rej(); img.src = src; });
+    const c = document.createElement('canvas');
+    c.width = img.naturalWidth; c.height = img.naturalHeight;
+    c.getContext('2d')!.drawImage(img, 0, 0);
+    const out = c.toDataURL('image/webp', 0.85);
+    return out.startsWith('data:image/webp') ? out : src;
+  } catch {
+    return src;
+  }
+}

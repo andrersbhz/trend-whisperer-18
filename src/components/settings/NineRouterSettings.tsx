@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 
+const IMAGE_MODELS = ['cf/@cf/black-forest-labs/flux-1-schnell', 'cf/@cf/stabilityai/stable-diffusion-xl-base-1.0'];
 const DEFAULT_ENDPOINT = 'https://9router-e7ep.srv2129112.hstgr.cloud/v1';
 
 export default function NineRouterSettings() {
@@ -20,6 +21,7 @@ export default function NineRouterSettings() {
   const [apiKey, setApiKey] = useState('');
   const [model, setModel] = useState('auto');
   const [enabled, setEnabled] = useState(true);
+  const [imageModel, setImageModel] = useState(IMAGE_MODELS[0]);
   const [hasKey, setHasKey] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -31,10 +33,12 @@ export default function NineRouterSettings() {
     if (!user) return;
     (async () => {
       const { data } = await supabase.from('user_settings')
-        .select('ninerouter_endpoint, ninerouter_model, ninerouter_enabled').eq('user_id', user.id).maybeSingle();
-      if (data?.ninerouter_endpoint) { setEndpoint(data.ninerouter_endpoint); setSaved(true); }
-      if (data?.ninerouter_model) setModel(data.ninerouter_model);
-      if (data) setEnabled(data.ninerouter_enabled !== false);
+        .select('ninerouter_endpoint, ninerouter_model, ninerouter_enabled, ninerouter_image_model' as any).eq('user_id', user.id).maybeSingle();
+      if ((data as any)?.ninerouter_endpoint) { setEndpoint((data as any).ninerouter_endpoint); setSaved(true); }
+      const d: any = data;
+      if (d?.ninerouter_model) setModel(d.ninerouter_model);
+      if (d?.ninerouter_image_model) setImageModel(d.ninerouter_image_model);
+      if (data) setEnabled((data as any).ninerouter_enabled !== false);
       const { data: k } = await supabase.rpc('get_ninerouter_status' as any);
       setHasKey(!!k);
     })();
@@ -52,7 +56,7 @@ export default function NineRouterSettings() {
   const save = async () => {
     if (!user) return;
     setSaving(true);
-    const payload: any = { ninerouter_endpoint: endpoint.trim(), ninerouter_model: model.trim() || 'auto', ninerouter_enabled: enabled };
+    const payload: any = { ninerouter_endpoint: endpoint.trim(), ninerouter_model: model.trim() || 'auto', ninerouter_enabled: enabled, ninerouter_image_model: imageModel.trim() || IMAGE_MODELS[0] };
     if (apiKey) payload.ninerouter_api_key = apiKey.trim();
     const { data: ex } = await supabase.from('user_settings').select('id').eq('user_id', user.id).maybeSingle();
     const { error } = ex
@@ -108,6 +112,14 @@ export default function NineRouterSettings() {
             <Input value={model} onChange={(e) => setModel(e.target.value)} className="h-9 text-sm" placeholder="auto" />
           )}
           <p className="text-[10px] text-muted-foreground">Clique em "Testar Conexão" para escolher da lista de modelos do seu 9Router.</p>
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">Modelo de imagem (Estúdio de Imagens)</Label>
+          <Input value={imageModel} onChange={(e) => setImageModel(e.target.value)} className="h-9 text-sm" list="nr-image-models" placeholder={IMAGE_MODELS[0]} />
+          <datalist id="nr-image-models">
+            {[...new Set([...IMAGE_MODELS, ...models.map((m) => m.id)])].map((id) => <option key={id} value={id} />)}
+          </datalist>
+          <p className="text-[10px] text-muted-foreground">Usado primeiro no Estúdio. Se falhar, tenta Flux, SDXL e depois as outras IAs. As imagens são salvas em WebP.</p>
         </div>
         <div className="flex items-center justify-between rounded-lg border border-border p-2.5">
           <span className="text-xs">Usar 9Router como IA principal</span>
