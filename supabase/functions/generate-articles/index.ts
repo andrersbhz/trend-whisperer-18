@@ -565,6 +565,36 @@ async function resizeDataUrlToExact(dataUrl: string, targetW: number, targetH: n
 
 // Geração via OpenAI (ChatGPT) usando gpt-image-1 — modelo que segue o prompt com precisão.
 // Suporta referências visuais (conhecimento) via endpoint /v1/images/edits multipart.
+// Geração de imagem via 9Router (/v1/images/generations) — modelo escolhido + fallbacks Flux/SDXL.
+async function generateImageNineRouter(endpoint: string, apiKey: string, title: string, content: string | null, visualElements: string, customImagePrompt?: string | null, formatKey?: string | null, chosen?: string | null): Promise<string | null> {
+  const fmt = getImageFormat(formatKey);
+  let prompt: string;
+  try { prompt = appendFormatHint(buildImagePrompt(title, content, visualElements, customImagePrompt), fmt); }
+  catch { prompt = `Editorial news photo illustration, high quality, no text: ${title}. ${visualElements || ""}`; }
+  let base = endpoint.trim().replace(/\/+$/, "");
+  if (!/\/v1$/.test(base)) base += "/v1";
+  const models = [...new Set([chosen?.trim(), "cf/@cf/black-forest-labs/flux-1-schnell", "cf/@cf/stabilityai/stable-diffusion-xl-base-1.0"].filter(Boolean) as string[])];
+  for (const model of models) {
+    try {
+      const resp = await fetch(`${base}/images/generations`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ model, prompt: prompt.slice(0, 2000) }),
+      });
+      if (!resp.ok) { console.warn(`[Image] 9Router ${model}: ${resp.status} ${(await resp.text()).slice(0, 200)}`); continue; }
+      const data = await resp.json();
+      const b64 = data.data?.[0]?.b64_json;
+      let url: string | null = data.data?.[0]?.url || null;
+      if (b64) {
+        const mime = b64.startsWith("/9j/") ? "image/jpeg" : "image/png";
+        url = `data:${mime};base64,${b64}`;
+      }
+      if (url) { console.log(`[Image] 9Router ${model} OK`); return url.startsWith("data:") ? await resizeDataUrlToExact(url, fmt.width, fmt.height) : url; }
+    } catch (e) { console.warn(`[Image] 9Router ${model} erro:`, e); }
+  }
+  return null;
+}
+
 async function generateImageOpenAI(
   apiKey: string,
   title: string,
@@ -1164,6 +1194,7 @@ serve(async (req) => {
     }
 
     const providers: ProviderConfig[] = [];
+    let nineKeyGlobal: string | null = null;
     // 0. 9Router (gateway próprio do usuário) — prioridade máxima, com fallback para os demais
     if (settings?.ninerouter_enabled !== false && settings?.ninerouter_endpoint) {
       let nineKey: string | null = null;
@@ -1171,6 +1202,7 @@ serve(async (req) => {
         const { data: dec } = await supabase.rpc("decrypt_credential", { enc_key: "", val: settings.ninerouter_api_key });
         if (dec && typeof dec === "string" && dec.length > 5) nineKey = dec;
       }
+      nineKeyGlobal = nineKey;
       providers.push({ name: "9Router", call: (s, u) => callNineRouterDirect(settings.ninerouter_endpoint, nineKey, s, u, settings?.ninerouter_model || "auto") });
     }
     // Ordem de redundância ajustada:
@@ -1676,8 +1708,13 @@ serve(async (req) => {
         const imageKnowledgeUrls: string[] = Array.isArray((settings as any)?.image_knowledge_urls) ? (settings as any).image_knowledge_urls : [];
 
         if (imageMode === "ai") {
-          // ÚNICO PROVEDOR: OpenAI ChatGPT (gpt-image-1) — segue o prompt à risca.
-          if (!openaiApiKey) {
+          // 1º: 9Router (modelo escolhido) → 2º: OpenAI gpt-image-1
+          if (nineKeyGlobal && settings?.ninerouter_endpoint && settings?.ninerouter_enabled !== false) {
+            featuredImageUrl = await generateImageNineRouter(settings.ninerouter_endpoint, nineKeyGlobal, parsed.title, parsed.content, parsed.visual_elements, customImagePrompt, imageFormatKey, (settings as any)?.ninerouter_image_model);
+          }
+          if (featuredImageUrl) {
+            // ok via 9Router
+          } else if (!openaiApiKey) {
             console.warn(`[Image] OPENAI_API_KEY do usuário não configurada — imagem não será gerada para "${parsed.title}". Configure em Configurações > OpenAI.`);
           } else {
             try {

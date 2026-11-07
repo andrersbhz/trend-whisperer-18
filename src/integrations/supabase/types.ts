@@ -2132,6 +2132,7 @@ export type Database = {
           ninerouter_api_key: string | null
           ninerouter_enabled: boolean
           ninerouter_endpoint: string | null
+          ninerouter_image_model: string | null
           ninerouter_model: string | null
           openai_api_key: string | null
           openai_model: string | null
@@ -2196,6 +2197,7 @@ export type Database = {
           ninerouter_api_key?: string | null
           ninerouter_enabled?: boolean
           ninerouter_endpoint?: string | null
+          ninerouter_image_model?: string | null
           ninerouter_model?: string | null
           openai_api_key?: string | null
           openai_model?: string | null
@@ -2260,6 +2262,7 @@ export type Database = {
           ninerouter_api_key?: string | null
           ninerouter_enabled?: boolean
           ninerouter_endpoint?: string | null
+          ninerouter_image_model?: string | null
           ninerouter_model?: string | null
           openai_api_key?: string | null
           openai_model?: string | null
