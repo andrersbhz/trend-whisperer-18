@@ -111,10 +111,10 @@ async function tryGemini(apiKey: string, prompt: string, selectedModel?: string 
   return { error: errs.join(" | ") };
 }
 
-async function tryNineRouter(endpoint: string, apiKey: string, prompt: string): Promise<ProviderResult> {
+async function tryNineRouter(endpoint: string, apiKey: string, prompt: string, chosen?: string | null): Promise<ProviderResult> {
   let base = endpoint.trim().replace(/\/+$/, "");
   if (!/\/v1$/.test(base)) base += "/v1";
-  const models = ["cf/@cf/black-forest-labs/flux-1-schnell", "cf/@cf/stabilityai/stable-diffusion-xl-base-1.0"];
+  const models = [...new Set([chosen?.trim(), "cf/@cf/black-forest-labs/flux-1-schnell", "cf/@cf/stabilityai/stable-diffusion-xl-base-1.0"].filter(Boolean) as string[])];
   const errs: string[] = [];
   for (const model of models) {
     try {
@@ -163,7 +163,7 @@ serve(async (req) => {
       const supabase = createClient(supaUrl, supaKey);
       const { data: settings } = await supabase
         .from("user_settings")
-        .select("openai_api_key, gemini_api_key, openai_model, gemini_model, ninerouter_endpoint, ninerouter_api_key, ninerouter_enabled")
+        .select("openai_api_key, gemini_api_key, openai_model, gemini_model, ninerouter_endpoint, ninerouter_api_key, ninerouter_enabled, ninerouter_image_model")
         .eq("user_id", effectiveUserId)
         .single();
 
@@ -178,7 +178,7 @@ serve(async (req) => {
 
       const nrKey = settings?.ninerouter_enabled !== false ? await decrypt(settings?.ninerouter_api_key) : null;
       if (nrKey && settings?.ninerouter_endpoint) {
-        const r = await tryNineRouter(settings.ninerouter_endpoint, nrKey, prompt);
+        const r = await tryNineRouter(settings.ninerouter_endpoint, nrKey, prompt, settings.ninerouter_image_model);
         if (r.imageUrl) {
           return new Response(JSON.stringify({ imageUrl: r.imageUrl, provider: "9router" }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
