@@ -111,6 +111,35 @@ async function tryGemini(apiKey: string, prompt: string, selectedModel?: string 
   return { error: errs.join(" | ") };
 }
 
+async function tryNineRouter(endpoint: string, apiKey: string, prompt: string): Promise<ProviderResult> {
+  let base = endpoint.trim().replace(/\/+$/, "");
+  if (!/\/v1$/.test(base)) base += "/v1";
+  const models = ["cf/@cf/black-forest-labs/flux-1-schnell", "cf/@cf/stabilityai/stable-diffusion-xl-base-1.0"];
+  const errs: string[] = [];
+  for (const model of models) {
+    try {
+      const resp = await fetch(`${base}/images/generations`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ model, prompt }),
+      });
+      if (!resp.ok) { errs.push(`9Router ${model}: ${resp.status} ${(await resp.text()).slice(0, 200)}`); continue; }
+      const data = await resp.json();
+      const b64 = data.data?.[0]?.b64_json;
+      const url = data.data?.[0]?.url;
+      if (b64) {
+        const mime = b64.startsWith("/9j/") ? "image/jpeg" : "image/png";
+        return { imageUrl: `data:${mime};base64,${b64}` };
+      }
+      if (url) return { imageUrl: url };
+      errs.push(`9Router ${model}: sem imagem`);
+    } catch (e) {
+      errs.push(`9Router ${model}: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+  return { error: errs.join(" | ") };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -134,7 +163,7 @@ serve(async (req) => {
       const supabase = createClient(supaUrl, supaKey);
       const { data: settings } = await supabase
         .from("user_settings")
-        .select("openai_api_key, gemini_api_key, openai_model, gemini_model")
+        .select("openai_api_key, gemini_api_key, openai_model, gemini_model, ninerouter_endpoint, ninerouter_api_key, ninerouter_enabled")
         .eq("user_id", effectiveUserId)
         .single();
 
@@ -146,6 +175,17 @@ serve(async (req) => {
           return typeof data === "string" && data.length > 5 ? data : null;
         } catch { return null; }
       };
+
+      const nrKey = settings?.ninerouter_enabled !== false ? await decrypt(settings?.ninerouter_api_key) : null;
+      if (nrKey && settings?.ninerouter_endpoint) {
+        const r = await tryNineRouter(settings.ninerouter_endpoint, nrKey, prompt);
+        if (r.imageUrl) {
+          return new Response(JSON.stringify({ imageUrl: r.imageUrl, provider: "9router" }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        if (r.error) errors.push(r.error);
+      }
 
       const openaiKey = await decrypt(settings?.openai_api_key);
       if (openaiKey) {
