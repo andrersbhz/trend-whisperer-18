@@ -615,7 +615,14 @@ serve(async (req) => {
         } else if (errJson.message) {
           errorDetail = errJson.message;
         }
-      } catch {}
+      } catch {
+        if (/<!DOCTYPE|<html/i.test(responseText)) {
+          const st = wpResponse?.status;
+          errorDetail = (st === 403 || /recaptcha|forbidden/i.test(responseText))
+            ? "A hospedagem do site (firewall/proteção anti-bot da Hostinger) bloqueou a publicação. No hPanel, desative a Proteção contra Bots ou libere o caminho /wp-json/ e tente novamente."
+            : `O site respondeu com uma página HTML em vez da API (status ${st ?? "?"}). Verifique o firewall ou plugins de segurança do WordPress.`;
+        }
+      }
 
       await supabase.from("articles").update({ status: "failed" }).eq("id", articleId);
       await supabase.from("publish_log").insert({
