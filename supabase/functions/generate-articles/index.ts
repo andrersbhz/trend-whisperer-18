@@ -315,10 +315,26 @@ async function callNineRouterDirect(endpoint: string, apiKey: string | null, sys
       model: model || "auto",
       messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt + "\n\nResponda SOMENTE com um objeto JSON contendo as chaves: " + Object.keys(ARTICLE_TOOL_PARAMS).join(", ") + "." }],
       response_format: { type: "json_object" },
+      stream: false,
     }),
   });
   if (!resp.ok) throw new Error(`9Router error ${resp.status}: ${(await resp.text()).slice(0, 300)}`);
-  const aiData = await resp.json();
+  const raw = await resp.text();
+  let aiData: any;
+  if (raw.trimStart().startsWith("data:")) {
+    // Resposta SSE: junta os deltas
+    let text = ""; let last: any = null;
+    for (const line of raw.split("\n")) {
+      const t = line.trim();
+      if (!t.startsWith("data:")) continue;
+      const payload = t.slice(5).trim();
+      if (!payload || payload === "[DONE]") continue;
+      try { const j = JSON.parse(payload); last = j; text += j.choices?.[0]?.delta?.content ?? j.choices?.[0]?.message?.content ?? ""; } catch { /* ignora */ }
+    }
+    aiData = { choices: [{ message: { content: text || last?.choices?.[0]?.message?.content || "" } }] };
+  } else {
+    aiData = JSON.parse(raw);
+  }
   const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
   if (toolCall?.function?.arguments) return JSON.parse(toolCall.function.arguments);
   let content = aiData.choices?.[0]?.message?.content || "";
