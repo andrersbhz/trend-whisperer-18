@@ -290,6 +290,8 @@ serve(async (req) => {
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
         "Authorization": authHeader,
+        "User-Agent": "WordPress/6.5; A3AutoPost",
+        "Accept": "application/json",
         "X-WP-Nonce": "", // Some servers require this even if empty to allow REST
       };
       // O título vai APENAS no campo title do WordPress — sem H1 no conteúdo
