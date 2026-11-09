@@ -290,6 +290,8 @@ serve(async (req) => {
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
         "Authorization": authHeader,
+        "User-Agent": "WordPress/6.5; A3AutoPost",
+        "Accept": "application/json",
         "X-WP-Nonce": "", // Some servers require this even if empty to allow REST
       };
       // O título vai APENAS no campo title do WordPress — sem H1 no conteúdo
@@ -615,7 +617,14 @@ serve(async (req) => {
         } else if (errJson.message) {
           errorDetail = errJson.message;
         }
-      } catch {}
+      } catch {
+        if (/<!DOCTYPE|<html/i.test(responseText)) {
+          const st = wpResponse?.status;
+          errorDetail = (st === 403 || /recaptcha|forbidden/i.test(responseText))
+            ? "A hospedagem do site (firewall/proteção anti-bot da Hostinger) bloqueou a publicação. No hPanel, desative a Proteção contra Bots ou libere o caminho /wp-json/ e tente novamente."
+            : `O site respondeu com uma página HTML em vez da API (status ${st ?? "?"}). Verifique o firewall ou plugins de segurança do WordPress.`;
+        }
+      }
 
       await supabase.from("articles").update({ status: "failed" }).eq("id", articleId);
       await supabase.from("publish_log").insert({
