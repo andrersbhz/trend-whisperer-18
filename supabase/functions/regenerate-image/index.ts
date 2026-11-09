@@ -355,7 +355,7 @@ serve(async (req) => {
     let openaiApiKey: string | null = null;
     const { data: settings } = await supabase
       .from("user_settings")
-      .select("gemini_api_key, openai_api_key, writer_prompt, image_mode, image_prompt, image_format, image_knowledge_urls, gemini_model, openai_model, groq_model, azure_openai_model")
+      .select("gemini_api_key, openai_api_key, writer_prompt, image_mode, image_prompt, image_format, image_knowledge_urls, ninerouter_enabled, ninerouter_endpoint, ninerouter_api_key, ninerouter_image_model, gemini_model, openai_model, groq_model, azure_openai_model")
       .eq("user_id", userId)
       .single();
     
@@ -380,7 +380,14 @@ serve(async (req) => {
         console.warn("[regenerate-image] falha ao decifrar chave OpenAI (opcional):", e);
       }
     }
-    // OpenAI é opcional. Provedor principal: Lovable AI Gateway (sem chave do usuário).
+    let nineKey: string | null = null;
+    const s9: any = settings;
+    if (s9?.ninerouter_enabled !== false && s9?.ninerouter_endpoint && s9?.ninerouter_api_key) {
+      try {
+        const { data: dec } = await supabase.rpc("decrypt_credential", { enc_key: "", val: s9.ninerouter_api_key });
+        nineKey = (typeof dec === "string" && dec.length > 5) ? dec : s9.ninerouter_api_key;
+      } catch { nineKey = s9.ninerouter_api_key; }
+    }
 
     // Fetch articles
     const { data: articles } = await supabase
@@ -438,19 +445,12 @@ serve(async (req) => {
       let imageUrl: string | null = null;
       const providerErrors: string[] = [];
 
-      // Provedor principal: Lovable AI Gateway (Gemini image). Sem chave do usuário.
-      try {
-        imageUrl = await generateImageLovable(
-          article.title,
-          (article as any).content || null,
-          (article as any).visual_elements || null,
-          imagePrompt,
-          fmt,
-          knowledgeUrls,
-          knowledgeText,
-        );
-      } catch (error) {
-        providerErrors.push(`Lovable AI: ${getErrorMessage(error)}`);
+      // Provedor principal: 9Router (sem créditos Lovable).
+      if (nineKey && s9?.ninerouter_endpoint) {
+        try {
+          imageUrl = await generateImageNineRouter9(s9.ninerouter_endpoint, nineKey, article.title, (article as any).visual_elements || "", imagePrompt, s9.ninerouter_image_model);
+        } catch (error) { providerErrors.push(`9Router: ${getErrorMessage(error)}`); }
+        if (!imageUrl) providerErrors.push("9Router: nenhum modelo retornou imagem");
       }
 
       // Fallback opcional: OpenAI, apenas se o usuário configurou a chave.
@@ -512,7 +512,29 @@ serve(async (req) => {
     console.error("regenerate-image error:", error);
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : "Erro desconhecido" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
+
+async function generateImageNineRouter9(endpoint: string, apiKey: string, title: string, visual: string, basePrompt: string, chosen?: string | null): Promise<string | null> {
+  let base = endpoint.trim().replace(/\/+$/, "");
+  if (!/\/v1$/.test(base)) base += "/v1";
+  const prompt = `${basePrompt}\n\nTema: ${title}. ${visual || ""}`.slice(0, 2000);
+  const models = [...new Set([chosen?.trim(), "cf/@cf/black-forest-labs/flux-1-schnell", "cf/@cf/stabilityai/stable-diffusion-xl-base-1.0"].filter(Boolean) as string[])];
+  for (const model of models) {
+    try {
+      const resp = await fetch(`${base}/images/generations`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ model, prompt }),
+      });
+      if (!resp.ok) { console.warn(`[regenerate-image] 9Router ${model}: ${resp.status}`); continue; }
+      const data = await resp.json();
+      const b64 = data.data?.[0]?.b64_json;
+      if (b64) return `data:${b64.startsWith("/9j/") ? "image/jpeg" : "image/png"};base64,${b64}`;
+      if (data.data?.[0]?.url) return data.data[0].url;
+    } catch (e) { console.warn(`[regenerate-image] 9Router ${model} erro:`, e); }
+  }
+  return null;
+}
