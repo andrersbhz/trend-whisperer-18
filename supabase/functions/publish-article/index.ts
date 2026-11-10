@@ -1,5 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+// Timeout padrão para chamadas externas (evita estourar o limite de 150s)
+const _rawFetch = globalThis.fetch.bind(globalThis);
+const fetch = (input: any, init: RequestInit = {}) =>
+  _rawFetch(input, { ...init, signal: init.signal ?? AbortSignal.timeout(25000) });
 import { fixYouTubeEmbeds, hasBrokenYouTubeEmbeds, loadYouTubeKey } from "../_shared/youtube.ts";
 
 const corsHeaders = {
@@ -561,8 +565,10 @@ serve(async (req) => {
 
       // Legacy social publishing remains available outside the Distribution Hub.
       // The Hub owns its first wave and explicitly suppresses this legacy fan-out.
+      // Redes sociais e indexação rodam em segundo plano para não travar a resposta
+      const backgroundTasks = (async () => {
       if (!skipSocialPublish) try {
-        const socialResp = await fetch(`${supabaseUrl}/functions/v1/publish-social`, {
+        const socialResp = await _rawFetch(`${supabaseUrl}/functions/v1/publish-social`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -591,7 +597,7 @@ serve(async (req) => {
       if (wpLink) {
         try {
           console.log("Triggering Google Indexing for:", wpLink);
-          const indexingResp = await fetch(`${supabaseUrl}/functions/v1/google-indexing`, {
+          const indexingResp = await _rawFetch(`${supabaseUrl}/functions/v1/google-indexing`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -605,6 +611,10 @@ serve(async (req) => {
           console.error("google-indexing call failed:", indexingErr);
         }
       }
+
+      })();
+      // @ts-ignore EdgeRuntime existe no runtime
+      if (typeof EdgeRuntime !== "undefined" && EdgeRuntime.waitUntil) EdgeRuntime.waitUntil(backgroundTasks);
 
       return new Response(
         JSON.stringify({

@@ -209,7 +209,7 @@ function sanitizeGroqModel(modelName?: string): string {
   return candidate;
 }
 
-const GROQ_MAX_TOKENS = 900; // abaixo do limite de saída por minuto (OTPM 1000) das contas Groq gratuitas
+const GROQ_MAX_TOKENS = 6000; // artigo de 10k+ caracteres precisa de ~3-4k tokens de saída
 
 async function callGroqDirect(apiKey: string, systemPrompt: string, userPrompt: string, modelName = ""): Promise<AIResponse> {
   const requestGroq = async (model: string, maxTokens = GROQ_MAX_TOKENS) =>
@@ -251,7 +251,7 @@ async function callGroqDirect(apiKey: string, systemPrompt: string, userPrompt: 
     const detail = await resp.clone().text();
     console.warn(`[AI] Groq 429 (limite de taxa). Repetindo com saída reduzida. Detalhe: ${detail.slice(0, 200)}`);
     await new Promise((r) => setTimeout(r, 6000));
-    resp = await requestGroq(GROQ_DEFAULT_MODEL, 700);
+    resp = await requestGroq(GROQ_DEFAULT_MODEL, 4500);
   }
 
 

@@ -8,6 +8,7 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  const runStartedAt = Date.now();
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
@@ -55,9 +56,14 @@ serve(async (req) => {
         if (readyArticles && readyArticles.length > 0) {
           let published = 0;
           for (const article of readyArticles) {
+            if (Date.now() - runStartedAt > 90000) {
+              console.warn("[Pipeline] Orçamento de tempo atingido; restantes ficam para a próxima execução.");
+              break;
+            }
             try {
               const pubResp = await fetch(`${supabaseUrl}/functions/v1/publish-article`, {
                 method: "POST",
+                signal: AbortSignal.timeout(60000),
                 headers: { Authorization: `Bearer ${serviceKey}`, "Content-Type": "application/json" },
                 body: JSON.stringify({ articleId: article.id, userId }),
               });
