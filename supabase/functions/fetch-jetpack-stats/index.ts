@@ -57,7 +57,7 @@ serve(async (req) => {
 
     // 1. Jetpack site stats summary
     try {
-      const res = await fetch(`${wpUrl}/wp-json/wpcom/v2/stats/summary`, { headers });
+      const res = await fetch(`${wpUrl}/wp-json/wpcom/v2/stats/summary`, { headers, signal: AbortSignal.timeout(12000) });
       if (res.ok) {
         const stats = await res.json();
         result.available = true;
@@ -79,7 +79,7 @@ serve(async (req) => {
 
     // 2. Jetpack top posts (last 7 days)
     try {
-      const res = await fetch(`${wpUrl}/wp-json/wpcom/v2/stats/top-posts?num=7`, { headers });
+      const res = await fetch(`${wpUrl}/wp-json/wpcom/v2/stats/top-posts?num=7`, { headers, signal: AbortSignal.timeout(12000) });
       if (res.ok) {
         const data = await res.json();
         result.available = true;
@@ -133,7 +133,7 @@ serve(async (req) => {
 
     // 4. Referrers
     try {
-      const res = await fetch(`${wpUrl}/wp-json/wpcom/v2/stats/referrers?num=7`, { headers });
+      const res = await fetch(`${wpUrl}/wp-json/wpcom/v2/stats/referrers?num=7`, { headers, signal: AbortSignal.timeout(12000) });
       if (res.ok) {
         const data = await res.json();
         result.available = true;
@@ -157,7 +157,7 @@ serve(async (req) => {
 
     // 5. Search terms
     try {
-      const res = await fetch(`${wpUrl}/wp-json/wpcom/v2/stats/search-terms?num=7`, { headers });
+      const res = await fetch(`${wpUrl}/wp-json/wpcom/v2/stats/search-terms?num=7`, { headers, signal: AbortSignal.timeout(12000) });
       if (res.ok) {
         const data = await res.json();
         result.available = true;
@@ -181,7 +181,7 @@ serve(async (req) => {
 
     // 6. Country views
     try {
-      const res = await fetch(`${wpUrl}/wp-json/wpcom/v2/stats/country-views?num=7`, { headers });
+      const res = await fetch(`${wpUrl}/wp-json/wpcom/v2/stats/country-views?num=7`, { headers, signal: AbortSignal.timeout(12000) });
       if (res.ok) {
         const data = await res.json();
         result.available = true;
@@ -205,7 +205,7 @@ serve(async (req) => {
 
     // 7. Publicize connections
     try {
-      const res = await fetch(`${wpUrl}/wp-json/jetpack/v4/publicize/connections`, { headers });
+      const res = await fetch(`${wpUrl}/wp-json/jetpack/v4/publicize/connections`, { headers, signal: AbortSignal.timeout(12000) });
       if (res.ok) {
         const connections = await res.json();
         if (Array.isArray(connections)) {
