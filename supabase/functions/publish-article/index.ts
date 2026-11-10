@@ -222,7 +222,7 @@ serve(async (req) => {
     console.log(`WP Config: url=${wpUrl}, user=${normalizedUsername}, pwd_len=${wpPassword?.length}, pwd_start=${wpPassword?.substring(0,4)}`);
 
     // --- Helper: encontra ou cria a categoria no WordPress (dinâmico, sem duplicar) ---
-    async function resolveWpCategory(authHeader: string, categoryName: string): Promise<number | null> {
+    async function resolveWpCategory(authHeader: string, categoryName: string, parentId: number | null = null): Promise<number | null> {
       const raw = (categoryName || "").trim();
       if (!raw) return null;
 
@@ -253,7 +253,7 @@ serve(async (req) => {
         }
 
         const match = all.find(
-          (c: any) => c.slug === slug || norm(c.name) === target || norm(c.slug) === target,
+          (c: any) => (parentId ? c.parent === parentId : true) && (c.slug === slug || c.slug === `world-${slug}` || norm(c.name) === target || norm(c.slug) === target),
         );
         if (match) {
           console.log(`Categoria WP encontrada: ${match.name} (id=${match.id})`);
@@ -264,7 +264,7 @@ serve(async (req) => {
         const createResp = await fetch(`${wpUrl}/wp-json/wp/v2/categories`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: authHeader },
-          body: JSON.stringify({ name: label, slug }),
+          body: JSON.stringify(parentId ? { name: label, slug: `world-${slug}`, parent: parentId } : { name: label, slug }),
         });
         if (createResp.ok) {
           const newCat = await createResp.json();
@@ -305,9 +305,21 @@ serve(async (req) => {
       };
 
       // Resolve WordPress category
-      const wpCategoryId = await resolveWpCategory(authHeader, article.category);
+      const rawCat = String(article.category || "");
+      const isWorld = /^world\b/i.test(rawCat.trim());
+      const wpCategoryId = await resolveWpCategory(authHeader, isWorld ? "World" : rawCat);
       if (wpCategoryId) {
         body.categories = [wpCategoryId];
+        if (isWorld) {
+          const explicit = rawCat.split(/[\/:>]/)[1]?.trim();
+          const sub = explicit ? (WORLD_SUBCATEGORIES.find((w) => norm(w.name) === norm(explicit) || norm(w.key) === norm(explicit))?.name || explicit)
+            : detectWorldSubcategory(`${article.title || ""} ${article.focus_keyword || article.seo_keyword || ""} ${article.excerpt || ""}`);
+          if (sub) {
+            const subId = await resolveWpCategory(authHeader, sub, wpCategoryId);
+            if (subId) body.categories = [wpCategoryId, subId];
+            console.log(`Subcategoria World: ${sub} (id=${subId})`);
+          }
+        }
       }
 
       // Autor do WordPress definido por categoria
@@ -319,7 +331,7 @@ serve(async (req) => {
         }
         if (!wpAuthorId && article.category) {
           const { data: a } = await supabase.from("authors").select("wp_user_id")
-            .eq("user_id", article.user_id).ilike("category", String(article.category).trim())
+            .eq("user_id", article.user_id).ilike("category", String(article.category).split(/[\/:>]/)[0].trim())
             .not("wp_user_id", "is", null).order("updated_at", { ascending: false }).limit(1).maybeSingle();
           wpAuthorId = a?.wp_user_id ?? null;
         }
@@ -673,3 +685,23 @@ serve(async (req) => {
     );
   }
 });
+
+
+const WORLD_SUBCATEGORIES: { key: string; name: string; words: string[] }[] = [
+  { key: "sports", name: "Sports", words: ["nfl", "nba", "mlb", "nhl", "soccer", "football", "game", "match", "score", "season", "playoff", "coach", "quarterback", "league", "team", "tennis", "golf", "ufc", "boxing", "f1", "olympic", "world cup", "touchdown", "picks"] },
+  { key: "technology", name: "Technology", words: ["apple", "iphone", "google", "microsoft", "ai ", "artificial intelligence", "openai", "chatgpt", "tesla", "spacex", "software", "app ", "tech", "samsung", "android", "nvidia", "meta ", "chip", "robot", "cyber"] },
+  { key: "finance", name: "Finance", words: ["stock", "market", "dow", "nasdaq", "s&p", "fed ", "interest rate", "inflation", "economy", "bitcoin", "crypto", "earnings", "bank", "dollar", "price", "tariff", "investor", "wall street", "jobs report"] },
+  { key: "politics", name: "Politics", words: ["trump", "biden", "president", "election", "senate", "congress", "governor", "democrat", "republican", "white house", "vote", "supreme court", "minister", "government", "war", "ukraine", "israel"] },
+  { key: "entertainment", name: "Entertainment", words: ["movie", "film", "actor", "actress", "singer", "album", "netflix", "disney", "oscar", "grammy", "concert", "tv show", "series", "celebrity", "taylor swift", "music", "box office"] },
+  { key: "health", name: "Health & Science", words: ["health", "vaccine", "virus", "disease", "cancer", "doctor", "hospital", "study", "nasa", "science", "covid", "flu", "medical", "fda", "space"] },
+];
+
+function detectWorldSubcategory(text: string): string | null {
+  const t = ` ${text.toLowerCase()} `;
+  let best: string | null = null, bestScore = 0;
+  for (const c of WORLD_SUBCATEGORIES) {
+    const score = c.words.reduce((n, w) => n + (t.includes(w) ? 1 : 0), 0);
+    if (score > bestScore) { bestScore = score; best = c.name; }
+  }
+  return best;
+}

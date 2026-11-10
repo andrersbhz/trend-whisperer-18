@@ -11,6 +11,7 @@ export interface PlanTier {
   tag: string;
   cta: string;
   features: string[];
+  active?: boolean;
 }
 
 export interface PlatformSettings {

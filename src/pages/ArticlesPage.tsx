@@ -35,6 +35,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { ImageUpload } from '@/components/articles/ImageUpload';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { EditArticleDialog } from '@/components/articles/EditArticleDialog';
+import { Pencil } from 'lucide-react';
 import { ManualArticleDialog } from '@/components/articles/ManualArticleDialog';
 import { GenerateFromKnowledgeDialog } from '@/components/articles/GenerateFromKnowledgeDialog';
 import { Plus, BookOpen } from 'lucide-react';
@@ -62,6 +64,7 @@ const ArticlesPage = () => {
   const [diagMetrics, setDiagMetrics] = useState<any[]>([]);
   const [showDiagnostics, setShowDiagnostics] = useState(false);
   const [manualDialogOpen, setManualDialogOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [knowledgeDialogOpen, setKnowledgeDialogOpen] = useState(false);
   const [titleInput, setTitleInput] = useState('');
   const [generatingByTitle, setGeneratingByTitle] = useState(false);
@@ -681,6 +684,15 @@ const ArticlesPage = () => {
                 <Eye className="h-3.5 w-3.5" />
                 Revisar
               </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setEditingId(article.id)}
+                className="h-8 gap-2 text-xs font-semibold border-[#a3ff12]/30 text-[#a3ff12] hover:bg-[#a3ff12] hover:text-black shadow-sm transition-colors"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                Editar
+              </Button>
               {article.status === 'failed' && (
                 <Button
                   size="sm"
@@ -1171,6 +1183,7 @@ const ArticlesPage = () => {
         </DialogContent>
       </Dialog>
       
+      <EditArticleDialog articleId={editingId} onOpenChange={(o) => !o && setEditingId(null)} onSaved={() => fetchArticles({ silent: true })} />
       <ManualArticleDialog 
         open={manualDialogOpen} 
         onOpenChange={setManualDialogOpen} 

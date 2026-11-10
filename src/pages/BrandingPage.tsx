@@ -323,6 +323,7 @@ const BrandingPage = () => {
                 <div><Label className="text-white text-xs">Texto do botão</Label><Input value={p.cta} onChange={(e) => updatePlan(i, { cta: e.target.value })} className="bg-slate-900 border-slate-700 text-white" /></div>
               </div>
               <div className="flex items-center gap-3"><Switch checked={p.highlight} onCheckedChange={(v) => updatePlan(i, { highlight: v })} /><Label className="text-white text-sm">Destacar este plano (mais escolhido)</Label></div>
+              <div className="flex items-center gap-3"><Switch checked={p.active !== false} onCheckedChange={(v) => updatePlan(i, { active: v })} /><Label className="text-white text-sm">Plano ativo (exibir na página de vendas)</Label></div>
               <div>
                 <div className="flex items-center justify-between mb-2"><Label className="text-white text-xs">Recursos incluídos</Label><Button size="sm" variant="ghost" onClick={() => addFeature(i)} className="text-lime-400 hover:text-lime-300 h-7"><Plus className="h-3 w-3 mr-1" /> Adicionar</Button></div>
                 <div className="space-y-2">{(p.features || []).map((f, fi) => <div key={fi} className="flex gap-2"><Input value={f} onChange={(e) => updateFeature(i, fi, e.target.value)} className="bg-slate-900 border-slate-700 text-white text-sm" /><Button size="icon" variant="ghost" onClick={() => removeFeature(i, fi)} className="text-red-400 hover:text-red-300 hover:bg-red-500/10 flex-shrink-0"><Trash2 className="h-4 w-4" /></Button></div>)}</div>
