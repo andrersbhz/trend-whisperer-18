@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { sanitizeArticleHtml } from '@/lib/video-embed';
 import Preloader from '@/components/Preloader';
 import { useAuth } from '@/hooks/useAuth';
+import { withWorldSubs, categoryLabel, baseCategory } from '@/lib/world-categories';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -564,7 +565,7 @@ const ArticlesPage = () => {
     geral:        { bg: 'bg-slate-500/10',   text: 'text-slate-300',   border: 'border-slate-500/40',   dot: 'bg-slate-400',   ring: 'ring-slate-500/30' },
   };
   const getCategoryColor = (cat?: string) =>
-    categoryColors[(cat || 'geral').toLowerCase()] || categoryColors.geral;
+    categoryColors[baseCategory(cat)] || categoryColors.geral;
 
 
   const blogFilter = blogs.length > 0 && (
@@ -640,18 +641,18 @@ const ArticlesPage = () => {
                       className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-[10px] sm:text-xs font-bold transition-colors capitalize outline-none hover:brightness-125 ${getCategoryColor(article.category).bg} ${getCategoryColor(article.category).text} ${getCategoryColor(article.category).border}`}
                     >
                       <span className={`inline-block w-1.5 h-1.5 rounded-full mr-1.5 ${getCategoryColor(article.category).dot}`} />
-                      {article.category || 'Geral'}
+                      {categoryLabel(article.category)}
                       <ChevronDown className="ml-1 h-3 w-3 opacity-50" />
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start" className="max-h-[300px] overflow-y-auto bg-[#0A0A0B] border-primary/20 z-[100] min-w-[150px] shadow-2xl shadow-primary/10">
-                    {userCategories.map((cat) => (
+                    {withWorldSubs(userCategories).map((cat) => (
                       <DropdownMenuItem 
                         key={cat} 
                         onSelect={() => handleUpdateCategory(article.id, cat)}
                         className={`capitalize text-xs text-foreground hover:bg-primary/10 hover:text-primary focus:bg-primary/10 focus:text-primary cursor-pointer transition-colors ${article.category === cat ? 'bg-primary/20 text-primary font-bold' : ''}`}
                       >
-                        {cat}
+                        {categoryLabel(cat)}
                       </DropdownMenuItem>
                     ))}
                   </DropdownMenuContent>
@@ -976,13 +977,13 @@ const ArticlesPage = () => {
           {(() => {
             // Agrupa artigos por categoria (inclui categorias sem posts, e categorias "extras" fora da lista do usuário)
             const knownCats = new Set(userCategories);
-            const extraCats = Array.from(new Set(articles.map(a => a.category).filter(c => c && !knownCats.has(c))));
+            const extraCats = Array.from(new Set(articles.map(a => baseCategory(a.category)).filter(c => c && !knownCats.has(c))));
             const allCats = [...userCategories, ...extraCats];
 
             return (
               <div className="space-y-6">
                 {allCats.map((category) => {
-                  const catArticles = articles.filter(a => (a.category || 'geral') === category);
+                  const catArticles = articles.filter(a => baseCategory(a.category) === category.toLowerCase());
                   const c = getCategoryColor(category);
                   return (
                     <section
@@ -1160,9 +1161,9 @@ const ArticlesPage = () => {
                             <SelectValue placeholder="Selecione uma categoria" />
                           </SelectTrigger>
                           <SelectContent>
-                            {userCategories.map((cat) => (
+                            {withWorldSubs(userCategories).map((cat) => (
                               <SelectItem key={cat} value={cat} className="capitalize">
-                                {cat}
+                                {categoryLabel(cat)}
                               </SelectItem>
                             ))}
                           </SelectContent>

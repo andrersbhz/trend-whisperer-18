@@ -1676,9 +1676,9 @@ serve(async (req) => {
         const topicSources: any[] = Array.isArray(topic.sources) ? topic.sources : [];
         const isBBCBrasil = topicSources.length > 0 && topicSources.every((s: any) => s?.source_name === "BBC Brasil");
         if (typeof topic.category === "string") topic.category = topic.category.trim().toLowerCase();
-        const isWorld = !isBBCBrasil && (topic.region === "World" || topic.category === "world");
-        if (isWorld) topic.category = "world";
-        const englishDirective = isWorld ? `\n\nLANGUAGE OVERRIDE (MANDATORY): This is an international story for a United States / English-speaking audience. Write EVERYTHING (title, content, excerpt, seo_keyword, seo_title, meta_description, slug, image_alt, image_caption, visual_elements) in native American English (en-US). Ignore any instruction above that says to write in Portuguese. Keep all factual and formatting rules.` : "";
+        const isWorld = !isBBCBrasil && (topic.region === "World" || topic.region === "US" || /^world\b/.test(String(topic.category || "")));
+        if (isWorld && !/^world\//.test(topic.category || "")) topic.category = "world";
+        const englishDirective = isWorld ? `\n\nLANGUAGE OVERRIDE (MANDATORY): This is an international story for a United States / English-speaking audience. Write EVERYTHING (title, content, excerpt, seo_keyword, seo_title, meta_description, slug, image_alt, image_caption, visual_elements) in native American English (en-US). Ignore any instruction above that says to write in Portuguese. Keep all factual and formatting rules.` : `\n\nIDIOMA (OBRIGATÓRIO): Notícia do Brasil. Escreva TUDO (título, conteúdo, resumo, palavra-chave, título SEO, meta descrição, slug, alt e legenda da imagem) em português do Brasil (pt-BR). Nunca escreva em inglês.`;
         const userPrompt = `${buildUserPrompt(topic.topic, topic.category, topic.context, strictPrompt, writerPrompt)}\n\n${buildFactsBlock(verification)}${englishDirective}`;
 
 

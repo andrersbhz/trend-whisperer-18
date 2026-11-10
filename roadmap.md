@@ -8,3 +8,5 @@
 - [x] Adicionar cinco presets modernos ao editor Marca / Vendas
 - [x] Adicionar modo personalizado e configuração de borda neon
 - [x] Disponibilizar o editor visual no painel administrativo e validar
+- [x] Subcategorias de World (ex.: World › Sports) visíveis e editáveis em Artigos e Agendamentos
+- [x] World sempre em inglês (en-US) e Brasil sempre em pt-BR na geração

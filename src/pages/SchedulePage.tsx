@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import Preloader from '@/components/Preloader';
 import { useAuth } from '@/hooks/useAuth';
+import { withWorldSubs, categoryLabel, baseCategory } from '@/lib/world-categories';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -764,18 +765,18 @@ const SchedulePage = () => {
                                 <button 
                                   className="inline-flex items-center rounded-none border border-border px-2.5 py-1 text-[10px] sm:text-xs font-bold transition-colors hover:bg-muted capitalize outline-none"
                                 >
-                                  {article.category || 'Geral'}
+                                  {categoryLabel(article.category)}
                                   <ChevronDown className="ml-1 h-3 w-3 opacity-50" />
                                 </button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="start" className="max-h-[300px] overflow-y-auto bg-[#0A0A0B] border-primary/20 z-[100] min-w-[150px] shadow-2xl shadow-primary/10">
-                                {userCategories.map((cat) => (
+                                {withWorldSubs(userCategories).map((cat) => (
                                   <DropdownMenuItem 
                                     key={cat} 
                                     onSelect={() => handleUpdateCategory(article.id, cat)}
                                     className={`capitalize text-xs text-foreground hover:bg-primary/10 hover:text-primary focus:bg-primary/10 focus:text-primary cursor-pointer transition-colors ${article.category === cat ? 'bg-primary/20 text-primary font-bold' : ''}`}
                                   >
-                                    {cat}
+                                    {categoryLabel(cat)}
                                   </DropdownMenuItem>
                                 ))}
                               </DropdownMenuContent>
@@ -954,9 +955,9 @@ const SchedulePage = () => {
                         <SelectValue placeholder="Selecione uma categoria" />
                       </SelectTrigger>
                       <SelectContent>
-                        {userCategories.map((cat) => (
+                        {withWorldSubs(userCategories).map((cat) => (
                           <SelectItem key={cat} value={cat} className="capitalize">
-                            {cat}
+                            {categoryLabel(cat)}
                           </SelectItem>
                         ))}
                       </SelectContent>
