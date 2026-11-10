@@ -98,6 +98,26 @@ async function withRetry<T>(fn: () => Promise<T>, maxRetries = 2, baseDelayMs = 
 
 // ── AI provider abstraction ──────────────────────────────────────────────
 
+const WORLD_SUBCATEGORIES: { key: string; name: string; words: string[] }[] = [
+  { key: "sports", name: "Sports", words: ["nfl", "nba", "mlb", "nhl", "soccer", "football", "game", "match", "score", "season", "playoff", "coach", "quarterback", "league", "team", "tennis", "golf", "ufc", "boxing", "f1", "olympic", "world cup", "touchdown", "picks"] },
+  { key: "technology", name: "Technology", words: ["apple", "iphone", "google", "microsoft", "ai ", "artificial intelligence", "openai", "chatgpt", "tesla", "spacex", "software", "app ", "tech", "samsung", "android", "nvidia", "meta ", "chip", "robot", "cyber"] },
+  { key: "finance", name: "Finance", words: ["stock", "market", "dow", "nasdaq", "s&p", "fed ", "interest rate", "inflation", "economy", "bitcoin", "crypto", "earnings", "bank", "dollar", "price", "tariff", "investor", "wall street", "jobs report"] },
+  { key: "politics", name: "Politics", words: ["trump", "biden", "president", "election", "senate", "congress", "governor", "democrat", "republican", "white house", "vote", "supreme court", "minister", "government", "war", "ukraine", "israel"] },
+  { key: "police", name: "Police", words: ["police", "arrest", "arrested", "shooting", "shot dead", "murder", "homicide", "crime", "suspect", "sheriff", "fbi", "charged with", "manhunt", "robbery", "stabbing", "detective", "investigation", "officer", "inmate", "prison", "kidnapping", "missing person"] },
+  { key: "entertainment", name: "Entertainment", words: ["movie", "film", "actor", "actress", "singer", "album", "netflix", "disney", "oscar", "grammy", "concert", "tv show", "series", "celebrity", "taylor swift", "music", "box office"] },
+  { key: "health", name: "Health & Science", words: ["health", "vaccine", "virus", "disease", "cancer", "doctor", "hospital", "study", "nasa", "science", "covid", "flu", "medical", "fda", "space"] },
+];
+
+function detectWorldSubcategory(text: string): string | null {
+  const t = ` ${text.toLowerCase()} `;
+  let best: string | null = null, bestScore = 0;
+  for (const c of WORLD_SUBCATEGORIES) {
+    const score = c.words.reduce((n, w) => n + (t.includes(w) ? 1 : 0), 0);
+    if (score > bestScore) { bestScore = score; best = c.key; }
+  }
+  return best;
+}
+
 interface AIResponse { title: string; content: string; excerpt: string; seo_keyword: string; seo_title: string; meta_description: string; slug: string; image_alt: string; image_caption: string; visual_elements: string; }
 
 const ARTICLE_TOOL_PARAMS = {
@@ -1814,6 +1834,10 @@ serve(async (req) => {
         pipelineLog.add("EDITORIAL_VALIDATION", "ok", verification.notes.slice(0, 180));
         pipelineLog.add("READY_TO_PUBLISH", "ok");
 
+        if (topic.category === "world") {
+          const subKey = detectWorldSubcategory(`${parsed.title || ""} ${parsed.seo_keyword || ""} ${parsed.excerpt || ""} ${topic.topic || ""}`);
+          if (subKey) topic.category = `world/${subKey}`;
+        }
         const { data: article, error: insertError } = await supabase.from("articles").insert({
           user_id: userId,
           title: parsed.title,

@@ -3,6 +3,7 @@ export const WORLD_SUBCATEGORIES = [
   { key: 'technology', name: 'Technology' },
   { key: 'finance', name: 'Finance' },
   { key: 'politics', name: 'Politics' },
+  { key: 'police', name: 'Police' },
   { key: 'entertainment', name: 'Entertainment' },
   { key: 'health', name: 'Health & Science' },
 ];
