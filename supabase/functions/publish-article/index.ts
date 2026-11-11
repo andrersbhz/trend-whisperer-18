@@ -131,7 +131,7 @@ serve(async (req) => {
       );
     }
     // "publishing" travado há mais de 10 minutos é considerado órfão e pode ser retomado
-    const STALE_MS = 10 * 60 * 1000;
+    const STALE_MS = 3 * 60 * 1000;
     const isStalePublishing =
       article.status === "publishing" &&
       article.updated_at &&
@@ -648,7 +648,7 @@ serve(async (req) => {
         }
       }
 
-      await supabase.from("articles").update({ status: "failed" }).eq("id", articleId);
+      await supabase.from("articles").update({ status: "ready", is_approved: true, scheduled_at: new Date(Date.now() + 3 * 60 * 1000).toISOString() }).eq("id", articleId);
       await supabase.from("publish_log").insert({
         user_id: userId,
         article_id: articleId,
@@ -674,7 +674,7 @@ serve(async (req) => {
       try {
         await claimCtx.supabase
           .from("articles")
-          .update({ status: "failed" })
+          .update({ status: "ready", is_approved: true, scheduled_at: new Date(Date.now() + 3 * 60 * 1000).toISOString() })
           .eq("id", claimCtx.articleId)
           .eq("status", "publishing")
           .is("wordpress_post_id", null);

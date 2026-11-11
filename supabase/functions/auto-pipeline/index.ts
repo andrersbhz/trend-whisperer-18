@@ -40,6 +40,20 @@ serve(async (req) => {
 
       const now = new Date();
 
+      // Step 0: destrava "publishing" parado há +3 min e reagenda falhas para nova tentativa em 3 min
+      try {
+        const staleCutoff = new Date(now.getTime() - 3 * 60 * 1000).toISOString();
+        await supabase.from("articles")
+          .update({ status: "ready", is_approved: true, scheduled_at: now.toISOString() })
+          .eq("user_id", userId).eq("status", "publishing").is("wordpress_post_id", null)
+          .lt("updated_at", staleCutoff);
+        await supabase.from("articles")
+          .update({ status: "ready", is_approved: true, scheduled_at: new Date(now.getTime() + 3 * 60 * 1000).toISOString() })
+          .eq("user_id", userId).eq("status", "failed").is("wordpress_post_id", null);
+      } catch (e) {
+        console.error("[Pipeline] Falha ao destravar/reagendar:", e);
+      }
+
       // Step 1: Publish ready articles FIRST (before any rescheduling)
       try {
         const { data: readyArticles } = await supabase

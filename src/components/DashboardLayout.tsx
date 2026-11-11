@@ -166,7 +166,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                   collapsed && 'lg:justify-center lg:px-2',
                   active
                     ? 'bg-foreground text-background'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                    : 'text-white'
                 )}
               >
                 <item.icon className="h-[17px] w-[17px] shrink-0" />
