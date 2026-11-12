@@ -398,7 +398,7 @@ const SettingsPage = () => {
   if (loading) return <Preloader message="Abrindo central de controle..." />;
 
   return (
-    <div className="space-y-6 max-w-5xl pb-10">
+    <div className="space-y-6 w-full pb-10">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Configurações</h1>
@@ -421,26 +421,26 @@ const SettingsPage = () => {
       </div>
 
       <Tabs defaultValue="ai" className="w-full space-y-6">
-        <TabsList className="grid grid-cols-2 md:grid-cols-6 h-auto p-1 bg-background/50 border border-border/50 backdrop-blur-sm rounded-xl">
-          <TabsTrigger value="ai" className="py-2.5 rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
-            <Cpu className="h-4 w-4 mr-2" /> Inteligência Artificial
+        <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 h-auto p-1 bg-background/50 border border-border/50 backdrop-blur-sm rounded-xl">
+          <TabsTrigger value="ai" className="settings-tab py-2.5 rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
+            <Cpu className="h-4 w-4 mr-2" /> IA
           </TabsTrigger>
-          <TabsTrigger value="blogs" className="py-2.5 rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
+          <TabsTrigger value="blogs" className="settings-tab py-2.5 rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
             <Layout className="h-4 w-4 mr-2" /> Meus Blogs
           </TabsTrigger>
-          <TabsTrigger value="knowledge" className="py-2.5 rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
+          <TabsTrigger value="knowledge" className="settings-tab py-2.5 rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
             <BookOpen className="h-4 w-4 mr-2" /> Conhecimento
           </TabsTrigger>
-          <TabsTrigger value="wordpress" className="py-2.5 rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
+          <TabsTrigger value="wordpress" className="settings-tab py-2.5 rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
             <Globe className="h-4 w-4 mr-2" /> WordPress
           </TabsTrigger>
-          <TabsTrigger value="social" className="py-2.5 rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
+          <TabsTrigger value="social" className="settings-tab py-2.5 rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
             <Share2 className="h-4 w-4 mr-2" /> Redes Sociais
           </TabsTrigger>
-          <TabsTrigger value="appearance" className="py-2.5 rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
+          <TabsTrigger value="appearance" className="settings-tab py-2.5 rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
             <BarChart3 className="h-4 w-4 mr-2" /> Interface
           </TabsTrigger>
-          <TabsTrigger value="general" className="py-2.5 rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
+          <TabsTrigger value="general" className="settings-tab py-2.5 rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
             <Settings2 className="h-4 w-4 mr-2" /> Geral
           </TabsTrigger>
         </TabsList>

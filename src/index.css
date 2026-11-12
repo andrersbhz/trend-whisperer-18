@@ -906,3 +906,11 @@ a:hover[class*="bg-primary"] *,
 [role="button"]:not([aria-disabled="true"]):hover[class*="bg-success"] * {
   color: #000000 !important;
 }
+
+/* Abas de Configurações: hover verde neon igual ao menu lateral */
+button.settings-tab:hover {
+  background-color: hsl(142 100% 50%) !important;
+  color: hsl(0 0% 0%) !important;
+  box-shadow: 0 0 10px hsl(142 100% 50% / 0.8), 0 0 22px hsl(142 100% 50% / 0.5) !important;
+}
+button.settings-tab:hover svg { color: hsl(0 0% 0%) !important; }
