@@ -1,0 +1,27 @@
+# Staging only. Do not deploy before configuring build-time public Supabase values.
+# No public ports, Traefik labels, database migrations, or production modifications.
+services:
+  vortex-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL:?Set staging Supabase URL}
+        VITE_SUPABASE_PUBLISHABLE_KEY: ${VITE_SUPABASE_PUBLISHABLE_KEY:?Set staging publishable key}
+        VITE_SUPABASE_PROJECT_ID: ${VITE_SUPABASE_PROJECT_ID:-}
+    restart: unless-stopped
+    mem_limit: 256m
+    cpus: "0.50"
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx
+      - /var/run
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - vortex_internal
+
+networks:
+  vortex_internal:
+    driver: bridge
