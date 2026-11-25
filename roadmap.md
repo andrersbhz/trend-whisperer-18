@@ -1,5 +1,10 @@
 # Roadmap
 
+- [x] Integrar geração de imagens pelo 9Router ao prompt e às referências de aprendizado.
+- [x] Exigir seleção de formato e oferecer modal antes da geração manual em Artigos.
+- [x] Validar seleção de formatos na tela e regras de geração com seis testes.
+- [ ] Confirmar geração real com aprendizado — depende de um modelo de imagem ou visão conectado e funcional no 9Router; os modelos compatíveis recusaram o teste.
+
 - [x] Publicar o site
 - [x] Corrigir URL de autorização do Threads (página inexistente)
 - [x] Corrigir "Adicionar Meta" (facebook.com recusa conexão dentro do iframe do preview)

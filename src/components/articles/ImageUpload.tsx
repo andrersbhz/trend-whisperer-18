@@ -18,6 +18,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Slider } from '@/components/ui/slider';
+import { AIImageFormatPicker, AIImageFormatDialog, type AIImageFormat } from './AIImageFormatPicker';
 
 interface ImageUploadProps {
   articleId: string;
@@ -66,6 +67,8 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
   const { user } = useAuth();
   const { toast } = useToast();
   const [uploading, setUploading] = useState(false);
+  const [aiFormat, setAIFormat] = useState<AIImageFormat | null>(null);
+  const [formatDialogOpen, setFormatDialogOpen] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentImageUrl || null);
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(currentThumbnailUrl || null);
@@ -321,16 +324,17 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
   };
 
 
-  const handleGenerateAI = async () => {
+  const handleGenerateAI = async (selectedFormat: AIImageFormat | null = aiFormat) => {
     if (!user || !articleId) return;
     if (!UUID_RE.test(articleId)) {
       toast({ title: "Salve o artigo primeiro", description: "A geração por IA fica disponível após o artigo ser criado. Envie uma imagem ou gere depois." });
       return;
     }
+    if (!selectedFormat) { setFormatDialogOpen(true); return; }
     try {
       setUploading(true);
       const { data, error } = await supabase.functions.invoke('regenerate-image', {
-        body: { userId: user.id, articleIds: [articleId], force: true },
+        body: { userId: user.id, articleIds: [articleId], force: true, imageFormat: selectedFormat },
       });
       
       if (error) throw error;
@@ -338,7 +342,8 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
       if (data?.success) {
         const generatedUrl = data.imageUrl;
         if (generatedUrl) {
-          await processAndUploadAIImage(generatedUrl);
+          setPreviewUrl(generatedUrl);
+          onUploadSuccess(generatedUrl);
         } else {
           toast({ 
             title: "Gerando imagem...", 
@@ -358,13 +363,14 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
             if (updated?.featured_image_url || attempts > 10) {
               clearInterval(interval);
               if (updated?.featured_image_url) {
-                await processAndUploadAIImage(updated.featured_image_url);
+                setPreviewUrl(updated.featured_image_url);
+                onUploadSuccess(updated.featured_image_url);
               }
             }
           }, 4000);
         }
       } else {
-        toast({ title: "Erro", description: data?.message || "Não foi possível gerar a imagem.", variant: "destructive" });
+        toast({ title: "Erro", description: data?.message || data?.error || "Não foi possível gerar a imagem.", variant: "destructive" });
       }
     } catch (e: any) {
       toast({ title: "Erro na geração", description: e.message, variant: "destructive" });
@@ -533,10 +539,16 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
 
   return (
     <div className="space-y-4">
+      <div className="space-y-2">
+        <Label>Formato para criar com IA</Label>
+        <AIImageFormatPicker value={aiFormat} onChange={setAIFormat} disabled={uploading} />
+      </div>
+      <AIImageFormatDialog open={formatDialogOpen} onOpenChange={setFormatDialogOpen}
+        onGenerate={format => { setAIFormat(format); void handleGenerateAI(format); }} />
       {/* Aspect ratio selector */}
       <div className="flex flex-col gap-2 p-3 bg-muted/20 border border-primary/10 rounded-lg">
         <div className="flex items-center justify-between">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Formato da Imagem</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Formato para recorte e upload</span>
           <span className="text-[10px] font-medium bg-primary/10 text-primary px-2 py-0.5 rounded-full">
             {currentAspect.label}{currentAspect.ratio === null ? ' (máx 1920px)' : ` · ${currentAspect.w}x${currentAspect.h}`}
           </span>
@@ -618,7 +630,7 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
         )}
       </div>
 
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         <Button
           variant="outline"
           size="sm"
@@ -655,11 +667,11 @@ export const ImageUpload = ({ articleId, currentImageUrl, currentThumbnailUrl, o
           variant="outline"
           size="sm"
           className="w-full gap-2 border-primary/30 text-primary hover:bg-primary/10"
-          onClick={handleGenerateAI}
+          onClick={() => void handleGenerateAI()}
           disabled={uploading}
         >
           {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-          IA
+          Criar com IA
         </Button>
         <Button
           variant="outline"

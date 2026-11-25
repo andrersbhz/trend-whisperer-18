@@ -1,234 +1,17 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { z } from "https://esm.sh/zod@3.25.76";
 import { requireUserOrService } from "../_shared/security.ts";
+import { generateRouterImage } from "../_shared/ninerouter-images.ts";
+import { isAIImageFormat, requireImageFormat } from "../_shared/image-formats.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
-
-// O prompt da imagem é composto OBRIGATORIAMENTE pelo prompt configurado nas configurações e o título da notícia.
-function buildImagePrompt(title: string, content: string | null, visualElements: string | null | undefined, imagePrompt: string | null | undefined, fmt?: { width: number; height: number; label: string }): string {
-  if (!imagePrompt || imagePrompt.trim().length < 5) {
-    throw new Error("O 'Prompt de Imagem IA' não está configurado em Configurações > Geral. Este prompt é obrigatório.");
-  }
-
-  // REGRA: o Prompt de Imagem IA das configurações é a ÚNICA fonte de verdade para estilo/composição.
-  // Deve ser seguido À RISCA. Título e formato entram apenas como metadados auxiliares.
-  const base = imagePrompt.trim().replace(/\{\{?\s*title\s*\}?\}/gi, title);
-  const hasTitleToken = base !== imagePrompt.trim();
-
-  const header = `INSTRUÇÕES DE IMAGEM (SIGA À RISCA, SEM DESVIOS — esta é a especificação obrigatória vinda das Configurações > Prompt de Imagem IA):\n\n${base}`;
-
-  const meta: string[] = [];
-  if (!hasTitleToken) {
-    meta.push(`Assunto da imagem (apenas tema, NÃO altere o estilo definido acima): ${title}`);
-  }
-  if (fmt) {
-    meta.push(`Proporção/formato obrigatório: ${fmt.label} (${fmt.width}x${fmt.height}px).`);
-  }
-
-  return meta.length ? `${header}\n\n---\n${meta.join("\n")}` : header;
-}
-
-const IMAGE_FORMATS: Record<string, { width: number; height: number; dalle: "1024x1024" | "1024x1792" | "1792x1024"; label: string }> = {
-  instagram_square:   { width: 1080, height: 1080, dalle: "1024x1024", label: "Instagram Feed Quadrado 1:1" },
-  instagram_portrait: { width: 1080, height: 1350, dalle: "1024x1792", label: "Instagram Feed Retrato 4:5" },
-  instagram_story:    { width: 1080, height: 1920, dalle: "1024x1792", label: "Instagram Story 9:16" },
-  facebook_post:      { width: 1200, height: 630,  dalle: "1792x1024", label: "Facebook Post 1.91:1" },
-  facebook_square:    { width: 1200, height: 1200, dalle: "1024x1024", label: "Facebook Quadrado 1:1" },
-  facebook_story:     { width: 1080, height: 1920, dalle: "1024x1792", label: "Facebook Story 9:16" },
-  linkedin_post:      { width: 1200, height: 627,  dalle: "1792x1024", label: "LinkedIn Post 1.91:1" },
-  linkedin_square:    { width: 1200, height: 1200, dalle: "1024x1024", label: "LinkedIn Quadrado 1:1" },
-};
-
-function getImageFormat(key?: string | null) {
-  return IMAGE_FORMATS[key || ""] || IMAGE_FORMATS.instagram_portrait;
-}
-
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-class ProviderError extends Error {
-  status: number;
-  retryable: boolean;
-  billing: boolean;
-
-  constructor(message: string, status = 500, retryable = false, billing = false) {
-    super(message);
-    this.name = "ProviderError";
-    this.status = status;
-    this.retryable = retryable;
-    this.billing = billing;
-  }
-}
-
-async function readResponseDetails(resp: Response) {
-  const text = await resp.text();
-  return text.slice(0, 500);
-}
-
-function isBillingIssue(status: number, details: string) {
-  return status === 402 || /payment_required|not enough credits|spending cap|resource_exhausted|quota|monthly spending cap|billing hard limit|billing_limit/i.test(details);
-}
-
-function isRetryableIssue(status: number, details: string) {
-  return [408, 429, 500, 502, 503, 504, 522].includes(status) || /temporar|timeout|unavailable|overloaded|rate limit/i.test(details);
-}
-
-function createProviderError(provider: string, status: number, details: string) {
-  const billing = isBillingIssue(status, details);
-  const retryable = isRetryableIssue(status, details) && !billing;
-  return new ProviderError(`${provider} ${status}: ${details}`, status, retryable, billing);
-}
-
-function getErrorMessage(error: unknown) {
-  return error instanceof Error ? error.message : String(error);
-}
-
-function toUserImageError(message: string) {
-  if (/billing hard limit|billing_limit|spending cap|payment_required|not enough credits/i.test(message)) {
-    return "A geração chegou ao limite de cobrança/créditos da conta OpenAI configurada. A chave está correta, mas a OpenAI bloqueou novas imagens até ajustar o limite ou créditos da conta.";
-  }
-  if (/quota|resource_exhausted/i.test(message)) {
-    return "A conta OpenAI configurada atingiu o limite de uso/quota para geração de imagens.";
-  }
-  if (/content_policy|moderation|safety/i.test(message)) {
-    return "A OpenAI bloqueou o prompt por política de conteúdo. Ajuste o Prompt de Imagem IA para remover termos restritos.";
-  }
-  if (/401|invalid api key|incorrect api key|unauthorized/i.test(message)) {
-    return "A chave OpenAI configurada foi recusada. Verifique a chave salva em Configurações > OpenAI.";
-  }
-  if (/522|Failed to send a request to the Edge Function/i.test(message)) {
-    return "Erro 522: A OpenAI está instável ou inacessível no momento. Tente novamente em instantes.";
-  }
-  return message.replace(/\s+/g, " ").slice(0, 240);
-}
-
-async function withRetry<T>(operation: () => Promise<T>, retries = 2, baseDelayMs = 1500): Promise<T> {
-  let lastError: unknown;
-
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    try {
-      return await operation();
-    } catch (error) {
-      lastError = error;
-      const providerError = error instanceof ProviderError
-        ? error
-        : new ProviderError(getErrorMessage(error));
-
-      if (attempt >= retries || !providerError.retryable) {
-        throw providerError;
-      }
-
-      const delay = baseDelayMs * (attempt + 1);
-      console.warn(`Retrying after transient image error in ${delay}ms: ${providerError.message}`);
-      await sleep(delay);
-    }
-  }
-
-  throw lastError instanceof Error ? lastError : new Error(String(lastError));
-}
-
-async function generateImageGemini(apiKey: string, title: string, content: string | null, visualElements: string | null, imagePrompt: string | null, fmt?: { width: number; height: number; label: string }): Promise<string> {
-  // Modelos experimentais que podem suportar geração de imagem
-  const models = ["gemini-2.0-flash-exp", "gemini-2.5-flash"];
-  const errors: string[] = [];
-
-  for (const model of models) {
-    try {
-      return await withRetry(async () => {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
-        const resp = await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: buildImagePrompt(title, content, visualElements, imagePrompt, fmt) }] }],
-            generationConfig: { 
-              responseModalities: ["IMAGE"],
-            },
-          }),
-        });
-
-        if (!resp.ok) {
-          throw createProviderError(`Gemini image ${model}`, resp.status, await readResponseDetails(resp));
-        }
-
-        const data = await resp.json();
-        const parts = data.candidates?.[0]?.content?.parts || [];
-        const imgPart = parts.find((p: any) => p.inlineData?.mimeType?.startsWith("image/"));
-
-        if (!imgPart?.inlineData) {
-          throw new ProviderError(`Gemini image ${model} não retornou uma imagem direta.`, 500, false, false);
-        }
-
-        return `data:${imgPart.inlineData.mimeType};base64,${imgPart.inlineData.data}`;
-      }, 1, 2000);
-    } catch (error) {
-      const message = getErrorMessage(error);
-      console.warn(message);
-      errors.push(message);
-    }
-  }
-
-  throw new ProviderError(errors.join(" | ") || "Falha ao gerar imagem com Gemini", 500, false, errors.some((message) => isBillingIssue(0, message)));
-}
-
-async function generateImageLovable(title: string, articleContent: string | null, visualElements: string | null, imagePrompt: string | null, fmt: { width: number; height: number; label: string } | undefined, knowledgeUrls: string[] = [], knowledgeText: string = ""): Promise<string> {
-  const lovableKey: string | undefined = undefined;
-  if (!lovableKey) throw new ProviderError("Lovable AI desativado (usar chaves próprias/9Router).", 500, false, false);
-  const basePrompt = buildImagePrompt(title, articleContent, visualElements, imagePrompt, fmt);
-  const refs = (knowledgeUrls || []).slice(0, 10).filter((u) => typeof u === "string" && u.startsWith("http"));
-
-  // Extrai um resumo do conteúdo do artigo (sem HTML) para dar contexto visual.
-  const articleSummary = (articleContent || "")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, 1500);
-
-  const contextBlocks: string[] = [];
-  contextBlocks.push(`TÍTULO DO ARTIGO: ${title}`);
-  if (articleSummary) contextBlocks.push(`RESUMO DO CONTEÚDO DO ARTIGO (use para inferir cena, personagens, objetos e ambiente):\n${articleSummary}`);
-  if (knowledgeText && knowledgeText.trim().length > 0) {
-    contextBlocks.push(`BASE DE CONHECIMENTO DO USUÁRIO (use como referência de estilo, marca e temas):\n${knowledgeText.slice(0, 2500)}`);
-  }
-  if (refs.length) {
-    contextBlocks.push(`CONHECIMENTO VISUAL: ${refs.length} imagem(ns) de referência anexadas — inspire-se no estilo, paleta e composição.`);
-  }
-
-  const promptText = `${basePrompt}\n\n---\n${contextBlocks.join("\n\n")}`;
-
-  const userContent: any[] = [{ type: "text", text: promptText }];
-  for (const url of refs) {
-    userContent.push({ type: "image_url", image_url: { url } });
-  }
-
-  const models = ["google/gemini-3.1-flash-image", "google/gemini-2.5-flash-image", "google/gemini-3-pro-image"];
-  const errs: string[] = [];
-  for (const model of models) {
-    try {
-      return await withRetry(async () => {
-        const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },
-          body: JSON.stringify({
-            model,
-            messages: [{ role: "user", content: userContent }],
-            modalities: ["image", "text"],
-          }),
-        });
-        if (!resp.ok) throw createProviderError(`Lovable AI ${model}`, resp.status, await readResponseDetails(resp));
-        const data = await resp.json();
-        const imgUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-        if (!imgUrl) throw new ProviderError(`Lovable AI ${model} não retornou imagem.`, 500, false, false);
-        return imgUrl as string;
-      }, 1, 1500);
-    } catch (e) {
-      errs.push(getErrorMessage(e));
-    }
-  }
-  throw new ProviderError(errs.join(" | ") || "Falha ao gerar imagem via Lovable AI", 500, false, false);
-}
+const RequestSchema = z.object({
+  userId: z.string().uuid(), articleIds: z.array(z.string().uuid()).min(1).max(100),
+  force: z.boolean().optional().default(false), imageFormat: z.string().refine(isAIImageFormat),
+});
+const getErrorMessage = (error: unknown) => error instanceof Error ? error.message : "Erro ao gerar imagem.";
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function resizeDataUrlToExact(dataUrl: string, targetW: number, targetH: number): Promise<string> {
   try {
@@ -251,111 +34,37 @@ async function resizeDataUrlToExact(dataUrl: string, targetW: number, targetH: n
     return `data:image/png;base64,${btoa(s)}`;
   } catch (e) {
     console.warn("[Image] Falha ao redimensionar para tamanho exato:", e);
-    return dataUrl;
+    throw new Error("Não foi possível aplicar o formato escolhido à imagem.");
   }
 }
 
-async function generateImageOpenAI(apiKey: string, title: string, content: string | null, visualElements: string | null, imagePrompt: string | null, fmt: { width: number; height: number; label: string }, knowledgeUrls: string[] = []): Promise<string> {
-  const ratio = fmt.width / fmt.height;
-  const size: "1024x1024" | "1024x1536" | "1536x1024" =
-    ratio > 1.15 ? "1536x1024" : ratio < 0.85 ? "1024x1536" : "1024x1024";
-  const basePrompt = buildImagePrompt(title, content, visualElements, imagePrompt, fmt);
-  const refs = (knowledgeUrls || []).slice(0, 10).filter((u) => typeof u === "string" && u.startsWith("http"));
-
-  return await withRetry(async () => {
-    if (refs.length > 0) {
-      const form = new FormData();
-      form.append("model", "gpt-image-1");
-      form.append("prompt", `${basePrompt}\n\nUse as imagens anexadas como REFERÊNCIA VISUAL obrigatória de estilo, paleta, composição e identidade visual. Siga o prompt em conjunto com o estilo dessas referências.`);
-      form.append("size", size);
-      form.append("n", "1");
-      let added = 0;
-      for (const url of refs) {
-        try {
-          const r = await fetch(url);
-          if (!r.ok) continue;
-          const blob = await r.blob();
-          form.append("image[]", blob, `ref-${added}.png`);
-          added++;
-        } catch { /* ignora */ }
-      }
-      if (added > 0) {
-        const resp = await fetch("https://api.openai.com/v1/images/edits", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${apiKey}` },
-          body: form,
-        });
-        if (!resp.ok) throw createProviderError("OpenAI gpt-image-1 (edits)", resp.status, await readResponseDetails(resp));
-        const data = await resp.json();
-        const b64 = data.data?.[0]?.b64_json;
-        if (b64) return await resizeDataUrlToExact(`data:image/png;base64,${b64}`, fmt.width, fmt.height);
-      }
-    }
-
-    const resp = await fetch("https://api.openai.com/v1/images/generations", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ model: "gpt-image-1", prompt: basePrompt, size, n: 1 }),
-    });
-    if (!resp.ok) throw createProviderError("OpenAI gpt-image-1", resp.status, await readResponseDetails(resp));
-    const data = await resp.json();
-    const b64 = data.data?.[0]?.b64_json;
-    const url = data.data?.[0]?.url;
-    if (b64) return await resizeDataUrlToExact(`data:image/png;base64,${b64}`, fmt.width, fmt.height);
-    if (url) {
-      try {
-        const r = await fetch(url);
-        const buf = new Uint8Array(await r.arrayBuffer());
-        let s = "";
-        const CHUNK = 0x8000;
-        for (let i = 0; i < buf.length; i += CHUNK) s += String.fromCharCode(...buf.subarray(i, i + CHUNK));
-        return await resizeDataUrlToExact(`data:image/png;base64,${btoa(s)}`, fmt.width, fmt.height);
-      } catch {
-        return url as string;
-      }
-    }
-    throw new ProviderError("OpenAI gpt-image-1 não retornou imagem.", 500, false, false);
-  }, 1, 2000);
-}
-
-// Fallback gratuito e resiliente usando Pollinations.ai
-async function generateImagePollinations(title: string, content: string | null, visualElements: string | null, imagePrompt: string | null, fmt?: { width: number; height: number; label: string }): Promise<string> {
-  const f = fmt || { width: 1080, height: 1350, label: "Instagram Feed Retrato 4:5" };
-  const prompt = buildImagePrompt(title, content, visualElements, imagePrompt, f);
-  const encodedPrompt = encodeURIComponent(prompt);
-  const seed = Math.floor(Math.random() * 1000000);
-  const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${f.width}&height=${f.height}&nologo=true&seed=${seed}`;
-  
-  // Tenta validar se a URL está ok
-  try {
-    const resp = await fetch(url);
-    if (!resp.ok) throw new Error("Pollinations failed");
-    return url;
-  } catch {
-    // Se falhar o fetch (raro), apenas retorna a URL e deixa o browser carregar
-    return url;
-  }
-}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const body = await req.json();
-    const { userId, articleIds, force = false } = body;
+    const parsed = RequestSchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return new Response(JSON.stringify({ success: false, error: "Informe artigos válidos e escolha o formato antes de gerar." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    const { userId, articleIds, force, imageFormat } = parsed.data;
+    if (!isAIImageFormat(imageFormat)) {
+      return new Response(JSON.stringify({ success: false, error: "Escolha o formato antes de gerar a imagem." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
     if (!userId || !articleIds?.length) throw new Error("userId and articleIds are required");
     await requireUserOrService(req, userId);
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!supabaseUrl || !supabaseKey) throw new Error("Configuração do serviço indisponível.");
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Carrega chaves de IA do usuário
-    let geminiApiKey: string | null = null;
-    let openaiApiKey: string | null = null;
     const { data: settings } = await supabase
       .from("user_settings")
-      .select("gemini_api_key, openai_api_key, writer_prompt, image_mode, image_prompt, image_format, image_knowledge_urls, ninerouter_enabled, ninerouter_endpoint, ninerouter_api_key, ninerouter_image_model, gemini_model, openai_model, groq_model, azure_openai_model")
+      .select("image_mode, image_prompt, image_knowledge_urls, ninerouter_enabled, ninerouter_endpoint, ninerouter_api_key, ninerouter_image_model")
       .eq("user_id", userId)
       .single();
     
@@ -365,21 +74,13 @@ serve(async (req) => {
       throw new Error("O 'Prompt de Imagem IA' não está configurado. Vá em Configurações > Imagem Destacada e defina o prompt — ele é obrigatório e será seguido à risca.");
     }
     const imageMode = settings?.image_mode || "ai";
-    const fmt = getImageFormat((settings as any)?.image_format);
+    const fmt = requireImageFormat(imageFormat);
     const knowledgeUrls: string[] = Array.isArray((settings as any)?.image_knowledge_urls) ? (settings as any).image_knowledge_urls : [];
 
     if (imageMode !== "ai" && !force) {
       throw new Error(`A regeneração por IA está desativada. Altere o Modo de Imagem para "Gerada por IA" nas configurações.`);
     }
 
-    if (settings?.openai_api_key) {
-      try {
-        const { data: decrypted } = await supabase.rpc("decrypt_credential", { enc_key: "", val: settings.openai_api_key });
-        if (decrypted && typeof decrypted === "string" && decrypted.length > 5) openaiApiKey = decrypted;
-      } catch (e) {
-        console.warn("[regenerate-image] falha ao decifrar chave OpenAI (opcional):", e);
-      }
-    }
     let nineKey: string | null = null;
     const s9: any = settings;
     if (s9?.ninerouter_enabled !== false && s9?.ninerouter_endpoint && s9?.ninerouter_api_key) {
@@ -422,7 +123,7 @@ serve(async (req) => {
     let skipped = 0;
     const details: Array<{ articleId: string; title: string; reason: string; imageUrl?: string }> = [];
     const startTime = Date.now();
-    const MAX_DURATION_MS = 120_000;
+    const MAX_DURATION_MS = 20_000;
     const MAX_PER_CALL = 5;
 
     const isBrokenImageUrl = (url: string | null | undefined): boolean => {
@@ -445,34 +146,38 @@ serve(async (req) => {
       let imageUrl: string | null = null;
       const providerErrors: string[] = [];
 
-      // Provedor principal: 9Router (sem créditos Lovable).
+      // Todas as imagens passam pelo 9Router com prompt, aprendizado e formato explícitos.
       if (nineKey && s9?.ninerouter_endpoint) {
         try {
-          imageUrl = await generateImageNineRouter9(s9.ninerouter_endpoint, nineKey, article.title, (article as any).visual_elements || "", imagePrompt, s9.ninerouter_image_model);
-        } catch (error) { providerErrors.push(`9Router: ${getErrorMessage(error)}`); }
-        if (!imageUrl) providerErrors.push("9Router: nenhum modelo retornou imagem");
-      }
-
-      // Fallback opcional: OpenAI, apenas se o usuário configurou a chave.
-      if (!imageUrl && openaiApiKey) {
-        try {
-          imageUrl = await generateImageOpenAI(
-            openaiApiKey,
-            article.title,
-            (article as any).content || null,
-            (article as any).visual_elements || null,
-            imagePrompt,
-            fmt,
-            knowledgeUrls,
-          );
-        } catch (error) {
-          providerErrors.push(`OpenAI (fallback): ${getErrorMessage(error)}`);
-        }
+          const generated = await generateRouterImage({
+            endpoint: s9.ninerouter_endpoint, apiKey: nineKey, model: s9.ninerouter_image_model,
+            title: article.title, content: article.content, visual: article.visual_elements,
+            prompt: imagePrompt, references: knowledgeUrls, knowledgeText, format: imageFormat,
+          });
+          let dataUrl = generated;
+          if (!dataUrl.startsWith("data:image/")) {
+            const response = await fetch(dataUrl, { signal: AbortSignal.timeout(10_000) });
+            if (!response.ok) throw new Error("Não foi possível baixar a imagem gerada.");
+            const bytes = new Uint8Array(await response.arrayBuffer());
+            let binary = "";
+            for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+            dataUrl = `data:image/png;base64,${btoa(binary)}`;
+          }
+          const resized = await resizeDataUrlToExact(dataUrl, fmt.width, fmt.height);
+          const base64 = resized.split(",")[1];
+          const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+          const path = `${userId}/${article.id}/${crypto.randomUUID()}.png`;
+          const { error: uploadError } = await supabase.storage.from("article-images").upload(path, bytes, { contentType: "image/png", upsert: false });
+          if (uploadError) throw uploadError;
+          imageUrl = supabase.storage.from("article-images").getPublicUrl(path).data.publicUrl;
+        } catch (error) { providerErrors.push(getErrorMessage(error)); }
+      } else {
+        providerErrors.push("Configure e ative o 9Router para gerar imagens.");
       }
 
       if (!imageUrl) {
         failed++;
-        const reason = toUserImageError(providerErrors[0] || "Todos os provedores de IA falharam");
+        const reason = (providerErrors[0] || "Não foi possível gerar imagem pelo 9Router.");
         details.push({ articleId: article.id, title: article.title, reason });
         continue;
       }
@@ -491,7 +196,7 @@ serve(async (req) => {
 
     const firstFailureReason = details.find((detail) => detail.reason !== "Success")?.reason;
     const message = updated > 0
-      ? `${updated} imagens processadas com sucesso.`
+      ? `${updated} imagens processadas com sucesso.${skipped > 0 ? ` ${skipped} restantes; clique em gerar novamente para continuar.` : ""}`
       : firstFailureReason
         ? `Nenhuma imagem foi gerada. Motivo: ${firstFailureReason}`
         : "Nenhuma imagem foi gerada. Verifique suas configurações de IA.";
@@ -511,30 +216,9 @@ serve(async (req) => {
   } catch (error) {
     console.error("regenerate-image error:", error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Erro desconhecido" }),
+      JSON.stringify({ success: false, error: error instanceof Error ? error.message : "Erro desconhecido" }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
 
-async function generateImageNineRouter9(endpoint: string, apiKey: string, title: string, visual: string, basePrompt: string, chosen?: string | null): Promise<string | null> {
-  let base = endpoint.trim().replace(/\/+$/, "");
-  if (!/\/v1$/.test(base)) base += "/v1";
-  const prompt = `${basePrompt}\n\nTema: ${title}. ${visual || ""}`.slice(0, 2000);
-  const models = [...new Set([chosen?.trim(), "cf/@cf/black-forest-labs/flux-1-schnell", "cf/@cf/stabilityai/stable-diffusion-xl-base-1.0"].filter(Boolean) as string[])];
-  for (const model of models) {
-    try {
-      const resp = await fetch(`${base}/images/generations`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ model, prompt }),
-      });
-      if (!resp.ok) { console.warn(`[regenerate-image] 9Router ${model}: ${resp.status}`); continue; }
-      const data = await resp.json();
-      const b64 = data.data?.[0]?.b64_json;
-      if (b64) return `data:${b64.startsWith("/9j/") ? "image/jpeg" : "image/png"};base64,${b64}`;
-      if (data.data?.[0]?.url) return data.data[0].url;
-    } catch (e) { console.warn(`[regenerate-image] 9Router ${model} erro:`, e); }
-  }
-  return null;
-}

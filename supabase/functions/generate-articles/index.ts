@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { requireUserOrService } from "../_shared/security.ts";
+import { generateRouterImage } from "../_shared/ninerouter-images.ts";
+import { isAIImageFormat, requireImageFormat } from "../_shared/image-formats.ts";
 import {
   discoverSources,
   findDuplicate,
@@ -603,58 +605,26 @@ async function resizeDataUrlToExact(dataUrl: string, targetW: number, targetH: n
 // Geração via OpenAI (ChatGPT) usando gpt-image-1 — modelo que segue o prompt com precisão.
 // Suporta referências visuais (conhecimento) via endpoint /v1/images/edits multipart.
 // Geração de imagem via 9Router (/v1/images/generations) — modelo escolhido + fallbacks Flux/SDXL.
-async function generateImageNineRouter(endpoint: string, apiKey: string, title: string, content: string | null, visualElements: string, customImagePrompt?: string | null, formatKey?: string | null, chosen?: string | null): Promise<string | null> {
-  const fmt = getImageFormat(formatKey);
-  let prompt: string;
-  try { prompt = appendFormatHint(buildImagePrompt(title, content, visualElements, customImagePrompt), fmt); }
-  catch { prompt = `Editorial news photo illustration, high quality, no text: ${title}. ${visualElements || ""}`; }
-  let base = endpoint.trim().replace(/\/+$/, "");
-  if (!/\/v1$/.test(base)) base += "/v1";
-  const models = [...new Set([chosen?.trim(), "cf/@cf/black-forest-labs/flux-1-schnell", "cf/@cf/stabilityai/stable-diffusion-xl-base-1.0"].filter(Boolean) as string[])];
-  for (const model of models) {
-    try {
-      const resp = await fetch(`${base}/images/generations`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ model, prompt: prompt.slice(0, 2000) }),
-      });
-      if (!resp.ok) { console.warn(`[Image] 9Router ${model}: ${resp.status} ${(await resp.text()).slice(0, 200)}`); continue; }
-      const data = await resp.json();
-      const b64 = data.data?.[0]?.b64_json;
-      let url: string | null = data.data?.[0]?.url || null;
-      if (b64) {
-        const mime = b64.startsWith("/9j/") ? "image/jpeg" : "image/png";
-        url = `data:${mime};base64,${b64}`;
-      }
-      if (url) { console.log(`[Image] 9Router ${model} OK`); return url.startsWith("data:") ? await resizeDataUrlToExact(url, fmt.width, fmt.height) : url; }
-    } catch (e) { console.warn(`[Image] 9Router ${model} erro:`, e); }
+async function generateImageNineRouter(endpoint: string, apiKey: string, title: string, content: string | null, visualElements: string, customImagePrompt?: string | null, formatKey?: string | null, chosen?: string | null, references: string[] = [], knowledgeText = ""): Promise<string | null> {
+  const format = isAIImageFormat(formatKey) ? formatKey : "instagram_portrait";
+  try {
+    const generated = await generateRouterImage({ endpoint, apiKey, model: chosen, title, content,
+      visual: visualElements, prompt: customImagePrompt || "", format, references, knowledgeText });
+    let dataUrl = generated;
+    if (!dataUrl.startsWith("data:image/")) {
+      const response = await fetch(dataUrl, { signal: AbortSignal.timeout(10_000) });
+      if (!response.ok) throw new Error("Não foi possível baixar a imagem.");
+      const bytes = new Uint8Array(await response.arrayBuffer());
+      let binary = "";
+      for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+      dataUrl = `data:image/png;base64,${btoa(binary)}`;
+    }
+    const { width, height } = requireImageFormat(format);
+    return await resizeDataUrlToExact(dataUrl, width, height);
+  } catch (error) {
+    console.warn("[Image] 9Router não conseguiu gerar imagem:", error instanceof Error ? error.message : "Falha de geração");
+    return null;
   }
-  return null;
-}
-
-// ChatGPT (gpt-image) via Lovable AI Gateway — fallback quando não há chave OpenAI própria.
-async function generateImageGatewayGPT(title: string, content: string | null, visualElements: string, customImagePrompt?: string | null, formatKey?: string | null): Promise<string | null> {
-  const key: string | undefined = undefined; // créditos Lovable proibidos
-  if (!key) return null;
-  const fmt = getImageFormat(formatKey);
-  const r = fmt.width / fmt.height;
-  const size = r > 1.15 ? "1536x1024" : r < 0.85 ? "1024x1536" : "1024x1024";
-  const prompt = appendFormatHint(buildImagePrompt(title, content, visualElements, customImagePrompt), fmt);
-  for (const model of ["openai/gpt-image-2.5-sunburst", "openai/gpt-image-2"]) {
-    try {
-      const resp = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ model, prompt, size, n: 1 }),
-      });
-      if (!resp.ok) { console.warn(`[Image] Gateway ${model}: ${resp.status} ${(await resp.text()).slice(0, 200)}`); continue; }
-      const data = await resp.json();
-      const b64 = data.data?.[0]?.b64_json;
-      if (b64) { console.log(`[Image] Gateway ${model} OK`); return `data:image/png;base64,${b64}`; }
-      if (data.data?.[0]?.url) return data.data[0].url;
-    } catch (e) { console.warn(`[Image] Gateway ${model} erro:`, e); }
-  }
-  return null;
 }
 
 async function generateImageOpenAI(
@@ -1776,27 +1746,13 @@ serve(async (req) => {
         const imageKnowledgeUrls: string[] = Array.isArray((settings as any)?.image_knowledge_urls) ? (settings as any).image_knowledge_urls : [];
 
         if (imageMode === "ai") {
-          // Ordem: 1) ChatGPT (gpt-image-1, chave do usuário, com modelo visual)
-          //        2) ChatGPT via gateway (gpt-image) 3) Gemini (com referências) 4) 9Router
-          const fmtR = getImageFormat(imageFormatKey);
-          if (openaiApiKey) {
-            try { featuredImageUrl = await generateImageOpenAI(openaiApiKey, parsed.title, parsed.content, parsed.visual_elements, customImagePrompt, imageFormatKey, imageKnowledgeUrls); }
-            catch (e) { console.warn("[Image] ChatGPT (chave própria) falhou:", e); }
-          }
-          if (!featuredImageUrl) {
-            try {
-              const gw = await generateImageGatewayGPT(parsed.title, parsed.content, parsed.visual_elements, customImagePrompt, imageFormatKey);
-              if (gw) featuredImageUrl = gw.startsWith("data:") ? await resizeDataUrlToExact(gw, fmtR.width, fmtR.height) : gw;
-            } catch (e) { console.warn("[Image] ChatGPT via gateway falhou:", e); }
-          }
-          if (!featuredImageUrl) {
-            try {
-              const lov = await generateImageLovable(parsed.title, parsed.content, parsed.visual_elements, customImagePrompt, imageFormatKey, imageKnowledgeUrls);
-              if (lov) featuredImageUrl = lov.startsWith("data:") ? await resizeDataUrlToExact(lov, fmtR.width, fmtR.height) : lov;
-            } catch (e) { console.warn("[Image] Gemini falhou:", e); }
-          }
-          if (!featuredImageUrl && nineKeyGlobal && settings?.ninerouter_endpoint && settings?.ninerouter_enabled !== false) {
-            featuredImageUrl = await generateImageNineRouter(settings.ninerouter_endpoint, nineKeyGlobal, parsed.title, parsed.content, parsed.visual_elements, customImagePrompt, imageFormatKey, (settings as any)?.ninerouter_image_model);
+          const { data: imageKnowledge } = await supabase.from("knowledge_entries")
+            .select("title, description, content").eq("user_id", userId).order("created_at", { ascending: false }).limit(5);
+          const knowledgeText = (imageKnowledge || []).map((entry: any) => `${entry.title}
+${entry.description || ""}
+${(entry.content || "").replace(/<[^>]+>/g, " ").slice(0, 800)}`).join("\n\n");
+          if (nineKeyGlobal && settings?.ninerouter_endpoint && settings?.ninerouter_enabled !== false) {
+            featuredImageUrl = await generateImageNineRouter(settings.ninerouter_endpoint, nineKeyGlobal, parsed.title, parsed.content, parsed.visual_elements, customImagePrompt, imageFormatKey, (settings as any)?.ninerouter_image_model, imageKnowledgeUrls, knowledgeText);
           }
           if (!featuredImageUrl) {
             console.warn(`[Image] Não foi possível gerar imagem para "${parsed.title}" — artigo criado sem imagem.`);
