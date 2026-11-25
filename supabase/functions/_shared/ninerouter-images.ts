@@ -32,10 +32,10 @@ export async function generateRouterImage(input: ImageRequest): Promise<string> 
   const prompt = imagePrompt(input);
   const base = input.endpoint.trim().replace(/\/+$/, '').replace(/\/v1$/, '') + '/v1';
   const refs = input.references.slice(0, 10);
-  const deadline = Date.now() + 45_000;
+  const deadline = Date.now() + 55_000;
   let available: string[] = [];
   let visionModels: string[] = [];
-  if (refs.length) {
+  {
     try {
       const response = await fetch(`${base}/models`, {
         headers: { Authorization: `Bearer ${input.apiKey}` }, signal: AbortSignal.timeout(5_000),
@@ -44,7 +44,7 @@ export async function generateRouterImage(input: ImageRequest): Promise<string> 
         const data = await response.json();
         const ids: string[] = (data.data || []).map((entry: { id: string }) => entry.id);
         available = ids
-          .filter((id: string) => /image|imagen/i.test(id) && !/flux|stable-diffusion|sdxl/i.test(id));
+          .filter((id: string) => /image|imagen|flux|stable-diffusion|sdxl|dall-e|ideogram|recraft|seedream|midjourney/i.test(id));
         visionModels = ids.filter(id => /gemini|gpt-4o|gpt-4\.1|vision/i.test(id) && !/image|imagen|embedding/i.test(id));
       }
     } catch { /* configured model and compatible routes remain available */ }
@@ -52,7 +52,7 @@ export async function generateRouterImage(input: ImageRequest): Promise<string> 
   // Text-to-image models receive a visual specification extracted from every reference,
   // not URLs masquerading as visual understanding. Both stages use the user's 9Router.
   let referenceStyle = '';
-  if (refs.length && /flux|stable-diffusion|sdxl/i.test(input.model || '')) {
+  if (refs.length && visionModels.length) {
     for (const model of visionModels.slice(0, 2)) {
       try {
         const response = await fetch(`${base}/chat/completions`, {
@@ -76,7 +76,9 @@ export async function generateRouterImage(input: ImageRequest): Promise<string> 
   const models = [...new Set([
     input.model?.trim(),
     ...available,
-    ...(refs.length && !referenceStyle ? ['google/gemini-2.5-flash-image', 'gpt-image-1'] : ['cf/@cf/black-forest-labs/flux-1-schnell', 'cf/@cf/stabilityai/stable-diffusion-xl-base-1.0']),
+    // 9Router decides: every image model it exposes is a candidate, plus common fallbacks.
+    'google/gemini-2.5-flash-image', 'gpt-image-1',
+    'cf/@cf/black-forest-labs/flux-1-schnell', 'cf/@cf/stabilityai/stable-diffusion-xl-base-1.0',
   ].filter((model): model is string => Boolean(model)))];
   let lastError = 'Nenhum modelo de imagem disponível no 9Router.';
   for (const model of models) {

@@ -23,11 +23,13 @@ describe('Regras de geração de imagens', () => {
     expect(AI_IMAGE_FORMATS.instagram_story).toMatchObject({ width: 1080, height: 1920 });
   });
   it('envia o formato escolhido ao 9Router, sem usar outro serviço', async () => {
-    const fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({ data: [{ url: 'https://router.example/image.png' }] })));
+    const fetch = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: [] })))
+      .mockResolvedValue(new Response(JSON.stringify({ data: [{ url: 'https://router.example/image.png' }] })));
     vi.stubGlobal('fetch', fetch);
     await generateRouterImage(input);
-    expect(fetch.mock.calls[0][0]).toBe('https://router.example/v1/images/generations');
-    expect(JSON.parse(fetch.mock.calls[0][1].body)).toMatchObject({ width: 1920, height: 1080, size: '1920x1080' });
+    expect(fetch.mock.calls[1][0]).toBe('https://router.example/v1/images/generations');
+    expect(JSON.parse(fetch.mock.calls[1][1].body)).toMatchObject({ width: 1920, height: 1080, size: '1920x1080' });
   });
   it('mantém o prompt completo e o aprendizado no pedido', () => {
     const fullPrompt = 'Referência obrigatória. '.repeat(150);
