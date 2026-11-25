@@ -32,7 +32,7 @@ export async function generateRouterImage(input: ImageRequest): Promise<string> 
   const prompt = imagePrompt(input);
   const base = input.endpoint.trim().replace(/\/+$/, '').replace(/\/v1$/, '') + '/v1';
   const refs = input.references.slice(0, 10);
-  const deadline = Date.now() + 55_000;
+  const deadline = Date.now() + 100_000;
   let available: string[] = [];
   let visionModels: string[] = [];
   {
@@ -53,24 +53,25 @@ export async function generateRouterImage(input: ImageRequest): Promise<string> 
   // not URLs masquerading as visual understanding. Both stages use the user's 9Router.
   let referenceStyle = '';
   if (refs.length && visionModels.length) {
-    for (const model of visionModels.slice(0, 2)) {
+    const ranked = [...visionModels].sort((a, b) => Number(/flash/i.test(b) && !/lite/i.test(b)) - Number(/flash/i.test(a) && !/lite/i.test(a)));
+    for (const model of ranked.slice(0, 2)) {
       try {
         const response = await fetch(`${base}/chat/completions`, {
           method: 'POST', headers: { Authorization: `Bearer ${input.apiKey}`, 'Content-Type': 'application/json' },
-          signal: AbortSignal.timeout(Math.min(12_000, Math.max(1, deadline - Date.now()))),
+          signal: AbortSignal.timeout(Math.min(25_000, Math.max(1, deadline - Date.now()))),
           body: JSON.stringify({ model, max_tokens: 900, messages: [{ role: 'user', content: [
             { type: 'text', text: 'Analise TODAS as imagens anexadas como modelos visuais. Descreva somente o estilo em uma especificação objetiva para gerar outra imagem: composição, paleta, contraste, iluminação, tipografia, posicionamento e hierarquia. Não copie o assunto das referências, não invente detalhes que não vê. Retorne de 100 a 300 palavras em inglês.' },
-            ...refs.map(url => ({ type: 'image_url', image_url: { url } })),
+            ...refs.slice(0, 3).map(url => ({ type: 'image_url', image_url: { url } })),
           ] }] }),
         });
-        if (!response.ok) { await response.body?.cancel(); continue; }
+        if (!response.ok) { console.warn('[9router-image] vision', model, response.status, (await response.text()).slice(0, 200)); continue; }
         const data = await response.json();
         const specification = data.choices?.[0]?.message?.content;
         if (typeof specification === 'string' && specification.trim().length >= 100) {
           referenceStyle = specification.trim();
           break;
         }
-      } catch { /* use a direct reference-capable image model if analysis is unavailable */ }
+      } catch (e) { console.warn('[9router-image] vision error', model, String(e)); /* use a direct reference-capable image model if analysis is unavailable */ }
     }
   }
   const models = [...new Set([
@@ -80,12 +81,17 @@ export async function generateRouterImage(input: ImageRequest): Promise<string> 
     'google/gemini-2.5-flash-image', 'gpt-image-1',
     'cf/@cf/black-forest-labs/flux-1-schnell', 'cf/@cf/stabilityai/stable-diffusion-xl-base-1.0',
   ].filter((model): model is string => Boolean(model)))];
+  console.log('[9router-image] candidates', JSON.stringify({ models, available, vision: visionModels.length, refs: refs.length, hasStyle: !!referenceStyle }));
   let lastError = 'Nenhum modelo de imagem disponível no 9Router.';
-  for (const model of models) {
+  const tried = new Set<string>();
+  const ordered = [...models.filter(m => !/flux|stable-diffusion|sdxl/i.test(m)), ...models.filter(m => /flux|stable-diffusion|sdxl/i.test(m))];
+  for (const model of refs.length && !referenceStyle ? ordered : models) {
     if (Date.now() >= deadline) break;
     // Flux/SDXL text-only cannot honor visual references; never silently drop them.
     const textOnly = /flux|stable-diffusion|sdxl/i.test(model);
-    if (refs.length && textOnly && !referenceStyle) continue;
+    // Last resort: let 9Router's text models run with the written learning and reference guidance.
+    if (refs.length && textOnly && !referenceStyle && models.some(m => !/flux|stable-diffusion|sdxl/i.test(m) && !tried.has(m))) continue;
+    tried.add(model);
     try {
       const signal = AbortSignal.timeout(Math.min(35_000, Math.max(1, deadline - Date.now())));
       const headers = { Authorization: `Bearer ${input.apiKey}`, 'Content-Type': 'application/json' };
@@ -114,13 +120,16 @@ export async function generateRouterImage(input: ImageRequest): Promise<string> 
       } else {
         response = await fetch(`${base}/images/generations`, {
           method: 'POST', headers, signal,
-          body: JSON.stringify({ model, prompt: referenceStyle
+          body: JSON.stringify({ model, prompt: textOnly
+            ? compactPrompt((referenceStyle ? `Visual style from learning images: ${referenceStyle.slice(0, 700)} ` : '') + prompt, fmt)
+            : referenceStyle
             ? `${prompt}\n\nESPECIFICAÇÃO EXTRAÍDA DAS IMAGENS DE APRENDIZADO (seguir junto ao prompt):\n${referenceStyle}`
-            : prompt, width: fmt.width, height: fmt.height,
-            size: /gpt-image|dall-e/i.test(model) ? (fmt.width > fmt.height ? '1536x1024' : fmt.width < fmt.height ? '1024x1536' : '1024x1024') : `${fmt.width}x${fmt.height}`, n: 1 }),
+            : prompt, ...(/^cf\/@cf\//.test(model) ? {} : { width: fmt.width, height: fmt.height }),
+            ...(/^cf\/@cf\//.test(model) ? {} : { size: /gpt-image|dall-e/i.test(model) ? (fmt.width > fmt.height ? '1536x1024' : fmt.width < fmt.height ? '1024x1536' : '1024x1024') : `${fmt.width}x${fmt.height}` }), n: 1 }),
         });
       }
       if (!response.ok) {
+        console.warn('[9router-image]', model, response.status, (await response.clone().text()).slice(0, 300));
         lastError = `9Router: modelo ${model} recusou a geração (${response.status}). Verifique se ele está conectado e suporta referências visuais.`;
         await response.body?.cancel();
         continue;
@@ -139,4 +148,8 @@ export async function generateRouterImage(input: ImageRequest): Promise<string> 
     }
   }
   throw new Error(lastError);
+}
+// Some text-to-image routes (e.g. Cloudflare Flux) cap prompts at 2048 chars; keep format first.
+function compactPrompt(prompt: string, fmt: { label: string; width: number; height: number }): string {
+  return (`Format ${fmt.label}, ${fmt.width}x${fmt.height}px. ` + prompt.replace(/\s+/g, ' ')).slice(0, 2000);
 }
