@@ -1196,6 +1196,7 @@ const MAX_GENERATION_BATCH = 2;
 // ── Main handler ──────────────────────────────────────────────────────────
 
 serve(async (req) => {
+  const __startedAt = Date.now();
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
@@ -1608,6 +1609,11 @@ serve(async (req) => {
 
     for (let i = 0; i < articlesToGenerate; i++) {
       if (allProvidersExhausted) break;
+      // Orçamento de tempo: limite da função é 150s; cada artigo leva até ~70s
+      if (i > 0 && Date.now() - __startedAt > 70_000) {
+        console.log(`[Pipeline] Orçamento de tempo atingido após ${i} artigo(s); restantes ficam para a próxima rodada`);
+        break;
+      }
 
       const topic = topicsToUse[i];
       const scheduledAt = new Date(baseScheduledTime + (i + 1) * intervalMs);
