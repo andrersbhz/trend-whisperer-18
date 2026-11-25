@@ -93,7 +93,7 @@ serve(async (req) => {
     // Fetch articles
     const { data: articles } = await supabase
       .from("articles")
-      .select("id, title, category, featured_image_url, visual_elements, content")
+      .select("id, title, category, featured_image_url, visual_elements, content, source_urls")
       .eq("user_id", userId)
       .in("id", articleIds);
 
@@ -144,6 +144,7 @@ serve(async (req) => {
       processed++;
 
       let imageUrl: string | null = null;
+      let photoCaption: string | undefined;
       const providerErrors: string[] = [];
 
       // Todas as imagens passam pelo 9Router com prompt, aprendizado e formato explícitos.
@@ -153,6 +154,8 @@ serve(async (req) => {
             endpoint: s9.ninerouter_endpoint, apiKey: nineKey, model: s9.ninerouter_image_model,
             title: article.title, content: article.content, visual: article.visual_elements,
             prompt: imagePrompt, references: knowledgeUrls, knowledgeText, format: imageFormat,
+            sourceUrls: article.source_urls || [],
+            onPhoto: photo => { photoCaption = `${photo.caption} — Fonte: ${photo.source} · ${photo.license} · ${photo.publishedAt}`; },
           });
           let dataUrl = generated;
           if (!dataUrl.startsWith("data:image/")) {
@@ -182,7 +185,9 @@ serve(async (req) => {
         continue;
       }
 
-      const { error: updateError } = await supabase.from("articles").update({ featured_image_url: imageUrl }).eq("id", article.id);
+      const { error: updateError } = await supabase.from("articles").update({ featured_image_url: imageUrl,
+        ...(photoCaption ? { image_caption: photoCaption, image_alt: photoCaption.split(' — Fonte:')[0], image_verification_status: 'foto_fonte_verificada' } : { image_verification_status: 'ilustrativa' }),
+      }).eq("id", article.id).eq("user_id", userId);
       if (updateError) {
         failed++;
         details.push({ articleId: article.id, title: article.title, reason: updateError.message });

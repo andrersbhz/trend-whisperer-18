@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] Buscar fotografias recentes por assunto e nomes, sem inventar pessoas, preservando legenda e fonte.
+- [x] Aplicar realismo obrigatório e impedir geração que ignore aprendizado; validar as regras.
+- [ ] Confirmar fotografia real no artigo sobre Mariana Rios — depende de o 9Router verificar nomes e de uma fotografia recente com licença; o teste na tela interrompeu sem inventar pessoas.
 - [x] Integrar geração de imagens pelo 9Router ao prompt e às referências de aprendizado.
 - [x] Exigir seleção de formato e oferecer modal antes da geração manual em Artigos.
 - [x] Validar seleção de formatos na tela e regras de geração com seis testes.

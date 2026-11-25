@@ -605,11 +605,11 @@ async function resizeDataUrlToExact(dataUrl: string, targetW: number, targetH: n
 // Geração via OpenAI (ChatGPT) usando gpt-image-1 — modelo que segue o prompt com precisão.
 // Suporta referências visuais (conhecimento) via endpoint /v1/images/edits multipart.
 // Geração de imagem via 9Router (/v1/images/generations) — modelo escolhido + fallbacks Flux/SDXL.
-async function generateImageNineRouter(endpoint: string, apiKey: string, title: string, content: string | null, visualElements: string, customImagePrompt?: string | null, formatKey?: string | null, chosen?: string | null, references: string[] = [], knowledgeText = ""): Promise<string | null> {
+async function generateImageNineRouter(endpoint: string, apiKey: string, title: string, content: string | null, visualElements: string, customImagePrompt?: string | null, formatKey?: string | null, chosen?: string | null, references: string[] = [], knowledgeText = "", sourceUrls: string[] = [], realPeople?: string[], onPhoto?: (photo: { caption: string; source: string; license: string; publishedAt: string }) => void): Promise<string | null> {
   const format = isAIImageFormat(formatKey) ? formatKey : "instagram_portrait";
   try {
     const generated = await generateRouterImage({ endpoint, apiKey, model: chosen, title, content,
-      visual: visualElements, prompt: customImagePrompt || "", format, references, knowledgeText });
+      visual: visualElements, prompt: customImagePrompt || "", format, references, knowledgeText, sourceUrls, realPeople, onPhoto });
     let dataUrl = generated;
     if (!dataUrl.startsWith("data:image/")) {
       const response = await fetch(dataUrl, { signal: AbortSignal.timeout(10_000) });
@@ -1741,6 +1741,7 @@ serve(async (req) => {
 
         // GERAÇÃO DE IMAGEM: depende do imageMode configurado
         let featuredImageUrl: string | null = null;
+        let sourcePhotoCaption: string | null = null;
         const customImagePrompt = settings?.image_prompt || null;
         const imageFormatKey = (settings as any)?.image_format || "instagram_portrait";
         const imageKnowledgeUrls: string[] = Array.isArray((settings as any)?.image_knowledge_urls) ? (settings as any).image_knowledge_urls : [];
@@ -1752,7 +1753,10 @@ serve(async (req) => {
 ${entry.description || ""}
 ${(entry.content || "").replace(/<[^>]+>/g, " ").slice(0, 800)}`).join("\n\n");
           if (nineKeyGlobal && settings?.ninerouter_endpoint && settings?.ninerouter_enabled !== false) {
-            featuredImageUrl = await generateImageNineRouter(settings.ninerouter_endpoint, nineKeyGlobal, parsed.title, parsed.content, parsed.visual_elements, customImagePrompt, imageFormatKey, (settings as any)?.ninerouter_image_model, imageKnowledgeUrls, knowledgeText);
+            featuredImageUrl = await generateImageNineRouter(settings.ninerouter_endpoint, nineKeyGlobal, parsed.title, parsed.content, parsed.visual_elements, customImagePrompt, imageFormatKey, (settings as any)?.ninerouter_image_model, imageKnowledgeUrls, knowledgeText,
+              verification.sources.map(s => s.source_url),
+              verification.entities.filter((e: any) => e?.type === 'pessoa').map((e: any) => e.name).filter((name: unknown): name is string => typeof name === 'string' && Boolean(name.trim())),
+              photo => { sourcePhotoCaption = `${photo.caption} — Fonte: ${photo.source} · ${photo.license} · ${photo.publishedAt}`; });
           }
           if (!featuredImageUrl) {
             console.warn(`[Image] Não foi possível gerar imagem para "${parsed.title}" — artigo criado sem imagem.`);
@@ -1771,8 +1775,10 @@ ${(entry.content || "").replace(/<[^>]+>/g, " ").slice(0, 800)}`).join("\n\n");
         const hasRealPeople = verification.entities.some((e: any) => e?.type === "pessoa");
         let imageVerificationStatus: string | null = null;
         if (featuredImageUrl) {
-          imageVerificationStatus = hasRealPeople ? "ilustrativa_pessoa_real" : "ilustrativa";
-          if (hasRealPeople && parsed.image_caption && !/ilustra/i.test(parsed.image_caption)) {
+          imageVerificationStatus = sourcePhotoCaption ? "foto_fonte_verificada" : hasRealPeople ? "ilustrativa_pessoa_real" : "ilustrativa";
+          if (sourcePhotoCaption) {
+            parsed = { ...parsed, image_caption: sourcePhotoCaption };
+          } else if (hasRealPeople && parsed.image_caption && !/ilustra/i.test(parsed.image_caption)) {
             parsed = { ...parsed, image_caption: `${parsed.image_caption} (imagem ilustrativa gerada por IA)` };
           }
           pipelineLog.add("IMAGE_VERIFICATION", "ok", imageVerificationStatus);
