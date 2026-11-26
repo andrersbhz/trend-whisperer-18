@@ -41,6 +41,7 @@ import { EditArticleDialog } from '@/components/articles/EditArticleDialog';
 import { Pencil } from 'lucide-react';
 import { ManualArticleDialog } from '@/components/articles/ManualArticleDialog';
 import { GenerateFromKnowledgeDialog } from '@/components/articles/GenerateFromKnowledgeDialog';
+import { AutomationProgress } from '@/components/articles/AutomationProgress';
 import { Plus, BookOpen } from 'lucide-react';
 
 const ArticlesPage = () => {
@@ -285,7 +286,7 @@ const ArticlesPage = () => {
         }),
       );
       toast({
-        title: data?.success ? 'Artigos gerados!' : 'Atenção',
+        title: data?.success ? (data.queued ? 'Geração na fila' : 'Artigos gerados!') : 'Atenção',
         description: data?.message || data?.error || 'Verifique o resultado.',
         variant: data?.success ? 'default' : 'destructive',
       });
@@ -812,6 +813,8 @@ const ArticlesPage = () => {
           </Button>
         </div>
       </div>
+
+      <AutomationProgress onCompleted={fetchArticles} />
 
       <Card className="glass-card border-primary/30">
         <CardContent className="p-4">

@@ -246,8 +246,9 @@ const Dashboard = () => {
     if (!user) return;
     setGenerating(true);
     try {
-      const { data } = await supabase.functions.invoke('generate-articles', { body: { userId: user.id } });
-      toast({ title: 'Geração iniciada!', description: data?.message || 'Artigos sendo gerados...' });
+      const { data, error } = await supabase.functions.invoke('generate-articles', { body: { userId: user.id } });
+      if (error) throw error;
+      toast({ title: data?.success ? 'Geração na fila' : 'Geração pausada', description: data?.message || 'Confira o progresso em Artigos.', variant: data?.success ? 'default' : 'destructive' });
       setTimeout(() => fetchStats(true), 5000);
     } catch (error) { toast({ title: 'Erro ao gerar artigos', description: getErrorMessage(error), variant: 'destructive' }); } finally { setGenerating(false); }
   };

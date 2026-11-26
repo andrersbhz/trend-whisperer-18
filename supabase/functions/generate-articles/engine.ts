@@ -1,0 +1,1970 @@
+import { jobFetch as fetch, throwIfJobStopped, isJobExecution } from "../_shared/job-runtime.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { requireUserOrService } from "../_shared/security.ts";
+import { generateRouterImage } from "../_shared/ninerouter-images.ts";
+import { isAIImageFormat, requireImageFormat } from "../_shared/image-formats.ts";
+import {
+  discoverSources,
+  findDuplicate,
+  keywordSet,
+  similarity,
+  PipelineLog,
+  slugify,
+  type SourceRef,
+} from "../_shared/editorial.ts";
+import { fixYouTubeEmbeds, loadYouTubeKey } from "../_shared/youtube.ts";
+
+// Dois assuntos são considerados o mesmo tema quando compartilham 2+ palavras
+// significativas (nomes, times, instituições) ou têm alta similaridade textual.
+function sharesSubject(a: string, b: string): boolean {
+  const A = keywordSet(a || "");
+  const B = keywordSet(b || "");
+  if (A.size === 0 || B.size === 0) return false;
+  let inter = 0;
+  for (const w of A) if (B.has(w)) inter++;
+  if (inter >= 2) return true;
+  return similarity(a || "", b || "") >= 0.45;
+}
+
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+};
+
+// ── Helpers ───────────────────────────────────────────────────────────────
+
+function stripHtml(text: string): string {
+  if (!text) return "";
+  return text.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
+}
+
+// Remove emojis e travessões/hífens usados como pontuação (mantém hífen de palavras compostas).
+const EMOJI_RE = /[\u{1F000}-\u{1FAFF}\u{2190}-\u{21FF}\u{2300}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}\u{200D}]/gu;
+function cleanStyle(text: string): string {
+  return (text || "")
+    .replace(EMOJI_RE, "")
+    .replace(/[\u2013\u2014\u2015]/g, ",")
+    .replace(/\s-\s/g, ", ")
+    .replace(/\s{2,}/g, " ")
+    .replace(/\s+([,.;:!?])/g, "$1")
+    .replace(/,\s*,/g, ",")
+    .trim();
+}
+
+function sanitizeSeoFields(parsed: AIResponse): AIResponse {
+  parsed = { ...parsed, content: cleanStyle(parsed.content || "") };
+
+  return {
+    ...parsed,
+    title: cleanStyle((parsed.title || "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim()),
+    excerpt: cleanStyle((parsed.excerpt || "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim()),
+    seo_keyword: cleanStyle((parsed.seo_keyword || "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim()),
+    seo_title: cleanStyle((parsed.seo_title || "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim()),
+    meta_description: cleanStyle((parsed.meta_description || "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim()),
+    slug: (parsed.slug || "").toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, ""),
+    image_alt: cleanStyle((parsed.image_alt || "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim()),
+    image_caption: cleanStyle((parsed.image_caption || "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim()),
+  };
+}
+
+// ── Retry helper ─────────────────────────────────────────────────────────
+
+function isTransientError(msg: string): boolean {
+  return /429|503|504|522|RESOURCE_EXHAUSTED|UNAVAILABLE|high demand|temporarily|timeout|Failed to send a request to the Edge Function/i.test(msg);
+}
+
+function isBillingError(msg: string): boolean {
+  return /402|payment_required|Not enough credits|spending cap|RESOURCE_EXHAUSTED/i.test(msg);
+}
+
+async function withRetry<T>(fn: () => Promise<T>, maxRetries = 2, baseDelayMs = 5000): Promise<T> {
+  if (isJobExecution()) return fn();
+  let lastErr: Error | null = null;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (err: any) {
+      throwIfJobStopped();
+      lastErr = err instanceof Error ? err : new Error(String(err));
+      const msg = lastErr.message;
+      if (attempt < maxRetries && isTransientError(msg) && !isBillingError(msg)) {
+        const delay = baseDelayMs * (attempt + 1);
+        console.log(`[Retry] Attempt ${attempt + 1} failed (transient), retrying in ${delay}ms...`);
+        await new Promise((r) => setTimeout(r, delay));
+        continue;
+      }
+      throw lastErr;
+    }
+  }
+  throw lastErr;
+}
+
+// ── AI provider abstraction ──────────────────────────────────────────────
+
+const WORLD_SUBCATEGORIES: { key: string; name: string; words: string[] }[] = [
+  { key: "sports", name: "Sports", words: ["nfl", "nba", "mlb", "nhl", "soccer", "football", "game", "match", "score", "season", "playoff", "coach", "quarterback", "league", "team", "tennis", "golf", "ufc", "boxing", "f1", "olympic", "world cup", "touchdown", "picks"] },
+  { key: "technology", name: "Technology", words: ["apple", "iphone", "google", "microsoft", "ai ", "artificial intelligence", "openai", "chatgpt", "tesla", "spacex", "software", "app ", "tech", "samsung", "android", "nvidia", "meta ", "chip", "robot", "cyber"] },
+  { key: "finance", name: "Finance", words: ["stock", "market", "dow", "nasdaq", "s&p", "fed ", "interest rate", "inflation", "economy", "bitcoin", "crypto", "earnings", "bank", "dollar", "price", "tariff", "investor", "wall street", "jobs report"] },
+  { key: "politics", name: "Politics", words: ["trump", "biden", "president", "election", "senate", "congress", "governor", "democrat", "republican", "white house", "vote", "supreme court", "minister", "government", "war", "ukraine", "israel"] },
+  { key: "police", name: "Police", words: ["police", "arrest", "arrested", "shooting", "shot dead", "murder", "homicide", "crime", "suspect", "sheriff", "fbi", "charged with", "manhunt", "robbery", "stabbing", "detective", "investigation", "officer", "inmate", "prison", "kidnapping", "missing person"] },
+  { key: "entertainment", name: "Entertainment", words: ["movie", "film", "actor", "actress", "singer", "album", "netflix", "disney", "oscar", "grammy", "concert", "tv show", "series", "celebrity", "taylor swift", "music", "box office"] },
+  { key: "health", name: "Health & Science", words: ["health", "vaccine", "virus", "disease", "cancer", "doctor", "hospital", "study", "nasa", "science", "covid", "flu", "medical", "fda", "space"] },
+];
+
+function detectWorldSubcategory(text: string): string | null {
+  const t = ` ${text.toLowerCase()} `;
+  let best: string | null = null, bestScore = 0;
+  for (const c of WORLD_SUBCATEGORIES) {
+    const score = c.words.reduce((n, w) => n + (t.includes(w) ? 1 : 0), 0);
+    if (score > bestScore) { bestScore = score; best = c.key; }
+  }
+  return best;
+}
+
+interface AIResponse { title: string; content: string; excerpt: string; seo_keyword: string; seo_title: string; meta_description: string; slug: string; image_alt: string; image_caption: string; visual_elements: string; }
+
+const ARTICLE_TOOL_PARAMS = {
+  title: "Título H1 do artigo, máximo 60 caracteres",
+  content: "Conteúdo HTML completo (10.000-14.000 chars para atingir 2.000+ palavras)",
+  excerpt: "Resumo para redes sociais (máx 160 chars)",
+  seo_keyword: "Focus keyword do Yoast SEO (3-5 palavras)",
+  seo_title: "Título SEO até 60 chars",
+  meta_description: "Meta descrição 120-155 chars",
+  slug: "Slug para URL",
+  image_alt: "Texto alternativo da imagem",
+  image_caption: "Legenda da imagem",
+  visual_elements: "3 a 5 elementos visuais específicos do artigo (pessoas, cenário, ações, objetos) separados por vírgula",
+};
+
+const OBSOLETE_GEMINI = /^gemini-(1\.0|1\.5|pro|ultra)/i;
+function sanitizeGeminiModel(m?: string | null) { return m && !OBSOLETE_GEMINI.test(m) ? m : ""; }
+
+async function callGeminiDirect(apiKey: string, systemPrompt: string, userPrompt: string, modelName = ""): Promise<AIResponse> {
+  const model = modelName || "gemini-3.6-flash";
+  let lastError: any = null;
+
+  try {
+    // Simple fetch with generic model for best compatibility
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+    const body = {
+      contents: [{ 
+        role: "user", 
+        parts: [
+          { text: `${systemPrompt}\n\nUSER REQUEST: ${userPrompt}\n\nIMPORTANT: Return ONLY valid JSON matching the article schema.` }
+        ] 
+      }]
+    };
+
+    const resp = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+
+    if (resp.ok) {
+      const data = await resp.json();
+      let text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      text = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+      return JSON.parse(text) as AIResponse;
+    } else {
+      const errText = await resp.text();
+      console.warn(`[AI] Gemini v1beta failed (${resp.status}): ${errText.substring(0, 200)}`);
+      throw new Error(`Gemini API failed with status ${resp.status}: ${errText}`);
+    }
+  } catch (err) {
+    throw err;
+  }
+}
+
+async function callOpenAIDirect(apiKey: string, systemPrompt: string, userPrompt: string, modelName = ""): Promise<AIResponse> {
+  const model = modelName || "gpt-4o-mini";
+  const resp = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: model,
+      messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }],
+      tools: [{
+        type: "function",
+        function: {
+          name: "create_article",
+          description: "Cria um artigo completo para publicação no WordPress.",
+          parameters: {
+            type: "object",
+            properties: Object.fromEntries(Object.entries(ARTICLE_TOOL_PARAMS).map(([k, v]) => [k, { type: "string", description: v }])),
+            required: Object.keys(ARTICLE_TOOL_PARAMS),
+            additionalProperties: false,
+          },
+        },
+      }],
+      tool_choice: { type: "function", function: { name: "create_article" } },
+    }),
+  });
+
+  if (!resp.ok) {
+    const errText = await resp.text();
+    throw new Error(`OpenAI API error ${resp.status}: ${errText}`);
+  }
+
+  const aiData = await resp.json();
+  const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+  if (toolCall?.function?.arguments) return JSON.parse(toolCall.function.arguments);
+  let content = aiData.choices?.[0]?.message?.content || "";
+  content = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+  return JSON.parse(content);
+}
+
+// Modelos Groq descontinuados que devem ser substituídos automaticamente
+const GROQ_DEPRECATED_MODELS = new Set([
+  "llama-3.3-70b-versatile",
+  "llama-3.1-8b-instant",
+  "llama3-70b-8192",
+  "llama3-8b-8192",
+  "mixtral-8x7b-32768",
+  "gemma-7b-it",
+  "gemma2-9b-it",
+]);
+const GROQ_DEFAULT_MODEL = "openai/gpt-oss-20b";
+
+function sanitizeGroqModel(modelName?: string): string {
+  const candidate = (modelName || "").trim();
+  if (!candidate || GROQ_DEPRECATED_MODELS.has(candidate)) return GROQ_DEFAULT_MODEL;
+  return candidate;
+}
+
+const GROQ_MAX_TOKENS = 6000; // artigo de 10k+ caracteres precisa de ~3-4k tokens de saída
+
+async function callGroqDirect(apiKey: string, systemPrompt: string, userPrompt: string, modelName = ""): Promise<AIResponse> {
+  const requestGroq = async (model: string, maxTokens = GROQ_MAX_TOKENS) =>
+    await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model,
+        max_tokens: maxTokens,
+        messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }],
+        tools: [{
+          type: "function",
+          function: {
+            name: "create_article",
+            description: "Cria um artigo completo para publicação no WordPress.",
+            parameters: {
+              type: "object",
+              properties: Object.fromEntries(Object.entries(ARTICLE_TOOL_PARAMS).map(([k, v]) => [k, { type: "string", description: v }])),
+              required: Object.keys(ARTICLE_TOOL_PARAMS),
+              additionalProperties: false,
+            },
+          },
+        }],
+        tool_choice: { type: "function", function: { name: "create_article" } },
+      }),
+    });
+
+  const model = sanitizeGroqModel(modelName);
+  let resp = await requestGroq(model);
+
+  // Se o modelo escolhido foi descontinuado pela Groq, tenta o modelo padrão atual
+  if (resp.status === 404 && model !== GROQ_DEFAULT_MODEL) {
+    console.warn(`[AI] Modelo Groq "${model}" indisponível; usando "${GROQ_DEFAULT_MODEL}".`);
+    resp = await requestGroq(GROQ_DEFAULT_MODEL);
+  }
+
+  // 429 por limite de tokens/minuto: aguarda e repete com saída menor no modelo padrão
+  if (resp.status === 429) {
+    const detail = await resp.clone().text();
+    console.warn(`[AI] Groq 429 (limite de taxa). Repetindo com saída reduzida. Detalhe: ${detail.slice(0, 200)}`);
+    await new Promise((r) => setTimeout(r, 6000));
+    resp = await requestGroq(GROQ_DEFAULT_MODEL, 4500);
+  }
+
+
+  if (!resp.ok) {
+    const errText = await resp.text();
+    throw new Error(`Groq API error ${resp.status}: ${errText}`);
+  }
+
+  const aiData = await resp.json();
+  const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+  if (toolCall?.function?.arguments) return JSON.parse(toolCall.function.arguments);
+  let content = aiData.choices?.[0]?.message?.content || "";
+  content = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+  return JSON.parse(content);
+}
+
+async function callAzureOpenAIDirect(apiKey: string, endpoint: string, deployment: string, systemPrompt: string, userPrompt: string, modelName = ""): Promise<AIResponse> {
+  const deploymentToUse = modelName || deployment;
+  const url = `${endpoint.replace(/\/$/, "")}/openai/deployments/${deploymentToUse}/chat/completions?api-version=2024-10-21`;
+  const resp = await fetch(url, {
+    method: "POST",
+    headers: { "api-key": apiKey, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }],
+      tools: [{
+        type: "function",
+        function: {
+          name: "create_article",
+          description: "Cria um artigo completo para publicação no WordPress.",
+          parameters: {
+            type: "object",
+            properties: Object.fromEntries(Object.entries(ARTICLE_TOOL_PARAMS).map(([k, v]) => [k, { type: "string", description: v }])),
+            required: Object.keys(ARTICLE_TOOL_PARAMS),
+            additionalProperties: false,
+          },
+        },
+      }],
+      tool_choice: { type: "function", function: { name: "create_article" } },
+    }),
+  });
+
+  if (!resp.ok) {
+    const errText = await resp.text();
+    throw new Error(`Azure OpenAI (Copilot) error ${resp.status}: ${errText}`);
+  }
+
+  const aiData = await resp.json();
+  const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+  if (toolCall?.function?.arguments) return JSON.parse(toolCall.function.arguments);
+  let content = aiData.choices?.[0]?.message?.content || "";
+  content = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+  return JSON.parse(content);
+}
+
+async function callNineRouterDirect(endpoint: string, apiKey: string | null, systemPrompt: string, userPrompt: string, model: string): Promise<AIResponse> {
+  const base = endpoint.trim().replace(/\/+$/, "").replace(/\/v1$/, "") + "/v1";
+  const resp = await fetch(`${base}/chat/completions`, {
+    method: "POST",
+    headers: { ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}), "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: model || "auto",
+      messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt + "\n\nResponda SOMENTE com um objeto JSON contendo as chaves: " + Object.keys(ARTICLE_TOOL_PARAMS).join(", ") + "." }],
+      response_format: { type: "json_object" },
+      stream: false,
+    }),
+  });
+  if (!resp.ok) throw new Error(`9Router error ${resp.status}: ${(await resp.text()).slice(0, 300)}`);
+  const raw = await resp.text();
+  let aiData: any;
+  if (raw.trimStart().startsWith("data:")) {
+    // Resposta SSE: junta os deltas
+    let text = ""; let last: any = null;
+    for (const line of raw.split("\n")) {
+      const t = line.trim();
+      if (!t.startsWith("data:")) continue;
+      const payload = t.slice(5).trim();
+      if (!payload || payload === "[DONE]") continue;
+      try { const j = JSON.parse(payload); last = j; text += j.choices?.[0]?.delta?.content ?? j.choices?.[0]?.message?.content ?? ""; } catch { /* ignora */ }
+    }
+    aiData = { choices: [{ message: { content: text || last?.choices?.[0]?.message?.content || "" } }] };
+  } else {
+    aiData = JSON.parse(raw);
+  }
+  const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+  if (toolCall?.function?.arguments) return JSON.parse(toolCall.function.arguments);
+  let content = aiData.choices?.[0]?.message?.content || "";
+  content = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+  const a = content.indexOf("{"), b = content.lastIndexOf("}");
+  return JSON.parse(a >= 0 && b > a ? content.slice(a, b + 1) : content);
+}
+
+async function callLovableGateway(apiKey: string, systemPrompt: string, userPrompt: string): Promise<AIResponse> {
+  throw new Error("Lovable AI desativado: usar apenas 9Router/chaves próprias.");
+  const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "google/gemini-2.5-flash",
+      messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }],
+      tools: [{
+        type: "function",
+        function: {
+          name: "create_article",
+          description: "Cria um artigo completo para publicação no WordPress.",
+          parameters: {
+            type: "object",
+            properties: Object.fromEntries(Object.entries(ARTICLE_TOOL_PARAMS).map(([k, v]) => [k, { type: "string", description: v }])),
+            required: Object.keys(ARTICLE_TOOL_PARAMS),
+            additionalProperties: false,
+          },
+        },
+      }],
+      tool_choice: { type: "function", function: { name: "create_article" } },
+    }),
+  });
+
+  if (!resp.ok) {
+    const errText = await resp.text();
+    throw new Error(`Gateway error ${resp.status}: ${errText}`);
+  }
+
+  const aiData = await resp.json();
+  const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+  if (toolCall?.function?.arguments) return JSON.parse(toolCall.function.arguments);
+  let content = aiData.choices?.[0]?.message?.content || "";
+  content = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+  return JSON.parse(content);
+}
+
+// ── Multi-provider fallback for text ─────────────────────────────────────
+
+interface ProviderConfig {
+  name: string;
+  call: (systemPrompt: string, userPrompt: string) => Promise<AIResponse>;
+}
+
+async function callWithFallback(
+  providers: ProviderConfig[],
+  systemPrompt: string,
+  userPrompt: string,
+  disabled?: Set<string>,
+): Promise<{ result: AIResponse; provider: string }> {
+  // A ordem já é definida na montagem do array 'providers' no handler principal.
+  const sortedProviders = providers.filter((p) => !disabled?.has(p.name));
+  if (sortedProviders.length === 0) {
+    throw new Error("Todos os provedores de IA estão indisponíveis (sem quota ou chave inválida).");
+  }
+
+  const errors: string[] = [];
+  for (const provider of sortedProviders) {
+    try {
+      console.log(`[AI] Trying provider: ${provider.name}`);
+      const result = await withRetry(() => provider.call(systemPrompt, userPrompt), 1, 3000);
+      return { result, provider: provider.name };
+    } catch (err: any) {
+      throwIfJobStopped();
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn(`[AI] Provider ${provider.name} failed: ${msg.substring(0, 200)}`);
+      // Provedor sem quota/chave inválida é desativado para os próximos artigos do lote,
+      // garantindo que o ChatGPT (OpenAI) assuma imediatamente quando o Gemini falha.
+      if (disabled && (isBillingError(msg) || /401|403|API key|quota/i.test(msg))) {
+        disabled.add(provider.name);
+        console.warn(`[AI] Provider ${provider.name} desativado neste lote.`);
+      }
+      errors.push(`${provider.name}: ${msg}`);
+    }
+  }
+  throw new Error(`Todos os provedores de IA falharam:\n${errors.join("\n")}`);
+}
+
+// ── Image generation ─────────────────────────────────
+// O prompt da imagem é DERIVADO do conteúdo do artigo + perfil do escritor (writer_prompt).
+// Não há mais template fixo de imagem: a imagem segue sempre o título e os visual_elements gerados.
+
+function buildImagePrompt(title: string, content: string | null, visualElements: string, customImagePrompt?: string | null): string {
+  if (!customImagePrompt || customImagePrompt.trim().length < 5) {
+    throw new Error("O 'Prompt de Imagem IA' não está configurado em Configurações > Geral. Este prompt é obrigatório.");
+  }
+  // REGRA: o Prompt de Imagem IA das configurações é a ÚNICA fonte de verdade para estilo/composição.
+  // Deve ser seguido À RISCA. O título entra apenas como assunto/tema.
+  const base = customImagePrompt.trim().replace(/\{\{?\s*title\s*\}?\}/gi, title);
+  const hasTitleToken = base !== customImagePrompt.trim();
+  const header = `INSTRUÇÕES DE IMAGEM (SIGA À RISCA, SEM DESVIOS — especificação obrigatória vinda das Configurações > Prompt de Imagem IA):\n\n${base}`;
+  return hasTitleToken ? header : `${header}\n\n---\nAssunto da imagem (apenas tema, NÃO altere o estilo definido acima): ${title}`;
+}
+
+const IMAGE_FORMATS: Record<string, { width: number; height: number; dalle: "1024x1024" | "1024x1792" | "1792x1024"; label: string }> = {
+  instagram_square:   { width: 1080, height: 1080, dalle: "1024x1024", label: "Instagram Feed Quadrado 1:1" },
+  instagram_portrait: { width: 1080, height: 1350, dalle: "1024x1792", label: "Instagram Feed Retrato 4:5" },
+  instagram_story:    { width: 1080, height: 1920, dalle: "1024x1792", label: "Instagram Story 9:16" },
+  facebook_post:      { width: 1200, height: 630,  dalle: "1792x1024", label: "Facebook Post 1.91:1" },
+  facebook_square:    { width: 1200, height: 1200, dalle: "1024x1024", label: "Facebook Quadrado 1:1" },
+  facebook_story:     { width: 1080, height: 1920, dalle: "1024x1792", label: "Facebook Story 9:16" },
+  linkedin_post:      { width: 1200, height: 627,  dalle: "1792x1024", label: "LinkedIn Post 1.91:1" },
+  linkedin_square:    { width: 1200, height: 1200, dalle: "1024x1024", label: "LinkedIn Quadrado 1:1" },
+};
+
+function getImageFormat(key?: string | null) {
+  return IMAGE_FORMATS[key || ""] || IMAGE_FORMATS.instagram_portrait;
+}
+
+function appendFormatHint(prompt: string, fmt: { width: number; height: number; label: string }) {
+  return `${prompt}\n\nProporção/formato obrigatório: ${fmt.label} (${fmt.width}x${fmt.height}px).`;
+}
+
+// Geração de imagem via Lovable AI Gateway (estilo chat, sem necessidade de API específica de imagens).
+// Usa LOVABLE_API_KEY (server-side) e o prompt configurado pelo usuário em Configurações > Prompt de Imagem IA.
+async function generateImageLovable(title: string, content: string | null, visualElements: string, customImagePrompt?: string | null, formatKey?: string | null, knowledgeUrls: string[] = []): Promise<string | null> {
+  const lovableKey: string | undefined = undefined; // créditos Lovable proibidos
+  if (!lovableKey) {
+    console.warn("[Image] LOVABLE_API_KEY não disponível no ambiente.");
+    return null;
+  }
+  const fmt = getImageFormat(formatKey);
+  const basePrompt = appendFormatHint(buildImagePrompt(title, content, visualElements, customImagePrompt), fmt);
+  const refs = (knowledgeUrls || []).slice(0, 10).filter((u) => typeof u === "string" && u.startsWith("http"));
+  const promptText = refs.length
+    ? `${basePrompt}\n\nCONHECIMENTO VISUAL DE REFERÊNCIA: Você recebeu ${refs.length} imagem(ns) de referência anexadas nesta mensagem. Elas são o MODELO VISUAL OBRIGATÓRIO. Reproduza fielmente o mesmo layout, estilo de arte, paleta de cores, tipografia (fontes, pesos, posicionamento do título), molduras, faixas, logotipos/elementos de marca, iluminação e acabamento. A nova arte deve parecer da MESMA série dessas referências, mudando apenas o assunto/foto e o texto para o título do artigo. Siga o prompt acima à risca. Textos devem ser legíveis, sem erros de ortografia e no idioma do título.`
+    : basePrompt;
+  const userContent: any[] = [{ type: "text", text: promptText }];
+  for (const url of refs) userContent.push({ type: "image_url", image_url: { url } });
+  const models = ["google/gemini-3-pro-image", "google/gemini-3.1-flash-image", "google/gemini-2.5-flash-image"];
+
+  for (const model of models) {
+    try {
+      console.log(`[Image] Lovable AI (${model}) para: ${title.substring(0, 50)}... (refs: ${refs.length})`);
+      const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${lovableKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model,
+          messages: [{ role: "user", content: userContent }],
+          modalities: ["image", "text"],
+        }),
+      });
+
+      if (!resp.ok) {
+        const errText = await resp.text();
+        console.warn(`[Image] Lovable AI ${model} falhou (${resp.status}): ${errText.substring(0, 200)}`);
+        continue;
+      }
+
+      const data = await resp.json();
+      const msg = data.choices?.[0]?.message;
+      const imgUrl = msg?.images?.[0]?.image_url?.url;
+      if (imgUrl) {
+        console.log(`[Image] Sucesso via ${model}`);
+        return imgUrl;
+      }
+      console.warn(`[Image] ${model} não retornou imagem na resposta.`);
+    } catch (err) {
+      console.error(`[Image] Lovable AI ${model} erro:`, err);
+    }
+  }
+  return null;
+}
+
+async function generateImageGemini(apiKey: string, title: string, content: string | null, visualElements: string, customImagePrompt?: string | null, formatKey?: string | null): Promise<string | null> {
+  const fmt = getImageFormat(formatKey);
+  const models = ["gemini-2.0-flash-exp", "gemini-2.5-flash"];
+  for (const model of models) {
+    try {
+      console.log(`[Image] Attempting generation with Gemini model: ${model}`);
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+      const body = {
+        contents: [{ parts: [{ text: appendFormatHint(buildImagePrompt(title, content, visualElements, customImagePrompt), fmt) }] }],
+        generationConfig: { 
+          responseModalities: ["IMAGE"] 
+        },
+      };
+
+      const resp = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+        body: JSON.stringify(body),
+      });
+
+      if (!resp.ok) {
+        const errText = await resp.text();
+        console.warn(`[Image] Gemini model ${model} failed (${resp.status}): ${errText.substring(0, 200)}`);
+        continue;
+      }
+
+      const data = await resp.json();
+      const imgPart = data.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData?.mimeType?.startsWith("image/"));
+
+      if (imgPart?.inlineData) {
+        console.log(`[Image] Success! Image generated with model: ${model}`);
+        return `data:${imgPart.inlineData.mimeType};base64,${imgPart.inlineData.data}`;
+      }
+    } catch (err) {
+      console.error(`[Image] Gemini model ${model} error:`, err);
+    }
+  }
+  return null;
+}
+
+// Redimensiona um data URL PNG para as dimensões EXATAS do formato (cover crop, mantém proporção).
+async function resizeDataUrlToExact(dataUrl: string, targetW: number, targetH: number): Promise<string> {
+  try {
+    if (!dataUrl.startsWith("data:image/")) return dataUrl;
+    const { Image } = await import("https://deno.land/x/imagescript@1.2.17/mod.ts");
+    const b64 = dataUrl.split(",")[1];
+    const bin = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+    const img = await Image.decode(bin);
+    // cover-crop: escala pelo maior lado e recorta o excesso
+    const scale = Math.max(targetW / img.width, targetH / img.height);
+    const scaledW = Math.round(img.width * scale);
+    const scaledH = Math.round(img.height * scale);
+    img.resize(scaledW, scaledH);
+    const cropX = Math.max(0, Math.floor((scaledW - targetW) / 2));
+    const cropY = Math.max(0, Math.floor((scaledH - targetH) / 2));
+    img.crop(cropX, cropY, targetW, targetH);
+    const out = await img.encode(); // PNG
+    let outB64 = "";
+    const CHUNK = 0x8000;
+    for (let i = 0; i < out.length; i += CHUNK) {
+      outB64 += String.fromCharCode(...out.subarray(i, i + CHUNK));
+    }
+    return `data:image/png;base64,${btoa(outB64)}`;
+  } catch (e) {
+    console.warn("[Image] Falha ao redimensionar para tamanho exato:", e);
+    return dataUrl;
+  }
+}
+
+// Geração via OpenAI (ChatGPT) usando gpt-image-1 — modelo que segue o prompt com precisão.
+// Suporta referências visuais (conhecimento) via endpoint /v1/images/edits multipart.
+// Geração de imagem via 9Router (/v1/images/generations) — modelo escolhido + fallbacks Flux/SDXL.
+async function generateImageNineRouter(endpoint: string, apiKey: string, title: string, content: string | null, visualElements: string, customImagePrompt?: string | null, formatKey?: string | null, chosen?: string | null, references: string[] = [], knowledgeText = "", sourceUrls: string[] = [], realPeople?: string[], onPhoto?: (photo: { caption: string; source: string; license: string; publishedAt: string }) => void): Promise<string | null> {
+  const format = isAIImageFormat(formatKey) ? formatKey : "instagram_portrait";
+  try {
+    const generated = await generateRouterImage({ endpoint, apiKey, model: chosen, title, content,
+      visual: visualElements, prompt: customImagePrompt || "", format, references, knowledgeText, sourceUrls, realPeople, onPhoto });
+    let dataUrl = generated;
+    if (!dataUrl.startsWith("data:image/")) {
+      const response = await fetch(dataUrl, { signal: AbortSignal.timeout(10_000) });
+      if (!response.ok) throw new Error("Não foi possível baixar a imagem.");
+      const bytes = new Uint8Array(await response.arrayBuffer());
+      let binary = "";
+      for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+      dataUrl = `data:image/png;base64,${btoa(binary)}`;
+    }
+    const { width, height } = requireImageFormat(format);
+    return await resizeDataUrlToExact(dataUrl, width, height);
+  } catch (error) {
+    console.warn("[Image] 9Router não conseguiu gerar imagem:", error instanceof Error ? error.message : "Falha de geração");
+    return null;
+  }
+}
+
+async function generateImageOpenAI(
+  apiKey: string,
+  title: string,
+  content: string | null,
+  visualElements: string,
+  customImagePrompt?: string | null,
+  formatKey?: string | null,
+  knowledgeUrls: string[] = [],
+): Promise<string | null> {
+  const fmt = getImageFormat(formatKey);
+  // gpt-image-1 aceita: 1024x1024, 1024x1536, 1536x1024
+  const ratio = fmt.width / fmt.height;
+  const size: "1024x1024" | "1024x1536" | "1536x1024" =
+    ratio > 1.15 ? "1536x1024" : ratio < 0.85 ? "1024x1536" : "1024x1024";
+  const basePrompt = appendFormatHint(buildImagePrompt(title, content, visualElements, customImagePrompt), fmt);
+  const refs = (knowledgeUrls || []).slice(0, 10).filter((u) => typeof u === "string" && u.startsWith("http"));
+
+  const finalize = async (dataUrl: string) => await resizeDataUrlToExact(dataUrl, fmt.width, fmt.height);
+
+  try {
+    if (refs.length > 0) {
+      const form = new FormData();
+      form.append("model", "gpt-image-1");
+      form.append("prompt", `${basePrompt}\n\nUse as imagens anexadas como REFERÊNCIA VISUAL obrigatória de estilo, paleta, composição e identidade visual. Siga o prompt em conjunto com o estilo dessas referências.`);
+      form.append("size", size);
+      form.append("n", "1");
+      let added = 0;
+      for (const url of refs) {
+        try {
+          const r = await fetch(url);
+          if (!r.ok) continue;
+          const blob = await r.blob();
+          form.append("image[]", blob, `ref-${added}.png`);
+          added++;
+        } catch { /* ignora */ }
+      }
+      if (added > 0) {
+        console.log(`[Image] OpenAI gpt-image-1 (edits, refs=${added}) size=${size} → ${fmt.width}x${fmt.height}`);
+        const resp = await fetch("https://api.openai.com/v1/images/edits", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${apiKey}` },
+          body: form,
+        });
+        if (!resp.ok) {
+          const errText = await resp.text();
+          console.warn(`[Image] OpenAI edits falhou (${resp.status}): ${errText.substring(0, 300)}`);
+        } else {
+          const data = await resp.json();
+          const b64 = data.data?.[0]?.b64_json;
+          if (b64) return await finalize(`data:image/png;base64,${b64}`);
+        }
+      }
+    }
+
+    console.log(`[Image] OpenAI gpt-image-1 (generations, size=${size}) → ${fmt.width}x${fmt.height}`);
+    const resp = await fetch("https://api.openai.com/v1/images/generations", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ model: "gpt-image-1", prompt: basePrompt, size, n: 1 }),
+    });
+    if (!resp.ok) {
+      const errText = await resp.text();
+      console.warn(`[Image] OpenAI gpt-image-1 falhou (${resp.status}): ${errText.substring(0, 300)}`);
+      return null;
+    }
+    const data = await resp.json();
+    const b64 = data.data?.[0]?.b64_json;
+    if (b64) return await finalize(`data:image/png;base64,${b64}`);
+    const url = data.data?.[0]?.url;
+    if (url) {
+      // Baixa e converte para data URL para poder redimensionar
+      try {
+        const r = await fetch(url);
+        const buf = new Uint8Array(await r.arrayBuffer());
+        let s = "";
+        const CHUNK = 0x8000;
+        for (let i = 0; i < buf.length; i += CHUNK) s += String.fromCharCode(...buf.subarray(i, i + CHUNK));
+        return await finalize(`data:image/png;base64,${btoa(s)}`);
+      } catch {
+        return url;
+      }
+    }
+    return null;
+  } catch (err) {
+    console.error("[Image] OpenAI gpt-image-1 erro:", err);
+    return null;
+  }
+}
+
+// ── Verificação editorial (fontes, entidades e fatos) ─────────────────────
+
+interface VerifiedFact {
+  fact: string;
+  confirmed_by: string[];
+}
+
+interface VerificationResult {
+  status: "verified" | "source_conflict" | "entity_unverified" | "verification_failed";
+  sources: SourceRef[];
+  facts: VerifiedFact[];
+  entities: Array<{ name: string; type: string; verified: boolean; note?: string }>;
+  conflicts: string[];
+  notes: string;
+}
+
+// Categorias sensíveis exigem 3 fontes independentes; as demais, 2.
+const SENSITIVE_CATEGORIES = new Set(["politica", "policia", "saude", "financas"]);
+
+function requiredSources(category: string): number {
+  return SENSITIVE_CATEGORIES.has((category || "").toLowerCase()) ? 3 : 2;
+}
+
+/** Chamada de IA em modo JSON puro (usada para extração de fatos e entidades). */
+async function callJsonAI(
+  keys: { gemini?: string | null; openai?: string | null; groq?: string | null },
+  systemPrompt: string,
+  userPrompt: string,
+  models: { gemini?: string; openai?: string; groq?: string },
+): Promise<any | null> {
+  const tryParse = (raw: string) => {
+    const text = (raw || "").replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+    const start = text.indexOf("{");
+    const end = text.lastIndexOf("}");
+    if (start === -1 || end === -1) return null;
+    try {
+      return JSON.parse(text.slice(start, end + 1));
+    } catch {
+      return null;
+    }
+  };
+
+  if (keys.gemini) {
+    try {
+      const model = models.gemini || "gemini-3.6-flash";
+      const resp = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-goog-api-key": keys.gemini },
+          body: JSON.stringify({
+            system_instruction: { parts: [{ text: systemPrompt }] },
+            contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+            generationConfig: { responseMimeType: "application/json" },
+          }),
+        },
+      );
+      if (resp.ok) {
+        const data = await resp.json();
+        const parsed = tryParse(data.candidates?.[0]?.content?.parts?.[0]?.text || "");
+        if (parsed) return parsed;
+      } else {
+        console.warn(`[Verify] Gemini JSON falhou: HTTP ${resp.status}`);
+      }
+    } catch (err) {
+      console.warn("[Verify] Gemini JSON erro:", err);
+    }
+  }
+
+  if (keys.openai) {
+    try {
+      const resp = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${keys.openai}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: models.openai || "gpt-4o-mini",
+          response_format: { type: "json_object" },
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt },
+          ],
+        }),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        const parsed = tryParse(data.choices?.[0]?.message?.content || "");
+        if (parsed) return parsed;
+      } else {
+        console.warn(`[Verify] OpenAI JSON falhou: HTTP ${resp.status}`);
+      }
+    } catch (err) {
+      console.warn("[Verify] OpenAI JSON erro:", err);
+    }
+  }
+
+  if (keys.groq) {
+    try {
+      const resp = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${keys.groq}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: sanitizeGroqModel(models.groq),
+          max_tokens: 800,
+          response_format: { type: "json_object" },
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt },
+          ],
+        }),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        const parsed = tryParse(data.choices?.[0]?.message?.content || "");
+        if (parsed) return parsed;
+      }
+    } catch (err) {
+      console.warn("[Verify] Groq JSON erro:", err);
+    }
+  }
+
+  return null;
+}
+
+const VERIFY_SYSTEM_PROMPT = `Você é um checador de fatos de uma redação jornalística brasileira.
+Receberá manchetes e resumos REAIS publicados por veículos de imprensa sobre um mesmo assunto.
+Sua tarefa é extrair apenas o que está EXPLICITAMENTE nas fontes. É PROIBIDO inferir, completar ou inventar.
+
+Responda SOMENTE com JSON neste formato:
+{
+  "facts": [{"fact": "afirmação objetiva", "confirmed_by": ["Veículo A", "Veículo B"]}],
+  "entities": [{"name": "nome citado", "type": "pessoa|organizacao|local|evento", "verified": true, "note": "como aparece nas fontes"}],
+  "conflicts": ["divergência entre as fontes, se houver"],
+  "summary": "resumo factual em até 400 caracteres"
+}
+
+Regras:
+- Um fato só entra na lista se aparecer em pelo menos uma fonte; registre em confirmed_by todos os veículos que o sustentam.
+- Uma entidade só é verified=true se o nome aparecer escrito nas fontes.
+- Registre em conflicts SOMENTE contradições materiais: números, datas, declarações ou fatos que se contradizem. NÃO registre diferenças de grafia de nomes, sobrenomes, apelidos ou variações de escrita — isso é normal entre veículos e não é conflito.
+- Nunca invente nomes, datas, números ou declarações.`;
+
+async function runVerification(
+  topic: { topic: string; category: string; context?: string | null; sources?: any },
+  keys: { gemini?: string | null; openai?: string | null; groq?: string | null },
+  models: { gemini?: string; openai?: string; groq?: string },
+  log: PipelineLog,
+): Promise<VerificationResult> {
+  // SOURCE_DISCOVERY — fontes já coletadas na tendência + busca cruzada ao vivo
+  const stored: SourceRef[] = Array.isArray(topic.sources) ? (topic.sources as SourceRef[]) : [];
+  let live: SourceRef[] = [];
+  try {
+    live = await discoverSources(topic.topic, 8);
+  } catch (err) {
+    log.add("SOURCE_DISCOVERY", "failed", err instanceof Error ? err.message : String(err));
+  }
+  const byName = new Map<string, SourceRef>();
+  for (const s of [...stored, ...live]) {
+    if (!s?.source_name) continue;
+    if (!byName.has(s.source_name)) byName.set(s.source_name, s);
+  }
+  const sources = [...byName.values()];
+  log.add("SOURCE_DISCOVERY", "ok", `${sources.length} fontes encontradas`);
+
+  // SOURCE_VERIFICATION — apenas veículos confiáveis e independentes contam
+  const trusted = sources.filter((s) => (s.reliability_score ?? 0) >= 0.75);
+  const needed = requiredSources(topic.category);
+  // Aprovado quando há fontes confiáveis suficientes OU repercussão ampla
+  // (muitos veículos distintos cobrindo o mesmo fato).
+  const wideCoverage = sources.length >= needed + 2;
+  if (trusted.length < needed && !wideCoverage) {
+    log.add(
+      "SOURCE_VERIFICATION",
+      "failed",
+      `${trusted.length} fonte(s) confiável(is); mínimo exigido: ${needed}`,
+    );
+    return {
+      status: "verification_failed",
+      sources,
+      facts: [],
+      entities: [],
+      conflicts: [],
+      notes: `Apuração insuficiente: ${trusted.length} de ${needed} fontes independentes confiáveis para "${topic.topic}".`,
+    };
+  }
+  // Conjunto usado na apuração: as confiáveis quando bastam, senão a cobertura ampla.
+  const pool = trusted.length >= needed ? trusted : sources;
+  log.add(
+    "SOURCE_VERIFICATION",
+    "ok",
+    `${trusted.length} fontes confiáveis de ${sources.length} veículos independentes`,
+  );
+
+  // FACT_EXTRACTION + ENTITY_VERIFICATION + FACT_CROSS_CHECK
+  const dossier = pool
+    .slice(0, 8)
+    .map(
+      (s, i) =>
+        `${i + 1}. VEÍCULO: ${s.source_name} (confiabilidade ${Math.round(s.reliability_score * 100)}%)\n   MANCHETE: ${s.title}\n   RESUMO: ${s.snippet || "(sem resumo)"}\n   URL: ${s.source_url}\n   PUBLICADO: ${s.published_at || "data não informada"}`,
+    )
+    .join("\n\n");
+
+  const extraction = await callJsonAI(
+    keys,
+    VERIFY_SYSTEM_PROMPT,
+    `ASSUNTO: "${topic.topic}"\nCATEGORIA: ${topic.category}\nCONTEXTO DA TENDÊNCIA: ${topic.context || "(sem contexto)"}\n\nFONTES:\n${dossier}`,
+    models,
+  );
+
+  // Fallback de degradação: se a IA de checagem estiver indisponível (429/quota),
+  // não bloqueia o assunto. Usa as próprias manchetes das fontes confiáveis como base
+  // factual — nada é inventado, apenas o que já foi publicado pelos veículos.
+  const fallbackFromSources = (reason: string): VerificationResult => {
+    const headlineFacts: VerifiedFact[] = pool.slice(0, 6).map((s) => ({
+      fact: s.title,
+      confirmed_by: [s.source_name],
+    }));
+    log.add("FACT_CROSS_CHECK", "ok", `apuração simplificada (${reason}) com ${headlineFacts.length} manchetes`);
+    return {
+      status: "verified",
+      sources: pool,
+      facts: headlineFacts,
+      entities: [],
+      conflicts: [],
+      notes: `Apuração simplificada (${reason}): baseada nas manchetes de ${pool.length} veículos.`,
+    };
+  };
+
+  if (!extraction) {
+    log.add("FACT_EXTRACTION", "degraded", "IA de checagem indisponível; usando manchetes das fontes");
+    return fallbackFromSources("checador de IA indisponível");
+  }
+
+  const facts: VerifiedFact[] = Array.isArray(extraction.facts)
+    ? extraction.facts
+        .filter((f: any) => f && typeof f.fact === "string" && f.fact.trim().length > 5)
+        .map((f: any) => ({ fact: f.fact.trim(), confirmed_by: Array.isArray(f.confirmed_by) ? f.confirmed_by : [] }))
+    : [];
+  const entities = Array.isArray(extraction.entities) ? extraction.entities : [];
+  const conflicts = Array.isArray(extraction.conflicts) ? extraction.conflicts.filter(Boolean) : [];
+
+  log.add("FACT_EXTRACTION", "ok", `${facts.length} fatos apurados`);
+  log.add("ENTITY_VERIFICATION", entities.length ? "ok" : "skipped", `${entities.length} entidades`);
+
+  if (facts.length === 0) {
+    return fallbackFromSources("IA não extraiu fatos");
+  }
+
+
+  // Cruzamento: pelo menos um fato sustentado por 2 veículos diferentes
+  const crossConfirmed = facts.filter((f) => new Set(f.confirmed_by).size >= 2).length;
+  // Separa divergências cosméticas (grafia de nomes, sobrenomes, apelidos, variações de
+  // escrita) das contradições materiais. Só contradição material bloqueia o artigo;
+  // divergência cosmética vira nota de redação e a geração continua.
+  const isCosmeticConflict = (c: any): boolean => {
+    const s = typeof c === "string" ? c : JSON.stringify(c || "");
+    if (/grafia|grafado|escrita|soletra|sobrenome|nome pr[óo]prio|apelido|varia[cç][ãa]o (de|na) (escrita|grafia)|escreve|escrevem/i.test(s)) {
+      return true;
+    }
+    // Divergência numérica irrelevante (ex.: "112 kg" vs "113 kg"): apenas arredondamento
+    // de medidas pequenas. Datas/anos, valores monetários, votos, placares e contagens
+    // NUNCA são cosméticos — qualquer diferença nesses casos é contradição material.
+    if (/\b(ano|anos|data|datas|dia|dias|m[êe]s|meses|hora|horas|voto|votos|placar|idade|R\$|US\$|milh[õo]|bilh[õa]|reais|d[óo]lar|pre[çc]o|valor|custo|mortos?|feridos?|v[íi]timas?)\b/i.test(s)) {
+      return false;
+    }
+    const nums = (s.match(/\d+(?:[.,]\d+)?/g) || [])
+      .map((n) => parseFloat(n.replace(/\./g, "").replace(",", ".")))
+      .filter((n) => Number.isFinite(n) && n !== 0);
+    // Anos (1900-2100) ou números grandes não entram na tolerância percentual.
+    if (nums.some((n) => (n >= 1900 && n <= 2100) || n >= 1000)) return false;
+    if (nums.length >= 2) {
+      const min = Math.min(...nums);
+      const max = Math.max(...nums);
+      if (max - min <= 1 && (max - min) / max <= 0.05) return true;
+    }
+    return false;
+  };
+  const materialConflicts = conflicts.filter((c) => !isCosmeticConflict(c));
+  const cosmeticConflicts = conflicts.filter(isCosmeticConflict);
+
+  if (materialConflicts.length > 0) {
+    log.add("FACT_CROSS_CHECK", "failed", `divergência entre fontes: ${materialConflicts[0]}`);
+    return {
+      status: "source_conflict",
+      sources: pool,
+      facts,
+      entities,
+      conflicts: materialConflicts,
+      notes: `Divergência entre fontes: ${materialConflicts.join(" | ")}`,
+    };
+  }
+  if (cosmeticConflicts.length > 0) {
+    log.add("FACT_CROSS_CHECK", "ok", `divergência cosmética ignorada: ${cosmeticConflicts[0]}`);
+  }
+  // Entidades não confirmadas são apenas descartadas do dossiê (não bloqueiam o artigo).
+  const unverifiedEntities = entities.filter((e: any) => e && e.verified === false);
+  const verifiedEntities = entities.filter((e: any) => !e || e.verified !== false);
+  if (unverifiedEntities.length > 0) {
+    log.add("ENTITY_VERIFICATION", "degraded", `${unverifiedEntities.length} entidade(s) descartada(s)`);
+  }
+
+
+  log.add("FACT_CROSS_CHECK", "ok", `${crossConfirmed} fato(s) confirmados por 2+ veículos`);
+  return {
+    status: "verified",
+    sources: pool,
+    facts,
+    entities: verifiedEntities,
+
+    conflicts,
+    notes: extraction.summary || `${facts.length} fatos apurados em ${trusted.length} fontes independentes.`,
+  };
+}
+
+function buildFactsBlock(verification: VerificationResult): string {
+  const facts = verification.facts
+    .map((f, i) => `${i + 1}. ${f.fact}${f.confirmed_by.length ? ` [confirmado por: ${f.confirmed_by.join(", ")}]` : ""}`)
+    .join("\n");
+  const sources = verification.sources
+    .slice(0, 8)
+    .map((s) => `- ${s.source_name}: ${s.title} (${s.source_url})`)
+    .join("\n");
+  const entities = verification.entities
+    .map((e: any) => `- ${e.name} (${e.type})`)
+    .join("\n");
+
+  return `FATOS APURADOS E CONFIRMADOS (ÚNICA BASE FACTUAL PERMITIDA):
+${facts || "(nenhum)"}
+
+ENTIDADES VERIFICADAS (use os nomes exatamente assim):
+${entities || "(nenhuma)"}
+
+FONTES CONSULTADAS (cite pelo nome ao longo do texto quando fizer sentido):
+${sources}
+
+REGRA ABSOLUTA: é PROIBIDO afirmar qualquer fato, número, data ou declaração que não esteja na lista acima. Quando faltar informação, escreva contexto geral verificável e explicite que a informação ainda não foi divulgada.`;
+}
+
+
+// ── System + User prompts ─────────────────────────────────────────────────
+
+const BASE_SYSTEM_PROMPT = `Você é um jornalista digital brasileiro sênior, especialista em SEO avançado e redação para WordPress com Yoast SEO e Jetpack.
+
+REGRAS CRÍTICAS DE VERACIDADE E ANTI-FAKE NEWS (OBRIGATÓRIO):
+1. PROIBIDO FAKE NEWS: Você NUNCA deve inventar fatos, nomes, datas ou acontecimentos. A precisão é a prioridade número 1.
+2. FONTE ÚNICA: Use APENAS as informações contidas no tópico do Google Trends fornecido e no contexto real. Se o tópico for vago, escreva um artigo informativo contextualizando o tema com fatos históricos reais e conhecidos, mas NUNCA invente notícias recentes que não ocorreram.
+3. VERIFICAÇÃO: Se não tiver certeza de um detalhe específico sobre a notícia do momento, foque em informações gerais, oficiais e educativas sobre o assunto.
+4. ESTILO JORNALÍSTICO: Mantenha um tom sério, informativo e autoritativo. Evite sensacionalismo barato que possa ser interpretado como desinformação.
+
+REGRAS OBRIGATÓRIAS DE ESTRUTURA PARA CADA ARTIGO:
+
+1. TÍTULO (H1): Máximo 60 caracteres, DEVE conter a palavra-chave principal, atrativo e 100% verdadeiro.
+
+2. CONTEÚDO EM HTML: MÍNIMO 10.000 e MÁXIMO 14.000 caracteres no HTML total para garantir a profundidade solicitada (2.000+ palavras). Lead jornalístico com keyword nas primeiras 100 palavras. Use <h2>/<h3> com <strong>. NUNCA use <h1>. Parágrafos curtos (<p>). <strong> para keywords. <ul>/<li> para escaneabilidade. Keyword no primeiro parágrafo, em 1+ H2, densidade 1-2%. Conclusão com CTA.
+
+3. SEO AVANÇADO:
+   - Use LSI keywords (Latent Semantic Indexing) naturalmente no texto.
+   - Otimize para Featured Snippets: inclua parágrafos de definição curtos (40-60 palavras).
+   - Inclua perguntas (People Also Ask) como subtítulos H2/H3.
+   - Use schema-friendly structure para FAQ e HowTo snippets.
+   - E-E-A-T: demonstre expertise, experiência, autoridade e confiabilidade.
+
+4. ESTILO: Mescle notícia trending com valor evergreen. Tom informativo e autoritativo. Inclua dados relevantes e reais. Evite linguagem de IA (como "no vasto mundo de", "em suma").
+
+5. SEO (Yoast + Jetpack): seo_keyword: cauda longa 3-5 palavras. seo_title: até 60 chars, keyword no início. meta_description: 120-155 chars, keyword na primeira metade, CTA sutil. excerpt: 2 frases (máx 160 chars). slug: keyword em formato URL.
+
+6. IMAGEM E SINCRONIA: 
+   - visual_elements: Liste 3 a 5 elementos visuais concretos (pessoas, objetos, cenário, ação) que representem FIELMENTE a notícia.
+   - image_alt: Texto alternativo técnico descrevendo exatamente os visual_elements.
+   - image_caption: Legenda jornalística que descreve a cena baseada nos visual_elements.
+
+7. ESTILO DE PONTUAÇÃO (OBRIGATÓRIO):
+   - PROIBIDO usar emojis ou qualquer ícone/símbolo decorativo em qualquer campo (título, conteúdo, excerpt, meta description, legendas).
+   - PROIBIDO usar travessões (—, –) ou hífen isolado como pontuação. Use vírgula, ponto ou dois-pontos.
+   - Hífen só é permitido dentro de palavras compostas legítimas (ex.: bem-estar, ex-presidente).`;
+
+// Regras mínimas inegociáveis usadas no modo estrito (veracidade + saída técnica).
+const CORE_NON_NEGOTIABLE = `REGRAS MÍNIMAS INEGOCIÁVEIS (não substituem o estilo definido acima, apenas garantem veracidade e formato):
+1. NUNCA invente fatos, números, datas, declarações ou nomes. Use apenas os fatos apurados e o contexto fornecidos. Se faltar informação, diga explicitamente que ainda não foi divulgada.
+2. Conteúdo em HTML válido, sem <h1> (o título vai no campo próprio). Use <p>, <h2>, <h3>, <ul>, <li>, <strong>.
+3. Preencha todos os campos solicitados: title, content, excerpt, seo_keyword, seo_title, meta_description, slug, image_alt, image_caption, visual_elements.
+4. Não use emojis nem travessões (—, –) ou hífen isolado como pontuação. Hífen só em palavras compostas legítimas.
+5. Escreva em português do Brasil.`;
+
+function buildSystemPrompt(writerPrompt?: string | null, strict = false): string {
+  if (!writerPrompt || writerPrompt.trim().length < 10) {
+    throw new Error("O 'Prompt personalizado dos artigos' não está configurado em Configurações > Automação. Este prompt é obrigatório para a geração.");
+  }
+
+  const prompt = writerPrompt.trim();
+
+  if (strict) {
+    // Modo estrito: o prompt do usuário é a única diretriz editorial.
+    return `### PROMPT DO USUÁRIO (AUTORIDADE MÁXIMA E ABSOLUTA) ###
+${prompt}
+### FIM DO PROMPT DO USUÁRIO ###
+
+Você DEVE seguir o prompt acima à risca: persona, tom, estrutura, tamanho, formatação e tudo o mais que ele determinar. Nenhuma outra convenção editorial se aplica. Em caso de qualquer conflito entre o prompt acima e as regras abaixo, vence o prompt acima, exceto quanto à veracidade dos fatos.
+
+${CORE_NON_NEGOTIABLE}
+
+Lembrete final: reler e cumprir integralmente o PROMPT DO USUÁRIO antes de responder.`;
+  }
+
+  // Modo combinado: prompt do usuário + modelo editorial padrão do sistema.
+  return `### DIRETRIZES DINÂMICAS DO USUÁRIO (PRIORIDADE MÁXIMA) ###
+${prompt}
+
+### FIM DAS DIRETRIZES DINÂMICAS ###
+
+Aplique as diretrizes acima como sua persona, tom de voz, estilo de escrita e abordagem editorial em TODO o artigo. Em caso de conflito com as regras abaixo, as diretrizes do usuário prevalecem, exceto nas regras de veracidade.
+
+As regras técnicas a seguir complementam o estilo acima, focando em veracidade e SEO:
+
+${BASE_SYSTEM_PROMPT}`;
+}
+
+function buildUserPrompt(topic: string, category: string, context?: string, strict = false, writerPrompt?: string | null): string {
+  const head = `TÓPICO PRINCIPAL: "${topic}"
+CONTEXTO REAL (NOTÍCIA DO DIA): "${context || "Fatos reais associados ao termo de pesquisa em alta"}"
+CATEGORIA: ${category}
+DATA: ${new Date().toLocaleDateString("pt-BR")}`;
+
+  if (strict) {
+    return `${head}
+
+INSTRUÇÃO: Escreva o artigo seguindo EXATAMENTE o prompt definido pelo usuário, repetido abaixo para referência. Use somente os fatos apurados e o contexto real fornecidos.
+
+### PROMPT DO USUÁRIO (SEGUIR À RISCA) ###
+${(writerPrompt || "").trim()}
+### FIM ###
+
+Gere também todos os metadados SEO e de imagem solicitados no formato de saída.`;
+  }
+
+  return `${head}
+
+INSTRUÇÃO: Escreva um artigo jornalístico de ALTA VERACIDADE. Use o contexto real fornecido para evitar alucinações. Se o contexto for sobre um evento específico, descreva-o com precisão.
+
+REGRAS TÉCNICAS:
+- Conteúdo HTML entre 10.000-14.000 chars (mínimo de 2.000 palavras).
+- Keyword no título, lead (primeiro parágrafo), ao menos um H2 e meta description.
+- Use técnicas avançadas de SEO: LSI keywords, otimize para featured snippets.
+- Gere todos os metadados SEO e de imagem solicitados.`;
+}
+
+const MAX_GENERATION_BATCH = 2;
+
+// ── Main handler ──────────────────────────────────────────────────────────
+
+export async function handleGeneration(req: Request) {
+  const __startedAt = Date.now();
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  try {
+    const reqBody = await req.text();
+    if (!reqBody) throw new Error("Request body is empty");
+    const parsedBody = JSON.parse(reqBody);
+    const { userId } = parsedBody;
+    const automationJobId = parsedBody.automationJobId;
+    const automationLease = parsedBody.automationLease;
+    let automationJob: { stage: string; checkpoint: Record<string, any>; payload: Record<string, any> } | null = null;
+    let manualTopics = parsedBody.topics;
+    const forceCategory: string | undefined = typeof parsedBody.forceCategory === "string" && parsedBody.forceCategory.trim()
+      ? parsedBody.forceCategory.trim().toLowerCase()
+      : undefined;
+    if (!userId) throw new Error("userId is required");
+    await requireUserOrService(req, userId);
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const { data: settings } = await supabase.from("user_settings").select("*, gemini_model, openai_model, groq_model, azure_openai_model").eq("user_id", userId).single();
+    if (automationJobId) {
+      const { data: job, error } = await supabase.from("article_automation_jobs").select("stage, checkpoint, payload")
+        .eq("id", automationJobId).eq("user_id", userId).eq("status", "running").eq("lease_token", automationLease)
+        .gt("lease_expires_at", new Date().toISOString()).single();
+      if (error || !job) throw new Error("Tarefa não autorizada ou trava expirada");
+      automationJob = job;
+      if (job.checkpoint.topic) manualTopics = [job.checkpoint.topic];
+      else manualTopics = job.payload.topics;
+    }
+    const advanceJob = async (stage: string, checkpoint: Record<string, unknown>) => {
+      throwIfJobStopped();
+      const { data, error } = await supabase.rpc("advance_article_automation", { p_id: automationJobId, p_lease: automationLease, p_stage: stage, p_checkpoint: checkpoint });
+      if (error || !data) throw new Error(error?.message || "Trava expirada");
+      return new Response(JSON.stringify({ success: true, stage }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    };
+    const writerPrompt = settings?.writer_prompt || null;
+    const strictPrompt = settings?.writer_prompt_strict !== false;
+    const systemPrompt = buildSystemPrompt(writerPrompt, strictPrompt);
+    const imageMode = settings?.image_mode || "ai";
+
+    let geminiApiKey: string | null = null;
+    if (settings?.gemini_api_key) {
+      const { data: decrypted } = await supabase.rpc("decrypt_credential", { enc_key: "", val: settings.gemini_api_key });
+      if (decrypted && typeof decrypted === "string" && decrypted.length > 5) {
+        geminiApiKey = decrypted;
+        console.log(`[Pipeline] Gemini API Key loaded (length: ${geminiApiKey.length})`);
+      } else {
+        console.warn(`[Pipeline] Failed to decrypt Gemini API Key or key is invalid.`);
+      }
+    }
+
+    let openaiApiKey: string | null = null;
+    if (settings?.openai_api_key) {
+      const { data: decrypted } = await supabase.rpc("decrypt_credential", { enc_key: "", val: settings.openai_api_key });
+      if (decrypted && typeof decrypted === "string" && decrypted.length > 5) {
+        openaiApiKey = decrypted;
+        console.log(`[Pipeline] OpenAI API Key loaded (length: ${openaiApiKey.length})`);
+      }
+    }
+
+    let groqApiKey: string | null = null;
+    if (settings?.groq_api_key) {
+      const { data: decrypted } = await supabase.rpc("decrypt_credential", { enc_key: "", val: settings.groq_api_key });
+      if (decrypted && typeof decrypted === "string" && decrypted.length > 5) {
+        groqApiKey = decrypted;
+        console.log(`[Pipeline] Groq API Key loaded (length: ${groqApiKey.length})`);
+      }
+    }
+
+
+    let azureApiKey: string | null = null;
+    if (settings?.azure_openai_api_key) {
+      const { data: decrypted } = await supabase.rpc("decrypt_credential", { enc_key: "", val: settings.azure_openai_api_key });
+      if (decrypted && typeof decrypted === "string" && decrypted.length > 5) azureApiKey = decrypted;
+    }
+
+    const providers: ProviderConfig[] = [];
+    let nineKeyGlobal: string | null = null;
+    // 0. 9Router (gateway próprio do usuário) — prioridade máxima, com fallback para os demais
+    if (settings?.ninerouter_enabled !== false && settings?.ninerouter_endpoint) {
+      let nineKey: string | null = null;
+      if (settings?.ninerouter_api_key) {
+        const { data: dec } = await supabase.rpc("decrypt_credential", { enc_key: "", val: settings.ninerouter_api_key });
+        if (dec && typeof dec === "string" && dec.length > 5) nineKey = dec;
+      }
+      nineKeyGlobal = nineKey;
+      providers.push({ name: "9Router", call: (s, u) => callNineRouterDirect(settings.ninerouter_endpoint, nineKey, s, u, settings?.ninerouter_model || "auto") });
+    }
+    // Ordem de redundância ajustada:
+    // Ordem de execução: 1. Gemini, 2. OpenAI, 3. Groq
+    
+    // 1. Gemini (Agora o primeiro a ser executado)
+    if (geminiApiKey) {
+      const key = geminiApiKey;
+      console.log(`[Pipeline] Adding Gemini provider as primary execution...`);
+      providers.push({ name: "Gemini", call: (s, u) => callGeminiDirect(key, s, u, sanitizeGeminiModel(settings?.gemini_model)) });
+    }
+    
+    // 2. OpenAI / ChatGPT (Segundo)
+    if (openaiApiKey) {
+      const key = openaiApiKey;
+      providers.push({ name: "OpenAI", call: (s, u) => callOpenAIDirect(key, s, u, settings?.openai_model) });
+    }
+    
+    // 3. Groq (Terceiro - Fallback de texto)
+    if (groqApiKey) {
+      const key = groqApiKey;
+      providers.push({ name: "Groq", call: (s, u) => callGroqDirect(key, s, u, settings?.groq_model) });
+    }
+    
+    // 4. Azure Copilot (Final fallback)
+    if (azureApiKey && settings?.azure_openai_endpoint && settings?.azure_openai_deployment_name) {
+      const key = azureApiKey;
+      providers.push({ 
+        name: "Azure Copilot", 
+        call: (s, u) => callAzureOpenAIDirect(key, settings.azure_openai_endpoint, settings.azure_openai_deployment_name, s, u, settings?.azure_openai_model) 
+      });
+    }
+
+    if (providers.length === 0) {
+      throw new Error("Nenhuma chave de IA configurada. Configure sua chave Gemini ou Groq em Configurações.");
+    }
+
+    console.log(`[Pipeline] Available AI providers: ${providers.map(p => p.name).join(" → ")}`);
+
+    let topics = [];
+    const baseCategories: string[] = settings?.categories || ["esportes", "politica", "policia", "saude", "celebridades", "financas"];
+    // Notícias internacionais (fora do Brasil) sempre entram na pauta como "world", escritas em inglês.
+    const userCategoriesToSearch: string[] = baseCategories.includes("world") ? baseCategories : [...baseCategories, "world"];
+
+    // Janela das últimas 24h — usada para evitar repetição de assunto
+    const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+    // Filtros salvos na página Tendências: definem a prioridade da geração automática.
+    const savedTrendFilters: any = (settings as any)?.trends_filters || {};
+    const prefRegion: "all" | "BR" | "World" =
+      savedTrendFilters.region === "World" || savedTrendFilters.region === "BR" ? savedTrendFilters.region : "all";
+    const prefSource: string = typeof savedTrendFilters.source === "string" ? savedTrendFilters.source : "all";
+    const prefSort: string = typeof savedTrendFilters.sort === "string" ? savedTrendFilters.sort : "audience_desc";
+    const prefTimeHours: number =
+      savedTrendFilters.time === "48h" ? 48 : savedTrendFilters.time === "7d" || savedTrendFilters.time === "all" ? 168 : 24;
+    const sinceTopics = new Date(Date.now() - prefTimeHours * 60 * 60 * 1000).toISOString();
+    const isWorldTopic = (t: any) => t?.region === "World" || t?.region === "US" || t?.category === "world";
+    const matchesPrefRegion = (t: any) =>
+      prefRegion === "all" ? true : prefRegion === "World" ? isWorldTopic(t) : !isWorldTopic(t);
+    const applyTrendPrefs = !forceCategory && !(manualTopics && Array.isArray(manualTopics) && manualTopics.length > 0);
+    console.log(`[Pipeline] Filtros de Tendências aplicados: região=${prefRegion} fonte=${prefSource} ordem=${prefSort} janela=${prefTimeHours}h (ativo=${applyTrendPrefs})`);
+
+    // Carrega artigos das últimas 24h (para contagem por categoria + deduplicação de assunto)
+    const { data: recentArticlesFull } = await supabase
+      .from("articles")
+      .select("category, title, trending_topic, created_at")
+      .eq("user_id", userId)
+      .gte("created_at", since24h);
+
+    const normalize = (s: string) =>
+      (s || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9\s]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+
+    const usedTopicsSet = new Set<string>();
+    for (const a of (recentArticlesFull || [])) {
+      if (a.trending_topic) usedTopicsSet.add(normalize(a.trending_topic));
+      if (a.title) usedTopicsSet.add(normalize(a.title));
+    }
+
+    if (manualTopics && Array.isArray(manualTopics) && manualTopics.length > 0) {
+      topics = manualTopics.map(t => typeof t === "string" ? { topic: t, category: forceCategory || "geral" } : t);
+      console.log(`[Pipeline] Using ${topics.length} manual topics`);
+    } else {
+      // Apenas tópicos das últimas 24h, ainda não usados, em categorias marcadas
+      // Brasil e Global buscados separadamente para que os tópicos internacionais
+      // nunca sejam cortados pelo limite de linhas quando há muitas notícias nacionais.
+      const [{ data: brTopics }, { data: worldTopics }] = await Promise.all([
+        supabase
+          .from("trending_topics")
+          .select("*")
+          .eq("user_id", userId)
+          .eq("used", false)
+          .gte("fetched_at", sinceTopics)
+          .or("region.is.null,region.neq.World")
+          .in("category", userCategoriesToSearch)
+          .order("trend_score", { ascending: false })
+          .limit(500),
+        supabase
+          .from("trending_topics")
+          .select("*")
+          .eq("user_id", userId)
+          .eq("used", false)
+          .gte("fetched_at", sinceTopics)
+          .eq("region", "World")
+          .order("trend_score", { ascending: false })
+          .limit(500),
+      ]);
+      // Todo tópico Global vai para a categoria "world" por padrão (exceto BBC Brasil, em PT-BR).
+      const worldNormalized = (worldTopics || []).map((t: any) => {
+        const srcs: any[] = Array.isArray(t.sources) ? t.sources : [];
+        const bbc = srcs.length > 0 && srcs.every((s: any) => s?.source_name === "BBC Brasil");
+        return bbc ? t : { ...t, category: "world" };
+      });
+      topics = [...(brTopics || []), ...worldNormalized];
+
+      // Remove tópicos cujo assunto já foi coberto por artigos das últimas 24h
+      const before = topics.length;
+      topics = topics.filter((t: any) => {
+        const key = normalize(t.topic);
+        if (!key) return false;
+        for (const used of usedTopicsSet) {
+          if (!used) continue;
+          if (used === key || used.includes(key) || key.includes(used)) return false;
+        }
+        return true;
+      });
+      console.log(`[Pipeline] Trends 24h: ${before} → ${topics.length} após remover assuntos já publicados`);
+    }
+
+    const manualCategories: string[] = (manualTopics && Array.isArray(manualTopics) && manualTopics.length > 0)
+      ? Array.from(new Set(topics.map((t: any) => t.category).filter(Boolean)))
+      : [];
+    // Com assuntos enviados manualmente, só eles valem: nada de completar a fila
+    // com temas evergreen de outras categorias.
+    const userCategories: string[] = manualCategories.length > 0
+      ? manualCategories
+      : (forceCategory ? [forceCategory] : userCategoriesToSearch);
+
+    const countsByCategory: Record<string, number> = {};
+    for (const cat of userCategories) countsByCategory[cat] = 0;
+    for (const a of (recentArticlesFull || [])) {
+      if (a.category in countsByCategory) countsByCategory[a.category]++;
+    }
+    console.log(`[Pipeline] Artigos últimas 24h por categoria:`, countsByCategory);
+
+    // Score de prioridade por volume de busca (quanto maior, mais "em alta")
+    const volumeScore = (v: string | null | undefined): number => {
+      const s = (v || "").toLowerCase();
+      if (s.includes("alto") || s === "high") return 3;
+      if (s.includes("médio") || s.includes("medio") || s === "medium") return 2;
+      if (s.includes("baixo") || s === "low") return 1;
+      if (s.includes("evergreen")) return 0;
+      return 1;
+    };
+
+    // Agrupa tópicos disponíveis por categoria + ordena cada categoria por volume DESC (alto primeiro)
+    const topicsByCategory: Record<string, any[]> = {};
+    for (const cat of userCategories) topicsByCategory[cat] = [];
+    for (const t of (topics || [])) {
+      if (t.category in topicsByCategory) topicsByCategory[t.category].push(t);
+    }
+    for (const cat of userCategories) {
+      // Ranking dentro da categoria: pontuação de tendência primeiro, volume como desempate.
+      topicsByCategory[cat].sort(
+        (a, b) =>
+          ((Number(b.trend_score) || 0) + (Number(b.discover_potential) || 0) * 0.5) -
+            ((Number(a.trend_score) || 0) + (Number(a.discover_potential) || 0) * 0.5) ||
+          volumeScore(b.search_volume) - volumeScore(a.search_volume),
+      );
+    }
+    // Fallback (default topic) para categorias SEM tópicos disponíveis
+    for (const cat of userCategories) {
+      if (topicsByCategory[cat].length === 0 && cat !== "world") {
+        topicsByCategory[cat].push({ topic: getDefaultTopic(cat), category: cat, id: null, search_volume: "evergreen" });
+      }
+    }
+
+    // Score combinado: prioriza categorias com tópicos QUENTES (alta busca),
+    // mas penaliza significativamente categorias já saturadas nas últimas 24h para garantir equilíbrio.
+    // O multiplicador 10 para 'peak' (volume) mantém a preferência por trends, 
+    // mas o multiplicador 4 para 'recent' garante que após 2-3 posts a prioridade mude.
+    const priorityCategories: string[] = Array.isArray(settings?.priority_categories) ? settings.priority_categories : [];
+    // Tópicos reais de tendência (vindos das fontes) têm prioridade absoluta sobre
+    // tópicos padrão "evergreen" gerados como fallback.
+    const isRealTrend = (t: any): boolean => !!t && t.id != null && t.search_volume !== "evergreen";
+    const categoryPriority = (cat: string): number => {
+      const top = topicsByCategory[cat][0];
+      const peak = top ? volumeScore(top.search_volume) : 0;
+      const recent = countsByCategory[cat] || 0;
+      const priorityBoost = priorityCategories.includes(cat) ? 100 : 0;
+      const trendBoost = isRealTrend(top) ? 500 : 0; // tendências definidas vêm primeiro
+
+      // Prioridade: (Boost de tendência real) + (Boost manual) + (Peso do Volume x 20) - (Saturação)
+      return trendBoost + priorityBoost - recent * 6 + peak * 20 - recent * 4.0;
+    };
+
+    // Round-robin ponderado: a cada rodada reordena por prioridade atual,
+    // pegando 1 tópico da categoria mais "quente vs saturada" do momento.
+    const topicsToUse: any[] = [];
+    while (topicsToUse.length < (applyTrendPrefs && prefRegion !== "all" ? 300 : 50)) {
+      const available = userCategories.filter((c) => topicsByCategory[c].length > 0);
+      if (available.length === 0) break;
+      available.sort((a, b) => categoryPriority(b) - categoryPriority(a));
+      const cat = available[0];
+      const next = topicsByCategory[cat].shift();
+      if (!next) break;
+      topicsToUse.push(next);
+      // simula que a categoria "ganhou" um post para o próximo cálculo
+      countsByCategory[cat] = (countsByCategory[cat] || 0) + 1;
+    }
+
+    // Garantia final: todas as tendências reais antes de qualquer tópico evergreen.
+    // Ordena tendências reais pelo maior alcance (pontuação + potencial + volume),
+    // independente da categoria, para gerar primeiro o que tem mais visualização.
+    const reach = (t: any) =>
+      (Number(t.trend_score) || 0) + (Number(t.discover_potential) || 0) * 0.5 + volumeScore(t.search_volume) * 5;
+    const realTrends = topicsToUse.filter(isRealTrend).sort((a, b) => reach(b) - reach(a));
+    const evergreenFallbacks = topicsToUse.filter((t) => !isRealTrend(t));
+    topicsToUse.length = 0;
+    topicsToUse.push(...realTrends, ...evergreenFallbacks);
+
+    // Remove tópicos que tratam do MESMO assunto entre si (ex.: duas manchetes
+    // sobre o mesmo julgamento). Mantém apenas o mais bem ranqueado de cada tema.
+    {
+      const kept: any[] = [];
+      for (const t of topicsToUse) {
+        if (kept.some((k) => sharesSubject(k.topic, t.topic))) continue;
+        kept.push(t);
+      }
+      if (kept.length !== topicsToUse.length) {
+        console.log(`[Pipeline] Assuntos repetidos na fila: ${topicsToUse.length} → ${kept.length}`);
+      }
+      topicsToUse.length = 0;
+      topicsToUse.push(...kept);
+    }
+
+
+    // Aplica as preferências salvas na página Tendências (região, fonte, ordenação).
+    if (applyTrendPrefs) {
+      const real = topicsToUse.filter(isRealTrend);
+      const fallback = topicsToUse.filter((t) => !isRealTrend(t));
+      const sortKey = (t: any) =>
+        prefSort === "recent" ? new Date(t.fetched_at || 0).getTime()
+        : prefSort === "oldest" ? -new Date(t.fetched_at || 0).getTime()
+        : reach(t);
+      const sourceMatch = (t: any) => {
+        if (prefSource === "all") return true;
+        if (t.source_name === prefSource) return true;
+        const srcs: any[] = Array.isArray(t.sources) ? t.sources : [];
+        return srcs.some((s: any) => s?.source_name === prefSource);
+      };
+      const rank = (t: any) => (matchesPrefRegion(t) ? 2 : 0) + (sourceMatch(t) ? 1 : 0);
+      real.sort((a, b) => rank(b) - rank(a) || sortKey(b) - sortKey(a));
+      const preferred = real.filter((t) => rank(t) === 3 || (prefSource === "all" && matchesPrefRegion(t)));
+      topicsToUse.length = 0;
+      // Com tópicos da região escolhida disponíveis, só eles entram na rodada;
+      // os demais e os temas padrão servem apenas de reserva quando acabarem.
+      if (prefRegion !== "all" && real.some(matchesPrefRegion)) {
+        topicsToUse.push(...real.filter(matchesPrefRegion));
+      } else {
+        topicsToUse.push(...real, ...fallback);
+      }
+      console.log(`[Pipeline] Preferência de Tendências: ${preferred.length} tópicos preferidos; fila final ${topicsToUse.length}`);
+    }
+
+    console.log(`[Pipeline] Ordem priorizando TENDÊNCIAS (primeiros 8):`,
+      topicsToUse.slice(0, 8).map(t => `${t.category}[${t.search_volume || "?"}]`).join(" → "));
+
+    const articlesPerDay = Math.max(settings?.articles_per_day || 10, 1);
+    const intervalMs = (24 / articlesPerDay) * 60 * 60 * 1000;
+    const now = new Date();
+    const generatedArticles: any[] = [];
+    const failureReasons: Array<{ status: number; message: string }> = [];
+    let allProvidersExhausted = false;
+    const disabledProviders = new Set<string>();
+    let rescheduledCount = 0;
+
+    const { data: pendingArticles } = await supabase
+      .from("articles")
+      .select("id, scheduled_at, created_at, status")
+      .eq("user_id", userId)
+      .neq("status", "published")
+      .neq("status", "ready")
+      .not("scheduled_at", "is", null)
+      .order("scheduled_at", { ascending: true })
+      .order("created_at", { ascending: true });
+
+    const pendingQueue = (pendingArticles || []) as Array<{ id: string; scheduled_at: string | null; created_at: string; status: string }>;
+    const overdueArticles = pendingQueue.filter((article) => article.scheduled_at && new Date(article.scheduled_at).getTime() < now.getTime());
+    const futureArticles = pendingQueue.filter((article) => article.scheduled_at && new Date(article.scheduled_at).getTime() >= now.getTime());
+
+    let queueCursor = futureArticles.length > 0
+      ? new Date(futureArticles[futureArticles.length - 1].scheduled_at as string)
+      : new Date(now);
+
+    for (const overdueArticle of automationJob ? [] : overdueArticles) {
+      queueCursor = new Date(Math.max(queueCursor.getTime(), now.getTime()) + intervalMs);
+      const nextIso = queueCursor.toISOString();
+      const { error: rescheduleError } = await supabase
+        .from("articles")
+        .update({ scheduled_at: nextIso })
+        .eq("id", overdueArticle.id);
+      if (!rescheduleError) {
+        overdueArticle.scheduled_at = nextIso;
+        rescheduledCount++;
+      }
+    }
+
+    // Count "ready" articles too — they shouldn't be rescheduled but DO count toward the daily quota
+    const { count: readyCount } = await supabase
+      .from("articles")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .eq("status", "ready")
+      .not("scheduled_at", "is", null);
+
+    const currentPendingCount = pendingQueue.length + (readyCount || 0);
+    const remainingToTarget = Math.max(0, articlesPerDay - currentPendingCount);
+    // Se forceCategory estiver presente, geramos todos os tópicos disponíveis dessa categoria (ou o limite máximo do batch)
+    const articlesToGenerate = (automationJob?.checkpoint.topic || forceCategory || (manualTopics && manualTopics.length > 0))
+      ? Math.min(automationJob ? 1 : MAX_GENERATION_BATCH, topicsToUse.length)
+      : Math.min(automationJob ? 1 : MAX_GENERATION_BATCH, remainingToTarget, topicsToUse.length);
+
+    if (articlesToGenerate === 0) {
+      if (automationJob) return advanceJob("done", automationJob.checkpoint);
+      const queueSize = Math.min(currentPendingCount, articlesPerDay);
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: rescheduledCount > 0
+            ? `Fila reorganizada: ${rescheduledCount} agendamentos vencidos foram realocados. Fila atual ${queueSize}/${articlesPerDay}.`
+            : `Fila já está completa com ${queueSize}/${articlesPerDay} artigos agendados.`,
+          articles: 0,
+          failed: 0,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const baseScheduledTime = queueCursor.getTime();
+
+    for (let i = 0; i < articlesToGenerate; i++) {
+      if (allProvidersExhausted) break;
+      // Orçamento de tempo: limite da função é 150s; cada artigo leva até ~70s
+      if (i > 0 && Date.now() - __startedAt > 70_000) {
+        console.log(`[Pipeline] Orçamento de tempo atingido após ${i} artigo(s); restantes ficam para a próxima rodada`);
+        break;
+      }
+
+      const topic = topicsToUse[i];
+      const scheduledAt = new Date(automationJob?.checkpoint.scheduledAt || baseScheduledTime + (i + 1) * intervalMs);
+
+      const pipelineLog = new PipelineLog();
+      pipelineLog.add("TREND_DISCOVERY", "ok", `${topic.topic} (score ${topic.trend_score ?? "n/d"})`);
+
+      try {
+        // ── DUPLICATE_CHECK (7 dias) ─────────────────────────────────────
+        const since7d = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+        const { data: last7d } = await supabase
+          .from("articles")
+          .select("id, title, trending_topic, slug, created_at")
+          .eq("user_id", userId)
+          .gte("created_at", since7d);
+        const dup = findDuplicate(topic.topic, (last7d || []) as any[], 0.45);
+        if (dup) {
+          pipelineLog.add("DUPLICATE_CHECK", "failed", `similar a "${dup.title}" (${dup.score})`);
+          failureReasons.push({
+            status: 409,
+            message: `Assunto "${topic.topic}" já coberto pelo artigo "${dup.title}" nos últimos 7 dias.`,
+          });
+          if (topic.id) await supabase.from("trending_topics").update({ used: true, validation_status: "duplicate" }).eq("id", topic.id);
+          continue;
+        }
+
+        // Intervalo mínimo por assunto: 48h. Mesmo tema (mesmos nomes/entidades)
+        // só volta à pauta depois desse período, evitando notícias repetidas.
+        const cooldownStart = Date.now() - 48 * 60 * 60 * 1000;
+        const recentSameSubject = (last7d || []).find((a: any) => {
+          if (!a.created_at || new Date(a.created_at).getTime() < cooldownStart) return false;
+          return sharesSubject(topic.topic, a.title || "") || sharesSubject(topic.topic, a.trending_topic || "");
+        });
+        if (recentSameSubject) {
+          pipelineLog.add("DUPLICATE_CHECK", "failed", `mesmo assunto de "${(recentSameSubject as any).title}" nas últimas 48h`);
+          failureReasons.push({
+            status: 409,
+            message: `Assunto "${topic.topic}" já foi publicado nas últimas 48h ("${(recentSameSubject as any).title}").`,
+          });
+          if (topic.id) await supabase.from("trending_topics").update({ used: true, validation_status: "duplicate" }).eq("id", topic.id);
+          continue;
+        }
+        pipelineLog.add("DUPLICATE_CHECK", "ok");
+
+
+        // Assuntos que são desmentidos ("é fake", "é boato", checagens de montagem com IA)
+        // não viram artigo. Notícias SOBRE fake news/desinformação (ex.: "STF julga lei das
+        // fake news") são legítimas e seguem o fluxo normal.
+        if (/#\s*fake|(?:^|[^\p{L}])[ée]\s+fake(?![\p{L}])|(?:^|[^\p{L}])era\s+fake(?![\p{L}])|(?:^|[^\p{L}])tudo\s+fake(?![\p{L}])|(?:^|[^\p{L}])[ée]\s+boato(?![\p{L}])|(?:^|[^\p{L}])era\s+boato(?![\p{L}])|checamos|montagem com ia|fabricad[ao] com ia/iu.test(topic.topic || "")) {
+          console.warn(`[Editorial] "${topic.topic}" ignorado: conteúdo de fake news/boato.`);
+          if (topic.id) await supabase.from("trending_topics").update({ used: true, validation_status: "fake_news" }).eq("id", topic.id);
+          continue;
+        }
+
+
+
+        // ── SOURCE/ENTITY/FACT VERIFICATION ──────────────────────────────
+        const verification: VerificationResult = automationJob?.checkpoint.verification || await runVerification(
+          topic,
+          { gemini: geminiApiKey, openai: openaiApiKey, groq: groqApiKey },
+          {
+            gemini: sanitizeGeminiModel(settings?.gemini_model) || undefined,
+            openai: settings?.openai_model || undefined,
+            groq: settings?.groq_model || undefined,
+          },
+          pipelineLog,
+        );
+
+        if (verification.status !== "verified") {
+          console.warn(`[Editorial] "${topic.topic}" bloqueado: ${verification.status} — ${verification.notes}`);
+          failureReasons.push({
+            status: 422,
+            message: `Assunto "${topic.topic}" não passou na apuração (${verification.status}): ${verification.notes}`,
+          });
+          if (topic.id) {
+            await supabase
+              .from("trending_topics")
+              .update({ validation_status: verification.status, sources: verification.sources })
+              .eq("id", topic.id);
+          }
+          continue;
+        }
+
+        throwIfJobStopped();
+        if (automationJob?.stage === "research") {
+          return advanceJob("text", { topic, verification, scheduledAt: scheduledAt.toISOString(), imageMode, imageFormat: settings?.image_format || "instagram_portrait", autoPublish: Boolean(settings?.auto_publish) });
+        }
+        // BBC Brasil é um feed em português: nunca tratar como notícia internacional em inglês,
+        // mesmo para tópicos antigos já salvos com region "World".
+        const topicSources: any[] = Array.isArray(topic.sources) ? topic.sources : [];
+        const isBBCBrasil = topicSources.length > 0 && topicSources.every((s: any) => s?.source_name === "BBC Brasil");
+        if (typeof topic.category === "string") topic.category = topic.category.trim().toLowerCase();
+        const isWorld = !isBBCBrasil && (topic.region === "World" || topic.region === "US" || /^world\b/.test(String(topic.category || "")));
+        if (isWorld && !/^world\//.test(topic.category || "")) topic.category = "world";
+        const englishDirective = isWorld ? `\n\nLANGUAGE OVERRIDE (MANDATORY): This is an international story for a United States / English-speaking audience. Write EVERYTHING (title, content, excerpt, seo_keyword, seo_title, meta_description, slug, image_alt, image_caption, visual_elements) in native American English (en-US). Ignore any instruction above that says to write in Portuguese. Keep all factual and formatting rules.` : `\n\nIDIOMA (OBRIGATÓRIO): Notícia do Brasil. Escreva TUDO (título, conteúdo, resumo, palavra-chave, título SEO, meta descrição, slug, alt e legenda da imagem) em português do Brasil (pt-BR). Nunca escreva em inglês.`;
+        const userPrompt = `${buildUserPrompt(topic.topic, topic.category, topic.context, strictPrompt, writerPrompt)}\n\n${buildFactsBlock(verification)}${englishDirective}`;
+
+
+        let parsed: AIResponse;
+        let usedProvider: string;
+
+        try {
+          const result = automationJob?.checkpoint.parsed
+            ? { result: automationJob.checkpoint.parsed, provider: automationJob.checkpoint.usedProvider }
+            : await callWithFallback(providers, isWorld ? `${systemPrompt}${englishDirective}` : systemPrompt, userPrompt, disabledProviders);
+          parsed = sanitizeSeoFields(result.result);
+          usedProvider = result.provider;
+
+          // Etapa de Validação: Revisar o texto contra o tópico original (fact-check leve baseado em heurística)
+          // Verifica se o título/conteúdo realmente menciona o tópico (evita artigos completamente fora do tema)
+          try {
+            const topicWords = topic.topic
+              .toLowerCase()
+              .replace(/[^a-záéíóúâêôãõç0-9\s]/gi, " ")
+              .split(/\s+/)
+              .filter((w: string) => w.length > 3);
+            const haystack = `${parsed.title} ${stripHtml(parsed.content)}`.toLowerCase();
+            const matched = topicWords.filter((w: string) => haystack.includes(w)).length;
+            const ratio = topicWords.length > 0 ? matched / topicWords.length : 1;
+            console.log(`[Validation] Topic "${topic.topic}" word-match ratio: ${(ratio * 100).toFixed(0)}% (${matched}/${topicWords.length})`);
+            if (topicWords.length >= 2 && ratio < 0.3) {
+              console.warn(`[Validation] Article rejected — does not reference topic enough.`);
+              failureReasons.push({ status: 422, message: `Artigo descartado por baixa aderência ao tópico "${topic.topic}".` });
+              continue;
+            }
+          } catch (vErr) {
+            console.warn("[Validation] Skipped:", vErr);
+          }
+
+        } catch (err: any) {
+          const msg = err instanceof Error ? err.message : String(err);
+          console.error(`All providers failed for topic ${topic.topic}:`, msg.substring(0, 300));
+          // Só interrompe o lote se TODOS os provedores (inclusive ChatGPT) estiverem sem quota
+          // ou com chave inválida. Isso cobre tanto erros de billing (402/RESOURCE_EXHAUSTED)
+          // quanto o caso em que callWithFallback já esgotou o conjunto de provedores
+          // disponíveis ("Todos os provedores de IA estão indisponíveis...").
+          if (disabledProviders.size >= providers.length) {
+            allProvidersExhausted = true;
+            failureReasons.push({
+              status: 402,
+              message: "Nenhum artigo gerado: todos os provedores de IA (Gemini, ChatGPT, Groq, Azure) estão sem quota ou com chave inválida. Adicione créditos no provedor ou verifique as chaves em Configurações → IA.",
+            });
+            break;
+          }
+          failureReasons.push({ status: 500, message: msg });
+          continue;
+        }
+
+        if (!parsed.title || !parsed.content) {
+          failureReasons.push({ status: 500, message: `Campos obrigatórios ausentes para: ${topic.topic}` });
+          continue;
+        }
+
+        throwIfJobStopped();
+        if (automationJob?.stage === "text") return advanceJob("save", { ...automationJob.checkpoint, parsed, usedProvider });
+        // Vídeos: troca embeds de busca (quebrados no YouTube) por vídeo real ou remove.
+        try {
+          const ytKey = await loadYouTubeKey(supabase, (settings as any)?.youtube_api_key);
+          parsed = { ...parsed, content: await fixYouTubeEmbeds(parsed.content, ytKey) };
+        } catch (ytErr) {
+          console.warn("[YouTube] correção de vídeo ignorada:", ytErr);
+        }
+
+        // GERAÇÃO DE IMAGEM: depende do imageMode configurado
+        let featuredImageUrl: string | null = null;
+        let sourcePhotoCaption: string | null = null;
+        const customImagePrompt = settings?.image_prompt || null;
+        const imageFormatKey = (settings as any)?.image_format || "instagram_portrait";
+        const imageKnowledgeUrls: string[] = Array.isArray((settings as any)?.image_knowledge_urls) ? (settings as any).image_knowledge_urls : [];
+
+        if (imageMode === "ai" && !automationJob) {
+          const { data: imageKnowledge } = await supabase.from("knowledge_entries")
+            .select("title, description, content").eq("user_id", userId).order("created_at", { ascending: false }).limit(5);
+          const knowledgeText = (imageKnowledge || []).map((entry: any) => `${entry.title}
+${entry.description || ""}
+${(entry.content || "").replace(/<[^>]+>/g, " ").slice(0, 800)}`).join("\n\n");
+          if (nineKeyGlobal && settings?.ninerouter_endpoint && settings?.ninerouter_enabled !== false) {
+            featuredImageUrl = await generateImageNineRouter(settings.ninerouter_endpoint, nineKeyGlobal, parsed.title, parsed.content, parsed.visual_elements, customImagePrompt, imageFormatKey, (settings as any)?.ninerouter_image_model, imageKnowledgeUrls, knowledgeText,
+              verification.sources.map(s => s.source_url),
+              verification.entities.filter((e: any) => e?.type === 'pessoa').map((e: any) => e.name).filter((name: unknown): name is string => typeof name === 'string' && Boolean(name.trim())),
+              photo => { sourcePhotoCaption = `${photo.caption} — Fonte: ${photo.source} · ${photo.license} · ${photo.publishedAt}`; });
+          }
+          if (!featuredImageUrl) {
+            console.warn(`[Image] Não foi possível gerar imagem para "${parsed.title}" — artigo criado sem imagem.`);
+          }
+        } else if (imageMode === "manual") {
+          console.log(`[Image] Modo manual detectado para "${parsed.title}" — aguardando upload.`);
+          featuredImageUrl = null;
+        } else {
+          console.log(`[Image] Modo "nenhuma" detectado para "${parsed.title}".`);
+          featuredImageUrl = null;
+        }
+
+        // ── IMAGE_VERIFICATION ───────────────────────────────────────────
+        // A imagem é gerada por IA: ela é ilustrativa e nunca pode ser
+        // apresentada como registro real de pessoas citadas na notícia.
+        const hasRealPeople = verification.entities.some((e: any) => e?.type === "pessoa");
+        let imageVerificationStatus: string | null = null;
+        if (featuredImageUrl) {
+          imageVerificationStatus = sourcePhotoCaption ? "foto_fonte_verificada" : hasRealPeople ? "ilustrativa_pessoa_real" : "ilustrativa";
+          if (sourcePhotoCaption) {
+            parsed = { ...parsed, image_caption: sourcePhotoCaption };
+          } else if (hasRealPeople && parsed.image_caption && !/ilustra/i.test(parsed.image_caption)) {
+            parsed = { ...parsed, image_caption: `${parsed.image_caption} (imagem ilustrativa gerada por IA)` };
+          }
+          pipelineLog.add("IMAGE_VERIFICATION", "ok", imageVerificationStatus);
+        } else {
+          imageVerificationStatus = "sem_imagem";
+          pipelineLog.add("IMAGE_VERIFICATION", "skipped", "artigo sem imagem");
+        }
+
+        // ── SEO_OPTIMIZATION + EDITORIAL_VALIDATION ──────────────────────
+        const finalSlug = parsed.slug || slugify(parsed.seo_title || parsed.title);
+        const seoAudit = {
+          slug: finalSlug,
+          focus_keyword: parsed.seo_keyword || "",
+          title_length: (parsed.seo_title || parsed.title || "").length,
+          meta_description_length: (parsed.meta_description || "").length,
+          content_length: stripHtml(parsed.content || "").length,
+          has_keyword_in_title: (parsed.title || "").toLowerCase().includes((parsed.seo_keyword || "").toLowerCase()),
+          checked_at: new Date().toISOString(),
+        };
+        pipelineLog.add("SEO_OPTIMIZATION", "ok", `slug=${finalSlug}`);
+        pipelineLog.add("EDITORIAL_VALIDATION", "ok", verification.notes.slice(0, 180));
+        pipelineLog.add("READY_TO_PUBLISH", "ok");
+
+        if (topic.category === "world") {
+          const subKey = detectWorldSubcategory(`${parsed.title || ""} ${parsed.seo_keyword || ""} ${parsed.excerpt || ""} ${topic.topic || ""}`);
+          if (subKey) topic.category = `world/${subKey}`;
+        }
+        const articlePayload = {
+          user_id: userId,
+          title: parsed.title,
+          content: parsed.content,
+          excerpt: parsed.excerpt || "",
+          category: topic.category,
+          seo_keyword: parsed.seo_keyword || "",
+          focus_keyword: parsed.seo_keyword || "",
+          seo_title: parsed.seo_title || parsed.title,
+          meta_title: parsed.seo_title || parsed.title,
+          meta_description: parsed.meta_description || "",
+          slug: finalSlug,
+          featured_image_url: featuredImageUrl,
+          // Regra: artigo sem imagem nunca fica ativo para postagem.
+          status: !featuredImageUrl ? "no_image" : (settings?.auto_publish ? "ready" : "draft"),
+          is_approved: !!featuredImageUrl && !!settings?.auto_publish,
+          scheduled_at: scheduledAt.toISOString(),
+          trending_topic: topic.topic,
+          trend_score: topic.trend_score ?? null,
+          ai_provider: usedProvider,
+          visual_elements: parsed.visual_elements,
+          image_alt: parsed.image_alt,
+          image_caption: parsed.image_caption,
+          image_verification_status: imageVerificationStatus,
+          fact_check_status: verification.status,
+          fact_check_notes: verification.notes,
+          research_references: verification.facts,
+          entity_verification: verification.entities,
+          source_urls: verification.sources.map((s) => s.source_url).filter(Boolean),
+          seo_audit_log: seoAudit,
+          pipeline_log: pipelineLog.toJSON(),
+        };
+        throwIfJobStopped();
+        if (automationJob) {
+          const { data: savedId, error: saveError } = await supabase.rpc("save_automation_article", { p_id: automationJobId, p_lease: automationLease, p_article: articlePayload });
+          if (saveError) throw saveError;
+          if (topic.id) await supabase.from("trending_topics").update({ used: true, validation_status: "verified", sources: verification.sources }).eq("id", topic.id);
+          return new Response(JSON.stringify({ success: true, articleId: savedId }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        const { data: article, error: insertError } = await supabase.from("articles").insert(articlePayload).select().single();
+        
+        if (insertError) {
+          console.error(`[Pipeline] Supabase insert error for ${parsed.title}:`, insertError.message);
+          failureReasons.push({ status: 500, message: insertError.message });
+          continue;
+        }
+
+        if (topic.id) {
+          const { error: updateError } = await supabase
+            .from("trending_topics")
+            .update({ used: true, validation_status: "verified", sources: verification.sources })
+            .eq("id", topic.id);
+          if (updateError) console.warn(`[Pipeline] Failed to mark topic as used: ${updateError.message}`);
+        }
+        // Retira da pauta todas as cópias do mesmo tema para não repetir artigos.
+        await supabase
+          .from("trending_topics")
+          .update({ used: true })
+          .eq("user_id", userId)
+          .ilike("topic", String(topic.topic).replace(/[%_]/g, ""));
+
+
+        generatedArticles.push(article);
+        console.log(`[Pipeline] Article successfully saved: ${article.id}`);
+        console.log(`[Pipeline] Article ${i + 1} generated via ${usedProvider}: ${parsed.title}`);
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      } catch (err) {
+        console.error(`Error generating article for ${topic.topic}:`, err);
+        failureReasons.push({ status: 500, message: err instanceof Error ? err.message : String(err) });
+      }
+    }
+
+    throwIfJobStopped();
+    const totalAttempted = articlesToGenerate;
+
+    if (generatedArticles.length === 0) {
+      const errorMessage = allProvidersExhausted
+        ? "Nenhum artigo gerado: Gemini/OpenAI/Groq estão sem quota. Adicione créditos no Gemini (AI Studio) ou aguarde a renovação diária do Groq."
+        : failureReasons[0]?.message || "Nenhum artigo pôde ser gerado.";
+
+      // Sempre retorna 200 com fallback:true para evitar que o cliente trate como erro fatal (tela em branco).
+      return new Response(
+        JSON.stringify({
+          success: false,
+          fallback: true,
+          message: errorMessage,
+          warning: errorMessage,
+          articles: 0,
+          failed: failureReasons.length,
+          providersExhausted: allProvidersExhausted,
+          details: failureReasons.slice(0, 3),
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const queueAfterRun = currentPendingCount + generatedArticles.length;
+    const message = failureReasons.length > 0
+      ? `${generatedArticles.length} de ${totalAttempted} artigos gerados nesta execução (${failureReasons.length} falharam). Fila atual ${queueAfterRun}/${articlesPerDay}.${rescheduledCount > 0 ? ` ${rescheduledCount} vencidos foram reagendados.` : ""}`
+      : `${generatedArticles.length} artigos gerados nesta execução. Fila atual ${queueAfterRun}/${articlesPerDay}.${rescheduledCount > 0 ? ` ${rescheduledCount} vencidos foram reagendados.` : ""}`;
+
+    return new Response(
+      JSON.stringify({ success: true, message, articles: generatedArticles.length, failed: failureReasons.length }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  } catch (error) {
+    if (isJobExecution()) throw error;
+    console.error("generate-articles error:", error);
+    return new Response(
+      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+}
+
+function getDefaultTopic(category: string): string {
+  const defaults: Record<string, string> = {
+    esportes: "Últimas notícias do futebol brasileiro",
+    politica: "Cenário político atual no Brasil",
+    policia: "Segurança pública no Brasil",
+    saude: "Dicas de saúde e bem-estar",
+    celebridades: "Novidades do mundo das celebridades brasileiras",
+    financas: "Economia e mercado financeiro no Brasil",
+    world: "Top world news today",
+  };
+  return defaults[category] || "Notícias do Brasil";
+}

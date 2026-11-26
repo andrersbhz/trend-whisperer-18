@@ -3,6 +3,7 @@
 // Descoberta de fontes, ranking de tendências, verificação factual e de entidades.
 // Usado por fetch-trends e generate-articles.
 // ─────────────────────────────────────────────────────────────────────────────
+import { jobFetch as fetch } from './job-runtime.ts';
 
 export interface SourceRef {
   source_url: string;

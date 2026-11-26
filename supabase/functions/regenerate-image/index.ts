@@ -5,10 +5,12 @@ import { z } from "https://esm.sh/zod@3.25.76";
 import { requireUserOrService } from "../_shared/security.ts";
 import { generateRouterImage } from "../_shared/ninerouter-images.ts";
 import { isAIImageFormat, requireImageFormat } from "../_shared/image-formats.ts";
+import { jobFetch as fetch, runJobStep, throwIfJobStopped, isJobExecution, JobStopped } from "../_shared/job-runtime.ts";
 
 const RequestSchema = z.object({
   userId: z.string().uuid(), articleIds: z.array(z.string().uuid()).min(1).max(100),
   force: z.boolean().optional().default(false), imageFormat: z.string().refine(isAIImageFormat),
+  automationJobId: z.string().uuid().optional(), automationLease: z.string().uuid().optional(),
 });
 const getErrorMessage = (error: unknown) => error instanceof Error ? error.message : "Erro ao gerar imagem.";
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -39,7 +41,7 @@ async function resizeDataUrlToExact(dataUrl: string, targetW: number, targetH: n
 }
 
 
-serve(async (req) => {
+async function handleImage(req: Request) {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
@@ -170,6 +172,7 @@ serve(async (req) => {
           const base64 = resized.split(",")[1];
           const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
           const path = `${userId}/${article.id}/${crypto.randomUUID()}.png`;
+          throwIfJobStopped();
           const { error: uploadError } = await supabase.storage.from("article-images").upload(path, bytes, { contentType: "image/png", upsert: false });
           if (uploadError) throw uploadError;
           imageUrl = supabase.storage.from("article-images").getPublicUrl(path).data.publicUrl;
@@ -178,6 +181,7 @@ serve(async (req) => {
         providerErrors.push("Configure e ative o 9Router para gerar imagens.");
       }
 
+      throwIfJobStopped();
       if (!imageUrl) {
         failed++;
         const reason = (providerErrors[0] || "Não foi possível gerar imagem pelo 9Router.");
@@ -185,9 +189,11 @@ serve(async (req) => {
         continue;
       }
 
-      const { error: updateError } = await supabase.from("articles").update({ featured_image_url: imageUrl,
+      let imageUpdate = supabase.from("articles").update({ featured_image_url: imageUrl,
         ...(photoCaption ? { image_caption: photoCaption, image_alt: photoCaption.split(' — Fonte:')[0], image_verification_status: 'foto_fonte_verificada' } : { image_verification_status: 'ilustrativa' }),
       }).eq("id", article.id).eq("user_id", userId);
+      if (isJobExecution()) imageUpdate = imageUpdate.neq("status", "published").is("featured_image_url", null);
+      const { error: updateError } = await imageUpdate;
       if (updateError) {
         failed++;
         details.push({ articleId: article.id, title: article.title, reason: updateError.message });
@@ -219,11 +225,32 @@ serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
+    if (isJobExecution()) throw error;
     console.error("regenerate-image error:", error);
     return new Response(
       JSON.stringify({ success: false, error: error instanceof Error ? error.message : "Erro desconhecido" }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
+  }
+}
+
+serve(async req => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  try {
+    const parsed = RequestSchema.safeParse(await req.clone().json());
+    if (!parsed.success || !parsed.data.automationJobId) return handleImage(req);
+    const body = parsed.data;
+    const auth = await requireUserOrService(req, body.userId);
+    if (!auth.isService || !body.automationLease) throw new Error("Etapa interna não autorizada");
+    const url = Deno.env.get("SUPABASE_URL");
+    const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!url || !key) throw new Error("Serviço indisponível");
+    const db = createClient(url, key);
+    const { data: job, error } = await db.from("article_automation_jobs").select("article_id").eq("id", body.automationJobId).eq("user_id", body.userId).eq("status", "running").eq("stage", "image").eq("lease_token", body.automationLease).gt("lease_expires_at", new Date().toISOString()).single();
+    if (error || !job || body.articleIds.length !== 1 || body.articleIds[0] !== job.article_id) throw new Error("Tarefa não autorizada ou expirada");
+    return await runJobStep(() => handleImage(req));
+  } catch (error) {
+    return new Response(JSON.stringify({ success: false, paused: true, error: getErrorMessage(error), message: getErrorMessage(error), outcomeUnknown: error instanceof JobStopped && error.unknownOutcome, rateLimited: error instanceof JobStopped && error.rateLimited }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });
 

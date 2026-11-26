@@ -1,3 +1,5 @@
+import { jobFetch as fetch } from './job-runtime.ts';
+
 export interface NewsPhoto {
   url: string;
   source: string;

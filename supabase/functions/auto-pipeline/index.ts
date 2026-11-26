@@ -1,207 +1,126 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-import { requireServiceOrAdmin } from "../_shared/security.ts";
+import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { z } from "https://esm.sh/zod@3.25.76";
+import { requireServiceOrAdmin, safeError } from "../_shared/security.ts";
+import { AUTOMATION_BATCH_USERS, AUTOMATION_PUBLISH_LIMIT, nextValidationStage, prioritizeAutomationUsers, type AutomationStage } from "../_shared/automation-policy.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+const RequestSchema = z.object({ jobId: z.string().uuid().optional(), remainingHops: z.number().int().min(0).max(6).default(6) });
+declare const EdgeRuntime: { waitUntil: (work: Promise<unknown>) => void };
+const json = (data: unknown, status = 200) => new Response(JSON.stringify(data), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
 serve(async (req) => {
-  const runStartedAt = Date.now();
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
-
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
     await requireServiceOrAdmin(req);
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, serviceKey);
+    const parsed = RequestSchema.safeParse(JSON.parse(await req.text() || '{}'));
+    if (!parsed.success) return json({ error: "Pedido de automação inválido" }, 400);
+    const url = Deno.env.get("SUPABASE_URL");
+    const service = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const anon = Deno.env.get("SUPABASE_ANON_KEY");
+    if (!url || !service || !anon) throw new Error("Serviço não configurado");
+    const db = createClient(url, service);
 
-    // Get all users with auto_publish enabled
-    const { data: users, error: usersErr } = await supabase
-      .from("user_settings")
-      .select("user_id, auto_publish, articles_per_day, categories")
-      .eq("auto_publish", true);
-
-    if (usersErr) throw usersErr;
-    if (!users || users.length === 0) {
-      return new Response(JSON.stringify({ message: "No users with auto_publish enabled" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    if (!parsed.data.jobId) {
+      // Each user gets an independent durable job. Oldest completed users go first.
+      const { data: users, error } = await db.from("user_settings").select("user_id").eq("auto_publish", true).order("user_id");
+      if (error) throw error;
+      const { data: history, error: historyError } = await db.from("article_automation_jobs").select("user_id, updated_at").eq("origin", "scheduled").order("updated_at", { ascending: false }).limit(5000);
+      if (historyError) throw historyError;
+      const ordered = prioritizeAutomationUsers(users || [], history || []);
+      let enqueued = 0;
+      for (const user of ordered.slice(0, AUTOMATION_BATCH_USERS)) {
+        const { error: enqueueError } = await db.rpc("enqueue_article_automation", { p_user: user.user_id });
+        if (enqueueError) throw enqueueError;
+        enqueued++;
+      }
+      const { data: dispatched, error: dispatchError } = await db.rpc("dispatch_article_automation", { p_url: `${url}/functions/v1/auto-pipeline`, p_bearer: anon });
+      if (dispatchError) throw dispatchError;
+      return json({ success: true, enqueued, dispatched });
     }
 
-    const results: Array<{ userId: string; step: string; result: string }> = [];
-
-    for (const userSettings of users) {
-      const userId = userSettings.user_id;
-      const articlesPerDay = Math.max(userSettings.articles_per_day || 10, 1);
-      const intervalMs = (24 / articlesPerDay) * 60 * 60 * 1000;
-      console.log(`[Pipeline] Processing user: ${userId}`);
-
-      const now = new Date();
-
-      // Step 0: destrava "publishing" parado há +3 min e reagenda falhas para nova tentativa em 3 min
-      try {
-        const staleCutoff = new Date(now.getTime() - 3 * 60 * 1000).toISOString();
-        await supabase.from("articles")
-          .update({ status: "ready", is_approved: true, scheduled_at: now.toISOString() })
-          .eq("user_id", userId).eq("status", "publishing").is("wordpress_post_id", null)
-          .lt("updated_at", staleCutoff);
-        await supabase.from("articles")
-          .update({ status: "ready", is_approved: true, scheduled_at: new Date(now.getTime() + 3 * 60 * 1000).toISOString() })
-          .eq("user_id", userId).eq("status", "failed").is("wordpress_post_id", null);
-      } catch (e) {
-        console.error("[Pipeline] Falha ao destravar/reagendar:", e);
-      }
-
-      // Step 1: Publish ready articles FIRST (before any rescheduling)
-      try {
-        const { data: readyArticles } = await supabase
-          .from("articles")
-          .select("id")
-          .eq("user_id", userId)
-          .eq("status", "ready")
-          .eq("is_approved", true)
-          .not("scheduled_at", "is", null)
-          .lte("scheduled_at", now.toISOString())
-          .order("scheduled_at", { ascending: true })
-          .limit(10);
-
-        if (readyArticles && readyArticles.length > 0) {
-          let published = 0;
-          for (const article of readyArticles) {
-            if (Date.now() - runStartedAt > 90000) {
-              console.warn("[Pipeline] Orçamento de tempo atingido; restantes ficam para a próxima execução.");
-              break;
-            }
-            try {
-              const pubResp = await fetch(`${supabaseUrl}/functions/v1/publish-article`, {
-                method: "POST",
-                signal: AbortSignal.timeout(60000),
-                headers: { Authorization: `Bearer ${serviceKey}`, "Content-Type": "application/json" },
-                body: JSON.stringify({ articleId: article.id, userId }),
-              });
-              if (pubResp.ok) {
-                published++;
-              } else {
-                const errBody = await pubResp.text().catch(() => "");
-                console.error(`[Pipeline] Publish failed for article ${article.id}: ${pubResp.status} ${errBody.substring(0, 200)}`);
-              }
-              await new Promise((r) => setTimeout(r, 3000));
-            } catch (e) {
-              console.error(`[Pipeline] Publish error article ${article.id}:`, e);
-            }
+    const jobId = parsed.data.jobId;
+    const { data: claimed, error: claimError } = await db.rpc("claim_article_automation", { p_id: jobId });
+    if (claimError) throw claimError;
+    const job = claimed?.[0];
+    if (!job) return json({ success: true, message: "Tarefa ocupada, pausada ou concluída." });
+    const lease = job.lease_token;
+    if (!lease) throw new Error("Trava não adquirida");
+    const advance = async (stage: string, checkpoint = job.checkpoint, articleId = job.article_id) => {
+      const { data, error } = await db.rpc("advance_article_automation", { p_id: job.id, p_lease: lease, p_stage: stage, p_checkpoint: checkpoint, p_article: articleId });
+      if (error || !data) throw new Error(error?.message || "Trava da tarefa expirou");
+    };
+    const invoke = async (name: string, body: unknown, timeoutMs: number) => {
+      const response = await fetch(`${url}/functions/v1/${name}`, { method: "POST", signal: AbortSignal.timeout(timeoutMs), headers: { Authorization: `Bearer ${service}`, "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(`HTTP ${response.status}: ${data.error || name}`);
+      return data;
+    };
+    try {
+      if (job.origin === "validation") {
+        // Read-only validation jobs exercise the real claim/advance flow, not external providers.
+        await advance(nextValidationStage(job.stage as AutomationStage), { ...job.checkpoint, validated: true });
+      } else if (job.stage === "publish") {
+        const now = new Date();
+        const { error: staleError } = await db.from("articles").update({ status: "ready", is_approved: true, scheduled_at: now.toISOString() }).eq("user_id", job.user_id).eq("status", "publishing").is("wordpress_post_id", null).lt("updated_at", new Date(now.getTime() - 180000).toISOString());
+        if (staleError) throw staleError;
+        const { error: retryError } = await db.from("articles").update({ status: "ready", is_approved: true, scheduled_at: new Date(now.getTime() + 180000).toISOString() }).eq("user_id", job.user_id).eq("status", "failed").is("wordpress_post_id", null);
+        if (retryError) throw retryError;
+        const { data: ready, error: readyError } = await db.from("articles").select("id").eq("user_id", job.user_id).eq("status", "ready").eq("is_approved", true).lte("scheduled_at", now.toISOString()).order("scheduled_at").limit(AUTOMATION_PUBLISH_LIMIT);
+        if (readyError) throw readyError;
+        for (const article of ready || []) await invoke("publish-article", { articleId: article.id, userId: job.user_id }, 60000);
+        await advance("trends");
+      } else if (job.stage === "trends") {
+        const result = await invoke("fetch-trends", { userId: job.user_id }, 25000);
+        if (result.success === false || result.error) throw new Error(result.error || result.message || "Falha na busca de tendências");
+        const { data: generation, error: generationError } = await db.from("article_automation_jobs").select("id").eq("user_id", job.user_id).neq("id", job.id).in("status", ["pending", "running", "paused"]).not("stage", "in", "(publish,trends)").limit(1);
+        if (generationError) throw generationError;
+        await advance(generation?.length ? "done" : "research");
+      } else if (job.stage === "image") {
+        if (!job.article_id) throw new Error("Artigo da tarefa não encontrado");
+        const { data: article, error: articleError } = await db.from("articles").select("id, status, featured_image_url").eq("id", job.article_id).eq("user_id", job.user_id).single();
+        if (articleError) throw articleError;
+        if (article.status !== "published" && !article.featured_image_url) {
+          const checkpoint = job.checkpoint as { imageFormat?: string; autoPublish?: boolean };
+          const result = await invoke("regenerate-image", { userId: job.user_id, articleIds: [job.article_id], imageFormat: checkpoint.imageFormat, force: true, automationJobId: job.id, automationLease: lease }, 110000);
+          if (!result.success) {
+            const { error } = await db.from("article_automation_jobs").update({ status: result.rateLimited ? "pending" : "paused", available_at: new Date(Date.now() + 15 * 60000).toISOString(), pause_reason: result.message || result.error || "Imagem não gerada", outcome_unknown: Boolean(result.outcomeUnknown), lease_token: null, lease_expires_at: null, updated_at: new Date().toISOString() }).eq("id", job.id).eq("lease_token", lease);
+            if (error) throw error;
+            return json({ success: false, paused: true });
           }
-          results.push({ userId, step: "auto-publish", result: `${published}/${readyArticles.length} published` });
-          console.log(`[Pipeline] Published ${published}/${readyArticles.length} articles for ${userId}`);
-        } else {
-          results.push({ userId, step: "auto-publish", result: "no articles ready" });
+          const { error: updateError } = await db.from("articles").update({ status: checkpoint.autoPublish ? "ready" : "draft", is_approved: Boolean(checkpoint.autoPublish) }).eq("id", job.article_id).eq("user_id", job.user_id).eq("status", "no_image").not("featured_image_url", "is", null);
+          if (updateError) throw updateError;
         }
-      } catch (err) {
-        console.error(`[Pipeline] Publish error for ${userId}:`, err);
-        results.push({ userId, step: "auto-publish", result: `error: ${err}` });
+        await advance("done");
+      } else {
+        // Research, text and save each return a persisted checkpoint, never an entire long batch.
+        const result = await invoke("generate-articles", { userId: job.user_id, automationJobId: job.id, automationLease: lease }, 110000);
+        if (result.paused || result.error || result.success === false) {
+          const { error } = await db.from("article_automation_jobs").update({ status: result.rateLimited ? "pending" : "paused", pause_reason: result.message || result.error || "Geração interrompida", outcome_unknown: Boolean(result.outcomeUnknown), available_at: new Date(Date.now() + 15 * 60000).toISOString(), lease_token: null, lease_expires_at: null, updated_at: new Date().toISOString() }).eq("id", job.id).eq("lease_token", lease);
+          if (error) throw error;
+        }
       }
-
-      // Step 2: Reagendar TODOS os itens vencidos ainda não publicados
-      // (inclui 'ready' que falharam ao publicar, 'draft', 'scheduled', etc.)
-      // Reconsulta após a etapa de publicação para pegar apenas os que sobraram.
-      try {
-        const { data: pendingArticles } = await supabase
-          .from("articles")
-          .select("id, scheduled_at, created_at, status")
-          .eq("user_id", userId)
-          .neq("status", "published")
-          .not("scheduled_at", "is", null)
-          .order("scheduled_at", { ascending: true })
-          .order("created_at", { ascending: true });
-
-        const nowTs = Date.now();
-        const overdue = (pendingArticles || []).filter((a: any) => a.scheduled_at && new Date(a.scheduled_at).getTime() < nowTs);
-        const future = (pendingArticles || []).filter((a: any) => a.scheduled_at && new Date(a.scheduled_at).getTime() >= nowTs);
-
-        let queueCursor = future.length > 0
-          ? new Date(future[future.length - 1].scheduled_at)
-          : new Date(nowTs);
-
-        let rescheduled = 0;
-        for (const article of overdue) {
-          queueCursor = new Date(Math.max(queueCursor.getTime(), nowTs) + intervalMs);
-          const { error: updErr } = await supabase
-            .from("articles")
-            .update({ scheduled_at: queueCursor.toISOString() })
-            .eq("id", article.id);
-          if (updErr) {
-            console.error(`[Pipeline] Reschedule update failed for ${article.id}:`, updErr);
-          } else {
-            rescheduled++;
+      if (parsed.data.remainingHops > 0) {
+        const { data: next } = await db.from("article_automation_jobs").select("status").eq("id", job.id).single();
+        if (next?.status === "pending") EdgeRuntime.waitUntil((async () => {
+          await new Promise(resolve => setTimeout(resolve, 10000));
+          try {
+            const { error } = await db.rpc("dispatch_article_automation_hop", { p_id: job.id, p_url: `${url}/functions/v1/auto-pipeline`, p_bearer: anon, p_hops: parsed.data.remainingHops - 1 });
+            if (error) throw error;
+          } catch (error) {
+            console.error("[Automation] Confirmação da próxima etapa perdida", job.id);
+            await db.from("article_automation_jobs").update({ pause_reason: "Próxima etapa não confirmada; tarefa preservada para o próximo ciclo.", updated_at: new Date().toISOString() }).eq("id", job.id).eq("status", "pending");
           }
-        }
-
-        if (overdue.length > 0) {
-          console.log(`[Pipeline] Reagendados ${rescheduled}/${overdue.length} artigos vencidos para ${userId}`);
-          results.push({ userId, step: "reschedule-overdue", result: `${rescheduled}/${overdue.length} reagendados` });
-        } else {
-          results.push({ userId, step: "reschedule-overdue", result: "nenhum vencido" });
-        }
-      } catch (err) {
-        console.error(`[Pipeline] Reschedule error for ${userId}:`, err);
-        results.push({ userId, step: "reschedule-overdue", result: `error: ${err}` });
+        })());
       }
-
-      // Small delay between steps
-      await new Promise((r) => setTimeout(r, 2000));
-
-      // Step 2: Fetch trends
-      try {
-        const trendResp = await fetch(`${supabaseUrl}/functions/v1/fetch-trends`, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${serviceKey}`, "Content-Type": "application/json" },
-          body: JSON.stringify({ userId }),
-        });
-        const trendData = await trendResp.json();
-        results.push({ userId, step: "fetch-trends", result: trendData.message || "done" });
-        console.log(`[Pipeline] Trends for ${userId}: ${trendData.message}`);
-      } catch (err) {
-        console.error(`[Pipeline] Trends error for ${userId}:`, err);
-        results.push({ userId, step: "fetch-trends", result: `error: ${err}` });
-      }
-
-      await new Promise((r) => setTimeout(r, 2000));
-
-      // Step 3: Generate articles
-      try {
-        const genResp = await fetch(`${supabaseUrl}/functions/v1/generate-articles`, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${serviceKey}`, "Content-Type": "application/json" },
-          body: JSON.stringify({ userId }),
-        });
-        const rawBody = await genResp.text();
-        let genData: any = {};
-        try {
-          genData = rawBody ? JSON.parse(rawBody) : {};
-        } catch {
-          genData = { error: `Non-JSON response (HTTP ${genResp.status}): ${rawBody.slice(0, 200)}` };
-        }
-        if (!genResp.ok && !genData.error) {
-          genData.error = `HTTP ${genResp.status}`;
-        }
-        results.push({ userId, step: "generate-articles", result: genData.message || genData.error || "done" });
-        console.log(`[Pipeline] Articles for ${userId}: ${genData.message || genData.error}`);
-      } catch (err) {
-        console.error(`[Pipeline] Generation error for ${userId}:`, err);
-        results.push({ userId, step: "generate-articles", result: `error: ${err}` });
-      }
+      return json({ success: true, jobId: job.id, stage: job.stage });
+    } catch (error) {
+      const { error: pauseError } = await db.from("article_automation_jobs").update({ status: "paused", pause_reason: error instanceof Error ? error.message : "Execução interrompida", outcome_unknown: true, lease_token: null, lease_expires_at: null, updated_at: new Date().toISOString() }).eq("id", job.id).eq("lease_token", lease);
+      if (pauseError) throw pauseError;
+      return json({ success: false, paused: true, message: "Execução pausada; progresso preservado." });
     }
-
-    return new Response(
-      JSON.stringify({ success: true, results }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
   } catch (error) {
-    console.error("auto-pipeline error:", error);
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    console.error("auto-pipeline:", error);
+    return safeError(error, corsHeaders);
   }
 });

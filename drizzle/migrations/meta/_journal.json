@@ -22,6 +22,34 @@
       "when": 1794016620008,
       "tag": "0002_ninerouter_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1795665249818,
+      "tag": "0003_durable_article_automation",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1795665293930,
+      "tag": "0004_allow_dispatched_automation_claim",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1795665660835,
+      "tag": "0005_bounded_automation_next_hop",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1795665754805,
+      "tag": "0006_isolate_publication_from_generation_pauses",
+      "breakpoints": true
     }
   ]
 }

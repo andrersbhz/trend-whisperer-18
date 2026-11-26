@@ -3,6 +3,7 @@
 // que aparecem como "Este vídeo não está disponível". Aqui trocamos esses
 // embeds por um vídeo real encontrado pela YouTube Data API v3; se não houver
 // chave, cota ou resultado, o bloco de vídeo é removido.
+import { jobFetch as fetch } from './job-runtime.ts';
 
 const SEARCH_EMBED_RE = /<iframe[^>]*src=["'][^"']*youtube(?:-nocookie)?\.com\/embed\/?\?[^"']*listType=search[^"']*["'][^>]*>[\s\S]*?<\/iframe>/gi;
 

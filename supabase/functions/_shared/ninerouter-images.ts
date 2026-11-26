@@ -1,5 +1,6 @@
 import { requireImageFormat, type AIImageFormat } from './image-formats.ts';
 import { searchNewsPhoto, type NewsPhoto } from './news-photo.ts';
+import { jobFetch as fetch } from './job-runtime.ts';
 
 export interface ImageRequest {
   endpoint: string;

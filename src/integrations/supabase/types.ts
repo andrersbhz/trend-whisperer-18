@@ -29,6 +29,60 @@ export type Database = {
         }
         Relationships: []
       }
+      article_automation_jobs: {
+        Row: {
+          article_id: string | null
+          available_at: string
+          checkpoint: Json
+          created_at: string
+          id: string
+          lease_expires_at: string | null
+          lease_token: string | null
+          origin: string
+          outcome_unknown: boolean
+          pause_reason: string | null
+          payload: Json
+          stage: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          article_id?: string | null
+          available_at?: string
+          checkpoint?: Json
+          created_at?: string
+          id?: string
+          lease_expires_at?: string | null
+          lease_token?: string | null
+          origin?: string
+          outcome_unknown?: boolean
+          pause_reason?: string | null
+          payload?: Json
+          stage?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          article_id?: string | null
+          available_at?: string
+          checkpoint?: Json
+          created_at?: string
+          id?: string
+          lease_expires_at?: string | null
+          lease_token?: string | null
+          origin?: string
+          outcome_unknown?: boolean
+          pause_reason?: string | null
+          payload?: Json
+          stage?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       articles: {
         Row: {
           ai_provider: string | null
@@ -2471,6 +2525,16 @@ export type Database = {
         Args: { p_period_days?: number; p_sale_id: string }
         Returns: Json
       }
+      advance_article_automation: {
+        Args: {
+          p_article?: string
+          p_checkpoint: Json
+          p_id: string
+          p_lease: string
+          p_stage: string
+        }
+        Returns: boolean
+      }
       attach_pix_proof: {
         Args: { p_proof_url: string; p_sale_id: string }
         Returns: Json
@@ -2478,6 +2542,32 @@ export type Database = {
       check_sale_status: {
         Args: { p_mp_payment_id?: string; p_stripe_session_id?: string }
         Returns: Json
+      }
+      claim_article_automation: {
+        Args: { p_id: string }
+        Returns: {
+          article_id: string | null
+          available_at: string
+          checkpoint: Json
+          created_at: string
+          id: string
+          lease_expires_at: string | null
+          lease_token: string | null
+          origin: string
+          outcome_unknown: boolean
+          pause_reason: string | null
+          payload: Json
+          stage: string
+          status: string
+          updated_at: string
+          user_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "article_automation_jobs"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       claim_next_social_job: {
         Args: { p_user_id?: string }
@@ -2550,7 +2640,19 @@ export type Database = {
         Returns: string
       }
       disconnect_google_oauth_credentials: { Args: never; Returns: undefined }
+      dispatch_article_automation: {
+        Args: { p_bearer: string; p_url: string }
+        Returns: number
+      }
+      dispatch_article_automation_hop: {
+        Args: { p_bearer: string; p_hops: number; p_id: string; p_url: string }
+        Returns: boolean
+      }
       encrypt_credential: { Args: { val: string }; Returns: string }
+      enqueue_article_automation: {
+        Args: { p_origin?: string; p_payload?: Json; p_user: string }
+        Returns: string
+      }
       extend_license_by_subscription: {
         Args: { p_period_days?: number; p_stripe_subscription_id: string }
         Returns: undefined
@@ -2647,9 +2749,14 @@ export type Database = {
         }
         Returns: undefined
       }
+      resume_article_automation: { Args: { p_id: string }; Returns: boolean }
       revoke_license_by_subscription: {
         Args: { p_stripe_subscription_id: string }
         Returns: undefined
+      }
+      save_automation_article: {
+        Args: { p_article: Json; p_id: string; p_lease: string }
+        Returns: string
       }
       save_google_oauth_credentials: {
         Args: { p_client_id: string; p_client_secret?: string }
