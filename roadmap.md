@@ -1,5 +1,8 @@
 # Roadmap
 
+- [ ] Corrigir estouros de tempo na automação — exige aprovação do plano de fila persistente e processamento por usuário.
+- [x] Corrigir formato ausente e avisos de falha nas imagens da base de conhecimento; 15 testes passaram, tela validada com respostas simuladas e formato ausente rejeitado pelo serviço publicado.
+
 - [x] Buscar fotografias recentes por assunto e nomes, sem inventar pessoas, preservando legenda e fonte.
 - [x] Aplicar realismo obrigatório e impedir geração que ignore aprendizado; validar as regras.
 - [ ] Confirmar fotografia real no artigo sobre Mariana Rios — depende de o 9Router verificar nomes e de uma fotografia recente com licença; o teste na tela interrompeu sem inventar pessoas.

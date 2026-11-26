@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { requireUserOrService } from "../_shared/security.ts";
+import { isAIImageFormat } from "../_shared/image-formats.ts";
+import { generateKnowledgeImage } from "../_shared/knowledge-image.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -48,8 +50,12 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const { userId, knowledgeId, category, title } = await req.json();
+    const { userId, knowledgeId, category, title, imageFormat } = await req.json();
     await requireUserOrService(req, userId);
+    if (!isAIImageFormat(imageFormat)) {
+      return new Response(JSON.stringify({ success: false, error: "Escolha o formato da imagem antes de criar o artigo." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
     if (!userId || !knowledgeId) {
       return new Response(
         JSON.stringify({ error: "userId e knowledgeId são obrigatórios" }),
@@ -218,20 +224,19 @@ serve(async (req) => {
 
     if (insertErr) throw insertErr;
 
-    try {
-      await supabase.functions.invoke("regenerate-image", {
-        body: { userId, articleIds: [inserted.id], force: true },
-      });
-    } catch (e) {
-      console.warn("[generate-from-knowledge] image gen failed", e);
-    }
+    const imageWarning = await generateKnowledgeImage(
+      (name, options) => supabase.functions.invoke(name, options), userId, inserted.id, imageFormat,
+    );
 
     return new Response(
       JSON.stringify({
         success: true,
         articleId: inserted.id,
         title: inserted.title,
-        message: `Artigo criado a partir da base de conhecimento.`,
+        imageWarning,
+        message: imageWarning
+          ? `Artigo criado, mas sem imagem: ${imageWarning}`
+          : `Artigo criado a partir da base de conhecimento.`,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );

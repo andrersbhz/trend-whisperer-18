@@ -12,6 +12,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Loader2, BookOpen, Sparkles } from "lucide-react";
+import { AIImageFormatPicker, type AIImageFormat } from "./AIImageFormatPicker";
 
 interface Props {
   open: boolean;
@@ -31,6 +32,7 @@ export const GenerateFromKnowledgeDialog = ({ open, onOpenChange, categories, on
   const [entryId, setEntryId] = useState<string>("");
   const [category, setCategory] = useState<string>(categories[0] || "");
   const [titleHint, setTitleHint] = useState<string>("");
+  const [imageFormat, setImageFormat] = useState<AIImageFormat | null>(null);
 
   useEffect(() => {
     if (!open || !user) return;
@@ -47,18 +49,18 @@ export const GenerateFromKnowledgeDialog = ({ open, onOpenChange, categories, on
   }, [open, user?.id]);
 
   const handleGenerate = async () => {
-    if (!user || !entryId) return;
+    if (!user || !entryId || !imageFormat) return;
     setGenerating(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-from-knowledge", {
-        body: { userId: user.id, knowledgeId: entryId, category, title: titleHint || undefined },
+        body: { userId: user.id, knowledgeId: entryId, category, title: titleHint || undefined, imageFormat },
       });
       if (error) throw error;
       if (data?.success) {
-        toast({ title: "Artigo criado!", description: data.message || "Artigo gerado a partir da base." });
+        toast({ title: data.imageWarning ? "Artigo criado sem imagem" : "Artigo criado!", description: data.message || "Artigo gerado a partir da base.", variant: data.imageWarning ? "destructive" : "default" });
         onSuccess();
         onOpenChange(false);
-        setEntryId(""); setTitleHint("");
+        setEntryId(""); setTitleHint(""); setImageFormat(null);
       } else {
         toast({ title: "Falha", description: data?.error || "Erro desconhecido", variant: "destructive" });
       }
@@ -123,13 +125,17 @@ export const GenerateFromKnowledgeDialog = ({ open, onOpenChange, categories, on
             <Input value={titleHint} onChange={(e) => setTitleHint(e.target.value)}
               placeholder="Deixe vazio para a IA decidir a partir do material" />
           </div>
+          <div className="space-y-2">
+            <Label>Formato da imagem</Label>
+            <AIImageFormatPicker value={imageFormat} onChange={setImageFormat} disabled={generating} />
+          </div>
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={generating}>
             Cancelar
           </Button>
-          <Button onClick={handleGenerate} disabled={generating || !entryId} className="gradient-primary gap-2">
+          <Button onClick={handleGenerate} disabled={generating || !entryId || !imageFormat} className="gradient-primary gap-2">
             {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
             {generating ? "Gerando..." : "Gerar Artigo"}
           </Button>
