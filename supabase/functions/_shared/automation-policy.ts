@@ -7,6 +7,9 @@ export function nextValidationStage(stage: AutomationStage): AutomationStage {
 export const AUTOMATION_BATCH_USERS = 100;
 export const AUTOMATION_STEP_MS = 100_000;
 export const AUTOMATION_PUBLISH_LIMIT = 1;
+export function blocksScheduledGeneration(jobs: { status: string; outcome_unknown: boolean }[]) {
+  return jobs.some(job => job.status !== 'paused' || !job.outcome_unknown);
+}
 export function prioritizeAutomationUsers<T extends { user_id: string }>(users: T[], history: { user_id: string; updated_at: string }[]) {
   const latest = new Map<string, string>();
   for (const row of history) {

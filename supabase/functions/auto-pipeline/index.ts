@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { z } from "https://esm.sh/zod@3.25.76";
 import { requireServiceOrAdmin, safeError } from "../_shared/security.ts";
-import { AUTOMATION_BATCH_USERS, AUTOMATION_PUBLISH_LIMIT, nextValidationStage, prioritizeAutomationUsers, type AutomationStage } from "../_shared/automation-policy.ts";
+import { AUTOMATION_BATCH_USERS, AUTOMATION_PUBLISH_LIMIT, blocksScheduledGeneration, nextValidationStage, prioritizeAutomationUsers, type AutomationStage } from "../_shared/automation-policy.ts";
 
 const RequestSchema = z.object({ jobId: z.string().uuid().optional(), remainingHops: z.number().int().min(0).max(6).default(6) });
 declare const EdgeRuntime: { waitUntil: (work: Promise<unknown>) => void };
@@ -73,9 +73,9 @@ serve(async (req) => {
       } else if (job.stage === "trends") {
         const result = await invoke("fetch-trends", { userId: job.user_id }, 25000);
         if (result.success === false || result.error) throw new Error(result.error || result.message || "Falha na busca de tendências");
-        const { data: generation, error: generationError } = await db.from("article_automation_jobs").select("id").eq("user_id", job.user_id).neq("id", job.id).in("status", ["pending", "running", "paused"]).not("stage", "in", "(publish,trends)").limit(1);
+        const { data: generation, error: generationError } = await db.from("article_automation_jobs").select("id, status, outcome_unknown").eq("user_id", job.user_id).neq("id", job.id).in("status", ["pending", "running", "paused"]).not("stage", "in", "(publish,trends)");
         if (generationError) throw generationError;
-        await advance(generation?.length ? "done" : "research");
+        await advance(blocksScheduledGeneration(generation || []) ? "done" : "research");
       } else if (job.stage === "image") {
         if (!job.article_id) throw new Error("Artigo da tarefa não encontrado");
         const { data: article, error: articleError } = await db.from("articles").select("id, status, featured_image_url").eq("id", job.article_id).eq("user_id", job.user_id).single();

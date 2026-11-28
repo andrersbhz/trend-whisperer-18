@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { jobFetch, runJobStep, JobStopped } from '../../../supabase/functions/_shared/job-runtime';
-import { AUTOMATION_BATCH_USERS, AUTOMATION_PUBLISH_LIMIT, AUTOMATION_STEP_MS, nextValidationStage, prioritizeAutomationUsers } from '../../../supabase/functions/_shared/automation-policy';
+import { AUTOMATION_BATCH_USERS, AUTOMATION_PUBLISH_LIMIT, AUTOMATION_STEP_MS, blocksScheduledGeneration, nextValidationStage, prioritizeAutomationUsers } from '../../../supabase/functions/_shared/automation-policy';
 afterEach(() => vi.unstubAllGlobals());
 describe('Automação limitada e sem repetição', () => {
   it('prioriza usuários não atendidos antes dos atendidos mais recentemente', () => {
@@ -14,6 +14,12 @@ describe('Automação limitada e sem repetição', () => {
     expect(AUTOMATION_PUBLISH_LIMIT).toBe(1);
     expect(AUTOMATION_STEP_MS).toBe(100000);
     expect(AUTOMATION_BATCH_USERS).toBe(100);
+  });
+  it('não deixa uma tarefa pausada com resultado incerto bloquear o próximo agendamento', () => {
+    expect(blocksScheduledGeneration([{ status: 'paused', outcome_unknown: true }])).toBe(false);
+    expect(blocksScheduledGeneration([{ status: 'paused', outcome_unknown: false }])).toBe(true);
+    expect(blocksScheduledGeneration([{ status: 'pending', outcome_unknown: true }])).toBe(true);
+    expect(blocksScheduledGeneration([{ status: 'running', outcome_unknown: false }])).toBe(true);
   });
   it('separa texto, salvamento e imagem em etapas retomáveis', () => {
     expect(nextValidationStage('research')).toBe('text');

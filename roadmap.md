@@ -1,5 +1,7 @@
 # Roadmap
 
+- [x] Impedir que uma tarefa pausada bloqueie novas gerações e permitir retomada manual segura; fluxo da fila validado sem IA e botão conferido na tela.
+- [x] Preservar todos os pedidos manuais na fila, mesmo durante outra geração; dois pedidos e execução única validados no banco.
 - [x] Corrigir estouros de tempo: fila por usuário, etapas retomáveis, trava, pausa, proteção contra duplicações e progresso em Artigos; 25 testes passaram e salvamento real validado sem publicação.
 - [ ] Conferir os próximos ciclos agendados com provedores reais — depende do próximo horário do agendador e do acesso/saldo dos provedores; nenhum conteúdo foi publicado nesta validação.
 - [x] Corrigir formato ausente e avisos de falha nas imagens da base de conhecimento; 15 testes passaram, tela validada com respostas simuladas e formato ausente rejeitado pelo serviço publicado.

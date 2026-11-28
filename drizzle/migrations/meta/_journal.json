@@ -50,6 +50,20 @@
       "when": 1795665754805,
       "tag": "0006_isolate_publication_from_generation_pauses",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1795834842925,
+      "tag": "0007_unblock_and_queue_article_generation",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1795834913181,
+      "tag": "0008_continue_schedule_after_unknown_pause",
+      "breakpoints": true
     }
   ]
 }

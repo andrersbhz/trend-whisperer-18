@@ -49,8 +49,8 @@ export function AutomationProgress({ onCompleted }: { onCompleted?: () => void }
       <span>{stages[job.stage] || job.stage}</span>
       <time className="text-xs text-muted-foreground">{new Date(job.updated_at).toLocaleString('pt-BR')}</time>
       {job.pause_reason && <span className="basis-full flex items-start gap-2 text-destructive"><AlertTriangle className="h-4 w-4 shrink-0" />{job.pause_reason}</span>}
-      {job.status === 'paused' && !job.outcome_unknown && <Button size="sm" variant="outline" disabled={busy} onClick={() => void resume(job)}><Play className="h-4 w-4 mr-2" />Retomar</Button>}
-      {job.outcome_unknown && <span className="basis-full text-xs text-muted-foreground">Resultado sem confirmação; a repetição automática está bloqueada.</span>}
+      {job.status === 'paused' && <Button size="sm" variant="outline" disabled={busy} onClick={() => void resume(job)}><Play className="h-4 w-4 mr-2" />{job.outcome_unknown ? 'Conferir e retomar' : 'Retomar'}</Button>}
+      {job.outcome_unknown && <span className="basis-full text-xs text-muted-foreground">Resultado sem confirmação. Confira se o artigo já foi criado; a retomada só acontece pelo botão acima.</span>}
     </div>)}
   </section>;
 }
